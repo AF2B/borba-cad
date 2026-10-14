@@ -146,12 +146,70 @@ WITH-UNIT: when true, append the area unit abbreviation."
         (format nil "~a ~a" number (unit-area-abbreviation unit))
         number)))
 
-(defun parse-decimal-rational (text)
-  "Parse TEXT as a decimal number and return it as an exact rational, or NIL when malformed.
-Accepts an optional sign, digits, and an optional fraction introduced by . or ,.
+(defconstant +thousands-group-size+ 3
+  "Digits in each group after the first when thousands are separated, as in 1.250.000.")
+
+(defun digit-string-p (text)
+  "Return true when TEXT is one or more digits.
+
+TEXT: a string."
+  (and (plusp (length text))
+       (every #'digit-char-p text)))
+
+(defun without-thousands-separators (text
+                                     mark)
+  "Return TEXT, an integer written with MARK between its thousands, as plain digits, or NIL when
+it is not so written: the first group has one to three digits and every other has exactly three.
+
+TEXT: the integer part of a number.
+MARK: the thousands separator, #\\. or #\\,."
+  (let ((groups (uiop:split-string text :separator (list mark))))
+    (and (every #'digit-string-p groups)
+         (<= 1 (length (first groups)) +thousands-group-size+)
+         (every (lambda (group) (= (length group) +thousands-group-size+))
+                (rest groups))
+         (apply #'concatenate 'string groups))))
+
+(defun normalize-separators (text)
+  "Return TEXT, a number as typed, in a form with at most one separator, a decimal mark: when it
+has more, they are thousands separators as Brazilian and American writing have them (1.250,5 and
+1,250.5 are both 1250.5; 1.250.000 is a million and a quarter). The decimal mark is the last
+separator when two kinds appear. Returns NIL when the separators make no sense (1.2.3, 1,5,5).
 
 TEXT: the number text without surrounding whitespace or unit."
-  (let ((length (length text))
+  (let* ((sign-length (if (and (plusp (length text)) (find (char text 0) "+-")) 1 0))
+         (sign (subseq text 0 sign-length))
+         (body (subseq text sign-length))
+         (last-dot (position #\. body :from-end t))
+         (last-comma (position #\, body :from-end t)))
+    (if (<= (+ (count #\. body) (count #\, body)) 1)
+        text
+        (let* ((decimal-mark (and last-dot
+                                  last-comma
+                                  (if (> last-dot last-comma) #\. #\,)))
+               (thousands-mark (cond (decimal-mark (if (char= decimal-mark #\.) #\, #\.))
+                                     (last-dot #\.)
+                                     (t #\,)))
+               (decimal-position (and decimal-mark (position decimal-mark body :from-end t)))
+               (digits (without-thousands-separators (if decimal-position
+                                                         (subseq body 0 decimal-position)
+                                                         body)
+                                                     thousands-mark))
+               (fraction (and decimal-position (subseq body (1+ decimal-position)))))
+          (and digits
+               (or (null decimal-mark) (= 1 (count decimal-mark body)))
+               (or (null fraction) (zerop (length fraction)) (digit-string-p fraction))
+               (concatenate 'string sign digits (if fraction (format nil ".~a" fraction) "")))))))
+
+(defun parse-decimal-rational (text)
+  "Parse TEXT as a decimal number and return it as an exact rational, or NIL when malformed.
+Accepts an optional sign, digits, an optional fraction introduced by . or , and thousands
+separators (see NORMALIZE-SEPARATORS).
+
+TEXT: the number text without surrounding whitespace or unit."
+  (let* ((text (or (normalize-separators text)
+                   (return-from parse-decimal-rational nil)))
+         (length (length text))
         (position 0)
         (sign 1)
         (digits 0)
@@ -203,7 +261,12 @@ DEFAULT-UNIT: unit assumed when TEXT has no suffix."
          (suffix-start (or (position-if-not #'alpha-char-p trimmed :from-end t) -1))
          (suffix (subseq trimmed (1+ suffix-start)))
          (number-text (string-trim " " (subseq trimmed 0 (1+ suffix-start))))
-         (value (parse-decimal number-text))
+         (value (handler-case (parse-decimal number-text)
+                  (invalid-input (condition)
+                    ;; Say what was typed, not the part left after the unit was cut off.
+                    (error 'invalid-input
+                           :text text
+                           :reason (invalid-input-reason condition)))))
          (unit (if (zerop (length suffix))
                    default-unit
                    (unit-from-abbreviation suffix))))

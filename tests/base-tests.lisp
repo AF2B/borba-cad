@@ -86,6 +86,28 @@
   (is (= 0.5d0 (borba-cad/base:parse-length ".5" :millimeter)))
   (is (= 7d0 (borba-cad/base:parse-length "  +7 " :millimeter))))
 
+(test thousands-separators-are-understood-in-both-conventions
+  (flet ((mm (text) (borba-cad/base:parse-length text :millimeter)))
+    (is (= 1250.5d0 (mm "1.250,5")))
+    (is (= 1250.5d0 (mm "1,250.5")))
+    (is (= 1250000d0 (mm "1.250.000")))
+    (is (= 1250000d0 (mm "1,250,000")))
+    (is (= 1250000.5d0 (mm "1.250.000,5")))
+    (is (= -1234567.89d0 (mm "-1,234,567.89")))
+    (is (= 1250500d0 (borba-cad/base:parse-length "1.250,5 m" :millimeter)) "with a unit")
+    (is (= 1.25d0 (mm "1.250")) "one separator is still the decimal mark")
+    (is (= 1.5d0 (mm "1,5")))))
+
+(test misplaced-thousands-separators-are-refused
+  (dolist (text '("1.2.3" "1,5,5" "12.34.567" "1234.567,8" "1.250,5,5" "1,250.5.5" "1.25,0.0" "1..250" ".,5"))
+    (signals borba-cad/base:invalid-input (borba-cad/base:parse-length text :millimeter) "~s" text)))
+
+(test an-invalid-length-reports-what-was-typed
+  (dolist (text '("abc" "hello world" "12 furlongs" "1.2.3m"))
+    (handler-case (borba-cad/base:parse-length text :millimeter)
+      (borba-cad/base:invalid-input (condition)
+        (is (string= text (borba-cad/base:invalid-input-text condition)) "~s" text)))))
+
 (test parse-length-rejects-malformed-input-with-a-typed-condition
   (dolist (text '("" "abc" "1.2.3" "--1" "1e5" "12 furlongs" "mm" "1 2"
                   "99999999999999999999999999999999999999"))
