@@ -1,0 +1,204 @@
+====================================================================================================
+BORBA CAD BENCHMARK REPORT
+====================================================================================================
+
+ENVIRONMENT
+----------------------------------------------------------------------------------------------------
+  date (UTC)                     2026-10-14T04:28:46.907Z
+  host                           borba
+  lisp                           SBCL 2.6.9
+  cpu                            12th Gen Intel(R) Core(TM) i5-12400F
+  kernel                         7.2.9-arch1-1
+  heap capacity (MiB)            4096
+  bytes consed between GCs (MiB) 204
+  git revision                   no commit yet
+  benchmark seed                 20261013
+
+WORKLOADS (generated with the seed above; equal checksums mean identical drawings)
+----------------------------------------------------------------------------------------------------
+  name       entities  checksum          generate (ms)    retained heap    heap per entity
+  W0                0  da2b99ebb82ba67b 0.1            0.2 MiB          n/a               
+  W1            1,000  85c048796a1ecabf 1.9            0.4 MiB          370 B             
+  W2           10,000  6b33baf5ca5c1406 22.9           2.5 MiB          263 B             
+  W3          100,000  fd02a50b099af56a 273.9          24.8 MiB         260 B             
+
+TIMINGS (per call; lower is better; every sample comes from the monotonic clock)
+====================================================================================================
+
+W0  (0 entities)
+----------------------------------------------------------------------------------------------------
+  operation                                        samples       mean        p50        p95        max  unit
+  scene.build, all entities in view                     20      9.616      9.809      11.88      12.32  microseconds
+      last scene: 0 entities drawn, 0 culled
+  scene.build, pan sweep at working zoom               300      2.768      2.262      4.480      16.33  microseconds
+      last scene: 0 entities drawn, 0 culled
+      GC during run: 0 collections, 0.00 ms CPU in total, longest 0.00 ms
+  scene.build, zoom sweep from whole site              300      4.533      2.137      12.17     207.62  microseconds
+      last scene: 0 entities drawn, 0 culled
+      GC during run: 0 collections, 0.00 ms CPU in total, longest 0.00 ms
+  pick.entity, random point                          2,000      0.095      0.040      0.360      1.179  microseconds
+      0 of 2000 random points hit an entity
+  select.window, random window                         200      0.319      0.054      0.087      31.20  microseconds
+      on average 0.0 entities selected per window
+  snap.object, random point                          1,000      0.265      0.069      0.647      63.73  microseconds
+  file.save (serialize, flush, rename)                   5      0.043      0.040      0.054      0.054  milliseconds
+      722 bytes on disk
+  file.load (read, parse, validate)                      5      0.067      0.065      0.078      0.078  milliseconds
+      round trip verified: checksum da2b99ebb82ba67b before and after
+  edit.create, one entity                              100      2.122      1.540      4.866      12.41  microseconds
+  edit.undo, one creation                              100      0.905      0.733      2.029      3.927  microseconds
+  edit.redo, one creation                              100      1.879      1.382      3.578      16.09  microseconds
+  edit.delete, one entity                              100      1.134      0.869      2.182      4.326  microseconds
+
+  memory soak: 400 cycles of creating and deleting 50 entities through the history
+  heap in use after a full GC:
+      start                    19.1 MiB
+      after 100 cycles         20.2 MiB
+      after 200 cycles         21.4 MiB
+      after 300 cycles         22.0 MiB
+      after 400 cycles         22.0 MiB
+      history cleared          19.1 MiB
+  growth between the last two checkpoints (history already full): 0.0 MiB
+
+W1  (1,000 entities)
+----------------------------------------------------------------------------------------------------
+  operation                                        samples       mean        p50        p95        max  unit
+  scene.build, all entities in view                     20     429.70     429.28     485.17     504.85  microseconds
+      last scene: 1000 entities drawn, 0 culled
+  scene.build, pan sweep at working zoom               300      29.07      27.98      40.74     110.45  microseconds
+      last scene: 0 entities drawn, 1000 culled
+      GC during run: 0 collections, 0.00 ms CPU in total, longest 0.00 ms
+  scene.build, zoom sweep from whole site              300      78.30      23.93     319.80     1642.9  microseconds
+      last scene: 7 entities drawn, 993 culled
+      GC during run: 0 collections, 0.00 ms CPU in total, longest 0.00 ms
+  pick.entity, random point                          2,000      5.233      5.264      7.712      50.25  microseconds
+      93 of 2000 random points hit an entity
+  select.window, random window                         200      9.061      8.923      12.30      81.57  microseconds
+      on average 5.4 entities selected per window
+  snap.object, random point                          1,000      8.367      8.158      11.08     166.55  microseconds
+  file.save (serialize, flush, rename)                   5      2.494      2.526      2.685      2.685  milliseconds
+      96,151 bytes on disk
+  file.load (read, parse, validate)                      5      7.422      7.777      8.837      8.837  milliseconds
+      round trip verified: checksum 85c048796a1ecabf before and after
+  edit.create, one entity                              100      17.18      15.27      25.14      85.75  microseconds
+  edit.undo, one creation                              100      5.520      5.227      7.072      7.996  microseconds
+  edit.redo, one creation                              100      17.83      12.32      32.41     357.60  microseconds
+  edit.delete, one entity                              100      7.121      6.975      10.25      18.21  microseconds
+
+  memory soak: 400 cycles of creating and deleting 50 entities through the history
+  heap in use after a full GC:
+      start                    19.4 MiB
+      after 100 cycles         20.5 MiB
+      after 200 cycles         21.7 MiB
+      after 300 cycles         22.3 MiB
+      after 400 cycles         22.3 MiB
+      history cleared          19.4 MiB
+  growth between the last two checkpoints (history already full): 0.0 MiB
+
+W2  (10,000 entities)
+----------------------------------------------------------------------------------------------------
+  operation                                        samples       mean        p50        p95        max  unit
+  scene.build, all entities in view                     10     3141.6     2938.3     3831.1     3831.1  microseconds
+      last scene: 10000 entities drawn, 0 culled
+  scene.build, pan sweep at working zoom                30     268.13     260.52     310.74     326.03  microseconds
+      last scene: 80 entities drawn, 9920 culled
+      GC during run: 0 collections, 0.00 ms CPU in total, longest 0.00 ms
+  scene.build, zoom sweep from whole site               30     763.21     309.15     3019.9     3437.1  microseconds
+      last scene: 2 entities drawn, 9998 culled
+      GC during run: 0 collections, 0.00 ms CPU in total, longest 0.00 ms
+  pick.entity, random point                            200      60.88      58.62      91.72     164.47  microseconds
+      27 of 200 random points hit an entity
+  select.window, random window                          20      91.15      94.40     135.08     136.28  microseconds
+      on average 76.2 entities selected per window
+  snap.object, random point                            100      82.52      83.02     117.53     132.77  microseconds
+  file.save (serialize, flush, rename)                   5      17.94      16.67      21.64      21.64  milliseconds
+      998,081 bytes on disk
+  file.load (read, parse, validate)                      5      72.63      70.26      92.05      92.05  milliseconds
+      round trip verified: checksum 6b33baf5ca5c1406 before and after
+  edit.create, one entity                               10     193.06     140.21     591.46     591.46  microseconds
+  edit.undo, one creation                               10      65.87      64.77      74.85      74.85  microseconds
+  edit.redo, one creation                               10     153.30     151.60     167.35     167.35  microseconds
+  edit.delete, one entity                               10      72.14      68.11      92.11      92.11  microseconds
+
+  memory soak: 400 cycles of creating and deleting 50 entities through the history
+  heap in use after a full GC:
+      start                    20.9 MiB
+      after 100 cycles         22.1 MiB
+      after 200 cycles         23.3 MiB
+      after 300 cycles         23.9 MiB
+      after 400 cycles         23.9 MiB
+      history cleared          21.0 MiB
+  growth between the last two checkpoints (history already full): 0.0 MiB
+
+W3  (100,000 entities)
+----------------------------------------------------------------------------------------------------
+  operation                                        samples       mean        p50        p95        max  unit
+  scene.build, all entities in view                     10    36349.8    32415.2    45170.3    45170.3  microseconds
+      last scene: 100000 entities drawn, 0 culled
+  scene.build, pan sweep at working zoom                10     3270.3     3252.7     3706.4     3706.4  microseconds
+      last scene: 698 entities drawn, 99302 culled
+      GC during run: 0 collections, 0.00 ms CPU in total, longest 0.00 ms
+  scene.build, zoom sweep from whole site               10    18678.7    12641.2    55593.0    55593.0  microseconds
+      last scene: 8052 entities drawn, 91948 culled
+      GC during run: 1 collections, 1.47 ms CPU in total, longest 1.47 ms
+  pick.entity, random point                             20     1009.6     917.65     1781.7     1891.1  microseconds
+      10 of 20 random points hit an entity
+  select.window, random window                          10     1148.8     1015.1     1477.1     1477.1  microseconds
+      on average 883.8 entities selected per window
+  snap.object, random point                             10     1495.1     1516.7     1806.8     1806.8  microseconds
+  file.save (serialize, flush, rename)                   5     155.74     159.15     161.19     161.19  milliseconds
+      10,209,345 bytes on disk
+  file.load (read, parse, validate)                      5     774.60     775.22     810.01     810.01  milliseconds
+      round trip verified: checksum fd02a50b099af56a before and after
+  edit.create, one entity                               10     2467.6     2091.2     4714.6     4714.6  microseconds
+  edit.undo, one creation                               10     811.37     705.88     1336.6     1336.6  microseconds
+  edit.redo, one creation                               10     2756.4     2575.5     3893.8     3893.8  microseconds
+  edit.delete, one entity                               10     1102.5     1079.9     1421.4     1421.4  microseconds
+
+  memory soak: 400 cycles of creating and deleting 50 entities through the history
+  heap in use after a full GC:
+      start                    37.0 MiB
+      after 100 cycles         38.2 MiB
+      after 200 cycles         39.4 MiB
+      after 300 cycles         40.0 MiB
+      after 400 cycles         40.0 MiB
+      history cleared          37.0 MiB
+  growth between the last two checkpoints (history already full): 0.0 MiB
+
+INSTRUMENTATION OVERHEAD (1000 entities, 10 interleaved rounds of 150 frames per mode)
+  overlay = info-level logging plus the live performance overlay drawn on every frame
+----------------------------------------------------------------------------------------------------
+  operation                                        samples       mean        p50        p95        max  unit
+  frame, instrumentation off                         1,500     278.40     263.72     406.78     2615.5  microseconds
+      no telemetry: nothing written
+  frame, instrumentation off-control                 1,500     284.00     265.56     413.59     3499.3  microseconds
+      no telemetry: nothing written
+  frame, instrumentation error                       1,500     283.05     265.25     414.10     3139.9  microseconds
+      0 log lines, 0 bytes written
+  frame, instrumentation info                        1,500     296.34     280.86     414.85     2654.9  microseconds
+      12 log lines, 1,838 bytes written
+  frame, instrumentation debug                       1,500     315.60     302.47     436.05     3794.2  microseconds
+      1,514 log lines, 203,319 bytes written
+  frame, instrumentation overlay                     1,500     277.01     262.10     403.61     2280.4  microseconds
+      12 log lines, 1,840 bytes written
+
+  difference from the first row, by mean frame time (the off-control row is the
+  same uninstrumented setup again: its difference is the noise floor of this run):
+      frame, instrumentation off-control               5.60 us per frame (2.0%)
+      frame, instrumentation error                     4.65 us per frame (1.7%)
+      frame, instrumentation info                      17.94 us per frame (6.4%)
+      frame, instrumentation debug                     37.20 us per frame (13.4%)
+      frame, instrumentation overlay                   -1.39 us per frame (-0.5%)
+
+  the overlay itself, over info-level logging: -19.33 us per frame
+  A difference below the run-to-run noise (compare p50 and p95) is not a cost.
+
+NOT MEASURED
+----------------------------------------------------------------------------------------------------
+  - GPU time and overdraw: no vendor-neutral timer is used; the windowed benchmark
+    (make bench-gui) reports CPU build/submit time, the time glFinish waits and swap time instead.
+  - Wall-clock GC pauses: SBCL exposes GC CPU time (*gc-run-time*); with the application's
+    single working thread it approximates the pause.
+  - Energy and power use.
+
+No performance target is asserted by this report; targets are proposed in docs/performance.md.

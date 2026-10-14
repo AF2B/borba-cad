@@ -1,0 +1,78 @@
+====================================================================================================
+BORBA CAD WINDOWED FRAME BENCHMARK
+====================================================================================================
+
+ENVIRONMENT
+----------------------------------------------------------------------------------------------------
+  date (UTC)                     2026-10-14T04:29:50.879Z
+  host                           borba
+  lisp                           SBCL 2.6.9
+  cpu                            12th Gen Intel(R) Core(TM) i5-12400F
+  kernel                         7.2.9-arch1-1
+  heap capacity (MiB)            4096
+  bytes consed between GCs (MiB) 204
+  git revision                   no commit yet
+  benchmark seed                 20261013
+  OpenGL renderer                NVIDIA GeForce RTX 4060/PCIe/SSE2
+  session                        XDG_SESSION_TYPE=wayland WAYLAND_DISPLAY=wayland-0 DISPLAY=:0
+
+FRAMES (window 1440x900 logical pixels; times in milliseconds; columns: mean p50 p95 max)
+----------------------------------------------------------------------------------------------------
+w1 (1,000 entities), swap interval requested 1, in effect 1, 600 frames
+  cpu: input, build, submit                 0.884      0.801      1.150      40.06  ms
+  gpu wait: glFinish after submit           0.441      0.160      1.766      2.373  ms
+  swap buffers                              0.092      0.073      0.151      3.832  ms
+  interval between presented frames         1.419      1.177      2.711      40.58  ms
+  serialized frame cost (cpu + gpu wait, mean): 1.325 ms
+  presented rate: 704.5 frames per second (from the mean interval)
+
+w1 (1,000 entities), swap interval requested 0, in effect 0, 600 frames
+  cpu: input, build, submit                 0.788      0.777      1.097      1.528  ms
+  gpu wait: glFinish after submit           0.473      0.153      1.711      2.369  ms
+  swap buffers                              0.096      0.075      0.174      3.839  ms
+  interval between presented frames         1.358      1.125      2.767      4.849  ms
+  serialized frame cost (cpu + gpu wait, mean): 1.260 ms
+  presented rate: 736.6 frames per second (from the mean interval)
+
+w2 (10,000 entities), swap interval requested 1, in effect 1, 600 frames
+  cpu: input, build, submit                 4.035      3.836      6.561      55.78  ms
+  gpu wait: glFinish after submit           0.430      0.231      1.229      1.932  ms
+  swap buffers                              0.172      0.157      0.252      3.400  ms
+  interval between presented frames         4.641      4.419      7.269      56.11  ms
+  serialized frame cost (cpu + gpu wait, mean): 4.465 ms
+  presented rate: 215.5 frames per second (from the mean interval)
+
+w2 (10,000 entities), swap interval requested 0, in effect 0, 600 frames
+  cpu: input, build, submit                 3.727      3.740      5.269      8.912  ms
+  gpu wait: glFinish after submit           0.446      0.268      1.224      1.807  ms
+  swap buffers                              0.181      0.168      0.264      3.878  ms
+  interval between presented frames         4.359      4.342      6.130      9.906  ms
+  serialized frame cost (cpu + gpu wait, mean): 4.174 ms
+  presented rate: 229.4 frames per second (from the mean interval)
+
+w3 (100,000 entities), swap interval requested 1, in effect 1, 600 frames
+  cpu: input, build, submit                 29.91      30.55      39.90      49.58  ms
+  gpu wait: glFinish after submit           0.682      0.663      1.480      1.939  ms
+  swap buffers                              0.197      0.182      0.281      3.920  ms
+  interval between presented frames         30.79      31.20      41.01      50.79  ms
+  serialized frame cost (cpu + gpu wait, mean): 30.591 ms
+  presented rate: 32.5 frames per second (from the mean interval)
+
+w3 (100,000 entities), swap interval requested 0, in effect 0, 600 frames
+  cpu: input, build, submit                 30.49      31.68      39.98      44.84  ms
+  gpu wait: glFinish after submit           0.678      0.637      1.441      2.069  ms
+  swap buffers                              0.192      0.182      0.301      2.237  ms
+  interval between presented frames         31.37      32.68      41.03      46.08  ms
+  serialized frame cost (cpu + gpu wait, mean): 31.170 ms
+  presented rate: 31.9 frames per second (from the mean interval)
+
+Notes
+----------------------------------------------------------------------------------------------------
+  - cpu is the time to apply input, build the draw list and submit it to OpenGL; it excludes
+    the swap.
+  - gpu wait is the time glFinish blocks after the submit: GPU work not already overlapped
+    with the CPU. Draining the pipeline every frame serializes CPU and GPU, so cpu + gpu wait
+    is an upper bound of a real frame's cost, not a vendor GPU-timer measurement.
+  - A swap time near zero with swap interval 1 means the swap did not wait for the display;
+    the interval is then the rate at which the program submits frames, not a rate the
+    display shows.

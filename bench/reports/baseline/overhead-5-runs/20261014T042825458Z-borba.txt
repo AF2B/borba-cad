@@ -1,0 +1,96 @@
+====================================================================================================
+BORBA CAD BENCHMARK REPORT
+====================================================================================================
+
+ENVIRONMENT
+----------------------------------------------------------------------------------------------------
+  date (UTC)                     2026-10-14T04:28:22.336Z
+  host                           borba
+  lisp                           SBCL 2.6.9
+  cpu                            12th Gen Intel(R) Core(TM) i5-12400F
+  kernel                         7.2.9-arch1-1
+  heap capacity (MiB)            4096
+  bytes consed between GCs (MiB) 204
+  git revision                   no commit yet
+  benchmark seed                 20261013
+
+WORKLOADS (generated with the seed above; equal checksums mean identical drawings)
+----------------------------------------------------------------------------------------------------
+  name       entities  checksum          generate (ms)    retained heap    heap per entity
+  W0                0  da2b99ebb82ba67b 0.0            0.2 MiB          n/a               
+
+TIMINGS (per call; lower is better; every sample comes from the monotonic clock)
+====================================================================================================
+
+W0  (0 entities)
+----------------------------------------------------------------------------------------------------
+  operation                                        samples       mean        p50        p95        max  unit
+  scene.build, all entities in view                     20      10.92      11.40      13.93      14.17  microseconds
+      last scene: 0 entities drawn, 0 culled
+  scene.build, pan sweep at working zoom               300      1.967      1.442      3.638      6.880  microseconds
+      last scene: 0 entities drawn, 0 culled
+      GC during run: 0 collections, 0.00 ms CPU in total, longest 0.00 ms
+  scene.build, zoom sweep from whole site              300      4.018      1.571      9.695     285.81  microseconds
+      last scene: 0 entities drawn, 0 culled
+      GC during run: 0 collections, 0.00 ms CPU in total, longest 0.00 ms
+  pick.entity, random point                          2,000      0.062      0.031      0.270      1.267  microseconds
+      0 of 2000 random points hit an entity
+  select.window, random window                         200      0.188      0.055      0.210      9.734  microseconds
+      on average 0.0 entities selected per window
+  snap.object, random point                          1,000      0.134      0.066      0.263      3.868  microseconds
+  file.save (serialize, flush, rename)                   5      0.035      0.031      0.048      0.048  milliseconds
+      722 bytes on disk
+  file.load (read, parse, validate)                      5      0.073      0.069      0.090      0.090  milliseconds
+      round trip verified: checksum da2b99ebb82ba67b before and after
+  edit.create, one entity                              100      1.959      1.456      4.450      7.311  microseconds
+  edit.undo, one creation                              100      0.888      0.631      2.283      4.196  microseconds
+  edit.redo, one creation                              100      2.208      1.844      4.217      10.78  microseconds
+  edit.delete, one entity                              100      1.365      0.952      3.788      6.009  microseconds
+
+  memory soak: 400 cycles of creating and deleting 50 entities through the history
+  heap in use after a full GC:
+      start                    19.1 MiB
+      after 100 cycles         20.3 MiB
+      after 200 cycles         21.4 MiB
+      after 300 cycles         22.1 MiB
+      after 400 cycles         22.0 MiB
+      history cleared          19.1 MiB
+  growth between the last two checkpoints (history already full): 0.0 MiB
+
+INSTRUMENTATION OVERHEAD (1000 entities, 10 interleaved rounds of 150 frames per mode)
+  overlay = info-level logging plus the live performance overlay drawn on every frame
+----------------------------------------------------------------------------------------------------
+  operation                                        samples       mean        p50        p95        max  unit
+  frame, instrumentation off                         1,500     281.83     265.33     387.40     5561.0  microseconds
+      no telemetry: nothing written
+  frame, instrumentation off-control                 1,500     277.28     267.29     380.36     2458.2  microseconds
+      no telemetry: nothing written
+  frame, instrumentation error                       1,500     297.13     286.07     398.15     3231.5  microseconds
+      0 log lines, 0 bytes written
+  frame, instrumentation info                        1,500     316.81     307.96     455.72     2269.8  microseconds
+      12 log lines, 1,838 bytes written
+  frame, instrumentation debug                       1,500     310.63     294.98     418.67     5188.2  microseconds
+      1,514 log lines, 203,319 bytes written
+  frame, instrumentation overlay                     1,500     289.00     280.87     393.60     2810.9  microseconds
+      12 log lines, 1,840 bytes written
+
+  difference from the first row, by mean frame time (the off-control row is the
+  same uninstrumented setup again: its difference is the noise floor of this run):
+      frame, instrumentation off-control               -4.54 us per frame (-1.6%)
+      frame, instrumentation error                     15.30 us per frame (5.4%)
+      frame, instrumentation info                      34.98 us per frame (12.4%)
+      frame, instrumentation debug                     28.80 us per frame (10.2%)
+      frame, instrumentation overlay                   7.17 us per frame (2.5%)
+
+  the overlay itself, over info-level logging: -27.81 us per frame
+  A difference below the run-to-run noise (compare p50 and p95) is not a cost.
+
+NOT MEASURED
+----------------------------------------------------------------------------------------------------
+  - GPU time and overdraw: no vendor-neutral timer is used; the windowed benchmark
+    (make bench-gui) reports CPU build/submit time, the time glFinish waits and swap time instead.
+  - Wall-clock GC pauses: SBCL exposes GC CPU time (*gc-run-time*); with the application's
+    single working thread it approximates the pause.
+  - Energy and power use.
+
+No performance target is asserted by this report; targets are proposed in docs/performance.md.
