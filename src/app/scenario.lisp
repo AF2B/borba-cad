@@ -234,9 +234,11 @@ APP: the application."
 move, delete and undo, zoom, pan, a save and an open, the overlay and the display unit.")
 
 (defun scenario-save-as (app)
-  "Save the drawing through the Save As prompt, typing the demonstration path.
+  "Save the drawing through the Save As prompt, typing the demonstration path. The folder of
+that path is created first, because saving never creates folders.
 
 APP: the application."
+  (ensure-directories-exist (demo-save-path app))
   (scenario-key app
                 :s
                 '(:control :shift))
@@ -342,6 +344,7 @@ draws.
 CONFIG: the configuration, which supplies the project root.
 PATH-TEXT: where to save the drawing."
   (let ((application (make-app config)))
+    (ensure-directories-exist path-text)
     (dolist (step (demo-steps application))
       (funcall step))
     (unless (save-app-drawing application path-text)

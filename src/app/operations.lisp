@@ -22,11 +22,8 @@ one and the color button cycles through them.")
           *layer-palette-channels*)
   "The palette as RGB values.")
 
-(defparameter *default-open-path* "examples/floor-plan.bcad"
-  "Path suggested in the Open prompt when no file has been used yet.")
-
-(defparameter *default-save-path* "drawings/untitled.bcad"
-  "Path suggested in the Save As prompt for a drawing without a file.")
+(defparameter *untitled-file-name* "untitled.bcad"
+  "File name offered in the Save As prompt for a drawing that has none.")
 
 (defun commit-changes (app
                        changes
@@ -396,17 +393,30 @@ LAYER-ID: layer id."
 
 ;;; Files
 
-(defun default-open-path (app)
-  "Return the path suggested in the Open prompt.
+(defun drawings-directory (app)
+  "Return the folder that the file prompts start in: the folder of the file being edited, or the
+user's documents folder.
 
 APP: the application."
-  (if (app-file-path app) (uiop:native-namestring (app-file-path app)) *default-open-path*))
+  (if (app-file-path app)
+      (persist:directory-of (app-file-path app))
+      (persist:default-drawings-directory)))
 
 (defun default-save-path (app)
-  "Return the path suggested in the Save As prompt.
+  "Return the path suggested in the Save As prompt: the file being edited, or a new name in the
+folder that prompts start in.
 
 APP: the application."
-  (if (app-file-path app) (uiop:native-namestring (app-file-path app)) *default-save-path*))
+  (uiop:native-namestring (or (app-file-path app)
+                              (merge-pathnames *untitled-file-name* (drawings-directory app)))))
+
+(defun default-open-path (app)
+  "Return the path suggested in the Open prompt: the file being edited, or the folder that
+prompts start in.
+
+APP: the application."
+  (uiop:native-namestring (or (app-file-path app)
+                              (drawings-directory app))))
 
 (defun reset-document (app
                        drawing
@@ -448,60 +458,92 @@ FIELDS: extra alternating keys and values."
            :duration-ms (obs:nanoseconds->milliseconds (- (sbcl:monotonic-nanoseconds) started))
            fields)))
 
+(defun fail-file-operation (app
+                            event
+                            started
+                            condition)
+  "Record a file operation that failed: log it, keep the condition and tell the user. Returns NIL,
+so that the caller can return it as the outcome.
+
+APP: the application.
+EVENT: dotted event name, such as file.save.
+STARTED: monotonic time when the operation began.
+CONDITION: the condition signaled."
+  (log-failed-operation app
+                        event
+                        started
+                        condition)
+  (setf (app-last-error app) condition)
+  (set-message app
+               (remove #\Newline (princ-to-string condition))
+               :error)
+  nil)
+
+(defun resolve-open-path (text)
+  "Return the pathname that an Open request names. A name without an extension that matches no
+file but matches a file with the drawing extension names that file.
+
+TEXT: file name as typed by the user."
+  (let ((path (persist:native-path text)))
+    (if (and (null (sbcl:file-kind path))
+             (member (pathname-type path) '(nil "") :test #'equal))
+        (let ((with-extension (persist:drawing-file-path text)))
+          (if (sbcl:file-kind with-extension)
+              with-extension
+              path))
+        path)))
+
 (defun load-drawing-into-app (app
                               path-text)
   "Load the drawing at PATH-TEXT and make it the current one. On failure the current drawing is
-untouched and the error is shown. Returns true on success.
+untouched and the reason is shown. Returns true on success.
 
 APP: the application.
 PATH-TEXT: file name as typed by the user."
-  (let ((started (sbcl:monotonic-nanoseconds))
-        (path (persist:native-path path-text)))
+  (let ((started (sbcl:monotonic-nanoseconds)))
     (handler-case
-        (multiple-value-bind (drawing stats)
-            (persist:load-drawing path)
-          (obs:record-operation-result (app-telemetry app)
-                                       "file.load"
-                                       (- (sbcl:monotonic-nanoseconds) started)
-                                       :info
-                                       :bytes (getf stats :bytes)
-                                       :entity-count (dom:drawing-entity-count drawing)
-                                       :read-ms (obs:nanoseconds->milliseconds
-                                                 (getf stats :read-nanoseconds))
-                                       :parse-ms (obs:nanoseconds->milliseconds
-                                                  (getf stats :parse-nanoseconds))
-                                       :result :success)
-          (reset-document app
-                          drawing
-                          path)
-          (set-message app (format nil "Opened ~a (~d entities)." (file-namestring path)
-                                   (dom:drawing-entity-count drawing)))
-          t)
-      (base:drawing-file-error (condition)
-        (log-failed-operation app
-                              "file.load"
-                              started
-                              condition)
-        (setf (app-last-error app) condition)
-        (set-message app
-                     (remove #\Newline (princ-to-string condition))
-                     :error)
-        nil))))
+        (let ((path (resolve-open-path path-text)))
+          (multiple-value-bind (drawing stats)
+              (persist:load-drawing path)
+            (obs:record-operation-result (app-telemetry app)
+                                         "file.load"
+                                         (- (sbcl:monotonic-nanoseconds) started)
+                                         :info
+                                         :bytes (getf stats :bytes)
+                                         :entity-count (dom:drawing-entity-count drawing)
+                                         :read-ms (obs:nanoseconds->milliseconds
+                                                   (getf stats :read-nanoseconds))
+                                         :parse-ms (obs:nanoseconds->milliseconds
+                                                    (getf stats :parse-nanoseconds))
+                                         :result :success)
+            (reset-document app
+                            drawing
+                            path)
+            (set-message app
+                         (format nil "Opened ~a: ~d ~:*~[entities~;entity~:;entities~] (~a)."
+                                 (file-namestring path)
+                                 (dom:drawing-entity-count drawing)
+                                 (base:format-byte-size (getf stats :bytes))))
+            t))
+      ((or base:drawing-file-error base:invalid-input) (condition)
+        (fail-file-operation app
+                             "file.load"
+                             started
+                             condition)))))
 
 (defun save-app-drawing (app
                          path-text)
-  "Save the drawing to PATH-TEXT, creating its directory when needed. On failure the previous
-file is untouched and the error is shown. Returns true on success.
+  "Save the drawing to PATH-TEXT; a name without an extension gets .bcad. On failure the
+previous file is untouched and the reason is shown. Returns true on success.
 
 APP: the application.
 PATH-TEXT: file name as typed by the user."
-  (let ((started (sbcl:monotonic-nanoseconds))
-        (path (persist:native-path path-text)))
+  (let ((started (sbcl:monotonic-nanoseconds)))
     (handler-case
-        (progn
-          (ensure-directories-exist path)
+        (let ((path (persist:drawing-file-path path-text)))
           (multiple-value-bind (saved stats)
               (persist:save-drawing (app-drawing app) path)
+            (declare (ignore saved))
             (obs:record-operation-result (app-telemetry app)
                                          "file.save"
                                          (- (sbcl:monotonic-nanoseconds) started)
@@ -513,20 +555,62 @@ PATH-TEXT: file name as typed by the user."
                                          :rename-ms (obs:nanoseconds->milliseconds
                                                      (getf stats :rename-nanoseconds))
                                          :result :success)
-            (setf (app-file-path app) saved
+            (setf (app-file-path app) path
                   (app-saved-revision app) (dom:drawing-revision (app-drawing app)))
-            (set-message app (format nil "Saved ~a (~d bytes)." (file-namestring saved) (getf stats :bytes)))
+            (set-message app
+                         (format nil "Saved ~a (~a)."
+                                 (file-namestring path)
+                                 (base:format-byte-size (getf stats :bytes))))
             t))
-      (error (condition)
-        (log-failed-operation app
-                              "file.save"
-                              started
-                              condition)
-        (setf (app-last-error app) condition)
-        (set-message app
-                     (remove #\Newline (princ-to-string condition))
-                     :error)
-        nil))))
+      ((or base:drawing-file-error base:invalid-input) (condition)
+        (fail-file-operation app
+                             "file.save"
+                             started
+                             condition)))))
+
+(defun same-file-p (first
+                    second)
+  "Return true when two pathnames name the same existing file.
+
+FIRST: a pathname, or NIL.
+SECOND: a pathname, or NIL."
+  (and first
+       second
+       (let ((first-true (probe-file first))
+             (second-true (probe-file second)))
+         (and first-true
+              (equal first-true second-true)))))
+
+(defun request-save-to (app
+                        text
+                        continuation)
+  "Save to the file that TEXT names, after asking whether to replace it when it is a different
+file that already exists. Then run CONTINUATION.
+
+APP: the application.
+TEXT: file name as typed by the user.
+CONTINUATION: function of no arguments run after a successful save, or NIL."
+  (let ((started (sbcl:monotonic-nanoseconds)))
+    (handler-case
+        (let ((path (persist:drawing-file-path text)))
+          (flet ((save ()
+                   (when (and (save-app-drawing app (uiop:native-namestring path))
+                              continuation)
+                     (funcall continuation))))
+            (if (and (eq :file (sbcl:file-kind path))
+                     (not (same-file-p path (app-file-path app))))
+                (open-choice-prompt app
+                                    "Replace file?"
+                                    (format nil "~a already exists. Replace it?"
+                                            (file-namestring path))
+                                    (list (cons "Replace" #'save)
+                                          (cons "Cancel" nil)))
+                (save))))
+      (base:invalid-input (condition)
+        (fail-file-operation app
+                             "file.save"
+                             started
+                             condition)))))
 
 (defun operation-save-as (app
                           &optional continuation)
@@ -536,11 +620,12 @@ APP: the application.
 CONTINUATION: optional function of no arguments run after a successful save."
   (open-text-prompt app
                     "Save drawing as"
-                    "File name (relative names are resolved against the current directory):"
+                    "File name (a name without an extension gets .bcad):"
                     (default-save-path app)
                     (lambda (text)
-                      (when (and (save-app-drawing app text) continuation)
-                        (funcall continuation)))))
+                      (request-save-to app
+                                       text
+                                       continuation))))
 
 (defun operation-save (app
                        &optional continuation)

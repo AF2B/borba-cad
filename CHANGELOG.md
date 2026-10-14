@@ -2,6 +2,21 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/). The project follows semantic versioning.
 
+## [Unreleased]
+
+### Fixed
+
+- Saving: a name without an extension is saved as `name.bcad`; blanks, one pair of quotes and
+  `file://` addresses around a pasted path are understood instead of creating folders named `"`,
+  `file:` or a blank in the current directory; saving over a symbolic link updates the file it
+  points to instead of replacing the link; a replaced file keeps its permissions; saving never
+  creates folders; saving over a different existing file asks first.
+- Opening: a name without an extension finds the `.bcad` file; a folder, a missing file, a device or
+  a blank name get a plain explanation instead of a Lisp stream error.
+- The Save As and Open prompts start in the documents folder of the desktop (`Documentos` on a
+  Portuguese desktop) instead of a path relative to wherever the program was started.
+- Messages report sizes in KB and MB.
+
 ## [1.0.0] - 2026-10-14
 
 First complete version of the MVP: a native 2D CAD in Common Lisp (SBCL) with measured performance.

@@ -225,3 +225,20 @@ RADIANS: angle in radians."
 
 DEGREES: angle in degrees."
   (* degrees (/ (float pi 1d0) +degrees-per-half-turn+)))
+
+(defconstant +bytes-per-kilobyte+ 1024
+  "Bytes in one KB as file sizes are shown.")
+
+(defun format-byte-size (bytes)
+  "Format a file size for people: bytes below one KB, then KB, MB and GB with one decimal.
+
+BYTES: a non-negative integer."
+  (let ((units '("KB" "MB" "GB"))
+        (value (float bytes 1d0)))
+    (if (< bytes +bytes-per-kilobyte+)
+        (format nil "~d B" bytes)
+        (progn
+          (loop do (setf value (/ value +bytes-per-kilobyte+))
+                while (and (>= value +bytes-per-kilobyte+) (rest units))
+                do (pop units))
+          (format nil "~a ~a" (format-decimal value 1) (first units))))))

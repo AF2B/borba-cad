@@ -472,7 +472,7 @@ fragment."
     (let ((missing (merge-pathnames "nope/plan.bcad" directory)))
       (handler-case (progn (persist:save-drawing (golden-drawing) missing) (fail "expected an error"))
         (base:drawing-file-io-error (condition)
-          (is (search "cannot be written" (princ-to-string condition)))))
+          (is (search "does not exist" (princ-to-string condition)))))
       (unless (zerop (sb-posix:getuid))       ; permissions do not bind the superuser
         (let ((path (merge-pathnames "plan.bcad" directory)))
           (persist:save-drawing (golden-drawing) path)

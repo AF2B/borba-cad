@@ -4,20 +4,6 @@
   "Largest drawing file that will be read. A 100,000-entity drawing is about 12 MB; the limit
 bounds the memory used to read an untrusted file (NFR-7).")
 
-(defun native-path (text)
-  "Return the pathname that the user-typed TEXT names. Characters such as * and [ are taken
-literally, a leading ~ means the home directory, and relative names are resolved against
-the current directory.
-
-TEXT: a file name as typed by the user."
-  (let ((home (uiop:native-namestring (user-homedir-pathname))))
-    (merge-pathnames
-     (uiop:parse-native-namestring
-      (cond ((string= text "~") home)
-            ((and (> (length text) 1) (string= "~/" text :end2 2))
-             (concatenate 'string home (subseq text 2)))
-            (t text))))))
-
 (defun io-failure (path
                    control
                    &rest arguments)
@@ -40,24 +26,49 @@ TARGET: the final pathname."
            (sbcl:process-id)
            (sbcl:monotonic-nanoseconds))))
 
+(defun check-save-target (target)
+  "Signal DRAWING-FILE-IO-ERROR, with a reason a person can act on, when a drawing cannot be
+saved at TARGET: it names a folder, its folder does not exist or may not be written, or the
+file exists and is read-only.
+
+TARGET: the pathname to save to."
+  (let ((folder (directory-of target)))
+    (cond ((null (pathname-name target))
+           (io-failure target "is a folder; type a file name"))
+          ((eq :directory (sbcl:file-kind target))
+           (io-failure target "is a folder, not a file"))
+          ((not (eq :directory (sbcl:file-kind folder)))
+           (io-failure target
+                       "cannot be saved: the folder ~a does not exist"
+                       (uiop:native-namestring folder)))
+          ((not (sbcl:path-accessible-p folder :write))
+           (io-failure target "cannot be saved: the folder is not writable (permission denied)"))
+          ((and (eq :file (sbcl:file-kind target))
+                (not (sbcl:path-accessible-p target :write)))
+           (io-failure target "cannot be saved: the file is read-only")))))
+
 (defun save-drawing (drawing
                      path
                      &key before-commit)
   "Save DRAWING atomically: write a sibling temporary file, flush it to disk, then rename it
 over PATH. A failure at any point leaves any existing file at PATH untouched and removes the
-temporary file. Returns two values: the saved pathname and a property list with :bytes,
-:serialize-nanoseconds (including the disk flush) and :rename-nanoseconds. Signals
-DRAWING-FILE-IO-ERROR on failure.
+temporary file. When PATH is a symbolic link the file it points to is replaced, not the link,
+and a replaced file keeps its permissions. Returns two values: the saved pathname and a
+property list with :bytes, :serialize-nanoseconds (including the disk flush) and
+:rename-nanoseconds. Signals DRAWING-FILE-IO-ERROR on failure.
 
 DRAWING: the drawing to save.
 PATH: destination pathname.
 BEFORE-COMMIT: optional function called with the temporary pathname just before the rename;
 a test seam for injecting failures."
-  (let* ((target (merge-pathnames path))
+  (let* ((target (sbcl:true-path (merge-pathnames path)))
          (temporary (temporary-path-for target))
+         (permissions (and (eq :file (sbcl:file-kind target))
+                           (sbcl:file-permissions target)))
          (committed nil)
          (started (sbcl:monotonic-nanoseconds))
          (written started))
+    (check-save-target target)
     (unwind-protect
          (handler-case
              (progn
@@ -68,6 +79,8 @@ a test seam for injecting failures."
                  (write-drawing drawing stream)
                  (sbcl:sync-output-stream stream))
                (setf written (sbcl:monotonic-nanoseconds))
+               (when permissions
+                 (sbcl:set-file-permissions temporary permissions))
                (when before-commit
                  (funcall before-commit temporary))
                (sbcl:rename-over temporary target)
@@ -77,13 +90,28 @@ a test seam for injecting failures."
            (error (condition)
              (io-failure target
                          "cannot be written: ~a"
-                         condition)))
+                         (sbcl:describe-os-error condition))))
       (unless committed
         (sbcl:delete-file-if-exists temporary)))
     (values target
             (list :bytes (sbcl:file-size-bytes target)
                   :serialize-nanoseconds (- written started)
                   :rename-nanoseconds (- (sbcl:monotonic-nanoseconds) written)))))
+
+(defun check-open-source (file)
+  "Signal DRAWING-FILE-IO-ERROR, with a reason a person can act on, when FILE cannot be opened as
+a drawing: it does not exist, is a folder or another kind of file, or may not be read.
+
+FILE: the pathname to open."
+  (case (sbcl:file-kind file)
+    ((nil)
+     (io-failure file "does not exist"))
+    (:directory
+     (io-failure file "is a folder, not a drawing file"))
+    (:other
+     (io-failure file "is not a regular file")))
+  (unless (sbcl:path-accessible-p file :read)
+    (io-failure file "cannot be opened: permission denied")))
 
 (defun read-file-text (file)
   "Read a whole UTF-8 text file into a string, enforcing the size limit.
@@ -106,11 +134,11 @@ FILE: pathname of an existing file."
     (file-error (condition)
       (io-failure file
                   "cannot be opened: ~a"
-                  condition))
+                  (sbcl:describe-os-error condition)))
     (stream-error (condition)
       (io-failure file
-                  "cannot be read as UTF-8 text: ~a"
-                  condition))))
+                  "is not a text file that Borba CAD can read (it must be UTF-8 text): ~a"
+                  (sbcl:describe-os-error condition)))))
 
 (defun load-drawing (path)
   "Read and validate the drawing file at PATH. Returns two values: the drawing and a property
@@ -120,8 +148,7 @@ building). Signals a DRAWING-FILE-ERROR subclass on any problem; no partial resu
 PATH: pathname of the drawing file."
   (let* ((file (merge-pathnames path))
          (started (sbcl:monotonic-nanoseconds)))
-    (unless (probe-file file)
-      (io-failure file "does not exist"))
+    (check-open-source file)
     (let* ((text (read-file-text file))
            (read-done (sbcl:monotonic-nanoseconds))
            (drawing (parse-drawing-text text :path (uiop:native-namestring file))))

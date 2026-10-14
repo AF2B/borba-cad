@@ -30,6 +30,13 @@
    #:cpu-model-string
    #:host-name-string
    ;; File system
+   #:file-kind
+   #:true-path
+   #:path-accessible-p
+   #:file-permissions
+   #:set-file-permissions
+   #:describe-os-error
+   #:utf-8-octets->string
    #:sync-output-stream
    #:rename-over
    #:delete-file-if-exists

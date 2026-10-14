@@ -25,6 +25,7 @@
    #:format-decimal
    #:format-length
    #:format-area
+   #:format-byte-size
    #:parse-length
    #:parse-decimal
    #:radians->degrees

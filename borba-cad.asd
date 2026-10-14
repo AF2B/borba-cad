@@ -16,7 +16,8 @@
                 :components ((:file "package")
                              (:file "clock")
                              (:file "memory")
-                             (:file "system")))
+                             (:file "system")
+                             (:file "filesystem")))
                (:module "base"
                 :serial t
                 :components ((:file "package")
@@ -61,6 +62,7 @@
                              (:file "format")
                              (:file "writer")
                              (:file "loader")
+                             (:file "paths")
                              (:file "files")))
                (:module "observability"
                 :serial t
@@ -186,6 +188,7 @@
                (:file "scene-tests")
                (:file "ui-tests")
                (:file "app-tests")
+               (:file "file-tests")
                (:file "bench-tests"))
   :perform (test-op (operation component)
              (declare (ignore operation component))

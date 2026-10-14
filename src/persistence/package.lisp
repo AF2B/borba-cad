@@ -13,7 +13,12 @@ numbers round-trip exactly, strict validation, and atomic saving.")
    #:write-drawing
    #:drawing-to-string
    #:parse-drawing-text
+   #:clean-path-text
    #:native-path
+   #:drawing-file-path
+   #:directory-of
+   #:default-drawings-directory
+   #:*drawing-extension*
    #:save-drawing
    #:load-drawing
    #:format-double))
