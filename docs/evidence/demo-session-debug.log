@@ -1,0 +1,246 @@
+2026-10-14T03:22:45.528Z INFO app.start lisp="SBCL 2.6.9" heap_capacity_mib=4096.000 demo=true
+2026-10-14T03:22:45.756Z DEBUG render.full-redraw duration_ms=0.890 entity_count=0 drawn_entities=0 vertices=842 result=success
+2026-10-14T03:22:45.782Z INFO app.startup duration_ms=253.532 window_ms=134.345 context_ms=86.277 renderer_ms=1.271 vsync=true result=success
+2026-10-14T03:22:45.788Z DEBUG render.full-redraw duration_ms=0.224 entity_count=0 drawn_entities=0 vertices=846 result=success
+2026-10-14T03:22:46.528Z INFO render.frame count=2 fps=92.233 cpu_ms_mean=11.204 cpu_ms_p95=19.876 cpu_ms_max=19.876 interval_ms_mean=10.842 interval_ms_p95=10.842 interval_ms_max=10.842 swap_ms_mean=4.482 swap_ms_p95=6.543 swap_ms_max=6.543
+2026-10-14T03:22:46.528Z INFO input.event type=pointer-move count=1 handle_ms_mean=5.615 handle_ms_p95=5.615 handle_ms_max=5.615
+2026-10-14T03:22:46.529Z INFO input.event type=resize count=1 handle_ms_mean=0.006 handle_ms_p95=0.006 handle_ms_max=0.006
+2026-10-14T03:22:48.958Z INFO gc.event pause_ms=44.156 heap_mib=41.701
+2026-10-14T03:22:50.018Z DEBUG render.full-redraw duration_ms=0.116 entity_count=0 drawn_entities=0 vertices=846 result=success
+2026-10-14T03:22:50.019Z DEBUG render.full-redraw duration_ms=0.077 entity_count=0 drawn_entities=0 vertices=888 result=success
+2026-10-14T03:22:50.032Z DEBUG render.full-redraw duration_ms=0.100 entity_count=0 drawn_entities=0 vertices=888 result=success
+2026-10-14T03:22:50.041Z DEBUG render.full-redraw duration_ms=0.094 entity_count=0 drawn_entities=0 vertices=888 result=success
+2026-10-14T03:22:50.063Z DEBUG render.full-redraw duration_ms=1.112 entity_count=0 drawn_entities=0 vertices=888 result=success
+2026-10-14T03:22:50.069Z DEBUG render.full-redraw duration_ms=0.131 entity_count=0 drawn_entities=0 vertices=888 result=success
+2026-10-14T03:22:50.083Z DEBUG render.full-redraw duration_ms=0.149 entity_count=0 drawn_entities=0 vertices=888 result=success
+2026-10-14T03:22:50.099Z DEBUG render.full-redraw duration_ms=5.270 entity_count=0 drawn_entities=0 vertices=888 result=success
+2026-10-14T03:22:50.110Z DEBUG render.full-redraw duration_ms=0.186 entity_count=0 drawn_entities=0 vertices=896 result=success
+2026-10-14T03:22:50.122Z DEBUG render.full-redraw duration_ms=0.095 entity_count=0 drawn_entities=0 vertices=896 result=success
+2026-10-14T03:22:50.135Z INFO entity.create duration_ms=0.010 changed=1 entity_count=0 result=success
+2026-10-14T03:22:50.135Z DEBUG render.full-redraw duration_ms=0.065 entity_count=1 drawn_entities=1 vertices=900 result=success
+2026-10-14T03:22:50.148Z DEBUG render.full-redraw duration_ms=0.093 entity_count=1 drawn_entities=1 vertices=896 result=success
+2026-10-14T03:22:50.162Z DEBUG render.full-redraw duration_ms=0.091 entity_count=1 drawn_entities=1 vertices=896 result=success
+2026-10-14T03:22:50.177Z DEBUG render.full-redraw duration_ms=0.154 entity_count=1 drawn_entities=1 vertices=896 result=success
+2026-10-14T03:22:50.189Z DEBUG render.full-redraw duration_ms=0.131 entity_count=1 drawn_entities=1 vertices=896 result=success
+2026-10-14T03:22:50.202Z DEBUG render.full-redraw duration_ms=0.151 entity_count=1 drawn_entities=1 vertices=896 result=success
+2026-10-14T03:22:50.215Z DEBUG render.full-redraw duration_ms=0.148 entity_count=1 drawn_entities=1 vertices=896 result=success
+2026-10-14T03:22:50.281Z DEBUG render.full-redraw duration_ms=0.103 entity_count=1 drawn_entities=1 vertices=898 result=success
+2026-10-14T03:22:50.287Z DEBUG render.full-redraw duration_ms=0.103 entity_count=1 drawn_entities=1 vertices=898 result=success
+2026-10-14T03:22:50.298Z INFO entity.create duration_ms=0.008 changed=1 entity_count=1 result=success
+2026-10-14T03:22:50.298Z DEBUG render.full-redraw duration_ms=0.088 entity_count=2 drawn_entities=2 vertices=902 result=success
+2026-10-14T03:22:50.309Z DEBUG render.full-redraw duration_ms=0.116 entity_count=2 drawn_entities=2 vertices=898 result=success
+2026-10-14T03:22:50.323Z DEBUG render.full-redraw duration_ms=0.137 entity_count=2 drawn_entities=2 vertices=898 result=success
+2026-10-14T03:22:50.335Z DEBUG render.full-redraw duration_ms=0.074 entity_count=2 drawn_entities=2 vertices=898 result=success
+2026-10-14T03:22:50.349Z DEBUG render.full-redraw duration_ms=0.150 entity_count=2 drawn_entities=2 vertices=900 result=success
+2026-10-14T03:22:50.363Z DEBUG render.full-redraw duration_ms=0.186 entity_count=2 drawn_entities=2 vertices=900 result=success
+2026-10-14T03:22:50.375Z INFO entity.create duration_ms=0.009 changed=1 entity_count=2 result=success
+2026-10-14T03:22:50.376Z DEBUG render.full-redraw duration_ms=0.070 entity_count=3 drawn_entities=3 vertices=904 result=success
+2026-10-14T03:22:50.388Z DEBUG render.full-redraw duration_ms=0.127 entity_count=3 drawn_entities=3 vertices=900 result=success
+2026-10-14T03:22:50.403Z DEBUG render.full-redraw duration_ms=0.204 entity_count=3 drawn_entities=3 vertices=900 result=success
+2026-10-14T03:22:50.416Z DEBUG render.full-redraw duration_ms=0.164 entity_count=3 drawn_entities=3 vertices=942 result=success
+2026-10-14T03:22:50.429Z DEBUG render.full-redraw duration_ms=0.111 entity_count=3 drawn_entities=3 vertices=942 result=success
+2026-10-14T03:22:50.441Z DEBUG render.full-redraw duration_ms=0.111 entity_count=3 drawn_entities=3 vertices=942 result=success
+2026-10-14T03:22:50.459Z DEBUG render.full-redraw duration_ms=0.252 entity_count=3 drawn_entities=3 vertices=942 result=success
+2026-10-14T03:22:50.469Z DEBUG render.full-redraw duration_ms=0.123 entity_count=3 drawn_entities=3 vertices=942 result=success
+2026-10-14T03:22:50.482Z DEBUG render.full-redraw duration_ms=0.102 entity_count=3 drawn_entities=3 vertices=942 result=success
+2026-10-14T03:22:50.496Z DEBUG render.full-redraw duration_ms=0.090 entity_count=3 drawn_entities=3 vertices=942 result=success
+2026-10-14T03:22:50.509Z DEBUG render.full-redraw duration_ms=0.139 entity_count=3 drawn_entities=3 vertices=1020 result=success
+2026-10-14T03:22:50.529Z INFO render.frame count=36 fps=69.353 cpu_ms_mean=1.323 cpu_ms_p95=7.457 cpu_ms_max=9.158 interval_ms_mean=14.419 interval_ms_p95=16.392 interval_ms_max=50.456 swap_ms_mean=11.013 swap_ms_p95=13.829 swap_ms_max=14.417
+2026-10-14T03:22:50.529Z INFO input.event type=key count=6 handle_ms_mean=2.028 handle_ms_p95=7.545 handle_ms_max=7.545
+2026-10-14T03:22:50.529Z INFO input.event type=pointer-down count=7 handle_ms_mean=0.129 handle_ms_p95=0.198 handle_ms_max=0.198
+2026-10-14T03:22:50.529Z INFO input.event type=pointer-move count=62 handle_ms_mean=0.018 handle_ms_p95=0.069 handle_ms_max=0.107
+2026-10-14T03:22:50.529Z INFO input.event type=pointer-up count=7 handle_ms_mean=0.016 handle_ms_p95=0.045 handle_ms_max=0.045
+2026-10-14T03:22:50.529Z INFO memory.sample heap_mib=103.887 heap_capacity_mib=4096.000 rss_mib=414.539 allocated_total_mib=688.830
+2026-10-14T03:22:50.536Z DEBUG render.full-redraw duration_ms=0.113 entity_count=3 drawn_entities=3 vertices=1020 result=success
+2026-10-14T03:22:50.537Z INFO entity.create duration_ms=0.005 changed=1 entity_count=3 result=success
+2026-10-14T03:22:50.537Z DEBUG render.full-redraw duration_ms=0.065 entity_count=4 drawn_entities=4 vertices=992 result=success
+2026-10-14T03:22:50.566Z DEBUG render.full-redraw duration_ms=0.103 entity_count=4 drawn_entities=4 vertices=992 result=success
+2026-10-14T03:22:50.573Z DEBUG render.full-redraw duration_ms=0.109 entity_count=4 drawn_entities=4 vertices=992 result=success
+2026-10-14T03:22:50.576Z DEBUG render.full-redraw duration_ms=0.090 entity_count=4 drawn_entities=4 vertices=992 result=success
+2026-10-14T03:22:50.590Z DEBUG render.full-redraw duration_ms=0.133 entity_count=4 drawn_entities=4 vertices=1060 result=success
+2026-10-14T03:22:50.603Z DEBUG render.full-redraw duration_ms=0.124 entity_count=4 drawn_entities=4 vertices=1060 result=success
+2026-10-14T03:22:50.616Z INFO entity.create duration_ms=0.009 changed=1 entity_count=4 result=success
+2026-10-14T03:22:50.616Z DEBUG render.full-redraw duration_ms=0.076 entity_count=5 drawn_entities=5 vertices=1042 result=success
+2026-10-14T03:22:50.629Z DEBUG render.full-redraw duration_ms=0.137 entity_count=5 drawn_entities=5 vertices=1042 result=success
+2026-10-14T03:22:50.642Z DEBUG render.full-redraw duration_ms=0.152 entity_count=5 drawn_entities=5 vertices=1042 result=success
+2026-10-14T03:22:50.658Z DEBUG render.full-redraw duration_ms=0.300 entity_count=5 drawn_entities=5 vertices=1042 result=success
+2026-10-14T03:22:50.669Z DEBUG render.full-redraw duration_ms=0.114 entity_count=5 drawn_entities=5 vertices=1042 result=success
+2026-10-14T03:22:50.682Z DEBUG render.full-redraw duration_ms=0.127 entity_count=5 drawn_entities=5 vertices=1042 result=success
+2026-10-14T03:22:50.696Z DEBUG render.full-redraw duration_ms=0.111 entity_count=5 drawn_entities=5 vertices=1042 result=success
+2026-10-14T03:22:50.707Z DEBUG render.full-redraw duration_ms=0.153 entity_count=5 drawn_entities=5 vertices=1044 result=success
+2026-10-14T03:22:50.720Z DEBUG render.full-redraw duration_ms=0.121 entity_count=5 drawn_entities=5 vertices=1044 result=success
+2026-10-14T03:22:50.733Z DEBUG render.full-redraw duration_ms=0.107 entity_count=5 drawn_entities=5 vertices=1042 result=success
+2026-10-14T03:22:50.748Z DEBUG render.full-redraw duration_ms=0.133 entity_count=5 drawn_entities=5 vertices=1046 result=success
+2026-10-14T03:22:50.760Z DEBUG render.full-redraw duration_ms=0.383 entity_count=5 drawn_entities=5 vertices=1046 result=success
+2026-10-14T03:22:50.774Z DEBUG render.full-redraw duration_ms=0.117 entity_count=5 drawn_entities=5 vertices=1042 result=success
+2026-10-14T03:22:50.786Z DEBUG render.full-redraw duration_ms=0.118 entity_count=5 drawn_entities=5 vertices=1048 result=success
+2026-10-14T03:22:50.800Z DEBUG render.full-redraw duration_ms=0.124 entity_count=5 drawn_entities=5 vertices=1048 result=success
+2026-10-14T03:22:50.815Z DEBUG render.full-redraw duration_ms=0.158 entity_count=5 drawn_entities=5 vertices=1042 result=success
+2026-10-14T03:22:50.828Z DEBUG render.full-redraw duration_ms=0.167 entity_count=5 drawn_entities=5 vertices=1050 result=success
+2026-10-14T03:22:50.840Z DEBUG render.full-redraw duration_ms=0.123 entity_count=5 drawn_entities=5 vertices=1050 result=success
+2026-10-14T03:22:50.854Z INFO entity.create duration_ms=0.009 changed=1 entity_count=5 result=success
+2026-10-14T03:22:50.854Z DEBUG render.full-redraw duration_ms=0.077 entity_count=6 drawn_entities=6 vertices=1054 result=success
+2026-10-14T03:22:50.866Z DEBUG render.full-redraw duration_ms=0.122 entity_count=6 drawn_entities=6 vertices=1050 result=success
+2026-10-14T03:22:50.879Z DEBUG render.full-redraw duration_ms=0.091 entity_count=6 drawn_entities=6 vertices=1050 result=success
+2026-10-14T03:22:50.896Z DEBUG render.full-redraw duration_ms=0.610 entity_count=6 drawn_entities=6 vertices=1050 result=success
+2026-10-14T03:22:50.906Z DEBUG render.full-redraw duration_ms=0.103 entity_count=6 drawn_entities=6 vertices=1050 result=success
+2026-10-14T03:22:50.921Z DEBUG render.full-redraw duration_ms=0.168 entity_count=6 drawn_entities=6 vertices=1050 result=success
+2026-10-14T03:22:50.932Z DEBUG render.full-redraw duration_ms=0.085 entity_count=6 drawn_entities=6 vertices=1050 result=success
+2026-10-14T03:22:50.947Z DEBUG render.full-redraw duration_ms=0.093 entity_count=6 drawn_entities=6 vertices=1052 result=success
+2026-10-14T03:22:50.959Z DEBUG render.full-redraw duration_ms=0.101 entity_count=6 drawn_entities=6 vertices=1052 result=success
+2026-10-14T03:22:50.975Z DEBUG render.full-redraw duration_ms=0.169 entity_count=6 drawn_entities=6 vertices=1050 result=success
+2026-10-14T03:22:50.988Z DEBUG render.full-redraw duration_ms=0.325 entity_count=6 drawn_entities=6 vertices=1054 result=success
+2026-10-14T03:22:51.001Z DEBUG render.full-redraw duration_ms=0.168 entity_count=6 drawn_entities=6 vertices=1054 result=success
+2026-10-14T03:22:51.013Z DEBUG render.full-redraw duration_ms=0.091 entity_count=6 drawn_entities=6 vertices=1050 result=success
+2026-10-14T03:22:51.029Z DEBUG render.full-redraw duration_ms=0.248 entity_count=6 drawn_entities=6 vertices=1056 result=success
+2026-10-14T03:22:51.041Z DEBUG render.full-redraw duration_ms=0.100 entity_count=6 drawn_entities=6 vertices=1056 result=success
+2026-10-14T03:22:51.055Z INFO entity.create duration_ms=0.016 changed=1 entity_count=6 result=success
+2026-10-14T03:22:51.055Z DEBUG render.full-redraw duration_ms=0.127 entity_count=7 drawn_entities=7 vertices=1054 result=success
+2026-10-14T03:22:51.067Z DEBUG render.full-redraw duration_ms=0.170 entity_count=7 drawn_entities=7 vertices=1054 result=success
+2026-10-14T03:22:51.081Z DEBUG render.full-redraw duration_ms=0.207 entity_count=7 drawn_entities=7 vertices=1054 result=success
+2026-10-14T03:22:51.094Z DEBUG render.full-redraw duration_ms=0.132 entity_count=7 drawn_entities=7 vertices=1096 result=success
+2026-10-14T03:22:51.107Z DEBUG render.full-redraw duration_ms=0.107 entity_count=7 drawn_entities=7 vertices=1096 result=success
+2026-10-14T03:22:51.120Z DEBUG render.full-redraw duration_ms=0.121 entity_count=7 drawn_entities=7 vertices=1096 result=success
+2026-10-14T03:22:51.138Z DEBUG render.full-redraw duration_ms=0.224 entity_count=7 drawn_entities=7 vertices=1096 result=success
+2026-10-14T03:22:51.147Z DEBUG render.full-redraw duration_ms=0.126 entity_count=7 drawn_entities=7 vertices=1096 result=success
+2026-10-14T03:22:51.160Z DEBUG render.full-redraw duration_ms=0.140 entity_count=7 drawn_entities=7 vertices=1096 result=success
+2026-10-14T03:22:51.174Z DEBUG render.full-redraw duration_ms=0.079 entity_count=7 drawn_entities=7 vertices=1170 result=success
+2026-10-14T03:22:51.187Z DEBUG render.full-redraw duration_ms=0.107 entity_count=7 drawn_entities=7 vertices=1170 result=success
+2026-10-14T03:22:51.199Z DEBUG render.full-redraw duration_ms=0.117 entity_count=7 drawn_entities=7 vertices=1170 result=success
+2026-10-14T03:22:51.213Z DEBUG render.full-redraw duration_ms=0.107 entity_count=7 drawn_entities=7 vertices=1164 result=success
+2026-10-14T03:22:51.227Z DEBUG render.full-redraw duration_ms=0.158 entity_count=7 drawn_entities=7 vertices=1164 result=success
+2026-10-14T03:22:51.239Z DEBUG render.full-redraw duration_ms=0.148 entity_count=7 drawn_entities=7 vertices=1164 result=success
+2026-10-14T03:22:51.253Z INFO entity.create duration_ms=0.023 changed=1 entity_count=7 result=success
+2026-10-14T03:22:51.253Z DEBUG render.full-redraw duration_ms=0.140 entity_count=8 drawn_entities=8 vertices=1096 result=success
+2026-10-14T03:22:51.266Z DEBUG render.full-redraw duration_ms=0.104 entity_count=8 drawn_entities=8 vertices=1096 result=success
+2026-10-14T03:22:51.284Z DEBUG render.full-redraw duration_ms=0.133 entity_count=8 drawn_entities=8 vertices=1096 result=success
+2026-10-14T03:22:51.293Z DEBUG render.full-redraw duration_ms=0.106 entity_count=8 drawn_entities=8 vertices=1170 result=success
+2026-10-14T03:22:51.307Z DEBUG render.full-redraw duration_ms=0.148 entity_count=8 drawn_entities=8 vertices=1170 result=success
+2026-10-14T03:22:51.323Z DEBUG render.full-redraw duration_ms=0.118 entity_count=8 drawn_entities=8 vertices=1170 result=success
+2026-10-14T03:22:51.333Z DEBUG render.full-redraw duration_ms=0.119 entity_count=8 drawn_entities=8 vertices=1164 result=success
+2026-10-14T03:22:51.348Z DEBUG render.full-redraw duration_ms=0.203 entity_count=8 drawn_entities=8 vertices=1164 result=success
+2026-10-14T03:22:51.361Z DEBUG render.full-redraw duration_ms=0.698 entity_count=8 drawn_entities=8 vertices=1164 result=success
+2026-10-14T03:22:51.374Z INFO entity.create duration_ms=0.019 changed=1 entity_count=8 result=success
+2026-10-14T03:22:51.374Z DEBUG render.full-redraw duration_ms=0.135 entity_count=9 drawn_entities=9 vertices=1096 result=success
+2026-10-14T03:22:51.386Z DEBUG render.full-redraw duration_ms=0.120 entity_count=9 drawn_entities=9 vertices=1096 result=success
+2026-10-14T03:22:51.400Z DEBUG render.full-redraw duration_ms=0.168 entity_count=9 drawn_entities=9 vertices=1096 result=success
+2026-10-14T03:22:51.415Z DEBUG render.full-redraw duration_ms=0.137 entity_count=9 drawn_entities=9 vertices=1096 result=success
+2026-10-14T03:22:51.427Z DEBUG render.full-redraw duration_ms=0.109 entity_count=9 drawn_entities=9 vertices=1096 result=success
+2026-10-14T03:22:51.440Z DEBUG render.full-redraw duration_ms=0.112 entity_count=9 drawn_entities=9 vertices=1096 result=success
+2026-10-14T03:22:51.454Z DEBUG render.full-redraw duration_ms=0.174 entity_count=9 drawn_entities=9 vertices=1100 result=success
+2026-10-14T03:22:51.468Z DEBUG render.full-redraw duration_ms=0.119 entity_count=9 drawn_entities=9 vertices=1098 result=success
+2026-10-14T03:22:51.480Z DEBUG render.full-redraw duration_ms=0.100 entity_count=9 drawn_entities=9 vertices=1098 result=success
+2026-10-14T03:22:51.496Z DEBUG render.full-redraw duration_ms=0.123 entity_count=9 drawn_entities=9 vertices=1112 result=success
+2026-10-14T03:22:51.507Z DEBUG render.full-redraw duration_ms=0.106 entity_count=9 drawn_entities=9 vertices=1108 result=success
+2026-10-14T03:22:51.521Z DEBUG render.full-redraw duration_ms=0.157 entity_count=9 drawn_entities=9 vertices=1108 result=success
+2026-10-14T03:22:51.534Z INFO render.frame count=76 fps=75.164 cpu_ms_mean=0.959 cpu_ms_p95=2.405 cpu_ms_max=4.075 interval_ms_mean=13.304 interval_ms_p95=16.068 interval_ms_max=17.714 swap_ms_mean=11.834 swap_ms_p95=15.076 swap_ms_max=17.159
+2026-10-14T03:22:51.534Z INFO input.event type=key count=14 handle_ms_mean=0.529 handle_ms_p95=3.160 handle_ms_max=3.160
+2026-10-14T03:22:51.534Z INFO input.event type=pointer-down count=15 handle_ms_mean=0.118 handle_ms_p95=0.364 handle_ms_max=0.364
+2026-10-14T03:22:51.535Z INFO input.event type=pointer-move count=142 handle_ms_mean=0.017 handle_ms_p95=0.049 handle_ms_max=0.365
+2026-10-14T03:22:51.535Z INFO input.event type=pointer-up count=15 handle_ms_mean=0.007 handle_ms_p95=0.031 handle_ms_max=0.031
+2026-10-14T03:22:51.535Z INFO input.event type=text count=2 handle_ms_mean=0.007 handle_ms_p95=0.008 handle_ms_max=0.008
+2026-10-14T03:22:51.535Z INFO entity.create duration_ms=0.018 changed=1 entity_count=9 result=success
+2026-10-14T03:22:51.535Z DEBUG render.full-redraw duration_ms=0.353 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.546Z DEBUG render.full-redraw duration_ms=0.186 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.560Z DEBUG render.full-redraw duration_ms=0.118 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.575Z DEBUG render.full-redraw duration_ms=0.117 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.587Z DEBUG render.full-redraw duration_ms=0.148 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.599Z DEBUG render.full-redraw duration_ms=0.106 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.614Z DEBUG geometry.pick duration_ms=0.111 entity_count=10 result=success
+2026-10-14T03:22:51.614Z DEBUG render.full-redraw duration_ms=0.489 entity_count=10 drawn_entities=10 vertices=1136 result=success
+2026-10-14T03:22:51.627Z DEBUG render.full-redraw duration_ms=0.239 entity_count=10 drawn_entities=10 vertices=1136 result=success
+2026-10-14T03:22:51.641Z DEBUG render.full-redraw duration_ms=0.135 entity_count=10 drawn_entities=10 vertices=1136 result=success
+2026-10-14T03:22:51.653Z DEBUG geometry.pick duration_ms=0.035 entity_count=10 result=success
+2026-10-14T03:22:51.653Z INFO entity.edit duration_ms=0.005 changed=1 entity_count=10 result=success
+2026-10-14T03:22:51.653Z DEBUG render.full-redraw duration_ms=0.084 entity_count=10 drawn_entities=10 vertices=1136 result=success
+2026-10-14T03:22:51.666Z DEBUG render.full-redraw duration_ms=0.153 entity_count=10 drawn_entities=10 vertices=1136 result=success
+2026-10-14T03:22:51.682Z DEBUG render.full-redraw duration_ms=0.176 entity_count=10 drawn_entities=10 vertices=1136 result=success
+2026-10-14T03:22:51.696Z INFO history.undo duration_ms=0.013 depth=11 result=success
+2026-10-14T03:22:51.697Z DEBUG render.full-redraw duration_ms=0.145 entity_count=10 drawn_entities=10 vertices=1136 result=success
+2026-10-14T03:22:51.707Z DEBUG render.full-redraw duration_ms=0.137 entity_count=10 drawn_entities=10 vertices=1132 result=success
+2026-10-14T03:22:51.721Z DEBUG render.full-redraw duration_ms=0.146 entity_count=10 drawn_entities=10 vertices=1132 result=success
+2026-10-14T03:22:51.734Z DEBUG geometry.pick duration_ms=0.002 entity_count=10 result=success
+2026-10-14T03:22:51.734Z DEBUG geometry.window-select duration_ms=0.001 entity_count=10 result=success
+2026-10-14T03:22:51.734Z DEBUG render.full-redraw duration_ms=0.106 entity_count=10 drawn_entities=10 vertices=1094 result=success
+2026-10-14T03:22:51.747Z DEBUG render.full-redraw duration_ms=0.105 entity_count=10 drawn_entities=10 vertices=1090 result=success
+2026-10-14T03:22:51.761Z DEBUG render.full-redraw duration_ms=0.177 entity_count=10 drawn_entities=10 vertices=1090 result=success
+2026-10-14T03:22:51.773Z DEBUG render.full-redraw duration_ms=0.117 entity_count=10 drawn_entities=10 vertices=1104 result=success
+2026-10-14T03:22:51.788Z DEBUG render.full-redraw duration_ms=0.151 entity_count=10 drawn_entities=10 vertices=1104 result=success
+2026-10-14T03:22:51.802Z DEBUG render.full-redraw duration_ms=0.202 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.813Z DEBUG geometry.pick duration_ms=0.004 entity_count=10 result=success
+2026-10-14T03:22:51.813Z DEBUG render.full-redraw duration_ms=0.125 entity_count=10 drawn_entities=10 vertices=1136 result=success
+2026-10-14T03:22:51.827Z DEBUG render.full-redraw duration_ms=0.159 entity_count=10 drawn_entities=10 vertices=1136 result=success
+2026-10-14T03:22:51.840Z DEBUG render.full-redraw duration_ms=0.151 entity_count=10 drawn_entities=10 vertices=1136 result=success
+2026-10-14T03:22:51.853Z INFO entity.delete duration_ms=0.013 changed=1 entity_count=10 result=success
+2026-10-14T03:22:51.854Z DEBUG render.full-redraw duration_ms=0.115 entity_count=9 drawn_entities=9 vertices=1058 result=success
+2026-10-14T03:22:51.867Z DEBUG render.full-redraw duration_ms=0.160 entity_count=9 drawn_entities=9 vertices=1058 result=success
+2026-10-14T03:22:51.881Z DEBUG render.full-redraw duration_ms=0.189 entity_count=9 drawn_entities=9 vertices=1058 result=success
+2026-10-14T03:22:51.894Z INFO history.undo duration_ms=0.014 depth=11 result=success
+2026-10-14T03:22:51.894Z DEBUG render.full-redraw duration_ms=0.103 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.906Z DEBUG render.full-redraw duration_ms=0.095 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.921Z DEBUG render.full-redraw duration_ms=0.303 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.934Z DEBUG render.full-redraw duration_ms=0.120 entity_count=10 drawn_entities=7 vertices=824 result=success
+2026-10-14T03:22:51.947Z DEBUG render.full-redraw duration_ms=0.138 entity_count=10 drawn_entities=7 vertices=824 result=success
+2026-10-14T03:22:51.960Z DEBUG render.full-redraw duration_ms=0.567 entity_count=10 drawn_entities=7 vertices=824 result=success
+2026-10-14T03:22:51.975Z DEBUG render.full-redraw duration_ms=0.157 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:51.987Z DEBUG render.full-redraw duration_ms=0.164 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:52.000Z DEBUG render.full-redraw duration_ms=0.146 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:52.014Z DEBUG render.full-redraw duration_ms=0.116 entity_count=10 drawn_entities=7 vertices=824 result=success
+2026-10-14T03:22:52.029Z DEBUG render.full-redraw duration_ms=0.526 entity_count=10 drawn_entities=7 vertices=824 result=success
+2026-10-14T03:22:52.040Z DEBUG render.full-redraw duration_ms=0.104 entity_count=10 drawn_entities=7 vertices=824 result=success
+2026-10-14T03:22:52.053Z DEBUG render.full-redraw duration_ms=0.132 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:52.067Z DEBUG render.full-redraw duration_ms=0.215 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:52.081Z DEBUG render.full-redraw duration_ms=0.164 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:52.093Z DEBUG render.full-redraw duration_ms=0.111 entity_count=10 drawn_entities=7 vertices=824 result=success
+2026-10-14T03:22:52.107Z DEBUG render.full-redraw duration_ms=0.104 entity_count=10 drawn_entities=7 vertices=824 result=success
+2026-10-14T03:22:52.121Z DEBUG render.full-redraw duration_ms=0.174 entity_count=10 drawn_entities=7 vertices=824 result=success
+2026-10-14T03:22:52.135Z DEBUG render.full-redraw duration_ms=0.168 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:52.146Z DEBUG render.full-redraw duration_ms=0.125 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:52.161Z DEBUG render.full-redraw duration_ms=0.156 entity_count=10 drawn_entities=10 vertices=1108 result=success
+2026-10-14T03:22:52.173Z DEBUG render.full-redraw duration_ms=0.088 entity_count=10 drawn_entities=8 vertices=1044 result=success
+2026-10-14T03:22:52.187Z DEBUG render.full-redraw duration_ms=0.110 entity_count=10 drawn_entities=8 vertices=1044 result=success
+2026-10-14T03:22:52.200Z DEBUG render.full-redraw duration_ms=0.142 entity_count=10 drawn_entities=8 vertices=1044 result=success
+2026-10-14T03:22:52.215Z INFO file.save duration_ms=1.471 bytes=1462 entity_count=10 serialize_ms=1.200 rename_ms=0.205 result=success
+2026-10-14T03:22:52.215Z DEBUG render.full-redraw duration_ms=0.081 entity_count=10 drawn_entities=8 vertices=1044 result=success
+2026-10-14T03:22:52.228Z DEBUG render.full-redraw duration_ms=0.128 entity_count=10 drawn_entities=8 vertices=1044 result=success
+2026-10-14T03:22:52.241Z DEBUG render.full-redraw duration_ms=0.197 entity_count=10 drawn_entities=8 vertices=1044 result=success
+2026-10-14T03:22:52.259Z INFO file.load duration_ms=0.459 bytes=1462 entity_count=10 read_ms=0.155 parse_ms=0.280 result=success
+2026-10-14T03:22:52.259Z DEBUG render.full-redraw duration_ms=0.119 entity_count=10 drawn_entities=10 vertices=1132 result=success
+2026-10-14T03:22:52.267Z DEBUG render.full-redraw duration_ms=0.133 entity_count=10 drawn_entities=10 vertices=1132 result=success
+2026-10-14T03:22:52.283Z DEBUG render.full-redraw duration_ms=0.191 entity_count=10 drawn_entities=10 vertices=1132 result=success
+2026-10-14T03:22:52.293Z DEBUG render.full-redraw duration_ms=0.117 entity_count=10 drawn_entities=10 vertices=1132 result=success
+2026-10-14T03:22:52.307Z DEBUG render.full-redraw duration_ms=0.144 entity_count=10 drawn_entities=10 vertices=1132 result=success
+2026-10-14T03:22:52.321Z DEBUG render.full-redraw duration_ms=0.123 entity_count=10 drawn_entities=10 vertices=1132 result=success
+2026-10-14T03:22:52.334Z DEBUG render.full-redraw duration_ms=0.175 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.346Z DEBUG render.full-redraw duration_ms=0.157 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.360Z DEBUG render.full-redraw duration_ms=0.133 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.373Z DEBUG render.full-redraw duration_ms=0.142 entity_count=10 drawn_entities=10 vertices=722 result=success
+2026-10-14T03:22:52.389Z DEBUG render.full-redraw duration_ms=0.208 entity_count=10 drawn_entities=10 vertices=722 result=success
+2026-10-14T03:22:52.401Z DEBUG render.full-redraw duration_ms=0.227 entity_count=10 drawn_entities=10 vertices=722 result=success
+2026-10-14T03:22:52.413Z DEBUG render.full-redraw duration_ms=0.255 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.426Z DEBUG render.full-redraw duration_ms=0.148 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.438Z DEBUG render.full-redraw duration_ms=0.163 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.451Z DEBUG render.full-redraw duration_ms=0.144 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.468Z DEBUG render.full-redraw duration_ms=0.185 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.481Z DEBUG render.full-redraw duration_ms=0.183 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.496Z DEBUG render.full-redraw duration_ms=0.220 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.506Z DEBUG render.full-redraw duration_ms=0.121 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.521Z DEBUG render.full-redraw duration_ms=0.404 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.533Z DEBUG render.full-redraw duration_ms=0.131 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.547Z INFO render.frame count=76 fps=75.085 cpu_ms_mean=1.163 cpu_ms_p95=2.899 cpu_ms_max=7.962 interval_ms_mean=13.318 interval_ms_p95=15.234 interval_ms_max=17.683 swap_ms_mean=11.998 swap_ms_p95=14.526 swap_ms_max=16.754
+2026-10-14T03:22:52.547Z INFO input.event type=key count=32 handle_ms_mean=0.160 handle_ms_p95=1.543 handle_ms_max=2.176
+2026-10-14T03:22:52.547Z INFO input.event type=pointer-down count=6 handle_ms_mean=0.225 handle_ms_p95=0.562 handle_ms_max=0.562
+2026-10-14T03:22:52.547Z INFO input.event type=pointer-move count=164 handle_ms_mean=0.021 handle_ms_p95=0.041 handle_ms_max=1.083
+2026-10-14T03:22:52.547Z INFO input.event type=pointer-up count=6 handle_ms_mean=0.041 handle_ms_p95=0.076 handle_ms_max=0.076
+2026-10-14T03:22:52.547Z INFO input.event type=text count=2 handle_ms_mean=0.009 handle_ms_p95=0.009 handle_ms_max=0.009
+2026-10-14T03:22:52.547Z INFO input.event type=wheel count=6 handle_ms_mean=0.011 handle_ms_p95=0.020 handle_ms_max=0.020
+2026-10-14T03:22:52.547Z INFO viewport.update count=14 update_ms_mean=0.003 update_ms_p95=0.007 update_ms_max=0.007
+2026-10-14T03:22:52.547Z DEBUG render.full-redraw duration_ms=0.106 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.562Z DEBUG render.full-redraw duration_ms=0.274 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.573Z DEBUG render.full-redraw duration_ms=0.156 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.588Z DEBUG render.full-redraw duration_ms=0.254 entity_count=10 drawn_entities=10 vertices=1138 result=success
+2026-10-14T03:22:52.744Z INFO app.screenshot path=/home/borba/Documents/borba-cad/var/screenshots/demo.png
+2026-10-14T03:22:52.746Z INFO file.save duration_ms=1.126 bytes=1462 entity_count=10 serialize_ms=0.865 rename_ms=0.174 result=success
+2026-10-14T03:22:52.836Z INFO app.shutdown uptime_s=7.308
+2026-10-14T03:22:52.837Z INFO render.frame count=4 fps=20.138 cpu_ms_mean=39.856 cpu_ms_p95=155.872 cpu_ms_max=155.872 interval_ms_mean=49.656 interval_ms_p95=157.053 interval_ms_max=157.053 swap_ms_mean=9.582 swap_ms_p95=14.066 swap_ms_max=14.066
+2026-10-14T03:22:52.837Z INFO input.event type=pointer-move count=7 handle_ms_mean=0.017 handle_ms_p95=0.044 handle_ms_max=0.044
