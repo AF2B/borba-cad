@@ -1,0 +1,596 @@
+(in-package #:borba-cad/app)
+
+;;;; User-level operations. Each one validates, changes the drawing through the history, times
+;;;; itself, and reports failures to the user instead of raising them.
+
+(declaim (ftype function make-tool tool-cancel tool-kind))
+
+(defparameter *layer-palette-channels*
+  '((235 235 235)
+    (255 120 80)
+    (120 200 255)
+    (160 220 120)
+    (255 220 100)
+    (200 160 255)
+    (255 150 200)
+    (100 220 200))
+  "Red, green and blue (0 to 255) of the colors offered to layers: new layers take the next
+one and the color button cycles through them.")
+
+(defparameter *layer-palette*
+  (mapcar (lambda (channels) (apply #'dom:make-rgb channels))
+          *layer-palette-channels*)
+  "The palette as RGB values.")
+
+(defparameter *default-open-path* "examples/floor-plan.bcad"
+  "Path suggested in the Open prompt when no file has been used yet.")
+
+(defparameter *default-save-path* "drawings/untitled.bcad"
+  "Path suggested in the Save As prompt for a drawing without a file.")
+
+(defun commit-changes (app
+                       changes
+                       event
+                       &key (context "edit"))
+  "Commit a change set through the history, timed and logged as EVENT. Failures are reported to
+the user and nothing changes. Returns true when changes were committed.
+
+APP: the application.
+CHANGES: list of change records; an empty list commits nothing and returns NIL.
+EVENT: dotted event name such as entity.create.
+CONTEXT: short name used in the error message log."
+  (when changes
+    (handler-case
+        (progn
+          (obs:with-operation ((app-telemetry app) event
+                               :fields (list :changed (length changes)
+                                             :entity-count (dom:drawing-entity-count (app-drawing app))))
+            (dom:history-commit (app-history app)
+                                (app-drawing app)
+                                changes))
+          (prune-selection app)
+          (app-request-redraw app)
+          t)
+      (base:borba-cad-error (condition)
+        (report-error app
+                      condition
+                      context)
+        nil))))
+
+(defun skipped-note (skipped)
+  "Return a sentence about entities that were not changed, or an empty string.
+
+SKIPPED: how many entities were skipped."
+  (if (plusp skipped)
+      (format nil " (~d on locked layers were left unchanged)" skipped)
+      ""))
+
+;;; Editing operations
+
+(defun operation-delete-selection (app)
+  "Delete the selected entities.
+
+APP: the application."
+  (let ((ids (selection-ids app)))
+    (if (null ids)
+        (set-message app "Nothing is selected.")
+        (multiple-value-bind (changes skipped)
+            (dom:delete-entities-changes (app-drawing app) ids)
+          (cond ((null changes)
+                 (set-message app
+                              "The selected entities are on locked layers."
+                              :error))
+                ((commit-changes app
+                                 changes
+                                 "entity.delete"
+                                 :context "delete")
+                 (clear-selection app)
+                 (set-message app (format nil "Deleted ~d ~:*~[entities~;entity~:;entities~].~a"
+                                          (length changes) (skipped-note skipped)))))))))
+
+(defun operation-undo (app)
+  "Undo the last change.
+
+APP: the application."
+  (handler-case
+      (if (obs:with-operation ((app-telemetry app) "history.undo"
+                               :fields (list :depth (dom:history-undo-depth (app-history app))))
+            (dom:history-undo (app-history app) (app-drawing app)))
+          (progn (prune-selection app)
+                 (set-message app "Undone.")
+                 (app-request-redraw app))
+          (set-message app "Nothing to undo."))
+    (base:borba-cad-error (condition) (report-error app
+                                                    condition
+                                                    "undo"))))
+
+(defun operation-redo (app)
+  "Redo the last undone change.
+
+APP: the application."
+  (handler-case
+      (if (obs:with-operation ((app-telemetry app) "history.redo"
+                               :fields (list :depth (dom:history-redo-depth (app-history app))))
+            (dom:history-redo (app-history app) (app-drawing app)))
+          (progn (prune-selection app)
+                 (set-message app "Redone.")
+                 (app-request-redraw app))
+          (set-message app "Nothing to redo."))
+    (base:borba-cad-error (condition) (report-error app
+                                                    condition
+                                                    "redo"))))
+
+(defun operation-select-all (app)
+  "Select every pickable entity.
+
+APP: the application."
+  (select-ids app (mapcar #'dom:entity-id (dom:pickable-entities (app-drawing app))))
+  (set-message app (format nil "~d selected." (hash-table-count (app-selection app)))))
+
+(defun operation-assign-selection-layer (app
+                                         layer-id)
+  "Move the selected entities to another layer.
+
+APP: the application.
+LAYER-ID: id of the destination layer."
+  (handler-case
+      (multiple-value-bind (changes skipped)
+          (dom:assign-layer-changes (app-drawing app)
+                                    (selection-ids app)
+                                    layer-id)
+        (when (commit-changes app
+                              changes
+                              "entity.edit"
+                              :context "layer-assignment")
+          (set-message app (format nil "Moved ~d to layer ~s.~a" (length changes)
+                                   (dom:layer-name (dom:find-layer (app-drawing app) layer-id))
+                                   (skipped-note skipped)))))
+    (base:borba-cad-error (condition) (report-error app
+                                                    condition
+                                                    "layer-assignment"))))
+
+(defun parse-property-input (kind
+                             text
+                             display-unit)
+  "Interpret user text for a property of KIND. Signals INVALID-INPUT when it makes no sense.
+
+KIND: the inspector property kind.
+TEXT: what the user typed.
+DISPLAY-UNIT: the drawing's display unit, assumed for numbers without a unit suffix."
+  (ecase kind
+    ((:coordinate :length) (base:parse-length text display-unit))
+    (:integer (handler-case (parse-integer (string-trim " " text))
+                (parse-error ()
+                  (error 'base:invalid-input :text text :reason "expected a whole number"))))
+    (:text text)
+    (:unit (or (base:unit-from-abbreviation (string-trim " " text))
+               (error 'base:invalid-input :text text :reason "unknown unit; use mm, cm or m")))))
+
+(defun operation-edit-property (app
+                                entity-id
+                                key
+                                value)
+  "Set one property of one entity to an already interpreted value.
+
+APP: the application.
+ENTITY-ID: id of the entity.
+KEY: property key from the entity's property list.
+VALUE: the new value (double-float, string, integer, boolean or unit keyword)."
+  (handler-case
+      (let ((changes (dom:edit-property-changes (app-drawing app)
+                                                entity-id
+                                                key
+                                                value)))
+        (when (commit-changes app
+                              changes
+                              "entity.edit"
+                              :context "property-edit")
+          (set-message app "Property changed.")))
+    (base:borba-cad-error (condition) (report-error app
+                                                    condition
+                                                    "property-edit"))))
+
+;;; View and settings
+
+(defun operation-zoom-extents (app)
+  "Fit the view to every visible entity.
+
+APP: the application."
+  (let ((bounds nil)
+        (drawing (app-drawing app)))
+    (dom:map-entities (lambda (entity)
+                        (let ((layer (dom:find-layer drawing (dom:entity-layer-id entity))))
+                          (when (and layer (dom:layer-visible layer))
+                            (setf bounds (if bounds
+                                             (geo:bounds-union bounds (dom:entity-bounds entity))
+                                             (dom:entity-bounds entity))))))
+                      (dom:drawing-store drawing))
+    (setf (app-viewport app)
+          (if bounds
+              (view:fit-viewport-to-bounds (app-viewport app) bounds)
+              (let ((viewport (app-viewport app)))
+                (view:default-viewport (view:viewport-width viewport)
+                                       (view:viewport-height viewport)
+                                       :origin-x (view:viewport-origin-x viewport)
+                                       :origin-y (view:viewport-origin-y viewport)))))
+    (app-request-redraw app)))
+
+(defun operation-toggle-grid (app)
+  "Show or hide the grid.
+
+APP: the application."
+  (dom:set-grid-visible (app-drawing app) (not (dom:drawing-grid-visible (app-drawing app))))
+  (app-request-redraw app))
+
+(defun operation-toggle-snap (app)
+  "Turn snapping to the grid on or off.
+
+APP: the application."
+  (dom:set-snap-to-grid (app-drawing app) (not (dom:drawing-snap-to-grid (app-drawing app))))
+  (app-request-redraw app))
+
+(defun operation-toggle-object-snap (app)
+  "Turn snapping to endpoints and centers on or off.
+
+APP: the application."
+  (dom:set-object-snap (app-drawing app) (not (dom:drawing-object-snap (app-drawing app))))
+  (app-request-redraw app))
+
+(defun operation-cycle-display-unit (app)
+  "Switch the display unit to the next one (mm, cm, m).
+
+APP: the application."
+  (let* ((units (base:supported-length-units))
+         (next (or (second (member (dom:drawing-display-unit (app-drawing app)) units)) (first units))))
+    (dom:set-display-unit (app-drawing app) next)
+    (set-message app (format nil "Lengths are now shown in ~a." (base:unit-abbreviation next)))
+    (app-request-redraw app)))
+
+(defun operation-toggle-overlay (app)
+  "Show or hide the performance overlay.
+
+APP: the application."
+  (setf (app-overlay-visible app) (not (app-overlay-visible app)))
+  (app-request-redraw app))
+
+(defun operation-set-tool (app
+                           kind)
+  "Activate a tool, cancelling whatever the previous one was doing.
+
+APP: the application.
+KIND: :select, :line, :rectangle, :circle, :polyline, :text or :dimension."
+  (when (app-tool app)
+    (tool-cancel (app-tool app) app))
+  (setf (app-tool app) (make-tool kind)
+        (app-interaction app) nil
+        (app-translation app) nil
+        (app-window app) nil)
+  (app-request-redraw app))
+
+;;; Layers
+
+(defun palette-color-after (color)
+  "Return the palette color that follows COLOR, or the first when COLOR is not in the palette.
+
+COLOR: a domain RGB color."
+  (let ((position (position color *layer-palette* :test #'equalp)))
+    (nth (if position (mod (1+ position) (length *layer-palette*)) 0) *layer-palette*)))
+
+(defun layer-operation (app
+                        context
+                        thunk)
+  "Run THUNK, which changes layers, reporting layer errors to the user.
+
+APP: the application.
+CONTEXT: short name for the error log.
+THUNK: function of no arguments."
+  (handler-case (progn (funcall thunk)
+                       (app-request-redraw app)
+                       t)
+    (base:borba-cad-error (condition)
+      (report-error app
+                    condition
+                    context)
+      nil)))
+
+(defun operation-add-layer (app
+                            name)
+  "Create a layer, make it current and tell the user.
+
+APP: the application.
+NAME: the layer name."
+  (layer-operation app
+                   "layer"
+                   (lambda ()
+                     (let ((layer (dom:add-layer (app-drawing app)
+                                                 name
+                                                 (nth (mod (dom:drawing-next-layer-id (app-drawing app))
+                                                           (length *layer-palette*))
+                                                      *layer-palette*))))
+                       (dom:set-current-layer (app-drawing app) (dom:layer-id layer))
+                       (set-message app (format nil "Layer ~s created and selected." (dom:layer-name layer)))))))
+
+(defun operation-rename-layer (app
+                               layer-id
+                               name)
+  "Rename a layer.
+
+APP: the application.
+LAYER-ID: layer id.
+NAME: the new name."
+  (layer-operation app
+                   "layer"
+                   (lambda ()
+                     (dom:rename-layer (app-drawing app)
+                                       layer-id
+                                       name)
+                     (set-message app "Layer renamed."))))
+
+(defun operation-delete-layer (app
+                               layer-id)
+  "Delete an empty layer. Deleting a layer clears the undo history, which may refer to it.
+
+APP: the application.
+LAYER-ID: layer id."
+  (layer-operation app
+                   "layer"
+                   (lambda ()
+                     (let ((name (dom:layer-name (dom:find-layer (app-drawing app) layer-id))))
+                       (dom:remove-layer (app-drawing app) layer-id)
+                       (dom:history-clear (app-history app))
+                       (set-message app (format nil "Layer ~s deleted; undo history cleared." name))))))
+
+(defun operation-toggle-layer-visible (app
+                                       layer-id)
+  "Show or hide a layer; its entities leave the selection when hidden.
+
+APP: the application.
+LAYER-ID: layer id."
+  (layer-operation app
+                   "layer"
+                   (lambda ()
+                     (let ((layer (dom:find-layer (app-drawing app) layer-id)))
+                       (dom:set-layer-visible (app-drawing app)
+                                              layer-id
+                                              (not (dom:layer-visible layer)))
+                       (prune-selection app)))))
+
+(defun operation-toggle-layer-locked (app
+                                      layer-id)
+  "Lock or unlock a layer; its entities leave the selection when locked.
+
+APP: the application.
+LAYER-ID: layer id."
+  (layer-operation app
+                   "layer"
+                   (lambda ()
+                     (let ((layer (dom:find-layer (app-drawing app) layer-id)))
+                       (dom:set-layer-locked (app-drawing app)
+                                             layer-id
+                                             (not (dom:layer-locked layer)))
+                       (prune-selection app)))))
+
+(defun operation-cycle-layer-color (app
+                                    layer-id)
+  "Give a layer the next palette color.
+
+APP: the application.
+LAYER-ID: layer id."
+  (layer-operation app
+                   "layer"
+                   (lambda ()
+                     (dom:recolor-layer (app-drawing app)
+                                        layer-id
+                                        (palette-color-after
+                                         (dom:layer-color (dom:find-layer (app-drawing app) layer-id)))))))
+
+(defun operation-set-current-layer (app
+                                    layer-id)
+  "Make a layer the one that receives new entities.
+
+APP: the application.
+LAYER-ID: layer id."
+  (layer-operation app
+                   "layer"
+                   (lambda () (dom:set-current-layer (app-drawing app) layer-id))))
+
+;;; Files
+
+(defun default-open-path (app)
+  "Return the path suggested in the Open prompt.
+
+APP: the application."
+  (if (app-file-path app) (uiop:native-namestring (app-file-path app)) *default-open-path*))
+
+(defun default-save-path (app)
+  "Return the path suggested in the Save As prompt.
+
+APP: the application."
+  (if (app-file-path app) (uiop:native-namestring (app-file-path app)) *default-save-path*))
+
+(defun reset-document (app
+                       drawing
+                       path)
+  "Replace the drawing being edited, with a fresh history, selection and view.
+
+APP: the application.
+DRAWING: the new drawing.
+PATH: its file, or NIL for a new drawing."
+  (setf (app-drawing app) drawing
+        (app-history app) (dom:make-history)
+        (app-file-path app) path
+        (app-saved-revision app) (dom:drawing-revision drawing)
+        (app-translation app) nil
+        (app-window app) nil
+        (app-interaction app) nil)
+  (clrhash (app-selection app))
+  (operation-set-tool app :select)
+  (operation-zoom-extents app)
+  (app-request-redraw app))
+
+(defun log-failed-operation (app
+                             event
+                             started
+                             condition
+                             &rest fields)
+  "Log a failed file operation with its duration.
+
+APP: the application.
+EVENT: dotted event name.
+STARTED: monotonic time when it began.
+CONDITION: the condition signaled.
+FIELDS: extra alternating keys and values."
+  (when (app-telemetry app)
+    (obs:record-operation (obs:telemetry-metrics (app-telemetry app))
+                          event
+                          (- (sbcl:monotonic-nanoseconds) started))
+    (apply #'obs:log-condition (obs:telemetry-logger (app-telemetry app)) :warn event condition
+           :duration-ms (obs:nanoseconds->milliseconds (- (sbcl:monotonic-nanoseconds) started))
+           fields)))
+
+(defun load-drawing-into-app (app
+                              path-text)
+  "Load the drawing at PATH-TEXT and make it the current one. On failure the current drawing is
+untouched and the error is shown. Returns true on success.
+
+APP: the application.
+PATH-TEXT: file name as typed by the user."
+  (let ((started (sbcl:monotonic-nanoseconds))
+        (path (persist:native-path path-text)))
+    (handler-case
+        (multiple-value-bind (drawing stats)
+            (persist:load-drawing path)
+          (obs:record-operation-result (app-telemetry app)
+                                       "file.load"
+                                       (- (sbcl:monotonic-nanoseconds) started)
+                                       :info
+                                       :bytes (getf stats :bytes)
+                                       :entity-count (dom:drawing-entity-count drawing)
+                                       :read-ms (obs:nanoseconds->milliseconds
+                                                 (getf stats :read-nanoseconds))
+                                       :parse-ms (obs:nanoseconds->milliseconds
+                                                  (getf stats :parse-nanoseconds))
+                                       :result :success)
+          (reset-document app
+                          drawing
+                          path)
+          (set-message app (format nil "Opened ~a (~d entities)." (file-namestring path)
+                                   (dom:drawing-entity-count drawing)))
+          t)
+      (base:drawing-file-error (condition)
+        (log-failed-operation app
+                              "file.load"
+                              started
+                              condition)
+        (setf (app-last-error app) condition)
+        (set-message app
+                     (remove #\Newline (princ-to-string condition))
+                     :error)
+        nil))))
+
+(defun save-app-drawing (app
+                         path-text)
+  "Save the drawing to PATH-TEXT, creating its directory when needed. On failure the previous
+file is untouched and the error is shown. Returns true on success.
+
+APP: the application.
+PATH-TEXT: file name as typed by the user."
+  (let ((started (sbcl:monotonic-nanoseconds))
+        (path (persist:native-path path-text)))
+    (handler-case
+        (progn
+          (ensure-directories-exist path)
+          (multiple-value-bind (saved stats)
+              (persist:save-drawing (app-drawing app) path)
+            (obs:record-operation-result (app-telemetry app)
+                                         "file.save"
+                                         (- (sbcl:monotonic-nanoseconds) started)
+                                         :info
+                                         :bytes (getf stats :bytes)
+                                         :entity-count (dom:drawing-entity-count (app-drawing app))
+                                         :serialize-ms (obs:nanoseconds->milliseconds
+                                                        (getf stats :serialize-nanoseconds))
+                                         :rename-ms (obs:nanoseconds->milliseconds
+                                                     (getf stats :rename-nanoseconds))
+                                         :result :success)
+            (setf (app-file-path app) saved
+                  (app-saved-revision app) (dom:drawing-revision (app-drawing app)))
+            (set-message app (format nil "Saved ~a (~d bytes)." (file-namestring saved) (getf stats :bytes)))
+            t))
+      (error (condition)
+        (log-failed-operation app
+                              "file.save"
+                              started
+                              condition)
+        (setf (app-last-error app) condition)
+        (set-message app
+                     (remove #\Newline (princ-to-string condition))
+                     :error)
+        nil))))
+
+(defun operation-save-as (app
+                          &optional continuation)
+  "Ask for a file name and save the drawing there, then run CONTINUATION.
+
+APP: the application.
+CONTINUATION: optional function of no arguments run after a successful save."
+  (open-text-prompt app
+                    "Save drawing as"
+                    "File name (relative names are resolved against the current directory):"
+                    (default-save-path app)
+                    (lambda (text)
+                      (when (and (save-app-drawing app text) continuation)
+                        (funcall continuation)))))
+
+(defun operation-save (app
+                       &optional continuation)
+  "Save the drawing to its file, asking for a name first when it has none.
+
+APP: the application.
+CONTINUATION: optional function of no arguments run after a successful save."
+  (if (app-file-path app)
+      (when (and (save-app-drawing app (uiop:native-namestring (app-file-path app))) continuation)
+        (funcall continuation))
+      (operation-save-as app continuation)))
+
+(defun confirm-discard (app
+                        continuation)
+  "Run CONTINUATION now when there are no unsaved changes; otherwise ask whether to save,
+discard or cancel first.
+
+APP: the application.
+CONTINUATION: function of no arguments."
+  (if (not (app-dirty-p app))
+      (funcall continuation)
+      (open-choice-prompt app
+                          "Unsaved changes"
+                          "The drawing has changes that are not saved."
+                          (list (cons "Save" (lambda () (operation-save app continuation)))
+                                (cons "Discard" continuation)
+                                (cons "Cancel" nil)))))
+
+(defun operation-new (app)
+  "Start a new empty drawing, after offering to save the current one.
+
+APP: the application."
+  (confirm-discard app (lambda () (reset-document app
+                                                  (dom:make-drawing)
+                                                  nil)
+                         (set-message app "New drawing."))))
+
+(defun operation-open (app)
+  "Ask for a file name and open that drawing, after offering to save the current one.
+
+APP: the application."
+  (confirm-discard app (lambda ()
+                         (open-text-prompt app
+                                           "Open drawing"
+                                           "File name:"
+                                           (default-open-path app)
+                                           (lambda (text) (load-drawing-into-app app text))))))
+
+(defun operation-quit (app)
+  "Close the application, after offering to save unsaved changes.
+
+APP: the application."
+  (confirm-discard app (lambda () (setf (app-quit-requested app) t))))
