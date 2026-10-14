@@ -141,3 +141,10 @@ RADIUS: replacement radius."
   (update-circle circle
                  :id id
                  :layer-id layer-id))
+
+(defmethod entity-touches-bounds-p ((circle circle-entity)
+                                    bounds)
+  (geo:circle-outline-touches-bounds-p (circle-center-x circle)
+                                       (circle-center-y circle)
+                                       (circle-radius circle)
+                                       bounds))

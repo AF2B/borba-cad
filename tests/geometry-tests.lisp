@@ -366,3 +366,100 @@
             (is (geo:bounds-contains-point-p grown
                                              (geo:dimension-layout-text-x layout)
                                              (geo:dimension-layout-text-y layout)))))))))
+
+;;; Touching a window (crossing selection)
+
+(def-suite crossing-geometry
+  :description "Whether a shape touches a window."
+  :in all)
+
+(in-suite crossing-geometry)
+
+(defun window (x1 y1 x2 y2)
+  "Return a window with the given corners."
+  (geo:make-bounds x1 y1 x2 y2))
+
+(test a-segment-touches-a-window-when-it-passes-through-it
+  (let ((window (window 0d0 0d0 10d0 10d0)))
+    (is-true (geo:segment-touches-bounds-p 2d0 2d0 5d0 5d0 window) "inside")
+    (is-true (geo:segment-touches-bounds-p -5d0 5d0 15d0 5d0 window) "straight through")
+    (is-true (geo:segment-touches-bounds-p -5d0 -5d0 5d0 5d0 window) "from outside to the middle")
+    (is-true (geo:segment-touches-bounds-p -5d0 5d0 0d0 5d0 window) "ending on the edge")
+    (is-true (geo:segment-touches-bounds-p 10d0 -5d0 10d0 15d0 window) "along an edge")
+    (is-true (geo:segment-touches-bounds-p -1d0 1d0 1d0 -1d0 window) "through a corner")
+    (is (not (geo:segment-touches-bounds-p -5d0 5d0 -0.001d0 5d0 window)) "just short of the edge")
+    (is-true (geo:segment-touches-bounds-p -1d0 2d0 2d0 -1d0 window) "a diagonal that cuts the corner off")
+    (is (not (geo:segment-touches-bounds-p -2d0 1d0 1d0 -2d0 window)) "a diagonal that passes the corner by")
+    (is (not (geo:segment-touches-bounds-p 20d0 20d0 30d0 30d0 window)) "far away")))
+
+(test a-segment-touches-a-window-exactly-when-a-point-of-it-is-in-the-window
+  (let ((prng (rng:make-prng 71))
+        (window (window -10d0 -5d0 12d0 8d0)))
+    (dotimes (case 400)
+      (let* ((x1 (rng:prng-next-double prng -30d0 30d0))
+             (y1 (rng:prng-next-double prng -30d0 30d0))
+             (x2 (rng:prng-next-double prng -30d0 30d0))
+             (y2 (rng:prng-next-double prng -30d0 30d0))
+             (nearest (loop for step from 0 to 3000
+                            minimize (let ((fraction (/ step 3000d0)))
+                                       (geo:point-bounds-distance (+ x1 (* fraction (- x2 x1)))
+                                                                  (+ y1 (* fraction (- y2 y1)))
+                                                                  window))))
+             (touches (geo:segment-touches-bounds-p x1 y1 x2 y2 window)))
+        (if touches
+            (is (< nearest 0.05d0) "~a ~a ~a ~a: said to touch, nearest sample ~a" x1 y1 x2 y2 nearest)
+            (is (> nearest 0d0) "~a ~a ~a ~a: said not to touch, but a sample is inside" x1 y1 x2 y2))))))
+
+(test a-polyline-touches-a-window-through-any-of-its-segments-and-its-closing-one
+  (let ((window (window 0d0 0d0 10d0 10d0))
+        (open (make-array 6 :element-type 'double-float :initial-contents '(-5d0 -5d0 -5d0 -20d0 20d0 -20d0))))
+    (is (not (geo:polyline-touches-bounds-p open nil window)) "an open polyline below the window")
+    (is-true (geo:polyline-touches-bounds-p (make-array 6 :element-type 'double-float
+                                                        :initial-contents '(5d0 5d0 -20d0 5d0 -20d0 -5d0))
+                                            nil
+                                            window)
+             "the first segment reaches in")
+    (let ((triangle (make-array 6 :element-type 'double-float :initial-contents '(-5d0 5d0 -5d0 -5d0 5d0 -5d0))))
+      (is-true (geo:polyline-touches-bounds-p triangle t window) "only the closing segment reaches in")
+      (is (not (geo:polyline-touches-bounds-p triangle nil window)) "left open, it does not"))
+    (is-true (geo:polyline-touches-bounds-p (make-array 2 :element-type 'double-float :initial-contents '(5d0 5d0))
+                                            nil
+                                            window)
+             "a single vertex inside")))
+
+(test a-circle-touches-a-window-when-its-outline-does
+  (let ((window (window 0d0 0d0 10d0 10d0)))
+    (is (not (geo:circle-outline-touches-bounds-p 5d0 5d0 20d0 window)) "the window is inside the circle")
+    (is-true (geo:circle-outline-touches-bounds-p 5d0 5d0 1d0 window) "the circle is inside the window")
+    (is-true (geo:circle-outline-touches-bounds-p 20d0 5d0 10d0 window) "tangent to an edge")
+    (is-true (geo:circle-outline-touches-bounds-p 15d0 5d0 8d0 window) "the outline cuts the window")
+    (is (not (geo:circle-outline-touches-bounds-p 20d0 5d0 5d0 window)) "close but short")
+    (is (not (geo:circle-outline-touches-bounds-p 50d0 50d0 5d0 window)) "far away")))
+
+(test a-circle-touches-a-window-exactly-when-a-point-of-its-outline-is-in-it
+  (let ((prng (rng:make-prng 72))
+        (window (window -10d0 -5d0 12d0 8d0)))
+    (dotimes (case 300)
+      (let* ((cx (rng:prng-next-double prng -30d0 30d0))
+             (cy (rng:prng-next-double prng -30d0 30d0))
+             (radius (rng:prng-next-double prng 1d0 30d0))
+             (nearest (loop for step from 0 below 4000
+                            minimize (let ((angle (* 2 pi (/ step 4000d0))))
+                                       (geo:point-bounds-distance (+ cx (* radius (cos angle)))
+                                                                  (+ cy (* radius (sin angle)))
+                                                                  window))))
+             (touches (geo:circle-outline-touches-bounds-p cx cy radius window)))
+        (if touches
+            (is (< nearest 0.1d0) "~a ~a ~a: said to touch, nearest sample ~a" cx cy radius nearest)
+            (is (> nearest 0d0) "~a ~a ~a: said not to touch, but a sample is inside" cx cy radius))))))
+
+(test a-rotated-box-touches-a-window-through-an-edge-or-by-holding-it
+  (let ((window (window 0d0 0d0 10d0 10d0)))
+    (is-true (geo:oriented-box-touches-bounds-p 5d0 5d0 2d0 1d0 0.25d0 0d0 window) "inside")
+    (is-true (geo:oriented-box-touches-bounds-p -5d0 5d0 8d0 1d0 0.25d0 0d0 window) "reaching in")
+    (is-true (geo:oriented-box-touches-bounds-p -20d0 -20d0 60d0 40d0 40d0 0d0 window) "holding the window")
+    (is (not (geo:oriented-box-touches-bounds-p -5d0 -5d0 2d0 1d0 0.25d0 0d0 window)) "beside it")
+    (is-true (geo:oriented-box-touches-bounds-p -5d0 -5d0 20d0 1d0 0.25d0 (/ pi 4) window)
+             "a box at 45 degrees that runs across the corner")
+    (is (not (geo:oriented-box-touches-bounds-p -5d0 5d0 4d0 1d0 0.25d0 (/ pi 2) window))
+        "turned upward, it misses the window")))

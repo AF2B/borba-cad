@@ -34,6 +34,7 @@ visibly at the edge.")
                                                              translation
                                                              preview-entities
                                                              window
+                                                             window-crossing
                                                              snap)))
   "The interaction state that decorates the drawing.
 
@@ -41,8 +42,9 @@ SELECTED-IDS: hash table of selected entity ids, or NIL.
 TRANSLATION: (dx . dy) in millimetres applied to selected entities while dragging, or NIL.
 PREVIEW-ENTITIES: entities being created, drawn in the preview color.
 WINDOW: world bounds of a window-selection rectangle, or NIL.
+WINDOW-CROSSING: true when that rectangle is a crossing selection, drawn dashed and in another color.
 SNAP: (x y kind) in world coordinates of the snap marker, or NIL."
-  selected-ids translation preview-entities window snap)
+  selected-ids translation preview-entities window window-crossing snap)
 
 (defstruct (scene-result (:constructor make-scene-result (drawn-entities
                                                           culled-entities)))
@@ -585,15 +587,28 @@ THEME: the theme."
                (line (- sx half) sy (+ sx half) sy)
                (line sx (- sy half) sx (+ sy half))))))))))
 
+(defconstant +crossing-dash-pixels+ 6f0
+  "Length of a dash of the outline of a crossing selection, in pixels.")
+
+(defconstant +crossing-gap-pixels+ 4f0
+  "Length of a gap of the outline of a crossing selection, in pixels.")
+
+(defconstant +crossing-outline-opacity+ 0.95f0
+  "Opacity of the outline of a crossing selection.")
+
 (defun add-selection-window (list
                              viewport
                              window
+                             crossing
                              theme)
-  "Emit the window-selection rectangle: translucent fill and outline.
+  "Emit the selection rectangle: a window, which takes what lies inside it, is a translucent
+fill with a solid outline; a crossing, which takes what it touches, a translucent fill of another
+color with a dashed outline.
 
 LIST: the draw list.
 VIEWPORT: the viewport.
 WINDOW: world bounds, or NIL.
+CROSSING: true for a crossing selection.
 THEME: the theme."
   (when window
     (multiple-value-bind (left top)
@@ -611,13 +626,34 @@ THEME: the theme."
                                 y
                                 width
                                 height
-                                (theme-selection-fill theme))
-          (add-rectangle-outline list
-                                 x
-                                 y
-                                 width
-                                 height
-                                 (theme-selection theme)))))))
+                                (if crossing
+                                    (theme-crossing-fill theme)
+                                    (theme-selection-fill theme)))
+          (if crossing
+              (let* ((fill (theme-crossing-fill theme))
+                     (color (make-rgba (rgba-r fill)
+                                       (rgba-g fill)
+                                       (rgba-b fill)
+                                       +crossing-outline-opacity+)))
+                (flet ((side (x1 y1 x2 y2)
+                         (add-dashed-line list
+                                          x1
+                                          y1
+                                          x2
+                                          y2
+                                          +crossing-dash-pixels+
+                                          +crossing-gap-pixels+
+                                          color)))
+                  (side x y (+ x width) y)
+                  (side (+ x width) y (+ x width) (+ y height))
+                  (side (+ x width) (+ y height) x (+ y height))
+                  (side x (+ y height) x y)))
+              (add-rectangle-outline list
+                                     x
+                                     y
+                                     width
+                                     height
+                                     (theme-selection theme))))))))
 
 (defun build-scene (list
                     drawing
@@ -652,6 +688,7 @@ THEME: the theme."
       (add-selection-window list
                             viewport
                             (scene-state-window state)
+                            (scene-state-window-crossing state)
                             theme)
       (add-snap-marker list
                        viewport

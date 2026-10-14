@@ -86,6 +86,17 @@ ENTITY: an entity.
 DX: displacement along x.
 DY: displacement along y."))
 
+(defgeneric entity-touches-bounds-p (entity bounds)
+  (:documentation "Return true when the selectable geometry of ENTITY has a point inside BOUNDS or on
+its edge, which is what a crossing selection asks: an outline passing through the window touches it,
+a shape that holds the whole window without its outline reaching it does not. The default is that the
+bounds of the entity overlap BOUNDS, right for shapes that are filled boxes.
+
+ENTITY: an entity.
+BOUNDS: the window, in world coordinates.")
+  (:method ((entity entity) bounds)
+    (geo:bounds-intersect-p (entity-bounds entity) bounds)))
+
 (defgeneric entity-snap-points (entity)
   (:documentation "Return the object-snap candidates of ENTITY as a list of (x y kind) lists,
 where kind is :endpoint or :center.

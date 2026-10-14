@@ -198,3 +198,30 @@ HEIGHT: replacement height."
   (update-rectangle rectangle
                  :id id
                  :layer-id layer-id))
+
+(defmethod entity-touches-bounds-p ((rectangle rectangle-entity)
+                                    bounds)
+  (let* ((left (rectangle-min-x rectangle))
+         (bottom (rectangle-min-y rectangle))
+         (right (+ left (rectangle-width rectangle)))
+         (top (+ bottom (rectangle-height rectangle))))
+    (or (geo:segment-touches-bounds-p left
+                                      bottom
+                                      right
+                                      bottom
+                                      bounds)
+        (geo:segment-touches-bounds-p right
+                                      bottom
+                                      right
+                                      top
+                                      bounds)
+        (geo:segment-touches-bounds-p right
+                                      top
+                                      left
+                                      top
+                                      bounds)
+        (geo:segment-touches-bounds-p left
+                                      top
+                                      left
+                                      bottom
+                                      bounds))))

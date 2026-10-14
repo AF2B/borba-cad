@@ -263,7 +263,8 @@ KIND: :select, :line, :rectangle, :circle, :polyline, :text or :dimension."
   (setf (app-tool app) (make-tool kind)
         (app-interaction app) nil
         (app-translation app) nil
-        (app-window app) nil)
+        (app-window app) nil
+        (app-window-crossing app) nil)
   (app-request-redraw app))
 
 ;;; Layers

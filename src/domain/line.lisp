@@ -159,3 +159,11 @@ Y2: replacement end y."
   (update-line line
                  :id id
                  :layer-id layer-id))
+
+(defmethod entity-touches-bounds-p ((line line-entity)
+                                    bounds)
+  (geo:segment-touches-bounds-p (line-x1 line)
+                                (line-y1 line)
+                                (line-x2 line)
+                                (line-y2 line)
+                                bounds))

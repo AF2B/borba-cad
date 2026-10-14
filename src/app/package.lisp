@@ -80,6 +80,7 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:app-last-error
    #:app-layer-scroll
    #:app-inspector-scroll
+   #:app-window-crossing
    #:app-window-width
    #:app-window-height
    #:app-dirty-p

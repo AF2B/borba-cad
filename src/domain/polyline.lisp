@@ -188,3 +188,9 @@ CLOSED: replacement closed flag."
   (update-polyline polyline
                  :id id
                  :layer-id layer-id))
+
+(defmethod entity-touches-bounds-p ((polyline polyline-entity)
+                                    bounds)
+  (geo:polyline-touches-bounds-p (polyline-coordinates polyline)
+                                 (polyline-closed polyline)
+                                 bounds))

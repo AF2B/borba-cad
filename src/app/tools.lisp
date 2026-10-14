@@ -152,14 +152,15 @@ Y: world y."
    (moved :initform nil :accessor select-moved)
    (hit-id :initform nil :accessor select-hit-id)
    (additive :initform nil :accessor select-additive))
-  (:documentation "Selects by click or window and moves the selection by dragging."))
+  (:documentation "Selects by click, by window (left to right: what lies inside) or by crossing (right to
+left: what it touches), and moves the selection by dragging."))
 
 (defmethod tool-kind ((tool select-tool))
   :select)
 
 (defmethod tool-prompt ((tool select-tool) app)
   (declare (ignore app))
-  (i18n:tr "Select: click an entity, drag it to move, drag on empty space to select a window (Shift adds)."))
+  (i18n:tr "Select: click or drag; left to right takes what is inside, right to left what it touches (Shift adds)."))
 
 (defun pick-radius-in-world (app)
   "Return the pick radius in millimetres at the current zoom.
@@ -219,7 +220,9 @@ APP: the application."
                      (geo:bounds-from-corners (select-start-x tool)
                                               (select-start-y tool)
                                               (cursor-raw-x cursor)
-                                              (cursor-raw-y cursor)))))
+                                              (cursor-raw-y cursor))
+                     (app-window-crossing app)
+                     (< (cursor-raw-x cursor) (select-start-x tool)))))
     (app-request-redraw app)))
 
 (defmethod tool-pointer-up ((tool select-tool) app cursor)
@@ -250,17 +253,23 @@ APP: the application."
               (select-ids app (list (select-hit-id tool)))))))
     (:window
      (cond ((select-moved tool)
-            (let ((window (app-window app)))
-              (setf (app-window app) nil)
+            (let ((window (app-window app))
+                  (crossing (app-window-crossing app)))
+              (setf (app-window app) nil
+                    (app-window-crossing app) nil)
               (when window
                 (select-ids app
                             (mapcar #'dom:entity-id
                                     (obs:with-operation ((app-telemetry app) "geometry.window-select"
                                                          :fields (list :entity-count
                                                                        (dom:drawing-entity-count
-                                                                        (app-drawing app)))
+                                                                        (app-drawing app))
+                                                                       :crossing
+                                                                       crossing)
                                                          :level :debug)
-                                      (dom:entities-in-window (app-drawing app) window)))
+                                      (if crossing
+                                          (dom:entities-crossing-window (app-drawing app) window)
+                                          (dom:entities-in-window (app-drawing app) window))))
                             :add (select-additive tool)))))
            ((not (select-additive tool))
             (clear-selection app)))))
@@ -272,7 +281,8 @@ APP: the application."
   (setf (select-mode tool) nil
         (select-moved tool) nil
         (app-translation app) nil
-        (app-window app) nil)
+        (app-window app) nil
+        (app-window-crossing app) nil)
   (app-request-redraw app))
 
 (defmethod tool-in-progress-p ((tool select-tool))

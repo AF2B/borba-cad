@@ -37,6 +37,8 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:entity-with-property
    #:entity-with-layer
    #:entity-with-identity
+   #:entity-touches-bounds-p
+   #:entities-crossing-window
    #:entity-kinds
    #:property
    #:make-property

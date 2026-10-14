@@ -39,6 +39,11 @@ No screen, pixel or rendering concepts appear here.")
    #:bounds-near-point-p
    ;; Clipping
    #:clip-segment-to-bounds
+   ;; Crossing
+   #:segment-touches-bounds-p
+   #:polyline-touches-bounds-p
+   #:circle-outline-touches-bounds-p
+   #:oriented-box-touches-bounds-p
    ;; Measures
    #:circle-circumference
    #:circle-area

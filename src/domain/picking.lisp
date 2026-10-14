@@ -62,6 +62,22 @@ WINDOW: a bounds value in world coordinates."
                   (drawing-store drawing))
     (nreverse found)))
 
+(defun entities-crossing-window (drawing
+                                 window)
+  "Return the pickable entities that lie inside WINDOW or touch it, in stacking order: what a
+crossing selection takes.
+
+DRAWING: the drawing.
+WINDOW: a bounds value in world coordinates."
+  (let ((found '()))
+    (map-entities (lambda (entity)
+                    (when (and (geo:bounds-intersect-p (entity-bounds entity) window)
+                               (pickable-p drawing entity)
+                               (entity-touches-bounds-p entity window))
+                      (push entity found)))
+                  (drawing-store drawing))
+    (nreverse found)))
+
 (defun pickable-entities (drawing)
   "Return every pickable entity, in stacking order.
 

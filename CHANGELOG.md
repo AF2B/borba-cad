@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Crossing selection.** Dragging on empty space from right to left selects what the rectangle
+  touches (drawn dashed and green); from left to right it selects what lies inside, as before
+  (solid). A diagonal line is taken only when it really passes through the rectangle, and a circle
+  or a rectangle that holds the whole rectangle, without its outline reaching it, is not.
 - **Copy, cut and paste of entities.** `Ctrl+C`, `Ctrl+X` and `Ctrl+V` copy, cut and paste the
   selection; `Ctrl+Shift+V` pastes in place. A paste is centered on the pointer (or on the view when
   the pointer is not over the canvas), becomes the selection so it can be moved at once, and is one

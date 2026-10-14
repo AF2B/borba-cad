@@ -45,8 +45,8 @@
    "Ctrl+O abre um desenho; um arquivo .bcad solto na janela também abre.")
 
   ;; Prompts of the tools
-  ("Select: click an entity, drag it to move, drag on empty space to select a window (Shift adds)."
-   "Selecionar: clique em uma entidade, arraste para mover ou no vazio para selecionar uma janela (Shift soma).")
+  ("Select: click or drag; left to right takes what is inside, right to left what it touches (Shift adds)."
+   "Selecionar: clique ou arraste; da esquerda p/ direita pega o que está dentro, da direita p/ esquerda o que toca (Shift soma).")
   ("Line: click the start point" "Linha: clique no ponto inicial")
   ("Line: click the end point (Esc cancels)" "Linha: clique no ponto final (Esc cancela)")
   ("Rectangle: click the first corner" "Retângulo: clique no primeiro canto")

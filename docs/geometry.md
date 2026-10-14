@@ -93,6 +93,7 @@ All functions take raw doubles and return doubles; none allocates in its hot pat
 | `point-polyline-distance` | Minimum over the segments; the closing segment counts only when `closed` and the polyline has at least 3 vertices. |
 | `bounds-near-point-p` | Cheap pre-filter used by picking: true when the point is within the radius of the bounds along both axes. Every shape inside the bounds that is closer than the radius passes it. |
 | `clip-segment-to-bounds` | Liang–Barsky. Returns the clipped endpoints, or NIL when no part of the segment lies inside. It runs in double precision before any coordinate becomes a single-float vertex, so a segment with a far-away endpoint keeps its precision on screen. |
+| `segment-touches-bounds-p`, `polyline-touches-bounds-p`, `circle-outline-touches-bounds-p`, `oriented-box-touches-bounds-p` | Whether the outline of a shape has a point inside a window or on its edge (a filled rotated box is filled, so a window inside it counts). The circle test compares the radius with the nearest and the farthest point of the window. Tested against dense sampling of random segments and circles. |
 | Measures | Circle circumference `2πr` and area `πr²`; rectangle area and perimeter; polyline length (the closing segment included when closed) and bounds. |
 
 ## 5. Text and dimension geometry
@@ -154,8 +155,14 @@ entities cannot be deleted either.
 - **Pick**: scan from the topmost entity down; the nearest pickable entity within the radius wins,
   and when two are at the same distance the one created last wins. The radius is 6 pixels
   converted to millimetres at the current zoom, so picking feels the same at every zoom level.
-- **Window selection** returns the pickable entities whose bounds lie entirely inside the window
-  (touching counts), in stacking order.
+- **Window selection** (dragging from left to right) returns the pickable entities whose bounds lie
+  entirely inside the window (touching counts), in stacking order.
+- **Crossing selection** (dragging from right to left) returns the pickable entities that are
+  inside the window or touch it, in stacking order: the window is first compared with the bounds of
+  the entity, and then `entity-touches-bounds-p` asks the shape itself, so a diagonal line whose
+  bounds overlap the window but which passes beside it is not taken, and a circle or a rectangle
+  that holds the whole window without its outline reaching it is not taken either. A filled box
+  (a text) is taken when its bounds overlap.
 - **Object snap** offers endpoints (line ends, rectangle corners, polyline vertices, dimension
   definition points, a text insertion point) and centers (circles) within 12 pixels, converted to
   millimetres. **Grid snap** rounds to the drawing's own grid spacing, not to the displayed one.

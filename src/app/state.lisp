@@ -88,6 +88,8 @@ POINTER-Y: last pointer window y.
 INTERACTION: current pointer drag (:pan or a tool-owned drag) or NIL.
 TRANSLATION: (dx . dy) move preview in millimetres, or NIL.
 WINDOW: world bounds of the window-selection rectangle, or NIL.
+WINDOW-CROSSING: true when that rectangle selects what it touches (dragged from right to left), and
+NIL when it selects only what it holds (dragged from left to right).
 SPACE-DOWN: true while the space bar is held (pan modifier).
 FILE-PATH: path of the drawing file, or NIL.
 SAVED-REVISION: drawing revision at the last save or load.
@@ -125,6 +127,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   interaction
   translation
   window
+  window-crossing
   space-down
   file-path
   (saved-revision 0 :type fixnum)
