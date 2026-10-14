@@ -21,7 +21,17 @@ viewport and the interaction state into a draw list.")
    #:theme-canvas-background
    #:theme-grid-minor
    #:theme-grid-major
-   #:theme-axis
+   #:theme-axis-x
+   #:theme-axis-y
+   #:theme-crossing-fill
+   #:theme-title-bar-top
+   #:theme-title-bar-bottom
+   #:theme-text-faint
+   #:theme-accent-soft
+   #:theme-accent-contrast
+   #:theme-warning
+   #:theme-shadow
+   #:theme-scrim
    #:theme-selection
    #:theme-selection-fill
    #:theme-preview
@@ -58,12 +68,28 @@ viewport and the interaction state into a draw list.")
    #:text-run-y
    #:text-run-size
    #:text-run-angle
+   #:text-run-font
    #:text-run-color
    #:add-line
    #:add-triangle
    #:add-filled-rectangle
    #:add-rectangle-outline
    #:add-text
+   #:+minimum-shape-segments+
+   #:+maximum-shape-segments+
+   #:shape-segments
+   #:with-alpha
+   #:add-thick-line
+   #:add-disc
+   #:add-ring
+   #:add-arc-stroke
+   #:rounded-rectangle-points
+   #:add-rounded-rectangle
+   #:add-rounded-rectangle-outline
+   #:add-gradient-rectangle
+   #:add-shadow
+   #:add-dashed-line
+   #:add-polygon
    #:draw-list-line-count
    #:draw-list-triangle-count
    ;; Scene

@@ -514,10 +514,12 @@ THEME: the theme."
            (bottom (+ top (to-single (view:viewport-height viewport)))))
       (multiple-value-bind (first-x last-x first-y last-y)
           (view:visible-grid-range viewport spacing)
-        (flet ((color-for (index)
-                 (cond ((zerop index) (theme-axis theme))
+        (flet ((color-for (index
+                           axis-color)
+                 (cond ((zerop index) axis-color)
                        ((zerop (mod index major)) (theme-grid-major theme))
                        (t (theme-grid-minor theme)))))
+          ;; The vertical line through x = 0 is the y axis, the horizontal one the x axis.
           (loop for index from first-x to last-x
                 do (let ((x (to-single (view:world->screen viewport
                                                            (* index spacing)
@@ -527,7 +529,7 @@ THEME: the theme."
                                top
                                x
                                bottom
-                               (color-for index))))
+                               (color-for index (theme-axis-y theme)))))
           (loop for index from first-y to last-y
                 do (let ((y (nth-value 1 (view:world->screen viewport
                                                              0d0
@@ -537,7 +539,7 @@ THEME: the theme."
                                (to-single y)
                                right
                                (to-single y)
-                               (color-for index)))))))))
+                               (color-for index (theme-axis-x theme))))))))))
 
 (defun add-snap-marker (list
                         viewport

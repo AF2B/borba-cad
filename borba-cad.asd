@@ -77,6 +77,7 @@
                 :serial t
                 :components ((:file "package")
                              (:file "draw-list")
+                             (:file "shapes")
                              (:file "theme")
                              (:file "scene")))
                (:module "ui"
@@ -186,6 +187,7 @@
                (:file "persistence-tests")
                (:file "observability-tests")
                (:file "scene-tests")
+               (:file "shapes-tests")
                (:file "ui-tests")
                (:file "app-tests")
                (:file "file-tests")

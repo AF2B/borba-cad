@@ -57,21 +57,25 @@ COUNT: number of vertices, or of text runs for :text."
                                                   y
                                                   size
                                                   angle
-                                                  color)))
+                                                  color
+                                                  font)))
   "A line of text to draw.
 
-STRING: the characters, one cell per code point on a 0.6 em grid.
+STRING: the characters.
 X: x of the baseline start, in pixels.
 Y: y of the baseline start, in pixels (down).
 SIZE: em size in pixels.
 ANGLE: counter-clockwise rotation of the baseline as seen on screen, in radians.
-COLOR: an RGBA."
+COLOR: an RGBA.
+FONT: :mono for drawing text, one cell per code point on a 0.6 em grid; :ui or :ui-strong for
+the proportional faces of the user interface, whose widths the renderer measures."
   (string "" :type string :read-only t)
   (x 0f0 :type single-float :read-only t)
   (y 0f0 :type single-float :read-only t)
   (size 12f0 :type single-float :read-only t)
   (angle 0f0 :type single-float :read-only t)
-  (color nil :type (or null rgba) :read-only t))
+  (color nil :type (or null rgba) :read-only t)
+  (font :mono :type keyword :read-only t))
 
 (defstruct (draw-list (:constructor %make-draw-list))
   "Everything a renderer needs for one frame.
@@ -311,7 +315,8 @@ COLOR: an RGBA."
                  y
                  size
                  color
-                 &key (angle 0f0))
+                 &key (angle 0f0)
+                      (font :mono))
   "Append a text run.
 
 LIST: a draw list.
@@ -320,7 +325,8 @@ X: x of the baseline start, in pixels.
 Y: y of the baseline start, in pixels (down).
 SIZE: em size in pixels.
 COLOR: an RGBA.
-ANGLE: counter-clockwise rotation in radians."
+ANGLE: counter-clockwise rotation in radians.
+FONT: :mono, :ui or :ui-strong."
   (let* ((runs (draw-list-text-runs list))
          (commands (draw-list-commands list))
          (last (and (plusp (length commands)) (aref commands (1- (length commands))))))
@@ -329,7 +335,8 @@ ANGLE: counter-clockwise rotation in radians."
                                        y
                                        size
                                        angle
-                                       color) runs)
+                                       color
+                                       font) runs)
     (if (and last (eq (draw-command-kind last) :text)
              (= (+ (draw-command-start last) (draw-command-count last)) (1- (length runs))))
         (incf (draw-command-count last))

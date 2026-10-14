@@ -338,15 +338,15 @@
                                       (scene:rgba-g rgba)
                                       (scene:rgba-b rgba)
                                       (scene:rgba-a rgba))))
-        ;; The axis line is at x = 0.
-        (is (equal (color-list (scene:theme-axis theme))
+        ;; The vertical axis line is at x = 0: the y axis.
+        (is (equal (color-list (scene:theme-axis-y theme))
                    (color-of (find 500f0 vertical :key #'first))))
         ;; A major line is at x = -500.
         (is (equal (color-list (scene:theme-grid-major theme))
                    (color-of (find 0f0 vertical :key #'first))))
         (is (equal (color-list (scene:theme-grid-minor theme))
                    (color-of (find 100f0 vertical :key #'first))))
-        (is (equal (color-list (scene:theme-axis theme)) (color-of (find 300f0 horizontal :key #'second))))))
+        (is (equal (color-list (scene:theme-axis-x theme)) (color-of (find 300f0 horizontal :key #'second))))))
     (dom:set-grid-visible drawing nil)
     (is (null (draw-lines (build drawing (scene-viewport)))))))
 
