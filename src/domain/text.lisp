@@ -95,7 +95,8 @@ HEIGHT: text height (em size), above the length tolerance."
                 height)))
 
 (defun update-text (text
-                    &key (layer-id (entity-layer-id text))
+                    &key (id (entity-id text))
+                         (layer-id (entity-layer-id text))
                          (x (text-x text))
                          (y (text-y text))
                          (string (text-string text))
@@ -103,12 +104,13 @@ HEIGHT: text height (em size), above the length tolerance."
   "Return a validated copy of TEXT with the given fields replaced.
 
 TEXT: the text entity to copy.
+ID: replacement id.
 LAYER-ID: replacement layer id.
 X: replacement insertion x.
 Y: replacement insertion y.
 STRING: replacement text.
 HEIGHT: replacement height."
-  (make-text :id (entity-id text)
+  (make-text :id id
              :layer-id layer-id
              :x x
              :y y
@@ -174,3 +176,10 @@ HEIGHT: replacement height."
 (defmethod entity-with-layer ((text text-entity)
                               layer-id)
   (update-text text :layer-id layer-id))
+
+(defmethod entity-with-identity ((text text-entity)
+                                 id
+                                 layer-id)
+  (update-text text
+                 :id id
+                 :layer-id layer-id))

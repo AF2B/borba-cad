@@ -92,16 +92,18 @@ CLOSED: true for a closed polyline."
                     (and closed t))))
 
 (defun update-polyline (polyline
-                        &key (layer-id (entity-layer-id polyline))
+                        &key (id (entity-id polyline))
+                             (layer-id (entity-layer-id polyline))
                              (coordinates (polyline-coordinates polyline))
                              (closed (polyline-closed polyline)))
   "Return a validated copy of POLYLINE with the given fields replaced.
 
 POLYLINE: the polyline to copy.
+ID: replacement id.
 LAYER-ID: replacement layer id.
 COORDINATES: replacement coordinates (copied).
 CLOSED: replacement closed flag."
-  (make-polyline :id (entity-id polyline)
+  (make-polyline :id id
                  :layer-id layer-id
                  :coordinates coordinates
                  :closed closed))
@@ -179,3 +181,10 @@ CLOSED: replacement closed flag."
 (defmethod entity-with-layer ((polyline polyline-entity)
                               layer-id)
   (update-polyline polyline :layer-id layer-id))
+
+(defmethod entity-with-identity ((polyline polyline-entity)
+                                 id
+                                 layer-id)
+  (update-polyline polyline
+                 :id id
+                 :layer-id layer-id))

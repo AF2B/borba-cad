@@ -55,7 +55,8 @@
                              (:file "drawing")
                              (:file "changes")
                              (:file "picking")
-                             (:file "commands")))
+                             (:file "commands")
+                             (:file "transfer")))
                (:module "viewport"
                 :serial t
                 :components ((:file "package")
@@ -108,6 +109,7 @@
                              (:file "operations")
                              (:file "file-browser")
                              (:file "tools")
+                             (:file "entity-clipboard")
                              (:file "panels")
                              (:file "side-panels")
                              (:file "menus")
@@ -213,6 +215,7 @@
                (:file "app-tests")
                (:file "panels-tests")
                (:file "menu-tests")
+               (:file "entity-clipboard-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

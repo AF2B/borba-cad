@@ -121,6 +121,10 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-set-current-layer
    #:operation-assign-selection-layer
    #:operation-edit-property
+   #:operation-copy
+   #:operation-cut
+   #:operation-paste
+   #:clipboard-drawing
    #:operation-set-language
    #:load-drawing-into-app
    #:save-app-drawing

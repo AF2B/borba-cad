@@ -97,7 +97,8 @@ Y2: y of the opposite corner."
                   :height (abs (- y2 y1))))
 
 (defun update-rectangle (rectangle
-                         &key (layer-id (entity-layer-id rectangle))
+                         &key (id (entity-id rectangle))
+                              (layer-id (entity-layer-id rectangle))
                               (min-x (rectangle-min-x rectangle))
                               (min-y (rectangle-min-y rectangle))
                               (width (rectangle-width rectangle))
@@ -105,12 +106,13 @@ Y2: y of the opposite corner."
   "Return a validated copy of RECTANGLE with the given fields replaced.
 
 RECTANGLE: the rectangle to copy.
+ID: replacement id.
 LAYER-ID: replacement layer id.
 MIN-X: replacement left edge.
 MIN-Y: replacement bottom edge.
 WIDTH: replacement width.
 HEIGHT: replacement height."
-  (make-rectangle :id (entity-id rectangle)
+  (make-rectangle :id id
                   :layer-id layer-id
                   :min-x min-x
                   :min-y min-y
@@ -189,3 +191,10 @@ HEIGHT: replacement height."
 (defmethod entity-with-layer ((rectangle rectangle-entity)
                               layer-id)
   (update-rectangle rectangle :layer-id layer-id))
+
+(defmethod entity-with-identity ((rectangle rectangle-entity)
+                                 id
+                                 layer-id)
+  (update-rectangle rectangle
+                 :id id
+                 :layer-id layer-id))

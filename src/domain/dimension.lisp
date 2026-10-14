@@ -129,7 +129,8 @@ PRECISION: decimals displayed, 0 to +MAXIMUM-DIMENSION-PRECISION+."
                        layout))))
 
 (defun update-dimension (dimension
-                         &key (layer-id (entity-layer-id dimension))
+                         &key (id (entity-id dimension))
+                              (layer-id (entity-layer-id dimension))
                               (x1 (dimension-x1 dimension))
                               (y1 (dimension-y1 dimension))
                               (x2 (dimension-x2 dimension))
@@ -141,6 +142,7 @@ PRECISION: decimals displayed, 0 to +MAXIMUM-DIMENSION-PRECISION+."
   "Return a validated copy of DIMENSION with the given fields replaced.
 
 DIMENSION: the dimension to copy.
+ID: replacement id.
 LAYER-ID: replacement layer id.
 X1: replacement x of the first point.
 Y1: replacement y of the first point.
@@ -150,7 +152,7 @@ OFFSET: replacement offset.
 TEXT-HEIGHT: replacement text height.
 UNIT: replacement display unit.
 PRECISION: replacement decimals."
-  (make-dimension :id (entity-id dimension)
+  (make-dimension :id id
                   :layer-id layer-id
                   :x1 x1
                   :y1 y1
@@ -268,3 +270,10 @@ DIMENSION: a dimension entity."
 (defmethod entity-with-layer ((dimension dimension-entity)
                               layer-id)
   (update-dimension dimension :layer-id layer-id))
+
+(defmethod entity-with-identity ((dimension dimension-entity)
+                                 id
+                                 layer-id)
+  (update-dimension dimension
+                 :id id
+                 :layer-id layer-id))

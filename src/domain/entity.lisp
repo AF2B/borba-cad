@@ -110,6 +110,14 @@ ENTITY: an entity.
 KEY: a PROPERTY-KEY returned by ENTITY-PROPERTIES.
 VALUE: new value (double-float, string, boolean or unit keyword according to the kind)."))
 
+(defgeneric entity-with-identity (entity id layer-id)
+  (:documentation "Return a copy of ENTITY with another id on another layer, for an entity that is
+pasted as a new one.
+
+ENTITY: an entity.
+ID: the new id, unused in the drawing it goes into.
+LAYER-ID: id of the layer it goes onto."))
+
 (defgeneric entity-with-layer (entity layer-id)
   (:documentation "Return a copy of ENTITY on another layer, with the same id.
 

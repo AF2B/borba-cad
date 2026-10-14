@@ -54,18 +54,20 @@ RADIUS: radius."
                   radius)))
 
 (defun update-circle (circle
-                      &key (layer-id (entity-layer-id circle))
+                      &key (id (entity-id circle))
+                           (layer-id (entity-layer-id circle))
                            (center-x (circle-center-x circle))
                            (center-y (circle-center-y circle))
                            (radius (circle-radius circle)))
   "Return a validated copy of CIRCLE with the given fields replaced.
 
 CIRCLE: the circle to copy.
+ID: replacement id.
 LAYER-ID: replacement layer id.
 CENTER-X: replacement center x.
 CENTER-Y: replacement center y.
 RADIUS: replacement radius."
-  (make-circle :id (entity-id circle)
+  (make-circle :id id
                :layer-id layer-id
                :center-x center-x
                :center-y center-y
@@ -132,3 +134,10 @@ RADIUS: replacement radius."
 (defmethod entity-with-layer ((circle circle-entity)
                               layer-id)
   (update-circle circle :layer-id layer-id))
+
+(defmethod entity-with-identity ((circle circle-entity)
+                                 id
+                                 layer-id)
+  (update-circle circle
+                 :id id
+                 :layer-id layer-id))

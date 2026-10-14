@@ -181,6 +181,14 @@
   ("~d selected." "Selecionadas: ~d.")
   ("Moved ~d to layer ~s.~a" "Movidas ~d para a camada ~s.~a")
   ("Property changed." "Propriedade alterada.")
+  ("Copied ~d ~:*~[entities~;entity~:;entities~]."
+   "~d ~:*~[entidades copiadas~;entidade copiada~:;entidades copiadas~].")
+  ("Cut ~d ~:*~[entities~;entity~:;entities~]."
+   "~d ~:*~[entidades recortadas~;entidade recortada~:;entidades recortadas~].")
+  ("Pasted ~d ~:*~[entities~;entity~:;entities~]."
+   "~d ~:*~[entidades coladas~;entidade colada~:;entidades coladas~].")
+  ("Nothing to paste: the clipboard has no drawing entities."
+   "Nada para colar: a área de transferência não tem entidades de desenho.")
   ("Lengths are now shown in ~a." "Os comprimentos agora aparecem em ~a.")
   ("expected a whole number" "esperava um número inteiro")
   ("unknown unit; use mm, cm or m" "unidade desconhecida; use mm, cm ou m")

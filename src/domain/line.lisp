@@ -71,7 +71,8 @@ Y2: y of the end point."
               y2))
 
 (defun update-line (line
-                    &key (layer-id (entity-layer-id line))
+                    &key (id (entity-id line))
+                         (layer-id (entity-layer-id line))
                          (x1 (line-x1 line))
                          (y1 (line-y1 line))
                          (x2 (line-x2 line))
@@ -79,12 +80,13 @@ Y2: y of the end point."
   "Return a validated copy of LINE with the given fields replaced.
 
 LINE: the line to copy.
+ID: replacement id.
 LAYER-ID: replacement layer id.
 X1: replacement start x.
 Y1: replacement start y.
 X2: replacement end x.
 Y2: replacement end y."
-  (make-line :id (entity-id line)
+  (make-line :id id
              :layer-id layer-id
              :x1 x1
              :y1 y1
@@ -150,3 +152,10 @@ Y2: replacement end y."
 (defmethod entity-with-layer ((line line-entity)
                               layer-id)
   (update-line line :layer-id layer-id))
+
+(defmethod entity-with-identity ((line line-entity)
+                                 id
+                                 layer-id)
+  (update-line line
+                 :id id
+                 :layer-id layer-id))

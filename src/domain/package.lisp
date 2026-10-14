@@ -36,6 +36,7 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:entity-derived-values
    #:entity-with-property
    #:entity-with-layer
+   #:entity-with-identity
    #:entity-kinds
    #:property
    #:make-property
@@ -174,6 +175,10 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    ;; Commands (change-set builders)
    #:create-entity-changes
    #:create-entities-changes
+   #:drawing-entities
+   #:extract-entities
+   #:entities-bounds
+   #:pasted-entities
    #:delete-entities-changes
    #:translate-entities-changes
    #:edit-property-changes

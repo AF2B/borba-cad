@@ -6,6 +6,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Copy, cut and paste of entities.** `Ctrl+C`, `Ctrl+X` and `Ctrl+V` copy, cut and paste the
+  selection; `Ctrl+Shift+V` pastes in place. A paste is centered on the pointer (or on the view when
+  the pointer is not over the canvas), becomes the selection so it can be moved at once, and is one
+  step of undo. What is copied is the text of a small drawing in the `.bcad` format, on the system
+  clipboard, so it pastes into another window of the program; it goes onto the layer of the same name
+  when there is one that is visible and unlocked, and onto the current layer otherwise. Anything else
+  on the clipboard is refused: the pasted text is read by the strict reader, which evaluates nothing.
 - **Languages.** The interface speaks English (US), always the default, and Brazilian Portuguese. The
   globe button in the title bar opens a menu of languages; the choice is kept between runs, and
   `--language pt-BR` or `BORBA_CAD_LANGUAGE=pt-BR` override it. The English text of the program is the

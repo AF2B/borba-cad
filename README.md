@@ -74,6 +74,8 @@ that switch the grid, grid snap, object snap, display unit and zoom to fit. Keys
 (Enter finishes, clicking the first vertex closes), `T` text, `D` dimension, `Esc` back to select.
 Click picks an entity (Shift+click toggles), dragging on empty space selects what lies fully inside
 the window, dragging a selection moves it. `Delete` removes the selection, `Ctrl+A` selects all.
+`Ctrl+C`, `Ctrl+X` and `Ctrl+V` copy, cut and paste the selection (centered on the pointer;
+`Ctrl+Shift+V` pastes where it was copied from), also into another window of the program.
 Pan with the middle button or Space + left drag, zoom with the wheel (the point under the cursor
 stays put), `Home` fits the drawing. `G` toggles the grid, `S` grid snap, `O` object snap
 (endpoints and centers), `U` cycles the display unit. `Ctrl+Z` undoes, `Ctrl+Y` or
