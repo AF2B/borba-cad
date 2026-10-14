@@ -510,13 +510,21 @@ DIALOG: the file dialog."
 DIALOG: the file dialog."
   (focus-field dialog (if (eq (file-dialog-focus dialog) :name) :filter :name)))
 
-(defun edit-focused-field (dialog
-                           key)
-  "Let the field that has the keyboard handle a key. Returns true when it did.
+(defun edit-focused-field (app
+                           dialog
+                           key
+                           modifiers)
+  "Let the field that has the keyboard handle a key, the clipboard keys included. Returns true
+when it did.
 
+APP: the application.
 DIALOG: the file dialog.
-KEY: key keyword."
-  (let ((edited (ui:edit-handle-key (focused-edit dialog) key)))
+KEY: key keyword.
+MODIFIERS: modifier keys held."
+  (let ((edited (edit-with-clipboard app
+                                     (focused-edit dialog)
+                                     key
+                                     modifiers)))
     (when edited
       (store-focused-edit dialog edited)
       (when (eq (file-dialog-focus dialog) :filter)
@@ -563,7 +571,10 @@ MODIFIERS: modifier keys held."
                 (zerop (length (ui:edit-state-text (file-dialog-filter-edit dialog)))))
            (open-parent-directory dialog))
           (t
-           (edit-focused-field dialog key)))
+           (edit-focused-field app
+                               dialog
+                               key
+                               modifiers)))
     (app-request-redraw app)))
 
 (defun handle-dialog-text (app

@@ -194,6 +194,30 @@ RENDERER: the renderer."
             :strong-past-the-end-ink (count-ink frame (+ strong-end 2) 145 (+ strong-end 62) 166 background)
             :measurer-installed (not (eq ui:*text-measurer* (function ui:fixed-advance-width)))))))
 
+(defun observe-clipboard ()
+  "Copy text to the system clipboard and read it back, with an accented text, a text with a line
+break, and an empty one.
+
+The clipboard belongs to the video system, so this runs inside the window session. It is also
+the user's clipboard: the text that was on it is put back afterwards."
+  (let ((original (platform:sdl-clipboard-text))
+        (accented (format nil "Planta T~crrea ~c~c~c 12,5"
+                          (code-char 233)
+                          (code-char 231)
+                          (code-char 227)
+                          (code-char 111)))
+        (lines (format nil "first~%second")))
+    (unwind-protect
+         (list :accepted (platform:set-sdl-clipboard-text accented)
+               :accented (platform:sdl-clipboard-text)
+               :expected-accented accented
+               :lines-accepted (platform:set-sdl-clipboard-text lines)
+               :lines (platform:sdl-clipboard-text)
+               :expected-lines lines
+               :empty-accepted (platform:set-sdl-clipboard-text "")
+               :empty (platform:sdl-clipboard-text))
+      (platform:set-sdl-clipboard-text (or original "")))))
+
 (defun observe-application-frame (window
                                   renderer)
   "Render a whole application frame (canvas and panels) for a generated drawing.
@@ -236,6 +260,7 @@ RENDERER: the renderer."
            :shapes (observe-shapes window renderer)
            :text (observe-text window renderer)
            :interface-text (observe-interface-text window renderer)
+           :clipboard (observe-clipboard)
            :application (observe-application-frame window renderer)))))
 
 (defun observation (&rest path)
@@ -289,6 +314,13 @@ PATH: keywords leading to the value, for example :shapes :background."
     (is (= 0 (observation :interface-text :strong-past-the-end-ink)))
     (is (> (observation :interface-text :strong-width) (observation :interface-text :regular-width))
         "the strong face is wider")))
+
+(test the-system-clipboard-round-trips-text-including-accents-and-lines-and-reads-empty-as-nothing
+  (when (display-or-skip)
+    (is (observation :clipboard :accepted))
+    (is (string= (observation :clipboard :expected-accented) (observation :clipboard :accented)))
+    (is (string= (observation :clipboard :expected-lines) (observation :clipboard :lines)))
+    (is (null (observation :clipboard :empty)) "an empty clipboard is no text")))
 
 (test the-measurer-is-removed-when-the-window-closes
   (when (display-or-skip)

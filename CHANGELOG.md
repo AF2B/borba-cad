@@ -21,6 +21,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
   itself, and the window announces its application id so desktops show the icon.
 - Drag a drawing onto the window to open it (after the usual question about unsaved changes).
 - Page Up and Page Down keys; options `--state-dir` and `--drawings-dir`.
+- Text fields take `Ctrl+A` (select all), `Ctrl+C`, `Ctrl+X` and `Ctrl+V` through the system clipboard,
+  in the file dialog, the prompts and the inspector; pasted lines become one line.
+- Typed lengths accept thousands separators in both conventions: `1.250,5` and `1,250.5` are 1250.5,
+  `1.250.000` is a million and a quarter; `1,5` and `1.5` are still 1.5.
 
 ### Changed
 
@@ -46,6 +50,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 - The Save As and Open dialogs start in the documents folder of the desktop (`Documentos` on a
   Portuguese desktop) instead of a path relative to wherever the program was started.
 - Messages report sizes in KB and MB.
+- A length that could not be read was reported without the text that was typed (the message said
+  `Invalid input ""` for `abc`).
 - The outline of a rounded rectangle with a small corner radius was stitched with the wrong
   neighbours and drew a filled, broken shape.
 

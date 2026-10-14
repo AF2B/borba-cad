@@ -97,6 +97,7 @@
                 :components ((:file "package")
                              (:file "events")
                              (:file "state")
+                             (:file "clipboard")
                              (:file "prompts")
                              (:file "operations")
                              (:file "file-browser")
@@ -125,6 +126,7 @@
                (:file "font")
                (:file "renderer")
                (:file "events")
+               (:file "clipboard")
                (:file "main")))
 
 (asdf:defsystem "borba-cad/test-support"
@@ -205,6 +207,7 @@
                (:file "panels-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")
+               (:file "clipboard-tests")
                (:file "file-tests")
                (:file "bench-tests"))
   :perform (test-op (operation component)

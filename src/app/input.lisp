@@ -266,31 +266,42 @@ APP: the application."
     (app-request-redraw app)))
 
 (defun handle-prompt-key (app
-                          key)
+                          key
+                          modifiers)
   "Handle a key press while a modal prompt is open.
 
 APP: the application.
-KEY: key keyword."
+KEY: key keyword.
+MODIFIERS: modifier keys held."
   (let ((prompt (app-prompt app)))
     (case key
       (:enter (accept-prompt app))
       (:escape (cancel-prompt app))
       (t (when (eq (prompt-kind prompt) :text)
-           (let ((edited (ui:edit-handle-key (prompt-edit prompt) key)))
+           (let ((edited (edit-with-clipboard app
+                                              (prompt-edit prompt)
+                                              key
+                                              modifiers)))
              (when edited
                (setf (prompt-edit prompt) edited))))))
     (app-request-redraw app)))
 
 (defun handle-field-key (app
-                         key)
+                         key
+                         modifiers)
   "Handle a key press while a text field has the focus.
 
 APP: the application.
-KEY: key keyword."
+KEY: key keyword.
+MODIFIERS: modifier keys held."
   (case key
     (:enter (commit-field-edit app))
     (:escape (stop-field-edit app))
-    (t (let ((edited (and (app-edit app) (ui:edit-handle-key (app-edit app) key))))
+    (t (let ((edited (and (app-edit app)
+                          (edit-with-clipboard app
+                                               (app-edit app)
+                                               key
+                                               modifiers))))
          (when edited
            (setf (app-edit app) edited)))))
   (app-request-redraw app))
@@ -348,11 +359,15 @@ EVENT: a key event."
     (cond ((eq (key-event-action event) :up)
            (when (eq key :space)
              (setf (app-space-down app) nil)))
-          ((app-prompt app) (handle-prompt-key app key))
+          ((app-prompt app) (handle-prompt-key app
+                                               key
+                                               modifiers))
           ((app-dialog app) (handle-dialog-key app
                                                key
                                                modifiers))
-          ((app-focus app) (handle-field-key app key))
+          ((app-focus app) (handle-field-key app
+                                             key
+                                             modifiers))
           ((eq key :space) (setf (app-space-down app) t))
           ((modifier-p modifiers :control) (handle-control-shortcut app
                                                                     key

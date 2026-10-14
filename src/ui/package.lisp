@@ -94,6 +94,7 @@ editing, and the performance overlay. No input device and no renderer appear her
    #:edit-state-text
    #:edit-state-caret
    #:edit-state-maximum-length
+   #:edit-state-replace-on-type
    #:edit-insert
    #:edit-backspace
    #:edit-delete

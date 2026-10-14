@@ -542,6 +542,7 @@ SCREENSHOT: file name to save the last demonstration frame to, or NIL."
                                                              :telemetry telemetry
                                                              :width (float width 1d0)
                                                              :height (float height 1d0))))
+                                      (install-system-clipboard app)
                                       (run-session (make-session :app app
                                                                  :window window
                                                                  :renderer renderer

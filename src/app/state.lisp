@@ -77,6 +77,9 @@ FOCUS: id of the field that has the keyboard focus, or NIL.
 EDIT: edit state of that field.
 PROMPT: the open modal prompt, or NIL.
 DIALOG: the open file dialog, or NIL.
+CLIPBOARD-READER: function of no arguments that returns the text on the system clipboard, or NIL.
+CLIPBOARD-WRITER: function of one string that puts it on the system clipboard, or NIL.
+CLIPBOARD-FALLBACK: the clipboard text kept here while there is no system clipboard.
 MESSAGE: (text . severity) shown in the status bar, or NIL.
 OVERLAY-VISIBLE: whether the performance overlay is shown.
 LAYER-SCROLL: first visible layer row.
@@ -107,6 +110,9 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   edit
   prompt
   dialog
+  clipboard-reader
+  clipboard-writer
+  clipboard-fallback
   message
   overlay-visible
   (layer-scroll 0 :type fixnum)

@@ -24,6 +24,9 @@ glyph atlas, the OpenGL renderer of the draw list, event translation and the ent
    #:platform-options-help
    #:find-font-path
    #:find-font-paths
+   #:sdl-clipboard-text
+   #:set-sdl-clipboard-text
+   #:install-system-clipboard
    #:translate-sdl-event
    #:keycode->key
    #:write-rgb-png
