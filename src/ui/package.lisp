@@ -10,13 +10,31 @@ editing, and the performance overlay. No input device and no renderer appear her
    ;; Metrics
    #:+font-pixels+
    #:+small-font-pixels+
+   #:+heading-font-pixels+
    #:+row-height+
    #:+padding+
+   #:+gap+
+   #:+radius+
+   #:+small-radius+
+   #:+card-radius+
    #:+toolbar-height+
+   #:+tool-palette-width+
    #:+status-height+
    #:+side-panel-width+
+   #:+panel-margin+
+   #:+icon-size+
+   #:+tool-icon-size+
+   #:+small-icon-size+
+   #:+icon-button-size+
+   #:+tooltip-height+
+   #:+chip-height+
+   #:+chip-padding+
+   #:*text-measurer*
+   #:fixed-advance-width
    #:text-width-pixels
    #:fit-text
+   #:wrap-text
+   #:visible-text-window
    ;; Layout
    #:rect
    #:make-rect
@@ -28,11 +46,16 @@ editing, and the performance overlay. No input device and no renderer appear her
    #:layout
    #:compute-layout
    #:layout-toolbar
+   #:layout-tool-palette
    #:layout-canvas
    #:layout-side-panel
    #:layout-layers-panel
    #:layout-inspector-panel
    #:layout-status-bar
+   ;; Icons
+   #:icon-names
+   #:icon-shapes
+   #:draw-icon
    ;; Widgets
    #:widget
    #:make-widget
@@ -52,6 +75,15 @@ editing, and the performance overlay. No input device and no renderer appear her
    #:widget-align
    #:widget-color
    #:widget-hint
+   #:widget-shortcut
+   #:widget-icon
+   #:widget-variant
+   #:widget-font
+   #:widget-size
+   #:widget-trailing
+   #:widget-contains-p
+   #:draw-logo
+   #:tooltip-width
    #:draw-widgets
    #:widget-at
    #:interactive-widget-p

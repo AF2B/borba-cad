@@ -84,8 +84,12 @@
                 :serial t
                 :components ((:file "package")
                              (:file "metrics")
+                             (:file "tokens")
+                             (:file "icons")
+                             (:file "logo")
                              (:file "text-edit")
-                             (:file "widgets")))
+                             (:file "widgets")
+                             (:file "draw-widgets")))
                (:module "app"
                 :serial t
                 :components ((:file "package")
@@ -95,6 +99,8 @@
                              (:file "operations")
                              (:file "tools")
                              (:file "panels")
+                             (:file "side-panels")
+                             (:file "dialogs")
                              (:file "input")
                              (:file "frame")
                              (:file "scenario"))))
@@ -190,6 +196,7 @@
                (:file "shapes-tests")
                (:file "ui-tests")
                (:file "app-tests")
+               (:file "panels-tests")
                (:file "file-tests")
                (:file "bench-tests"))
   :perform (test-op (operation component)
