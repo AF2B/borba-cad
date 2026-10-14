@@ -10,6 +10,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
   date, places (home, documents, desktop, downloads, sample drawings), recent drawings, a clickable
   folder trail with a path field, live search, an All files switch, new folder, overwrite
   confirmation, keyboard navigation, and errors shown in the dialog with the dialog kept open.
+- **Double-click distribution.** `make dist` builds a Linux folder and archive with the program, the
+  libraries it needs (SDL2, FreeType and what they need), the fonts, the examples, the icon, a
+  desktop launcher and install scripts; `make dist-check` verifies it in a clean environment. A
+  Windows script, an MSYS2 target and a CI workflow are written but have never been run on Windows;
+  the system-specific code is guarded and has portable fallbacks that the tests compare with the
+  POSIX ones.
+- The program takes a drawing as an argument (`borba-cad plan.bcad`), the standalone executable keeps
+  its log and recent drawings in the user's state directory and finds its fonts and examples beside
+  itself, and the window announces its application id so desktops show the icon.
 - Drag a drawing onto the window to open it (after the usual question about unsaved changes).
 - Page Up and Page Down keys; options `--state-dir` and `--drawings-dir`.
 

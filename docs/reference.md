@@ -2114,6 +2114,19 @@ Format a length for display.
 - `PRECISION`: decimals to show; defaults to the unit's default precision.
 - `WITH-UNIT`: when true, append the unit abbreviation.
 
+### `installed-config` (function)
+
+```lisp
+(installed-config application-directory &optional (reader #'environment-variable))
+```
+
+Return the configuration of the program running from an installed folder: the folder holds the
+program, its examples and its fonts, and the log and what the program remembers go to the user's
+own state directory, because the installed folder may not be writable.
+
+- `APPLICATION-DIRECTORY`: the folder that holds the executable.
+- `READER`: function from variable name to string or NIL; defaults to the process environment.
+
 ### `invalid-entity` (condition)
 
 An entity violates one of its invariants. KIND is the entity kind keyword.
@@ -2332,6 +2345,19 @@ Return the area abbreviation of UNIT, for example "m2" with a superscript two.
 Return the unit keyword whose abbreviation equals TEXT (case-insensitive), or NIL.
 
 - `TEXT`: an abbreviation such as "cm".
+
+### `user-state-directory` (function)
+
+```lisp
+(user-state-directory &optional (reader #'environment-variable))
+```
+
+Return the folder where an installed program keeps its log and what it remembers between
+runs: %LOCALAPPDATA%\BorbaCAD on Windows, $XDG_STATE_HOME/borba-cad (by default
+~/.local/state/borba-cad) elsewhere, and a folder in the home directory when the system does not
+say where.
+
+- `READER`: function from variable name to string or NIL; defaults to the process environment.
 
 ## BORBA-CAD/BENCH
 
@@ -6073,11 +6099,14 @@ Return the key keyword for an SDL keycode, or NIL for keys the application ignor
 ### `main` (function)
 
 ```lisp
-(main)
+(main &key installed)
 ```
 
 Program entry point: parse the command line and environment, then run the application.
 Exit status: 0 on a normal exit, 2 for a configuration problem, 1 for an unexpected error.
+
+- `INSTALLED`: true when running as the saved executable, whose folder holds its examples and fonts
+and whose log goes to the user's state directory.
 
 ### `parse-platform-options` (function)
 
@@ -6089,6 +6118,46 @@ Interpret the arguments left over by the core option parser. Signals CONFIGURATI
 anything unknown.
 
 - `ARGUMENTS`: list of argument strings.
+
+### `platform-options-demo` (function)
+
+```lisp
+(platform-options-demo instance)
+```
+
+(undocumented)
+
+### `platform-options-exit-after-demo` (function)
+
+```lisp
+(platform-options-exit-after-demo instance)
+```
+
+(undocumented)
+
+### `platform-options-file` (function)
+
+```lisp
+(platform-options-file instance)
+```
+
+(undocumented)
+
+### `platform-options-help` (function)
+
+```lisp
+(platform-options-help instance)
+```
+
+(undocumented)
+
+### `platform-options-screenshot` (function)
+
+```lisp
+(platform-options-screenshot instance)
+```
+
+(undocumented)
 
 ### `run-application` (function)
 
@@ -6425,7 +6494,9 @@ Stop recording GC events and discard any pending ones.
 (rename-over from to)
 ```
 
-Atomically rename FROM to TO, replacing TO if it exists (same file system).
+Rename FROM to TO, replacing TO if it exists (same file system). The rename is atomic where the
+system offers one (POSIX); on Windows the old file is removed first, so a crash between the two
+steps can leave only the temporary file.
 
 - `FROM`: pathname of an existing file.
 - `TO`: destination pathname.

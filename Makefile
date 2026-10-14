@@ -14,7 +14,11 @@ QL_DIST_VERSION    := 2026-01-01
 DYNAMIC_SPACE_SIZE ?= 4GB
 SUITE              ?= ALL
 LOG_DIR            ?= $(ROOT)/var/log
-EXECUTABLE         := $(ROOT)/build/borba-cad
+# In an MSYS2 MINGW64 shell the program is a Windows one, and its file name ends in .exe.
+EXE_SUFFIX         := $(if $(findstring MINGW,$(shell uname -s)),.exe,)
+EXECUTABLE         := $(ROOT)/build/borba-cad$(EXE_SUFFIX)
+VERSION            := $(shell awk -F'"' '/:version/ {print $$2; exit}' $(ROOT)/borba-cad.asd)
+DIST_NAME          := borba-cad-$(VERSION)-linux-x86_64
 SCREENSHOT         ?= $(ROOT)/var/screenshots/demo.png
 REPL_SYSTEMS       ?= borba-cad borba-cad/platform borba-cad/tests borba-cad/bench
 # Options of the program itself: `make run FILE=drawings/a.bcad LOG_LEVEL=debug ARGS="--log-stderr"`.
@@ -38,7 +42,7 @@ endef
 .NOTPARALLEL:
 
 .PHONY: help check-env deps compile build lint test test-gui check all \
-        run demo debug repl exe run-exe \
+        run demo debug repl exe run-exe dist dist-check dist-windows \
         bench bench-quick bench-gui bench-baseline \
         logs-tail logs-summary logs-clean example docs version \
         clean distclean \
@@ -102,11 +106,20 @@ repl: ensure-quicklisp ## Interactive REPL with the project loaded (REPL_SYSTEMS
 		--eval '(borba-cad/scripts:start-repl :systems (quote ($(foreach s,$(REPL_SYSTEMS),"$(s)"))))'
 
 exe: ensure-quicklisp ## Build the standalone executable build/borba-cad
-	$(LISP_BATCH) --load $(ROOT)/scripts/tools.lisp --eval '(borba-cad/scripts:build-executable)'
+	$(LISP_BATCH) --load $(ROOT)/scripts/tools.lisp --eval '(borba-cad/scripts:build-executable :output "build/borba-cad$(EXE_SUFFIX)")'
 	@ls -lh "$(EXECUTABLE)"
 
 run-exe: exe ensure-display ## Build, then run the standalone executable (FILE=, LOG_LEVEL=, ARGS=)
 	"$(EXECUTABLE)" $(RUN_ARGS)
+
+dist: exe ## Linux distribution in dist/: a folder to double-click and its .tar.gz
+	$(ROOT)/scripts/dist-linux.sh "$(EXECUTABLE)" "$(ROOT)/dist" "$(VERSION)"
+
+dist-check: dist ensure-display ## Start the distribution in a clean environment and check it uses its own libraries and fonts
+	$(ROOT)/scripts/verify-dist.sh "$(ROOT)/dist/$(DIST_NAME)"
+
+dist-windows: exe ## Windows distribution in dist/ (run in an MSYS2 MINGW64 shell; never run on Windows yet)
+	$(ROOT)/scripts/dist-windows.sh "$(EXECUTABLE)" "$(ROOT)/dist" "$(VERSION)"
 
 logs-tail: ## Follow the current log file (Ctrl-C to stop)
 	@test -f "$(LOG_DIR)/borba-cad.log" || { echo "No log yet at $(LOG_DIR)/borba-cad.log; run the program first."; exit 1; }
@@ -144,8 +157,8 @@ docs: ensure-quicklisp ## Regenerate docs/reference.md from the docstrings
 
 ##@ Cleaning
 
-clean: ## Remove compiled files and the executable (build/)
-	rm -rf "$(ROOT)/build"
+clean: ## Remove compiled files, the executable (build/) and the distribution (dist/)
+	rm -rf "$(ROOT)/build" "$(ROOT)/dist"
 
 distclean: clean ## Also remove logs, screenshots, scratch drawings and non-baseline benchmark reports
 	rm -rf "$(ROOT)/var" "$(ROOT)/spikes/out"

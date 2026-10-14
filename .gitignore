@@ -1,5 +1,6 @@
 # Generated: compiled output, executables, logs, benchmark output, spike output.
 /build/
+/dist/
 /var/
 /spikes/out/
 /bench/reports/*

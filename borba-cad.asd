@@ -204,6 +204,7 @@
                (:file "app-tests")
                (:file "panels-tests")
                (:file "file-dialog-tests")
+               (:file "packaging-tests")
                (:file "file-tests")
                (:file "bench-tests"))
   :perform (test-op (operation component)

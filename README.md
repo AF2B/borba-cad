@@ -44,10 +44,22 @@ with `LOG_LEVEL=debug`, pass any program option with `ARGS="..."`.
 | `check` | `compile`, `lint`, `test` and `test-gui` |
 | `run`, `demo`, `debug`, `repl` | Run the program, a scripted demo with a screenshot, run under the Lisp debugger, an interactive session |
 | `exe` / `run-exe` | Standalone executable `build/borba-cad` |
+| `dist` / `dist-check` | Linux folder to double-click and its `.tar.gz` in `dist/` / start it in a clean environment and check it uses its own libraries and fonts |
+| `dist-windows` | Windows folder and `.zip` (in an MSYS2 shell; written but never run on Windows) |
 | `bench`, `bench-gui`, `bench-quick` | Benchmarks, written to `bench/reports/` |
 | `logs-tail`, `logs-summary` | Follow the log, aggregate it per event (no GUI needed) |
 | `example`, `docs` | Regenerate `examples/floor-plan.bcad`, regenerate `docs/reference.md` |
 | `clean`, `distclean` | Remove build output / also logs, screenshots and non-baseline reports |
+
+## Running it by double-click
+
+`make dist` makes `dist/borba-cad-VERSION-linux-x86_64/` and a `.tar.gz`. Unpack it anywhere and
+double-click `Borba CAD.desktop` (or `borba-cad`): the folder carries the libraries and the fonts
+it needs, so nothing has to be installed. `./install.sh` adds it to the applications menu and makes
+a double click on a `.bcad` file open it. The Windows folder (`make dist-windows`, in an MSYS2
+shell, or the workflow in `.github/workflows/dist.yml`) has the same idea with `borba-cad.exe`, but
+has never been built on Windows: see docs/development.md, "Windows". The program also takes the
+drawing as an argument: `borba-cad plan.bcad`.
 
 ## Using the program
 

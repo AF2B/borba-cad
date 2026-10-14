@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The Borba CAD mark: a "B" drawn with the strokes of a technical pen on a teal tile. The same
+     geometry as ui/logo.lisp, on the same 24 by 24 grid. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 24 24">
+  <rect width="24" height="24" rx="6" fill="#21d4a1"/>
+  <path d="M8.5 5.5V18.5M8.5 5.5H12.5A3.25 3.25 0 0 1 12.5 12H8.5M8.5 12H13.2A3.25 3.25 0 0 1 13.2 18.5H8.5"
+        fill="none" stroke="#062b22" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

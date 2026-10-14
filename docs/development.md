@@ -237,8 +237,57 @@ command-line argument goes to the program. Two details matter: the FreeType libr
 `cl-freetype2` creates while loading is a dangling pointer in a saved image, so the build clears it
 and the program opens its own at startup; and the entry point disables the debugger unless
 `BORBA_CAD_DEBUG=1`, so that an unexpected condition ends the process instead of waiting for a
-terminal. The executable still needs the native libraries and a font on the machine where it runs;
-it finds `var/log` through `BORBA_CAD_ROOT`, or the project directory it was built in.
+terminal. The executable still needs the native libraries and a font on the machine where it runs
+(the distribution below carries them). Run as the saved executable the program is *installed*: its
+folder is the project root (so `examples/` and `fonts/` beside it are found), and its log and its
+list of recent drawings go to the user's state directory (`$XDG_STATE_HOME/borba-cad`, by default
+`~/.local/state/borba-cad`; `%LOCALAPPDATA%\BorbaCAD` on Windows) because the folder may not be
+writable. Run from the source, it keeps using `var/` in the project.
+
+### Distribution for Linux: `make dist`
+
+`make dist` builds the executable and then `dist/borba-cad-VERSION-linux-x86_64/` and its `.tar.gz`
+(22 MB). The folder runs from a double click:
+
+| File | What it is |
+|---|---|
+| `Borba CAD.desktop`, `borba-cad` | What to double-click: the first is a desktop launcher that works from wherever the folder is, the second the shell script it starts. The launcher makes `lib/` visible and, when the program cannot start, shows why in a dialog (`kdialog`, `zenity`, `notify-send` or `xmessage`, whichever exists) and saves it to `last-error.txt` |
+| `borba-cad.bin` | The program: the executable of `make exe` |
+| `lib/` | What the program loads and a desktop may lack: SDL2 (the SDL3 compatibility layer) and SDL3, FreeType and its libraries, Zstandard. Found with `ldd`, recursively; the C library and everything that belongs to the graphics stack (OpenGL, X11, Wayland) are never copied |
+| `fonts/`, `examples/`, `LICENSES/`, `borba-cad.svg` | Noto Sans (regular, medium) and Noto Sans Mono, the sample drawing, the licenses of the bundled parts, the icon |
+| `install.sh`, `uninstall.sh` | Per-user install: the applications menu with the icon, and a double click on a `.bcad` file opens it. Nothing outside the home folder is touched |
+| `BUILD-INFO.txt` | Version, commit, build machine, glibc, SBCL, bundled libraries |
+
+`make dist-check` starts the folder in a clean environment (`env -i`, so nothing of the developer's
+shell leaks in) and checks that the scripted demonstration draws and saves a valid PNG; that every
+library the folder needs, except the C library and the graphics stack, resolves inside the folder
+(`ldd` with only `lib/` on the library path); that a running program has loaded SDL from the folder;
+and that it opened the fonts of the folder (the program logs them in `app.start`). One thing it
+reports and does not refuse: when the desktop's own libraries (client-side window decorations) load
+the system FreeType first, that copy serves, and the bundled one is for systems that have none.
+
+Limits: the folder is built on the machine that runs `make dist`, so it needs a C library at least
+as new as that machine's (the build machine and its glibc are in `BUILD-INFO.txt`); to run on older
+distributions, build on the oldest one you want to support. There is no AppImage. The program has no
+license file until the author chooses one, so the folder carries only the licenses of its parts.
+
+### Windows
+
+**Nothing here has been built or run on Windows.** What exists, and how far it was tried:
+
+| Piece | State |
+|---|---|
+| `scripts/dist-windows.sh`, `make dist-windows` | Written for an MSYS2 MINGW64 shell. Its one delicate step, turning the console program into a graphical one by writing 2 over the Subsystem field of the PE header, is tested on a fabricated header (`tests/packaging-tests.lisp`). The DLL collection and the zip are unproven |
+| `.github/workflows/dist.yml` | A Linux job (Arch container, the whole `make check`, then `dist` and `dist-check` under `xvfb`) and a Windows job (MSYS2 with SBCL, SDL2, FreeType and gcc). Neither has run; the first run will show what is missing |
+| `src/sbcl-support/` | The POSIX calls (`sb-posix`: stat, access, chmod, folder listing, rename, fsync) are written for Linux and guarded with `#-win32`; on Windows `portable-filesystem.lisp` (standard Common Lisp and UIOP) answers instead. The tests hold the portable versions to the same answers as the POSIX ones on Linux, but the Windows branches were never compiled. The monotonic clock falls back to the coarser `get-internal-real-time`, the memory figure that reads `/proc` is reported as unavailable, and the atomic rename becomes delete-then-rename |
+| Fonts | The bundled Noto fonts, else Segoe UI and Consolas from `C:\Windows\Fonts` |
+| Not looked at | Whether `cl-sdl2` and `cl-freetype2` build under MSYS2's SBCL (`cl-freetype2` needs a C compiler and the FreeType headers when first loaded), whether `sdl2:with-init` and OpenGL 3.3 context creation behave the same, DPI scaling, the file dialog on drive letters and backslashes (`typed-path` handles `C:\...`, the tests only exercise Unix paths), and the console-less program's standard streams |
+
+To try it on a Windows machine: install MSYS2, open its MINGW64 shell, `pacman -S make git zip curl
+mingw-w64-x86_64-gcc mingw-w64-x86_64-sbcl mingw-w64-x86_64-SDL2 mingw-w64-x86_64-freetype`, install
+Quicklisp, then `make dist-windows` in the repository. `dist/borba-cad-VERSION-windows-x86_64/`
+holds `borba-cad.exe` (no console window) and `borba-cad-console.exe` (with one, to see what the
+program prints when the first does not start).
 
 ## 9. Releasing
 

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Borba CAD
+Comment=2D CAD written in Common Lisp
+Exec=sh -c 'exec "$(dirname "$1")/borba-cad"' sh %k
+Terminal=false
+Categories=Graphics;Engineering;

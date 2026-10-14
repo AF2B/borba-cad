@@ -1,0 +1,38 @@
+#!/bin/sh
+# Borba CAD launcher. Double-click it, or run it from a terminal; every argument goes to the program.
+# It makes the bundled libraries visible and says what went wrong when the program cannot start.
+# The program finds its fonts and examples beside itself, and keeps its log and the list of recent
+# drawings in ~/.local/state/borba-cad (or $XDG_STATE_HOME/borba-cad) by itself.
+
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P) || exit 1
+state_root=${XDG_STATE_HOME:-$HOME/.local/state}/borba-cad
+mkdir -p "$state_root" 2>/dev/null
+
+LD_LIBRARY_PATH="$here/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH
+
+errors="$state_root/last-error.txt"
+"$here/borba-cad.bin" "$@" 2>"$errors"
+status=$?
+if [ "$status" -eq 0 ]; then
+  exit 0
+fi
+
+summary=$(head -n 12 "$errors" 2>/dev/null)
+message="Borba CAD could not start (exit status $status).
+
+$summary
+
+The full text is in $errors"
+if [ -t 2 ]; then
+  printf '%s\n' "$message" >&2
+elif command -v kdialog >/dev/null 2>&1; then
+  kdialog --title "Borba CAD" --error "$message"
+elif command -v zenity >/dev/null 2>&1; then
+  zenity --error --title="Borba CAD" --no-markup --text="$message"
+elif command -v notify-send >/dev/null 2>&1; then
+  notify-send "Borba CAD could not start" "See $errors"
+elif command -v xmessage >/dev/null 2>&1; then
+  xmessage -center "$message"
+fi
+exit "$status"
