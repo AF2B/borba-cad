@@ -509,7 +509,15 @@ HOVER: true when the pointer is over it."
                       widget
                       (widget-label widget)
                       color
-                      :left-inset inset)))
+                      :left-inset inset)
+    (when (widget-shortcut widget)
+      (let ((shortcut (widget-shortcut widget)))
+        (scene:add-text list
+                        shortcut
+                        (- (+ x (widget-width widget)) +padding+ (text-width-pixels shortcut +small-font-pixels+))
+                        (baseline-for widget +small-font-pixels+)
+                        +small-font-pixels+
+                        (scene:theme-text-faint theme))))))
 
 (defun draw-label-widget (list
                           widget

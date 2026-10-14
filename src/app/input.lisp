@@ -71,6 +71,27 @@ WIDGET: the widget under the pointer."
     (funcall (ui:widget-action widget))
     (app-request-redraw app)))
 
+(defun follow-pointer-in-menu (app
+                               x
+                               y)
+  "Move the keyboard highlight of the open menu to the choice under the pointer, if there is one.
+
+APP: the application.
+X: pointer window x.
+Y: pointer window y."
+  (let* ((menu (app-menu app))
+         (hit (ui:widget-at (build-widgets app)
+                            x
+                            y))
+         (id (and hit (consp (ui:widget-id hit)) (eq :menu-item (first (ui:widget-id hit)))
+                  (second (ui:widget-id hit))))
+         (position (and id (position id
+                                     (selectable-items (menu-items app (menu-kind menu)))
+                                     :key #'menu-item-id))))
+    (when (and position (not (eql position (menu-highlight menu))))
+      (setf (menu-highlight menu) position)
+      (app-request-redraw app))))
+
 (defun handle-pointer-move (app
                             event)
   "Handle pointer movement: panning, cursor update and the tool's reaction.
@@ -89,6 +110,10 @@ EVENT: a pointer event."
         (when (app-telemetry app)
           (obs:telemetry-record-viewport-update (app-telemetry app) (- (sbcl:monotonic-nanoseconds) started)))))
     (cond ((or (app-prompt app) (app-dialog app)) nil)
+          ((app-menu app)
+           (follow-pointer-in-menu app
+                                   x
+                                   y))
           ((or (canvas-contains-p app
                                   x
                                   y) (eq interaction :tool))
@@ -126,6 +151,8 @@ EVENT: a pointer event."
                               y)))
     (cond ((and hit (eq button :left))
            (handle-widget-click app hit))
+          ((app-menu app)
+           (close-menu app))
           ((or (app-prompt app) (app-dialog app)) nil)
           ((and (canvas-contains-p app
                                    x
@@ -220,6 +247,7 @@ EVENT: a wheel event."
     (setf (app-pointer-x app) x
           (app-pointer-y app) y)
     (cond ((app-prompt app) nil)
+          ((app-menu app) nil)
           ((app-dialog app)
            (handle-dialog-wheel app delta))
           ((scroll-panel app
@@ -307,10 +335,6 @@ MODIFIERS: modifier keys held."
            (setf (app-edit app) edited)))))
   (app-request-redraw app))
 
-(defparameter *tool-shortcuts*
-  '((:l . :line) (:r . :rectangle) (:c . :circle) (:p . :polyline) (:t . :text) (:d . :dimension))
-  "Letter keys that activate tools.")
-
 (defun handle-control-shortcut (app
                                 key
                                 modifiers)
@@ -359,6 +383,8 @@ EVENT: a key event."
         (modifiers (key-event-modifiers event)))
     (when (eq (key-event-action event) :down)
       (clear-message app))
+    (when (and (app-menu app) (modifier-p modifiers :control))
+      (close-menu app))
     (cond ((eq (key-event-action event) :up)
            (when (eq key :space)
              (setf (app-space-down app) nil)))
@@ -368,6 +394,7 @@ EVENT: a key event."
           ((app-dialog app) (handle-dialog-key app
                                                key
                                                modifiers))
+          ((app-menu app) (handle-menu-key app key))
           ((app-focus app) (handle-field-key app
                                              key
                                              modifiers))

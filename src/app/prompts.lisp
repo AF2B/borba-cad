@@ -22,6 +22,7 @@ ON-ACCEPT: function of one argument, the typed string."
                      (ui:edit-select-all-replace
                       (ui:make-edit-state :text initial :maximum-length +prompt-maximum-text-length+))
                      (list (cons "OK" on-accept) (cons "Cancel" nil)))
+        (app-menu app) nil
         (app-focus app) :prompt)
   (app-request-redraw app))
 
@@ -40,6 +41,7 @@ CHOICES: list of (label . function-or-nil); the first is chosen by Enter, the la
                                       message
                                       nil
                                       choices)
+        (app-menu app) nil
         (app-focus app) :prompt)
   (app-request-redraw app))
 

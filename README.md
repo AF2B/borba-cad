@@ -66,7 +66,7 @@ drawing as an argument: `borba-cad plan.bcad`.
 
 ## Using the program
 
-The tools are in the palette on the left and on the keyboard; hover a button to see its name and key.
+The Select tool and the Draw button, which opens the list of drawing tools, are in the palette on the left; every tool also has a key, shown in the list.
 The title bar holds the file and history buttons, the document name (a dot marks unsaved changes)
 and the performance overlay; the status bar holds the hints, the pointer position and the chips
 that switch the grid, grid snap, object snap, display unit and zoom to fit. Keys: `L` line, `R` rectangle, `C` circle, `P` polyline

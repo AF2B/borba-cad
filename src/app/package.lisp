@@ -182,6 +182,13 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:move-selection
    #:format-modified-time
    #:format-entry-size
+   ;; Menus
+   #:app-menu
+   #:menu
+   #:menu-kind
+   #:close-menu
+   #:open-menu
+   #:toggle-menu
    ;; Clipboard
    #:app-clipboard-reader
    #:app-clipboard-writer

@@ -690,7 +690,7 @@ true, recent files are remembered in a folder inside DIRECTORY."
       (is (string= "l" (ui:edit-state-text (app:file-dialog-filter-edit (dialog-of application)))))
       (click application 0 0)
       (is (= 4 (dom:drawing-entity-count (app:app-drawing application))) "a click on the canvas does nothing")
-      (dolist (id '(:line :save :grid :layer-add :new))
+      (dolist (id '(:draw :save :grid :layer-add :new))
         (is (ui:widget-blocked (find-widget application id)) "~s is blocked" id))
       (send application (app:make-wheel-event 3d0 300d0 300d0))
       (press application :escape)

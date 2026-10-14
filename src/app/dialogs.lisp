@@ -140,12 +140,12 @@ APP: the application."
 (defun build-widgets (app)
   "Build every widget of the window, in drawing order, from the application state: the side
 panel, the title bar, the tool palette, the status bar, the tooltip of the widget under the
-pointer, the file dialog when one is open, and the modal prompt when one is.
+pointer, the open menu, the file dialog when one is open, and the modal prompt when one is.
 
 APP: the application."
   (let* ((layout (ui:compute-layout (app-window-width app) (app-window-height app)))
          (side (ui:layout-side-panel layout))
-         (blocked (and (or (app-prompt app) (app-dialog app)) t))
+         (blocked (and (or (app-prompt app) (app-dialog app) (app-menu app)) t))
          (dialog-widgets (and (app-dialog app)
                               (file-dialog-widgets app (and (app-prompt app) t))))
          (base-widgets (append (empty-hint-widgets app (ui:layout-canvas layout))
@@ -179,7 +179,8 @@ APP: the application."
                                       blocked)
                       dialog-widgets
                       (let ((tooltip (tooltip-widget app hovered)))
-                        (and tooltip (list tooltip))))))
+                        (and tooltip (list tooltip)))
+                      (menu-widgets app base-widgets))))
     (if (app-prompt app)
         (append all (prompt-widgets app))
         all)))

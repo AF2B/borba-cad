@@ -638,3 +638,7 @@ KIND: :select, :line, :rectangle, :circle, :polyline, :text or :dimension."
     (:polyline (make-instance 'polyline-tool))
     (:text (make-instance 'text-tool))
     (:dimension (make-instance 'dimension-tool))))
+
+(defparameter *tool-shortcuts*
+  '((:l . :line) (:r . :rectangle) (:c . :circle) (:p . :polyline) (:t . :text) (:d . :dimension))
+  "Letter keys that activate tools.")

@@ -148,6 +148,7 @@ CONTINUATION: function of no arguments run after a successful save, or NIL."
   (setf (app-dialog app) (make-file-dialog app
                                            mode
                                            continuation)
+        (app-menu app) nil
         (app-focus app) :dialog)
   (app-request-redraw app))
 

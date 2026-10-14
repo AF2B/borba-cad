@@ -87,17 +87,11 @@
     "Ctrl+O opens a drawing, and a .bcad file dropped on the window opens too.")
   "The lines of the hint shown over an empty drawing, under its heading.")
 
-(defparameter *palette-tools*
-  '((:select :select "Select and move" "Esc")
-    nil
-    (:line :line "Line" "L")
-    (:rectangle :rectangle "Rectangle" "R")
-    (:circle :circle "Circle" "C")
-    (:polyline :polyline "Polyline" "P")
-    nil
-    (:text :text "Text" "T")
-    (:dimension :dimension "Dimension" "D"))
-  "The tool palette, top to bottom, as (tool-kind icon hint shortcut), with NIL between groups.")
+(defconstant +caret-size+ 10f0
+  "Side of the small arrow that tells a button it opens a menu, in pixels.")
+
+(defconstant +caret-margin+ 3f0
+  "Space between the arrow of the draw button and the edge of the button, in pixels.")
 
 (defun focused-p (app
                   id)
@@ -443,52 +437,75 @@ CANVAS: the canvas rectangle."
                                       :align :center
                                       :color (scene:theme-text-faint theme)))))))
 
+(defun draw-button-icon (app)
+  "Return the icon of the draw button: the icon of the drawing tool in use, or a pencil while the
+select tool is.
+
+APP: the application."
+  (let ((kind (tool-kind (app-tool app))))
+    (if (eq kind :select)
+        :pencil
+        kind)))
+
 (defun palette-widgets (app
                         rect
                         blocked)
-  "Build the column of drawing tools along the left edge.
+  "Build the column of tools along the left edge: the select tool, and the button that opens the
+list of drawing tools.
 
 APP: the application.
 RECT: the palette rectangle.
 BLOCKED: true while a modal covers the palette."
-  (let* ((kind (tool-kind (app-tool app)))
+  (let* ((theme (app-theme app))
+         (selecting (eq (tool-kind (app-tool app)) :select))
          (button-x (/ (- (ui:rect-width rect) +palette-button-size+) 2))
-         (y (+ (ui:rect-y rect) ui:+padding+))
-         (widgets (list (ui:make-widget :panel
-                                        :palette
-                                        (ui:rect-x rect)
-                                        (ui:rect-y rect)
-                                        (ui:rect-width rect)
-                                        (ui:rect-height rect)
-                                        :variant :palette))))
-    (dolist (spec *palette-tools*)
-      (if (null spec)
-          (progn
-            (push (make-separator (list :palette-separator (length widgets))
-                                  (+ button-x +palette-separator-inset+)
-                                  (+ y +palette-separator-drop+)
-                                  (- +palette-button-size+ (* 2 +palette-separator-inset+))
-                                  +separator-width+)
-                  widgets)
-            (incf y +palette-group-gap+))
-          (destructuring-bind (tool-kind icon
-                                         hint
-                                         shortcut) spec
-            (push (make-icon-button tool-kind
-                                    icon
-                                    button-x
-                                    y
-                                    :action (let ((tool-kind tool-kind))
-                                              (lambda () (operation-set-tool app tool-kind)))
-                                    :active (eq kind tool-kind)
-                                    :blocked blocked
-                                    :hint hint
-                                    :shortcut shortcut
-                                    :variant :tool
-                                    :size +palette-button-size+)
-                  widgets)
-            (incf y (+ +palette-button-size+ +palette-button-gap+)))))
-    (nreverse widgets)))
+         (select-y (+ (ui:rect-y rect) ui:+padding+))
+         (separator-y (+ select-y +palette-button-size+ +palette-button-gap+ +palette-separator-drop+))
+         (draw-y (+ select-y +palette-button-size+ +palette-button-gap+ +palette-group-gap+)))
+    (list (ui:make-widget :panel
+                          :palette
+                          (ui:rect-x rect)
+                          (ui:rect-y rect)
+                          (ui:rect-width rect)
+                          (ui:rect-height rect)
+                          :variant :palette)
+          (make-icon-button :select
+                            :select
+                            button-x
+                            select-y
+                            :action (lambda () (operation-set-tool app :select))
+                            :active selecting
+                            :blocked blocked
+                            :hint "Select and move"
+                            :shortcut "Esc"
+                            :variant :tool
+                            :size +palette-button-size+)
+          (make-separator :palette-separator
+                          (+ button-x +palette-separator-inset+)
+                          separator-y
+                          (- +palette-button-size+ (* 2 +palette-separator-inset+))
+                          +separator-width+)
+          (make-icon-button :draw
+                            (draw-button-icon app)
+                            button-x
+                            draw-y
+                            :action (lambda ()
+                                      (toggle-menu app
+                                                   :draw
+                                                   :draw))
+                            :active (not selecting)
+                            :blocked blocked
+                            :hint "Drawing tools"
+                            :variant :tool
+                            :size +palette-button-size+)
+          (ui:make-widget :icon
+                          :draw-caret
+                          (- (+ button-x +palette-button-size+) +caret-size+ +caret-margin+)
+                          (+ draw-y (/ (- +palette-button-size+ +caret-size+) 2))
+                          +caret-size+
+                          +caret-size+
+                          :icon :caret
+                          :color (scene:theme-text-faint theme)))))
 
 ;;; Status bar
 

@@ -99,6 +99,11 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
             (app:make-pointer-event :down :left x y)
             (app:make-pointer-event :up :left x y)))))
 
+(defun choose-tool (application kind)
+  "Open the draw menu with the mouse and click the row of the tool KIND."
+  (click-widget application :draw)
+  (click-widget application (list :menu-item kind)))
+
 (defun select-tool-with (application key)
   "Press the shortcut KEY and check that it activated a tool."
   (press application key)
@@ -844,12 +849,12 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
       (is (eq :error severity)))
     ;; Hovering a toolbar button shows its hint (once the message is gone).
     (let ((fresh (make-test-app)))
-      (let ((widget (find-widget fresh :line)))
+      (let ((widget (find-widget fresh :select)))
         (send fresh (app:make-pointer-event :move nil
                                             (float (+ (ui:widget-x widget) 5) 1d0)
                                             (float (+ (ui:widget-y widget) 5) 1d0)))
         (app:app-render fresh)
-        (is (some (lambda (text) (search "Line (L)" text)) (all-text fresh)))))))
+        (is (some (lambda (text) (search "Select and move (Esc)" text)) (all-text fresh)))))))
 
 (test a-message-leaves-the-status-bar-after-a-while-and-an-error-after-longer
   (let ((application (make-test-app))
@@ -997,9 +1002,10 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
 (test toolbar-buttons-reflect-state-and-drive-operations
   (let ((application (make-test-app)))
     (is (not (ui:widget-enabled (find-widget application :undo))))
-    (click-widget application :line)
+    (choose-tool application :line)
     (is (eq :line (app:tool-kind (app:app-tool application))))
-    (is (ui:widget-active (find-widget application :line)))
+    (is (ui:widget-active (find-widget application :draw)))
+    (is (eq :line (ui:widget-icon (find-widget application :draw))) "the button shows the tool in use")
     (click application 0 0)
     (click application 1000 0)
     (is (ui:widget-enabled (find-widget application :undo)))

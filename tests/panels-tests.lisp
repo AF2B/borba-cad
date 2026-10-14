@@ -150,22 +150,26 @@
 
 ;;; Tool palette
 
-(test the-palette-lists-the-tools-top-to-bottom-inside-its-column
+(test the-palette-holds-the-select-tool-and-one-button-for-the-drawing-tools
   (let* ((application (make-test-app))
          (layout (ui:compute-layout 1440 900))
          (palette (ui:layout-tool-palette layout))
-         (tools (mapcar (lambda (id) (find-widget application id))
-                        '(:select :line :rectangle :circle :polyline :text :dimension))))
-    (is (every (lambda (widget) (eq :tool (ui:widget-variant widget))) tools))
-    (is (apply #'< (mapcar #'ui:widget-y tools)))
-    (dolist (widget tools)
+         (buttons (mapcar (lambda (id) (find-widget application id))
+                          '(:select :draw))))
+    (is (every (lambda (widget) (eq :tool (ui:widget-variant widget))) buttons))
+    (is (apply #'< (mapcar #'ui:widget-y buttons)))
+    (dolist (widget buttons)
       (is (ui:rect-contains-p palette (ui:widget-x widget) (ui:widget-y widget)))
       (is (ui:rect-contains-p palette
                               (+ (ui:widget-x widget) (ui:widget-width widget))
                               (+ (ui:widget-y widget) (ui:widget-height widget)))))
     (is (ui:widget-active (find-widget application :select)))
-    (click-widget application :circle)
-    (is (ui:widget-active (find-widget application :circle)))
+    (is (not (ui:widget-active (find-widget application :draw))))
+    (is (eq :pencil (ui:widget-icon (find-widget application :draw))) "a pencil while selecting")
+    (is (null (find-widget application :line)) "the tools are no longer buttons of the palette")
+    (is-true (find-widget application :draw-caret) "an arrow tells that the button opens a list")
+    (choose-tool application :circle)
+    (is (ui:widget-active (find-widget application :draw)))
     (is (not (ui:widget-active (find-widget application :select))))))
 
 ;;; Tooltips
@@ -173,12 +177,12 @@
 (test hovering-an-icon-button-shows-a-tooltip-with-its-hint-and-shortcut
   (let ((application (make-test-app)))
     (is (null (find-widget application :tooltip)) "no tooltip without hover")
-    (hover application :line)
+    (hover application :draw)
     (let ((tooltip (find-widget application :tooltip))
-          (button (find-widget application :line)))
+          (button (find-widget application :draw)))
       (is-true tooltip)
-      (is (string= "Line" (ui:widget-label tooltip)))
-      (is (string= "L" (ui:widget-shortcut tooltip)))
+      (is (string= "Drawing tools" (ui:widget-label tooltip)))
+      (is (null (ui:widget-shortcut tooltip)))
       (is (>= (ui:widget-x tooltip) (+ (ui:widget-x button) (ui:widget-width button))) "to the right of a tool")
       (is (< (abs (- (+ (ui:widget-y tooltip) (/ (ui:widget-height tooltip) 2))
                      (+ (ui:widget-y button) (/ (ui:widget-height button) 2))))
@@ -192,7 +196,7 @@
 (test a-tooltip-never-leaves-the-window
   (let ((application (make-test-app :width (float +minimum-window-width+ 1d0)
                                     :height (float +minimum-window-height+ 1d0))))
-    (dolist (id '(:perf :new :select :dimension))
+    (dolist (id '(:perf :new :select :draw))
       (hover application id)
       (let ((tooltip (find-widget application :tooltip)))
         (is-true tooltip)
@@ -211,7 +215,7 @@
 
 (test no-tooltip-appears-while-a-prompt-is-open
   (let ((application (make-test-app)))
-    (hover application :line)
+    (hover application :draw)
     (is (find-widget application :tooltip))
     (app:open-text-prompt application "Title" "Message" "" #'identity)
     (is (null (find-widget application :tooltip)))))
@@ -432,5 +436,5 @@
       (is (= 0f0 (ui:widget-x scrim)))
       (is (= 1440f0 (ui:widget-width scrim)))
       (is (= 900f0 (ui:widget-height scrim))))
-    (dolist (id '(:line :save :grid :layer-add))
+    (dolist (id '(:draw :save :grid :layer-add))
       (is (ui:widget-blocked (find-widget application id)) "~s is blocked" id))))

@@ -83,6 +83,7 @@ FOCUS: id of the field that has the keyboard focus, or NIL.
 EDIT: edit state of that field.
 PROMPT: the open modal prompt, or NIL.
 DIALOG: the open file dialog, or NIL.
+MENU: the open drop-down menu, or NIL.
 CLIPBOARD-READER: function of no arguments that returns the text on the system clipboard, or NIL.
 CLIPBOARD-WRITER: function of one string that puts it on the system clipboard, or NIL.
 CLIPBOARD-FALLBACK: the clipboard text kept here while there is no system clipboard.
@@ -119,6 +120,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   edit
   prompt
   dialog
+  menu
   clipboard-reader
   clipboard-writer
   clipboard-fallback

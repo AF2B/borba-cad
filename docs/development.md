@@ -185,7 +185,7 @@ step that is forgotten fails loudly at run time or in a test, except the documen
 4. **Scene** (`src/scene/scene.lisp`): a clause in the `etypecase` of `emit-entity` (an entity of an
    unknown type is a run-time error, so a forgotten clause is caught by the scene tests).
 5. **Application** (`src/app/`): a tool class and its clause in `make-tool` (`tools.lisp`), the
-   shortcut in the key table (`input.lisp`), the palette entry (`*palette-tools*` in `panels.lisp`) and
+   shortcut in the key table (`*tool-shortcuts*` in `tools.lisp`), the draw menu entry (`*draw-menu-tools*` in `menus.lisp`) and
    its icon (`ui/icons.lisp`).
 6. **Workload** (`test-support/workload.lisp`): a generator for the kind and its weight. This changes
    the checksums of W1 to W3, so the baseline must be recorded again.
