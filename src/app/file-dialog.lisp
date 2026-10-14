@@ -227,7 +227,7 @@ APP: the application.
 DIALOG: the file dialog."
   (let ((message (app-message app)))
     (dialog-say dialog
-                (if message (car message) "That did not work.")
+                (if message (car message) (i18n:tr "That did not work."))
                 :error)))
 
 (defun accept-open (app
@@ -247,7 +247,7 @@ TEXT: a name or a path."
                (leave-location-edit dialog))
               ((null kind)
                (dialog-say dialog
-                           (format nil "~a does not exist." (string-trim " " text))
+                           (i18n:trf "~a does not exist." (string-trim " " text))
                            :error))
               ((load-drawing-into-app app (uiop:native-namestring path))
                (close-file-dialog app))
@@ -286,7 +286,7 @@ DIALOG: the file dialog.
 TEXT: a name or a path."
   (cond ((zerop (length text))
          (dialog-say dialog
-                     "Type a name for the file."
+                     (i18n:tr "Type a name for the file.")
                      :error))
         (t
          (handler-case
@@ -298,13 +298,13 @@ TEXT: a name or a path."
                      ((and (eq kind :file)
                            (not (same-file-p path (app-file-path app))))
                       (open-choice-prompt app
-                                          "Replace file?"
-                                          (format nil "~a already exists. Replace it?"
+                                          (i18n:tr "Replace file?")
+                                          (i18n:trf "~a already exists. Replace it?"
                                                   (file-namestring path))
-                                          (list (cons "Replace" (lambda () (finish-save app
+                                          (list (cons (i18n:tr "Replace") (lambda () (finish-save app
                                                                                         dialog
                                                                                         path)))
-                                                (cons "Cancel" nil))))
+                                                (cons (i18n:tr "Cancel") nil))))
                      (t
                       (finish-save app
                                    dialog
@@ -378,7 +378,7 @@ TEXT: the path typed in the location or search field."
                               dialog
                               (uiop:native-namestring resolved))
                  (dialog-say dialog
-                             (format nil "~a does not exist." (string-trim " " text))
+                             (i18n:trf "~a does not exist." (string-trim " " text))
                              :error))))))
     (base:invalid-input (condition)
       (dialog-say dialog
@@ -426,7 +426,7 @@ APP: the application."
                            (typed-text (file-dialog-name-edit dialog))))
              (t
               (dialog-say dialog
-                          "Choose a drawing from the list."
+                          (i18n:tr "Choose a drawing from the list.")
                           :error))))
       (t
        (let ((text (typed-text (file-dialog-name-edit dialog))))
@@ -441,7 +441,7 @@ APP: the application."
                                     selected))
                    (t
                     (dialog-say dialog
-                                "Choose a drawing from the list."
+                                (i18n:tr "Choose a drawing from the list.")
                                 :error)))
              (accept-save app
                           dialog
@@ -497,8 +497,8 @@ PATH: the file's pathname."
 APP: the application.
 DIALOG: the file dialog."
   (open-text-prompt app
-                    "New folder"
-                    "Name of the new folder:"
+                    (i18n:tr "New folder")
+                    (i18n:tr "Name of the new folder:")
                     ""
                     (lambda (text)
                       (create-folder dialog text))))

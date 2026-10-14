@@ -170,7 +170,7 @@ BLOCKED: true while a modal covers the panel."
                             :action (lambda () (operation-toggle-layer-visible app id))
                             :active visible
                             :blocked blocked
-                            :hint "Show or hide the layer"
+                            :hint (i18n:tr "Show or hide the layer")
                             :variant :ghost
                             :size +toggle-size+
                             :color (if visible
@@ -183,7 +183,7 @@ BLOCKED: true while a modal covers the panel."
                             :action (lambda () (operation-toggle-layer-locked app id))
                             :active locked
                             :blocked blocked
-                            :hint "Lock or unlock the layer"
+                            :hint (i18n:tr "Lock or unlock the layer")
                             :variant :ghost
                             :size +toggle-size+
                             :color (if locked
@@ -206,12 +206,12 @@ BLOCKED: true while a modal covers the card."
                     (+ card-top (/ (- +card-header-height+ +toggle-size+) 2))
                     :action (lambda ()
                               (open-text-prompt app
-                                                "New layer"
-                                                "Layer name:"
+                                                (i18n:tr "New layer")
+                                                (i18n:tr "Layer name:")
                                                 ""
                                                 (lambda (text) (operation-add-layer app text))))
                     :blocked blocked
-                    :hint "Create a layer"
+                    :hint (i18n:tr "Create a layer")
                     :variant :ghost
                     :size +toggle-size+
                     :color (scene:theme-text (app-theme app))))
@@ -222,22 +222,22 @@ BLOCKED: true while a modal covers the card."
 APP: the application."
   (let* ((drawing (app-drawing app))
          (current (dom:drawing-current-layer-id drawing)))
-    (list (list :layer-rename "Rename" :edit
+    (list (list :layer-rename (i18n:tr "Rename") :edit
                 (lambda ()
                   (open-text-prompt app
-                                    "Rename layer"
-                                    "New name:"
+                                    (i18n:tr "Rename layer")
+                                    (i18n:tr "New name:")
                                     (dom:layer-name (dom:find-layer drawing current))
                                     (lambda (text) (operation-rename-layer app
                                                                            current
                                                                            text))))
-                "Rename the current layer")
-          (list :layer-delete "Delete" :trash
+                (i18n:tr "Rename the current layer"))
+          (list :layer-delete (i18n:tr "Delete") :trash
                 (lambda () (operation-delete-layer app current))
-                "Delete the current layer if it is empty")
-          (list :layer-color "Color" :palette
+                (i18n:tr "Delete the current layer if it is empty"))
+          (list :layer-color (i18n:tr "Color") :palette
                 (lambda () (operation-cycle-layer-color app current))
-                "Change the color of the current layer"))))
+                (i18n:tr "Change the color of the current layer")))))
 
 (defun reveal-current-layer (app
                              layers
@@ -285,7 +285,7 @@ BLOCKED: true while a modal covers the card."
            (capacity (max 0 (floor (- rows-bottom rows-top) +layer-row-pitch+)))
            (widgets (reverse (card-header-widgets :layers-card
                                                   :layers
-                                                  "Layers"
+                                                  (i18n:tr "Layers")
                                                   (format nil "~d" (length layers))
                                                   x
                                                   y
@@ -322,7 +322,7 @@ BLOCKED: true while a modal covers the card."
                                         :blocked blocked
                                         :trailing (+ (* 2 +toggle-size+) +toggle-gap+ ui:+padding+)
                                         :action (lambda () (operation-set-current-layer app id))
-                                        :hint "Click to make this the current layer"))
+                                        :hint (i18n:tr "Click to make this the current layer")))
                    (dolist (toggle (layer-toggle-widgets app
                                                          layer
                                                          (+ inner-x inner-width)
@@ -375,7 +375,7 @@ PROPERTY: an inspector property."
       ((:coordinate :length) (format-model-number app value))
       (:text value)
       (:integer (format nil "~d" value))
-      (:boolean (if value "Yes" "No"))
+      (:boolean (if value (i18n:tr "Yes") (i18n:tr "No")))
       (:unit (base:unit-abbreviation value)))))
 
 (defun format-derived-value (app
@@ -471,7 +471,7 @@ BLOCKED: true while a modal covers the panel."
                                                                 entity-id
                                                                 key
                                                                 (not (dom:property-value property))))
-                             :hint "Click to toggle"))
+                             :hint (i18n:tr "Click to toggle")))
             (:unit
              (ui:make-widget :button
                              id
@@ -489,7 +489,7 @@ BLOCKED: true while a modal covers the panel."
                                                                   entity-id
                                                                   key
                                                                   next)))
-                             :hint "Click to change the unit"))
+                             :hint (i18n:tr "Click to change the unit")))
             (t
              (ui:make-widget :field
                              id
@@ -517,7 +517,7 @@ BLOCKED: true while a modal covers the panel."
                                                                (report-error app
                                                                              condition
                                                                              "property-edit"))))))
-                             :hint "Click to edit; Enter commits, Esc cancels"))))))
+                             :hint (i18n:tr "Click to edit; Enter commits, Esc cancels")))))))
 
 (defun field-group (app
                     id
@@ -560,7 +560,7 @@ COMMIT: function of the typed string, called when the edit is committed."
                                                             (report-error app
                                                                           condition
                                                                           "setting"))))))
-                          :hint "Click to edit; Enter commits, Esc cancels"))))
+                          :hint (i18n:tr "Click to edit; Enter commits, Esc cancels")))))
 
 (defun note-widget (app
                     id
@@ -594,13 +594,13 @@ BLOCKED: true while a modal covers the panel."
          (unit (dom:drawing-display-unit drawing)))
     (list (list (note-widget app
                              :settings-info
-                             (format nil "~d entities, ~d layers"
+                             (i18n:trf "~d ~:*~[entities~;entity~:;entities~], ~d ~:*~[layers~;layer~:;layers~]"
                                      (dom:drawing-entity-count drawing)
                                      (length (dom:layers-in-order drawing)))
                              width))
           (field-group app
                        :setting-grid
-                       "Grid spacing"
+                       (i18n:tr "Grid spacing")
                        (format-model-number app (dom:drawing-grid-spacing drawing))
                        width
                        blocked
@@ -609,7 +609,7 @@ BLOCKED: true while a modal covers the panel."
                          (app-request-redraw app)))
           (field-group app
                        :setting-text-height
-                       "Text height"
+                       (i18n:tr "Text height")
                        (format-model-number app (dom:drawing-default-text-height drawing))
                        width
                        blocked
@@ -618,7 +618,7 @@ BLOCKED: true while a modal covers the panel."
                          (app-request-redraw app)))
           (list (note-widget app
                              :settings-hint
-                             "Select an entity to edit it."
+                             (i18n:tr "Select an entity to edit it.")
                              width)))))
 
 (defun layer-cycle-group (app
@@ -636,7 +636,7 @@ BLOCKED: true while a modal covers the panel."
          (column (value-x width)))
     (list (property-label app
                           :layer-label
-                          "Layer"
+                          (i18n:tr "Layer")
                           width)
           (ui:make-widget :button
                           :layer-cycle
@@ -644,14 +644,14 @@ BLOCKED: true while a modal covers the panel."
                           0f0
                           (- width column)
                           ui:+row-height+
-                          :label (if layer (dom:layer-name layer) "(several)")
+                          :label (if layer (dom:layer-name layer) (i18n:tr "(several)"))
                           :swatch (and layer (scene:rgb->rgba (dom:layer-color layer)))
                           :blocked blocked
                           :align :left
                           :action (lambda ()
                                     (operation-assign-selection-layer
                                      app (next-layer-id-after app (first layer-ids))))
-                          :hint "Click to move the selection to the next layer"))))
+                          :hint (i18n:tr "Click to move the selection to the next layer")))))
 
 (defun entity-groups (app
                       entity
@@ -666,7 +666,9 @@ BLOCKED: true while a modal covers the panel."
   (let ((theme (app-theme app)))
     (append
      (list (list (make-label :entity-title
-                             (format nil "~:(~a~) #~d" (dom:entity-kind entity) (dom:entity-id entity))
+                             (i18n:trf "~a #~d"
+                                       (string-capitalize (base:entity-kind-label (dom:entity-kind entity)))
+                                       (dom:entity-id entity))
                              0f0
                              0f0
                              width
@@ -715,7 +717,7 @@ BLOCKED: true while a modal covers the panel."
                           width
                           blocked))
           (t (list (list (make-label :multi-title
-                                     (format nil "~d entities selected" (length selected))
+                                     (i18n:trf "~d entities selected" (length selected))
                                      0f0
                                      0f0
                                      width
@@ -753,10 +755,10 @@ BLOCKED: true while a modal covers the card."
            (selected (selected-entities app))
            (widgets (reverse (card-header-widgets :inspector-card
                                                   :edit
-                                                  "Properties"
-                                                  (cond ((null selected) "Drawing")
-                                                        ((rest selected) "Selection")
-                                                        (t "Entity"))
+                                                  (i18n:tr "Properties")
+                                                  (cond ((null selected) (i18n:tr "Drawing"))
+                                                        ((rest selected) (i18n:tr "Selection"))
+                                                        (t (i18n:tr "Entity")))
                                                   x
                                                   y
                                                   width

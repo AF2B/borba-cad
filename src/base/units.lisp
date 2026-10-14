@@ -247,7 +247,7 @@ TEXT: user-typed text such as \"12.5\" or \"-3,25\"."
     (unless value
       (error 'invalid-input
              :text text
-             :reason "not a number; enter digits with an optional sign and decimal point"))
+             :reason (i18n:tr "not a number; enter digits with an optional sign and decimal point")))
     (float value 1d0)))
 
 (defun parse-length (text
@@ -273,7 +273,7 @@ DEFAULT-UNIT: unit assumed when TEXT has no suffix."
     (unless unit
       (error 'invalid-input
              :text text
-             :reason (format nil "unknown unit ~s; use mm, cm or m" suffix)))
+             :reason (i18n:trf "unknown unit ~s; use mm, cm or m" suffix)))
     (unit->millimeters value unit)))
 
 (declaim (inline radians->degrees degrees->radians))

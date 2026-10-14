@@ -1,6 +1,7 @@
 (defpackage #:borba-cad/ui
   (:use #:cl)
   (:local-nicknames (#:base #:borba-cad/base)
+                    (#:i18n #:borba-cad/i18n)
                     (#:geo #:borba-cad/geometry)
                     (#:scene #:borba-cad/scene))
   (:documentation "Declarative user-interface widgets: layout of the window, drawing and hit

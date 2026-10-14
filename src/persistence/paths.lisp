@@ -38,7 +38,7 @@ CONTROL: format control string for the reason.
 ARGUMENTS: format arguments."
   (error 'base:invalid-input
          :text text
-         :reason (apply #'format nil control arguments)))
+         :reason (apply #'i18n:trf control arguments)))
 
 (defun starts-with-p (prefix
                       text)

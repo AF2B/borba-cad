@@ -1,6 +1,7 @@
 (defpackage #:borba-cad/app
   (:use #:cl)
   (:local-nicknames (#:base #:borba-cad/base)
+                    (#:i18n #:borba-cad/i18n)
                     (#:sbcl #:borba-cad/sbcl-support)
                     (#:geo #:borba-cad/geometry)
                     (#:dom #:borba-cad/domain)
@@ -120,6 +121,7 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-set-current-layer
    #:operation-assign-selection-layer
    #:operation-edit-property
+   #:operation-set-language
    #:load-drawing-into-app
    #:save-app-drawing
    #:commit-changes

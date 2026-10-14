@@ -48,7 +48,9 @@ MEMORY-SAMPLE-INTERVAL-SECONDS: period of memory samples.
 FONT-PATH: monospace TrueType font file, or NIL to search the usual locations.
 WINDOW-WIDTH: initial window width in logical pixels.
 WINDOW-HEIGHT: initial window height in logical pixels.
-INITIAL-FILE: drawing file to open at startup, or NIL."
+INITIAL-FILE: drawing file to open at startup, or NIL.
+LANGUAGE: the language keyword the user asked for with an option or the environment, or NIL to use the
+one saved last time and, failing that, English (US)."
   (project-root nil :type (or null pathname))
   (log-directory nil :type (or null pathname))
   (state-directory nil :type (or null pathname))
@@ -63,7 +65,8 @@ INITIAL-FILE: drawing file to open at startup, or NIL."
   (font-path nil :type (or null string))
   (window-width +default-window-width+ :type integer)
   (window-height +default-window-height+ :type integer)
-  (initial-file nil :type (or null string)))
+  (initial-file nil :type (or null string))
+  (language nil :type (or null keyword)))
 
 (defun configuration-failure (control
                               &rest arguments)
@@ -82,6 +85,16 @@ TEXT: a level name such as \"debug\" (case-insensitive)."
       (configuration-failure "unknown log level ~s; use one of ~{~(~a~)~^, ~}"
                              text
                              *log-levels*)))
+
+(defun parse-language-option (text)
+  "Return the language keyword named by TEXT, signaling CONFIGURATION-ERROR when the program does
+not speak it.
+
+TEXT: a language tag such as \"pt-BR\" (any case; a hyphen or an underscore)."
+  (or (i18n:parse-language text)
+      (configuration-failure "unknown language ~s; use one of ~{~a~^, ~}"
+                             text
+                             (mapcar #'i18n:language-tag (i18n:supported-languages)))))
 
 (defun parse-positive-integer-option (text
                                       option-name)
@@ -205,7 +218,8 @@ READER: function from variable name to string or NIL; defaults to the process en
             (max-files (value-of "BORBA_CAD_LOG_MAX_FILES"))
             (to-stderr (value-of "BORBA_CAD_LOG_STDERR"))
             (sampling (value-of "BORBA_CAD_LOG_SAMPLING"))
-            (font (value-of "BORBA_CAD_FONT")))
+            (font (value-of "BORBA_CAD_FONT"))
+            (language (value-of "BORBA_CAD_LANGUAGE")))
         (when log-dir
           (setf (config-log-directory result) (directory-pathname log-dir)))
         (when state-dir
@@ -227,7 +241,9 @@ READER: function from variable name to string or NIL; defaults to the process en
           (setf (config-log-sampling result)
                 (mapcar #'parse-sampling-option (uiop:split-string sampling :separator ","))))
         (when font
-          (setf (config-font-path result) font))))
+          (setf (config-font-path result) font))
+        (when language
+          (setf (config-language result) (parse-language-option language)))))
     result))
 
 (defun config-with-arguments (config
@@ -235,7 +251,7 @@ READER: function from variable name to string or NIL; defaults to the process en
   "Apply core command-line options to a copy of CONFIG.
 Returns two values: the new configuration and the arguments that were not recognized, in order.
 Recognized: --log-dir DIR, --state-dir DIR, --drawings-dir DIR, --log-level LEVEL, --log-stderr,
---log-sample EVENT=N, --font PATH, --file PATH, --width N, --height N.
+--log-sample EVENT=N, --font PATH, --language TAG, --file PATH, --width N, --height N.
 
 CONFIG: the configuration to start from.
 ARGUMENTS: list of argument strings."
@@ -264,6 +280,8 @@ ARGUMENTS: list of argument strings."
                               (config-log-sampling result)))
                        ((string= option "--font")
                         (setf (config-font-path result) (next-value option)))
+                       ((string= option "--language")
+                        (setf (config-language result) (parse-language-option (next-value option))))
                        ((string= option "--file")
                         (setf (config-initial-file result) (next-value option)))
                        ((string= option "--width")

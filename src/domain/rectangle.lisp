@@ -147,32 +147,32 @@ HEIGHT: replacement height."
 
 (defmethod entity-properties ((rectangle rectangle-entity))
   (list (make-property :min-x
-                       "Left"
+                       (i18n:tr "Left")
                        :coordinate
                        (rectangle-min-x rectangle)
                        t)
         (make-property :min-y
-                       "Bottom"
+                       (i18n:tr "Bottom")
                        :coordinate
                        (rectangle-min-y rectangle)
                        t)
         (make-property :width
-                       "Width"
+                       (i18n:tr "Width")
                        :length
                        (rectangle-width rectangle)
                        t)
         (make-property :height
-                       "Height"
+                       (i18n:tr "Height")
                        :length
                        (rectangle-height rectangle)
                        t)))
 
 (defmethod entity-derived-values ((rectangle rectangle-entity))
-  (list (make-derived-value "Area"
+  (list (make-derived-value (i18n:tr "Area")
                             :area
                             (geo:rectangle-area (rectangle-width rectangle)
                                                 (rectangle-height rectangle)))
-        (make-derived-value "Perimeter"
+        (make-derived-value (i18n:tr "Perimeter")
                             :length
                             (geo:rectangle-perimeter (rectangle-width rectangle)
                                                      (rectangle-height rectangle)))))

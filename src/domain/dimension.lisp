@@ -220,33 +220,35 @@ DIMENSION: a dimension entity."
         (list (dimension-x2 dimension) (dimension-y2 dimension) :endpoint)))
 
 (defmethod entity-properties ((dimension dimension-entity))
-  (append (coordinate-properties '((:x1 "Point 1 X") (:y1 "Point 1 Y")
-                                   (:x2 "Point 2 X") (:y2 "Point 2 Y"))
+  (append (coordinate-properties (list (list :x1 (i18n:mark "Point 1 X"))
+                                               (list :y1 (i18n:mark "Point 1 Y"))
+                                               (list :x2 (i18n:mark "Point 2 X"))
+                                               (list :y2 (i18n:mark "Point 2 Y")))
                                  (list (dimension-x1 dimension) (dimension-y1 dimension)
                                        (dimension-x2 dimension) (dimension-y2 dimension)))
           (list (make-property :offset
-                               "Offset"
+                               (i18n:tr "Offset")
                                :length
                                (dimension-offset dimension)
                                t)
                 (make-property :text-height
-                               "Text height"
+                               (i18n:tr "Text height")
                                :length
                                (dimension-text-height dimension)
                                t)
                 (make-property :unit
-                               "Unit"
+                               (i18n:tr "Unit")
                                :unit
                                (dimension-unit dimension)
                                t)
                 (make-property :precision
-                               "Decimals"
+                               (i18n:tr "Decimals")
                                :integer
                                (dimension-precision dimension)
                                t))))
 
 (defmethod entity-derived-values ((dimension dimension-entity))
-  (list (make-derived-value "Measured length"
+  (list (make-derived-value (i18n:tr "Measured length")
                             :length
                             (dimension-measured-length dimension))))
 

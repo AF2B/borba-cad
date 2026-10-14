@@ -14,7 +14,7 @@ CONTROL: format control string for the reason.
 ARGUMENTS: format arguments."
   (error 'base:drawing-file-io-error
          :path (uiop:native-namestring path)
-         :reason (apply #'format nil control arguments)))
+         :reason (apply #'i18n:trf control arguments)))
 
 (defun temporary-path-for (target)
   "Return a unique sibling path next to TARGET for write-then-rename saving.

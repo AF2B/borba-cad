@@ -128,7 +128,7 @@ CONTROL: format control string.
 ARGUMENTS: format arguments."
   (error 'base:invalid-entity
          :kind kind
-         :reason (apply #'format nil control arguments)))
+         :reason (apply #'i18n:trf control arguments)))
 
 (defun require-identifiers (kind
                             id
@@ -201,7 +201,7 @@ ENTITY-VALUES: list of the matching values, in the same order."
   (loop for (key label) in keys-and-labels
         for value in entity-values
         collect (make-property key
-                               label
+                               (i18n:tr label)
                                :coordinate
                                value
                                t)))

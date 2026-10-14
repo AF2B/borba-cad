@@ -21,7 +21,7 @@ ON-ACCEPT: function of one argument, the typed string."
                      message
                      (ui:edit-select-all-replace
                       (ui:make-edit-state :text initial :maximum-length +prompt-maximum-text-length+))
-                     (list (cons "OK" on-accept) (cons "Cancel" nil)))
+                     (list (cons (i18n:tr "OK") on-accept) (cons (i18n:tr "Cancel") nil)))
         (app-menu app) nil
         (app-focus app) :prompt)
   (app-request-redraw app))

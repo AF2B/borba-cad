@@ -19,6 +19,11 @@
                              (:file "system")
                              (:file "portable-filesystem")
                              (:file "filesystem")))
+               (:module "i18n"
+                :serial t
+                :components ((:file "package")
+                             (:file "i18n")
+                             (:static-file "pt-br.catalog")))
                (:module "base"
                 :serial t
                 :components ((:file "package")
@@ -65,6 +70,7 @@
                              (:file "loader")
                              (:file "paths")
                              (:file "recent")
+                             (:file "settings")
                              (:file "files")))
                (:module "observability"
                 :serial t
@@ -207,6 +213,7 @@
                (:file "app-tests")
                (:file "panels-tests")
                (:file "menu-tests")
+               (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")
                (:file "clipboard-tests")

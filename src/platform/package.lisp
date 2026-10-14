@@ -1,6 +1,7 @@
 (defpackage #:borba-cad/platform
   (:use #:cl)
   (:local-nicknames (#:base #:borba-cad/base)
+                    (#:i18n #:borba-cad/i18n)
                     (#:sbcl #:borba-cad/sbcl-support)
                     (#:geo #:borba-cad/geometry)
                     (#:dom #:borba-cad/domain)

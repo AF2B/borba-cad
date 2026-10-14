@@ -33,7 +33,7 @@ COORDINATES: sequence of numbers x0 y0 x1 y1 ..."
     (map nil
          (lambda (value)
            (require-coordinate :polyline
-                               (format nil "coordinate ~d" index)
+                               (i18n:trf "coordinate ~d" index)
                                value)
            (setf (aref copy index) value)
            (incf index))
@@ -136,28 +136,28 @@ CLOSED: replacement closed flag."
         (editable-vertices (min +inspector-maximum-vertex-rows+
                                 (geo:polyline-vertex-count (polyline-coordinates polyline)))))
     (cons (make-property :closed
-                         "Closed"
+                         (i18n:tr "Closed")
                          :boolean
                          (polyline-closed polyline)
                          t)
           (loop for vertex from 0 below editable-vertices
                 append (list (make-property (cons :vertex-x vertex)
-                                            (format nil "Vertex ~d X" (1+ vertex))
+                                            (i18n:trf "Vertex ~d X" (1+ vertex))
                                             :coordinate
                                             (aref coordinates (* 2 vertex))
                                             t)
                              (make-property (cons :vertex-y vertex)
-                                            (format nil "Vertex ~d Y" (1+ vertex))
+                                            (i18n:trf "Vertex ~d Y" (1+ vertex))
                                             :coordinate
                                             (aref coordinates (1+ (* 2 vertex)))
                                             t))))))
 
 (defmethod entity-derived-values ((polyline polyline-entity))
-  (list (make-derived-value "Length"
+  (list (make-derived-value (i18n:tr "Length")
                             :length
                             (geo:polyline-length (polyline-coordinates polyline)
                                                  (polyline-closed polyline)))
-        (make-derived-value "Vertices"
+        (make-derived-value (i18n:tr "Vertices")
                             :count
                             (geo:polyline-vertex-count (polyline-coordinates polyline)))))
 

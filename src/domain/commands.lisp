@@ -94,9 +94,9 @@ KEY: property key from ENTITY-PROPERTIES.
 VALUE: new value."
   (let ((entity (store-find (drawing-store drawing) id)))
     (unless entity
-      (error 'base:layer-error :reason (format nil "entity ~d does not exist" id)))
+      (error 'base:layer-error :reason (i18n:trf "entity ~d does not exist" id)))
     (unless (editable-entity-p drawing entity)
-      (error 'base:layer-error :reason (format nil "entity ~d is on a locked layer" id)))
+      (error 'base:layer-error :reason (i18n:trf "entity ~d is on a locked layer" id)))
     (let ((updated (entity-with-property entity
                                          key
                                          value)))

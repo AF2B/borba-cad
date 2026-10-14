@@ -60,6 +60,7 @@ All compiled output goes to `build/fasl/`, logs to `var/log/`, benchmark reports
 | `--state-dir DIR` | `BORBA_CAD_STATE_DIR` | Where the program remembers things between runs: the recent files (default `var/state` in the project) |
 | `--drawings-dir DIR` | `BORBA_CAD_DRAWINGS_DIR` | Folder where the file dialogs start when no drawing is open (default: the user's documents folder) |
 | `--font FILE` | `BORBA_CAD_FONT` | Monospace TrueType font |
+| `--language TAG` | `BORBA_CAD_LANGUAGE` | Interface language: `en-US` (the default, always) or `pt-BR`. The language chosen with the globe button in the title bar is kept in `settings.txt` in the state directory and used next time unless an option or the variable says otherwise |
 | `--width N`, `--height N` | | Initial window size in logical pixels (1440 × 900) |
 | `--demo`, `--exit-after-demo`, `--screenshot FILE` | | Run the scripted demonstration, close when done, save the last frame as a PNG |
 | | `BORBA_CAD_ROOT` | Project root: where `var/log` and `examples` are looked for; defaults to the directory of `borba-cad.asd` |
@@ -199,6 +200,20 @@ block of a few lines (the export lists of `domain` and `geometry`, the format ro
 clause); seven need one line or a mention in a docstring (the entity kind list, the key table, the
 palette entry, `app` exports, and docstrings in `operations.lisp` and `drawing.lisp`; a comment in the
 demo script).
+
+### Translating text
+
+Every text the user reads is written in English and passed through `i18n:tr` (a plain text),
+`i18n:trf` (a format control with its values, which the translation may reorder in meaning but
+must keep in order and kind) or `i18n:mark` (a text in a table, translated with `tr` where shown).
+`invalid-entity-failure`, `layer-failure`, `io-failure` and `path-failure` translate their control
+for you. After adding one, run `make lint`: it lists every text with no entry in
+`src/i18n/pt-br.catalog` and every entry nothing uses; add the entry, `(ENGLISH TRANSLATION)`, in
+UTF-8. `make test SUITE=i18n` checks that each translation asks for the same values as its English
+text, and that no English text reaches the screen in Portuguese through any of the windows it
+walks. Texts that are not for the user (log events, option names, the structure of a damaged
+`.bcad`) are not translated. A new language is a catalog file, an entry in `*catalog-files*`
+(`src/i18n/i18n.lisp`) and its name in `*translated-languages*` in `scripts/lint.lisp`.
 
 ### Adding a tool
 

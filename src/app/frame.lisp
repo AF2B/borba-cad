@@ -26,6 +26,9 @@ THEME: the color theme."
                          :saved-revision (dom:drawing-revision drawing)
                          :window-width (float width 1d0)
                          :window-height (float height 1d0))))
+    (let ((language (or (base:config-language config) (saved-language config))))
+      (when language
+        (setf i18n:*language* language)))
     (setf (app-tool app) (make-tool :select)
           (app-viewport app) (fit-viewport-to-window app (view:default-viewport 1000d0 600d0)))
     (operation-zoom-extents app)

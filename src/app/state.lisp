@@ -58,6 +58,18 @@ CHOICES: for :text, a list of (label . function) with the accept function first;
 The accept function of a :text prompt receives the typed string."
   kind title message edit choices)
 
+(defstruct (menu (:constructor make-menu (kind
+                                          anchor
+                                          highlight)))
+  "An open drop-down menu.
+
+KIND: :draw or :language.
+ANCHOR: id of the button the menu hangs from.
+HIGHLIGHT: position, among the choices, of the one the keyboard is on."
+  kind
+  anchor
+  highlight)
+
 (defstruct (app (:constructor %make-app))
   "The whole application state.
 
@@ -175,8 +187,10 @@ APP: the application."
   "Return the window title: file name, unsaved marker and program name.
 
 APP: the application."
-  (format nil "~:[Untitled~;~:*~a~]~:[~; *~] - Borba CAD"
-          (and (app-file-path app) (file-namestring (app-file-path app)))
+  (format nil "~a~:[~; *~] - Borba CAD"
+          (if (app-file-path app)
+              (file-namestring (app-file-path app))
+              (i18n:tr "Untitled"))
           (app-dirty-p app)))
 
 (defun app-wants-text-input-p (app)
@@ -249,7 +263,7 @@ CONTEXT: short name of what failed, used in the log event."
                        condition)))
 
 (defparameter *internal-error-advice*
-  "Save your work and restart if things look wrong; the log has the details."
+  (i18n:mark "Save your work and restart if things look wrong; the log has the details.")
   "What the user is told to do after a failure of the program itself.")
 
 (defun report-internal-error (app
@@ -266,10 +280,10 @@ CONTEXT: what the program was doing, as a phrase that follows \"while\", for the
 BACKTRACE: the call stack at the moment of the failure, as text, or NIL."
   (setf (app-last-error app) condition)
   (set-message app
-               (format nil "Internal error while ~a: ~a. ~a"
-                       context
-                       (remove #\Newline (princ-to-string condition))
-                       *internal-error-advice*)
+               (i18n:trf "Internal error while ~a: ~a. ~a"
+                         (i18n:tr context)
+                         (remove #\Newline (princ-to-string condition))
+                         (i18n:tr *internal-error-advice*))
                :error)
   (when (app-telemetry app)
     (obs:log-condition (obs:telemetry-logger (app-telemetry app))

@@ -4,6 +4,7 @@
                 #:make-temporary-directory
                 #:with-temporary-directory)
   (:local-nicknames (#:base #:borba-cad/base)
+                    (#:i18n #:borba-cad/i18n)
                     (#:sbcl #:borba-cad/sbcl-support)
                     (#:geo #:borba-cad/geometry)
                     (#:rng #:borba-cad/test-support)

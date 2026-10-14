@@ -1,5 +1,6 @@
 (defpackage #:borba-cad/base
   (:use #:cl)
+  (:local-nicknames (#:i18n #:borba-cad/i18n))
   (:documentation "Units, tolerances, conditions and configuration shared by every module.")
   (:import-from #:borba-cad/sbcl-support
                 #:environment-variable)
@@ -31,6 +32,7 @@
    #:radians->degrees
    #:degrees->radians
    ;; Conditions
+   #:entity-kind-label
    #:borba-cad-error
    #:invalid-entity
    #:invalid-entity-kind
@@ -77,6 +79,7 @@
    #:config-window-width
    #:config-window-height
    #:config-initial-file
+   #:config-language
    #:parse-positive-integer-option
    #:detect-project-root
    #:default-config
@@ -84,4 +87,5 @@
    #:user-state-directory
    #:installed-config
    #:config-with-arguments
-   #:parse-log-level))
+   #:parse-log-level
+   #:parse-language-option))

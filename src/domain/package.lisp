@@ -1,6 +1,7 @@
 (defpackage #:borba-cad/domain
   (:use #:cl)
   (:local-nicknames (#:base #:borba-cad/base)
+                    (#:i18n #:borba-cad/i18n)
                     (#:geo #:borba-cad/geometry))
   (:documentation "The drawing model: entities, layers, the drawing aggregate, change sets,
 history, picking and snapping. Pure data and rules; no rendering, input or file I/O.")

@@ -19,7 +19,8 @@ One ASDF file (`borba-cad.asd`), seven systems. One package per module directory
 | System | Packages (directory under `src/`) | Responsibility | Depends on |
 |---|---|---|---|
 | `borba-cad` (core) | `sbcl-support` | Everything SBCL-specific: monotonic clock, wall clock, heap/RSS, GC-event queue, environment, `fsync`/`rename`. | SBCL contribs `sb-posix` |
-| | `base` | Units, tolerances, conditions, configuration. | `sbcl-support` |
+| | `i18n` | The interface languages: `tr`, `trf`, `mark`, the catalogs (data files read at load time). | none |
+| | `base` | Units, tolerances, conditions, configuration. | `sbcl-support`, `i18n` |
 | | `geometry` | Bounds, distances, clipping, dimension layout, text extents. Doubles only; no screen types. | `base` |
 | | `domain` | Entities, layers, drawing, change sets, history, picking, snapping, inspector property model. | `geometry`, `base` |
 | | `viewport` | World↔screen transform, zoom/pan, extents, adaptive grid. | `geometry`, `base` |
@@ -72,6 +73,8 @@ Native libraries: `libSDL2` (sdl2-compat), `libGL` (libglvnd/NVIDIA), `libfreety
 | A18 | The look of the interface is data: colors in the theme, strokes and opacities in `ui/tokens.lisp`, icons and the brand mark as shape lists on a 24-unit grid, everything built from triangles by `scene/shapes.lisp`. No image files. | One place to tune; crisp at any size or display scale; nothing to ship or load. |
 | A19 | The file dialog is state plus widgets, like every panel: `file-browser.lisp` holds the dialog's state and everything it can do without a window (list, sort, filter, navigate, select, create a folder, resolve typed names), `file-dialog.lisp` its actions and key handling, `file-dialog-widgets.lisp` the widgets rebuilt from the state each frame. Folder listing is an SBCL-specific primitive in `sbcl-support`; recent files are a plain text file in the state directory (`persistence/recent.lisp`) that can fail without harm. Tests never touch the user's folders: their configuration has no state directory and starts dialogs in a private scratch folder. | The dialog is testable with scripted events and temporary folders, and its own suite drives it end to end; the random-event test is kept from wandering into the real home folder. |
 | A16 | The window loop is a `session` plus `step-session`: everything between two batches of SDL events is a plain function of the session, testable without a window. | The scripted demo once stalled when a window received no event; the fix needed a regression test that does not open a window. |
+
+| A20 | The interface is translated by the English text itself: a message is written in English where it is used and passed through `i18n:tr` (or `trf` for a format control, `mark` for a text in a table); a language is a catalog, a UTF-8 data file mapping English texts to translations, read when the system loads. English (US) needs no catalog and is the default whatever the system locale says; a text without a translation shows in English. The headless core translates what it reports (property names, error reasons) through the same functions, so the language is one dynamic variable, `i18n:*language*`, set by the application. The choice is kept in `settings.txt` in the state directory. | No key table to keep in step with the code, nothing to look up at the point of use, a translator edits data and not code, and the lint (`translation-violations`) fails when the code and the catalog disagree, in either direction. Format directives of a translation are checked against the English text by a test. Pluralization uses the format directive `~[`, so each language writes its own forms. |
 
 ## 5. Data structures
 

@@ -45,6 +45,7 @@
   --log-stderr           also print log lines on standard error
   --log-sample EVENT=N   write only one in N entries of an event
   --font FILE            monospace TrueType font (default: Noto Sans Mono, DejaVu Sans Mono, ...)
+  --language TAG         interface language: en-US (default) or pt-BR; the choice made in the program is kept
   --width N, --height N  initial window size in logical pixels
   --demo                 run the scripted demonstration drawing
   --exit-after-demo      close the window when the demonstration ends
@@ -53,6 +54,7 @@
 Environment: BORBA_CAD_ROOT, BORBA_CAD_LOG_DIR, BORBA_CAD_STATE_DIR,
 BORBA_CAD_DRAWINGS_DIR, BORBA_CAD_LOG_LEVEL, BORBA_CAD_LOG_MAX_BYTES,
 BORBA_CAD_LOG_MAX_FILES, BORBA_CAD_LOG_STDERR, BORBA_CAD_LOG_SAMPLING, BORBA_CAD_FONT,
+BORBA_CAD_LANGUAGE,
 BORBA_CAD_DEBUG (1: do not catch unexpected errors, for use with a debugger)."
   "Command-line help text.")
 
@@ -277,7 +279,7 @@ WAIT-MILLISECONDS: 0 to poll, positive to wait."
                (if (eq translated :redraw)
                    (app:app-request-redraw app)
                    (call-guarded app
-                                 "handling input"
+                                 (i18n:mark "handling input")
                                  (lambda () (app:app-handle-event app translated)))))
              (setf available (sdl2-ffi.functions:sdl-poll-event event)))))
 
@@ -497,7 +499,7 @@ again and ends the program.
 SESSION: the session.
 DRAW: function of the session that draws and presents a frame."
   (if (call-guarded (session-app session)
-                    "drawing the window"
+                    (i18n:mark "drawing the window")
                     (lambda ()
                       (funcall draw session)
                       (note-frame-presented session)

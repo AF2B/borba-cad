@@ -137,28 +137,28 @@ HEIGHT: replacement height."
 
 (defmethod entity-properties ((text text-entity))
   (list (make-property :x
-                       "X"
+                       (i18n:tr "X")
                        :coordinate
                        (text-x text)
                        t)
         (make-property :y
-                       "Y"
+                       (i18n:tr "Y")
                        :coordinate
                        (text-y text)
                        t)
         (make-property :string
-                       "Text"
+                       (i18n:tr "Text")
                        :text
                        (text-string text)
                        t)
         (make-property :height
-                       "Height"
+                       (i18n:tr "Height")
                        :length
                        (text-height text)
                        t)))
 
 (defmethod entity-derived-values ((text text-entity))
-  (list (make-derived-value "Width"
+  (list (make-derived-value (i18n:tr "Width")
                             :length
                             (geo:text-width (length (text-string text)) (text-height text)))))
 

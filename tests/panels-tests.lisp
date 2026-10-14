@@ -127,14 +127,14 @@
     (setf (app:app-file-path application) #p"/tmp/plan-a.bcad")
     (is (string= "plan-a.bcad" (ui:widget-label (find-widget application :document-name))))))
 
-(test the-document-name-is-centered-between-the-buttons-and-the-performance-toggle
+(test the-document-name-is-centered-between-the-buttons-and-the-language-and-performance-buttons
   (let* ((application (make-test-app))
          (name (find-widget application :document-name))
          (redo (find-widget application :redo))
-         (perf (find-widget application :perf))
+         (language (find-widget application :language))
          (middle (+ (ui:widget-x name) (/ (ui:widget-width name) 2)))
          (free-left (+ (ui:widget-x redo) (ui:widget-width redo)))
-         (free-right (ui:widget-x perf)))
+         (free-right (ui:widget-x language)))
     (is (< (abs (- middle (/ (+ free-left free-right) 2))) 1f0))))
 
 (test file-and-history-buttons-are-icons-with-hints-and-shortcuts
@@ -146,6 +146,10 @@
         (is (null (ui:widget-label widget)))
         (is (ui:widget-hint widget))
         (is (ui:widget-shortcut widget))))
+    (let ((language (find-widget application :language)))
+      (is (eq :globe (ui:widget-icon language)))
+      (is (string= "Language" (ui:widget-hint language)))
+      (is (null (ui:widget-shortcut language)) "the language button has no key"))
     (is (string= "Ctrl+Shift+S" (ui:widget-shortcut (find-widget application :save-as))))))
 
 ;;; Tool palette

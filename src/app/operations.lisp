@@ -59,7 +59,7 @@ CONTEXT: short name used in the error message log."
 
 SKIPPED: how many entities were skipped."
   (if (plusp skipped)
-      (format nil " (~d on locked layers were left unchanged)" skipped)
+      (i18n:trf " (~d on locked layers were left unchanged)" skipped)
       ""))
 
 ;;; Editing operations
@@ -70,20 +70,21 @@ SKIPPED: how many entities were skipped."
 APP: the application."
   (let ((ids (selection-ids app)))
     (if (null ids)
-        (set-message app "Nothing is selected.")
+        (set-message app (i18n:tr "Nothing is selected."))
         (multiple-value-bind (changes skipped)
             (dom:delete-entities-changes (app-drawing app) ids)
           (cond ((null changes)
                  (set-message app
-                              "The selected entities are on locked layers."
+                              (i18n:tr "The selected entities are on locked layers.")
                               :error))
                 ((commit-changes app
                                  changes
                                  "entity.delete"
                                  :context "delete")
                  (clear-selection app)
-                 (set-message app (format nil "Deleted ~d ~:*~[entities~;entity~:;entities~].~a"
-                                          (length changes) (skipped-note skipped)))))))))
+                 (set-message app (i18n:trf "Deleted ~d ~:*~[entities~;entity~:;entities~].~a"
+                                            (length changes)
+                                            (skipped-note skipped)))))))))
 
 (defun operation-undo (app)
   "Undo the last change.
@@ -94,9 +95,9 @@ APP: the application."
                                :fields (list :depth (dom:history-undo-depth (app-history app))))
             (dom:history-undo (app-history app) (app-drawing app)))
           (progn (prune-selection app)
-                 (set-message app "Undone.")
+                 (set-message app (i18n:tr "Undone."))
                  (app-request-redraw app))
-          (set-message app "Nothing to undo."))
+          (set-message app (i18n:tr "Nothing to undo.")))
     (base:borba-cad-error (condition) (report-error app
                                                     condition
                                                     "undo"))))
@@ -110,9 +111,9 @@ APP: the application."
                                :fields (list :depth (dom:history-redo-depth (app-history app))))
             (dom:history-redo (app-history app) (app-drawing app)))
           (progn (prune-selection app)
-                 (set-message app "Redone.")
+                 (set-message app (i18n:tr "Redone."))
                  (app-request-redraw app))
-          (set-message app "Nothing to redo."))
+          (set-message app (i18n:tr "Nothing to redo.")))
     (base:borba-cad-error (condition) (report-error app
                                                     condition
                                                     "redo"))))
@@ -122,7 +123,7 @@ APP: the application."
 
 APP: the application."
   (select-ids app (mapcar #'dom:entity-id (dom:pickable-entities (app-drawing app))))
-  (set-message app (format nil "~d selected." (hash-table-count (app-selection app)))))
+  (set-message app (i18n:trf "~d selected." (hash-table-count (app-selection app)))))
 
 (defun operation-assign-selection-layer (app
                                          layer-id)
@@ -139,9 +140,10 @@ LAYER-ID: id of the destination layer."
                               changes
                               "entity.edit"
                               :context "layer-assignment")
-          (set-message app (format nil "Moved ~d to layer ~s.~a" (length changes)
-                                   (dom:layer-name (dom:find-layer (app-drawing app) layer-id))
-                                   (skipped-note skipped)))))
+          (set-message app (i18n:trf "Moved ~d to layer ~s.~a"
+                                     (length changes)
+                                     (dom:layer-name (dom:find-layer (app-drawing app) layer-id))
+                                     (skipped-note skipped)))))
     (base:borba-cad-error (condition) (report-error app
                                                     condition
                                                     "layer-assignment"))))
@@ -158,10 +160,10 @@ DISPLAY-UNIT: the drawing's display unit, assumed for numbers without a unit suf
     ((:coordinate :length) (base:parse-length text display-unit))
     (:integer (handler-case (parse-integer (string-trim " " text))
                 (parse-error ()
-                  (error 'base:invalid-input :text text :reason "expected a whole number"))))
+                  (error 'base:invalid-input :text text :reason (i18n:tr "expected a whole number")))))
     (:text text)
     (:unit (or (base:unit-from-abbreviation (string-trim " " text))
-               (error 'base:invalid-input :text text :reason "unknown unit; use mm, cm or m")))))
+               (error 'base:invalid-input :text text :reason (i18n:tr "unknown unit; use mm, cm or m"))))))
 
 (defun operation-edit-property (app
                                 entity-id
@@ -182,7 +184,7 @@ VALUE: the new value (double-float, string, integer, boolean or unit keyword)."
                               changes
                               "entity.edit"
                               :context "property-edit")
-          (set-message app "Property changed.")))
+          (set-message app (i18n:tr "Property changed."))))
     (base:borba-cad-error (condition) (report-error app
                                                     condition
                                                     "property-edit"))))
@@ -240,7 +242,7 @@ APP: the application."
   (let* ((units (base:supported-length-units))
          (next (or (second (member (dom:drawing-display-unit (app-drawing app)) units)) (first units))))
     (dom:set-display-unit (app-drawing app) next)
-    (set-message app (format nil "Lengths are now shown in ~a." (base:unit-abbreviation next)))
+    (set-message app (i18n:trf "Lengths are now shown in ~a." (base:unit-abbreviation next)))
     (app-request-redraw app)))
 
 (defun operation-toggle-overlay (app)
@@ -305,7 +307,7 @@ NAME: the layer name."
                                                            (length *layer-palette*))
                                                       *layer-palette*))))
                        (dom:set-current-layer (app-drawing app) (dom:layer-id layer))
-                       (set-message app (format nil "Layer ~s created and selected." (dom:layer-name layer)))))))
+                       (set-message app (i18n:trf "Layer ~s created and selected." (dom:layer-name layer)))))))
 
 (defun operation-rename-layer (app
                                layer-id
@@ -321,7 +323,7 @@ NAME: the new name."
                      (dom:rename-layer (app-drawing app)
                                        layer-id
                                        name)
-                     (set-message app "Layer renamed."))))
+                     (set-message app (i18n:tr "Layer renamed.")))))
 
 (defun operation-delete-layer (app
                                layer-id)
@@ -335,7 +337,7 @@ LAYER-ID: layer id."
                      (let ((name (dom:layer-name (dom:find-layer (app-drawing app) layer-id))))
                        (dom:remove-layer (app-drawing app) layer-id)
                        (dom:history-clear (app-history app))
-                       (set-message app (format nil "Layer ~s deleted; undo history cleared." name))))))
+                       (set-message app (i18n:trf "Layer ~s deleted; undo history cleared." name))))))
 
 (defun operation-toggle-layer-visible (app
                                        layer-id)
@@ -523,7 +525,7 @@ PATH-TEXT: file name as typed by the user."
                             path)
             (note-recent-file app path)
             (set-message app
-                         (format nil "Opened ~a: ~d ~:*~[entities~;entity~:;entities~] (~a)."
+                         (i18n:trf "Opened ~a: ~d ~:*~[entities~;entity~:;entities~] (~a)."
                                  (file-namestring path)
                                  (dom:drawing-entity-count drawing)
                                  (base:format-byte-size (getf stats :bytes))))
@@ -562,7 +564,7 @@ PATH-TEXT: file name as typed by the user."
                   (app-saved-revision app) (dom:drawing-revision (app-drawing app)))
             (note-recent-file app path)
             (set-message app
-                         (format nil "Saved ~a (~a)."
+                         (i18n:trf "Saved ~a (~a)."
                                  (file-namestring path)
                                  (base:format-byte-size (getf stats :bytes))))
             t))
@@ -617,11 +619,11 @@ CONTINUATION: function of no arguments."
   (if (not (app-dirty-p app))
       (funcall continuation)
       (open-choice-prompt app
-                          "Unsaved changes"
-                          "The drawing has changes that are not saved."
-                          (list (cons "Save" (lambda () (operation-save app continuation)))
-                                (cons "Discard" continuation)
-                                (cons "Cancel" nil)))))
+                          (i18n:tr "Unsaved changes")
+                          (i18n:tr "The drawing has changes that are not saved.")
+                          (list (cons (i18n:tr "Save") (lambda () (operation-save app continuation)))
+                                (cons (i18n:tr "Discard") continuation)
+                                (cons (i18n:tr "Cancel") nil)))))
 
 (defun operation-new (app)
   "Start a new empty drawing, after offering to save the current one.
@@ -630,7 +632,7 @@ APP: the application."
   (confirm-discard app (lambda () (reset-document app
                                                   (dom:make-drawing)
                                                   nil)
-                         (set-message app "New drawing."))))
+                         (set-message app (i18n:tr "New drawing.")))))
 
 (defun operation-open (app)
   "Open the dialog where the user finds a drawing to open, after offering to save the current one.
@@ -643,3 +645,29 @@ APP: the application."
 
 APP: the application."
   (confirm-discard app (lambda () (setf (app-quit-requested app) t))))
+
+;;; Language
+
+(defparameter *language-setting-name* "language"
+  "Name under which the chosen language is kept between runs.")
+
+(defun saved-language (config)
+  "Return the language kept from the last run, or NIL when there is none or the program no longer
+speaks it.
+
+CONFIG: the application configuration."
+  (let ((tag (persist:load-setting (base:config-state-directory config) *language-setting-name*)))
+    (and tag (i18n:parse-language tag))))
+
+(defun operation-set-language (app
+                               language)
+  "Make the interface speak LANGUAGE now and keep the choice for the next run.
+
+APP: the application.
+LANGUAGE: a language keyword."
+  (setf i18n:*language* language)
+  (persist:save-setting (base:config-state-directory (app-config app))
+                        *language-setting-name*
+                        (i18n:language-tag language))
+  (set-message app (i18n:trf "Language: ~a" (i18n:language-name language)))
+  (app-request-redraw app))

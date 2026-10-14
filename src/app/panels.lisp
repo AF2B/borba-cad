@@ -83,8 +83,8 @@
   "Space between the edge of the empty-drawing hint's card and its text, above and below, in pixels.")
 
 (defparameter *empty-hint-lines*
-  '("Pick a tool on the left, or press L for a line, R for a rectangle, C for a circle."
-    "Ctrl+O opens a drawing, and a .bcad file dropped on the window opens too.")
+  (list (i18n:mark "Pick a tool on the left, or press L for a line, R for a rectangle, C for a circle.")
+        (i18n:mark "Ctrl+O opens a drawing, and a .bcad file dropped on the window opens too."))
   "The lines of the hint shown over an empty drawing, under its heading.")
 
 (defconstant +caret-size+ 10f0
@@ -252,14 +252,14 @@ HEIGHT: height; 1 for a horizontal line."
 marking a separator.
 
 APP: the application."
-  (list (list :new :new (lambda () (operation-new app)) "New drawing" "Ctrl+N" t)
-        (list :open :open (lambda () (operation-open app)) "Open a drawing" "Ctrl+O" t)
-        (list :save :save (lambda () (operation-save app)) "Save" "Ctrl+S" t)
-        (list :save-as :save-as (lambda () (operation-save-as app)) "Save as..." "Ctrl+Shift+S" t)
+  (list (list :new :new (lambda () (operation-new app)) (i18n:tr "New drawing") "Ctrl+N" t)
+        (list :open :open (lambda () (operation-open app)) (i18n:tr "Open a drawing") "Ctrl+O" t)
+        (list :save :save (lambda () (operation-save app)) (i18n:tr "Save") "Ctrl+S" t)
+        (list :save-as :save-as (lambda () (operation-save-as app)) (i18n:tr "Save as...") "Ctrl+Shift+S" t)
         nil
-        (list :undo :undo (lambda () (operation-undo app)) "Undo" "Ctrl+Z"
+        (list :undo :undo (lambda () (operation-undo app)) (i18n:tr "Undo") "Ctrl+Z"
               (dom:history-can-undo-p (app-history app)))
-        (list :redo :redo (lambda () (operation-redo app)) "Redo" "Ctrl+Y"
+        (list :redo :redo (lambda () (operation-redo app)) (i18n:tr "Redo") "Ctrl+Y"
               (dom:history-can-redo-p (app-history app)))))
 
 (defun document-name (app)
@@ -269,7 +269,7 @@ APP: the application."
   (let ((path (app-file-path app)))
     (if path
         (file-namestring path)
-        "Untitled")))
+        (i18n:tr "Untitled"))))
 
 (defun document-widget (app
                         left
@@ -299,7 +299,7 @@ RIGHT: x where it ends."
 (defun toolbar-widgets (app
                         blocked)
   "Build the title bar: brand mark, file and history buttons, the document name, and the
-performance toggle.
+language and performance buttons.
 
 APP: the application.
 BLOCKED: true while a modal covers the title bar."
@@ -365,7 +365,20 @@ BLOCKED: true while a modal covers the title bar."
                                     :shortcut shortcut)
                   widgets)
             (incf x (+ ui:+icon-button-size+ +title-button-gap+)))))
-    (let ((perf-x (- width +title-margin+ ui:+icon-button-size+)))
+    (let* ((perf-x (- width +title-margin+ ui:+icon-button-size+))
+           (language-x (- perf-x +title-button-gap+ ui:+icon-button-size+)))
+      (push (make-icon-button :language
+                              :globe
+                              language-x
+                              button-y
+                              :action (lambda ()
+                                        (toggle-menu app
+                                                     :language
+                                                     :language))
+                              :active (and (app-menu app) (eq :language (menu-kind (app-menu app))))
+                              :blocked blocked
+                              :hint (i18n:tr "Language"))
+            widgets)
       (push (make-icon-button :perf
                               :perf
                               perf-x
@@ -373,12 +386,12 @@ BLOCKED: true while a modal covers the title bar."
                               :action (lambda () (operation-toggle-overlay app))
                               :active (app-overlay-visible app)
                               :blocked blocked
-                              :hint "Performance overlay"
+                              :hint (i18n:tr "Performance overlay")
                               :shortcut "F3")
             widgets)
       (push (document-widget app
                              (+ (- x +title-button-gap+) +title-group-gap+)
-                             (- perf-x +title-group-gap+))
+                             (- language-x +title-group-gap+))
             widgets))
     (nreverse widgets)))
 
@@ -398,12 +411,12 @@ CANVAS: the canvas rectangle."
     (let* ((theme (app-theme app))
            (x (ui:rect-x canvas))
            (width (ui:rect-width canvas))
-           (lines *empty-hint-lines*)
+           (lines (mapcar #'i18n:tr *empty-hint-lines*))
            (block-height (+ +empty-hint-title-size+
                             +empty-hint-gap+
                             (* (length lines) +empty-hint-line-height+)))
            (block-width (reduce #'max
-                                (cons (ui:text-width-pixels "Start drawing"
+                                (cons (ui:text-width-pixels (i18n:tr "Start drawing")
                                                             +empty-hint-title-size+
                                                             :ui-strong)
                                       (mapcar #'ui:text-width-pixels lines))))
@@ -416,7 +429,7 @@ CANVAS: the canvas rectangle."
                              card-width
                              (+ block-height (* 2 +empty-hint-padding-y+)))
              (make-label :empty-hint-title
-                        "Start drawing"
+                        (i18n:tr "Start drawing")
                         x
                         top
                         width
@@ -476,7 +489,7 @@ BLOCKED: true while a modal covers the palette."
                             :action (lambda () (operation-set-tool app :select))
                             :active selecting
                             :blocked blocked
-                            :hint "Select and move"
+                            :hint (i18n:tr "Select and move")
                             :shortcut "Esc"
                             :variant :tool
                             :size +palette-button-size+)
@@ -495,7 +508,7 @@ BLOCKED: true while a modal covers the palette."
                                                    :draw))
                             :active (not selecting)
                             :blocked blocked
-                            :hint "Drawing tools"
+                            :hint (i18n:tr "Drawing tools")
                             :variant :tool
                             :size +palette-button-size+)
           (ui:make-widget :icon
@@ -509,6 +522,21 @@ BLOCKED: true while a modal covers the palette."
 
 ;;; Status bar
 
+(defparameter *snap-kind-labels*
+  (list (cons :endpoint (i18n:mark "endpoint"))
+        (cons :center (i18n:mark "center"))
+        (cons :grid (i18n:mark "grid")))
+  "How the status bar names what the pointer snapped to, in English; it is translated where shown.")
+
+(defun snap-kind-label (kind)
+  "Return the name of a kind of snap in the current language, in lower case.
+
+KIND: :endpoint, :center or :grid."
+  (let ((label (cdr (assoc kind *snap-kind-labels*))))
+    (if label
+        (i18n:tr label)
+        (string-downcase (symbol-name kind)))))
+
 (defun cursor-text (app)
   "Return the pointer position and zoom as status text.
 
@@ -521,7 +549,7 @@ APP: the application."
                                             2)
                        (base:unit-abbreviation unit))))
     (if cursor
-        (format nil "X ~a  Y ~a ~a | ~a~@[ | snap: ~(~a~)~]"
+        (i18n:trf "X ~a  Y ~a ~a | ~a~@[ | snap: ~a~]"
                 (base:format-length (cursor-x cursor)
                                     unit
                                     :precision 3)
@@ -530,7 +558,7 @@ APP: the application."
                                     :precision 3)
                 (base:unit-abbreviation unit)
                 zoom
-                (cursor-snap-kind cursor))
+                (and (cursor-snap-kind cursor) (snap-kind-label (cursor-snap-kind cursor))))
         (format nil "~a" zoom))))
 
 (defun app-status-texts (app
@@ -553,23 +581,23 @@ to right. A chip without an icon shows a dot that lights up when it is on.
 
 APP: the application."
   (let ((drawing (app-drawing app)))
-    (list (list :grid "Grid" nil
+    (list (list :grid (i18n:tr "Grid") nil
                 (lambda () (operation-toggle-grid app))
-                "Show the grid" "G" (dom:drawing-grid-visible drawing))
-          (list :snap "Snap" nil
+                (i18n:tr "Show the grid") "G" (dom:drawing-grid-visible drawing))
+          (list :snap (i18n:tr "Snap") nil
                 (lambda () (operation-toggle-snap app))
-                "Snap to the grid" "S" (dom:drawing-snap-to-grid drawing))
-          (list :object-snap "OSnap" nil
+                (i18n:tr "Snap to the grid") "S" (dom:drawing-snap-to-grid drawing))
+          (list :object-snap (i18n:tr "OSnap") nil
                 (lambda () (operation-toggle-object-snap app))
-                "Snap to endpoints and centers" "O" (dom:drawing-object-snap drawing))
+                (i18n:tr "Snap to endpoints and centers") "O" (dom:drawing-object-snap drawing))
           (list :unit
-                (format nil "Unit: ~a" (base:unit-abbreviation (dom:drawing-display-unit drawing)))
+                (i18n:trf "Unit: ~a" (base:unit-abbreviation (dom:drawing-display-unit drawing)))
                 :unit
                 (lambda () (operation-cycle-display-unit app))
-                "Change the display unit" "U" nil)
-          (list :extents "Fit" :extents
+                (i18n:tr "Change the display unit") "U" nil)
+          (list :extents (i18n:tr "Fit") :extents
                 (lambda () (operation-zoom-extents app))
-                "Zoom to fit everything" "Home" nil))))
+                (i18n:tr "Zoom to fit everything") "Home" nil))))
 
 (defun chip-width (label
                    icon)

@@ -30,27 +30,15 @@
   "Room a row gives its icon before its text, in pixels.")
 
 (defparameter *draw-menu-tools*
-  '((:line :line "Line" "L")
-    (:polyline :polyline "Polyline" "P")
-    (:rectangle :rectangle "Rectangle" "R")
-    (:circle :circle "Circle" "C")
-    nil
-    (:text :text "Text" "T")
-    (:dimension :dimension "Dimension" "D"))
+  (list (list :line :line (i18n:mark "Line") "L")
+        (list :polyline :polyline (i18n:mark "Polyline") "P")
+        (list :rectangle :rectangle (i18n:mark "Rectangle") "R")
+        (list :circle :circle (i18n:mark "Circle") "C")
+        nil
+        (list :text :text (i18n:mark "Text") "T")
+        (list :dimension :dimension (i18n:mark "Dimension") "D"))
   "The choices of the draw menu, top to bottom, as (tool-kind icon label shortcut), with NIL between
-groups.")
-
-(defstruct (menu (:constructor make-menu (kind
-                                          anchor
-                                          highlight)))
-  "An open drop-down menu.
-
-KIND: :draw or :language.
-ANCHOR: id of the button the menu hangs from.
-HIGHLIGHT: position, among the choices, of the one the keyboard is on."
-  kind
-  anchor
-  highlight)
+groups. The labels are in English and are translated where the menu is built.")
 
 (defstruct (menu-item (:constructor make-menu-item (id
                                                     label
@@ -100,20 +88,36 @@ APP: the application."
                     (destructuring-bind (kind icon label shortcut) spec
                       (let ((kind kind))
                         (make-menu-item kind
-                                        label
+                                        (i18n:tr label)
                                         icon
                                         shortcut
                                         (lambda () (choose-menu-tool app kind))
                                         (eq kind active))))))))
+
+(defun language-menu-items (app)
+  "Return the choices of the language menu: one per language, each named in its own language.
+
+APP: the application."
+  (loop for language in (i18n:supported-languages)
+        collect (let ((language language))
+                  (make-menu-item language
+                                  (i18n:language-name language)
+                                  nil
+                                  nil
+                                  (lambda ()
+                                    (close-menu app)
+                                    (operation-set-language app language))
+                                  (eq language i18n:*language*)))))
 
 (defun menu-items (app
                    kind)
   "Return the choices of the menu KIND, with NIL between groups.
 
 APP: the application.
-KIND: :draw."
+KIND: :draw or :language."
   (ecase kind
-    (:draw (draw-menu-items app))))
+    (:draw (draw-menu-items app))
+    (:language (language-menu-items app))))
 
 (defun selectable-items (items)
   "Return the choices among ITEMS, without the NILs that separate groups.
@@ -127,7 +131,7 @@ ITEMS: a list of menu items and NILs."
   "Open the menu KIND hanging from the button ANCHOR, with the keyboard on the choice in force.
 
 APP: the application.
-KIND: :draw.
+KIND: :draw or :language.
 ANCHOR: id of the button."
   (let* ((items (selectable-items (menu-items app kind)))
          (current (position-if #'menu-item-current items)))
@@ -142,7 +146,7 @@ ANCHOR: id of the button."
   "Open the menu KIND, or close it when it is already open.
 
 APP: the application.
-KIND: :draw.
+KIND: :draw or :language.
 ANCHOR: id of the button it hangs from."
   (if (and (app-menu app) (eq (menu-kind (app-menu app)) kind))
       (close-menu app)

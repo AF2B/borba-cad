@@ -31,7 +31,7 @@ BLOCKED: true while a prompt covers the dialog."
                           width
                           (browser-layout-height layout))
           (make-label :dialog-title
-                      (if (eq (file-dialog-mode dialog) :open) "Open a drawing" "Save drawing as")
+                      (if (eq (file-dialog-mode dialog) :open) (i18n:tr "Open a drawing") (i18n:tr "Save drawing as"))
                       (+ x +browser-inset+)
                       y
                       (- width (* 2 +browser-inset+) +browser-control-height+)
@@ -45,7 +45,7 @@ BLOCKED: true while a prompt covers the dialog."
                             (+ y (/ (- +browser-header-height+ +toggle-size+) 2))
                             :action (lambda () (close-file-dialog app))
                             :blocked blocked
-                            :hint "Close"
+                            :hint (i18n:tr "Close")
                             :shortcut "Esc"
                             :variant :ghost
                             :size +toggle-size+)
@@ -117,7 +117,7 @@ BLOCKED: true while a prompt covers the dialog."
                          +sidebar-heading-height+
                          :size ui:+small-font-pixels+
                          :color (scene:theme-text-faint theme))))
-      (add (heading :dialog-places-heading "PLACES"))
+      (add (heading :dialog-places-heading (i18n:tr "PLACES")))
       (incf y +sidebar-heading-height+)
       (loop for (label icon path) in (file-dialog-places dialog)
             for index from 0
@@ -132,7 +132,7 @@ BLOCKED: true while a prompt covers the dialog."
                (incf y +sidebar-row-height+))
       (when recent
         (incf y ui:+gap+)
-        (add (heading :dialog-recent-heading "RECENT"))
+        (add (heading :dialog-recent-heading (i18n:tr "RECENT")))
         (incf y +sidebar-heading-height+)
         (loop for path in recent
               for index from 0
@@ -244,7 +244,7 @@ BLOCKED: true while a prompt covers the dialog."
                                   top
                                   :action (lambda () (start-location-edit dialog))
                                   :blocked blocked
-                                  :hint "Type a path"
+                                  :hint (i18n:tr "Type a path")
                                   :shortcut "Ctrl+L"
                                   :variant :ghost
                                   :size edit-size)
@@ -272,7 +272,7 @@ BLOCKED: true while a prompt covers the dialog."
                                     :action (lambda () (open-parent-directory dialog))
                                     :enabled (and (parent-directory (file-dialog-directory dialog)) t)
                                     :blocked blocked
-                                    :hint "Up one folder"
+                                    :hint (i18n:tr "Up one folder")
                                     :shortcut "Alt+Up"
                                     :variant :ghost
                                     :size +browser-control-height+))
@@ -288,7 +288,7 @@ BLOCKED: true while a prompt covers the dialog."
                                   +browser-control-height+
                                   :label (if (plusp (length (ui:edit-state-text filter-edit)))
                                              (ui:edit-state-text filter-edit)
-                                             "Search")
+                                             (i18n:tr "Search"))
                                   :align :left
                                   :color (and (zerop (length (ui:edit-state-text filter-edit)))
                                               (scene:theme-text-faint (app-theme app)))
@@ -296,7 +296,7 @@ BLOCKED: true while a prompt covers the dialog."
                                   :blocked blocked
                                   :icon :search
                                   :action (lambda () (focus-field dialog :filter))
-                                  :hint "Type to find a file or a folder")))))
+                                  :hint (i18n:tr "Type to find a file or a folder"))))))
 
 (defun empty-list-text (dialog)
   "Return the sentence shown in place of an empty list.
@@ -304,11 +304,11 @@ BLOCKED: true while a prompt covers the dialog."
 DIALOG: the file dialog."
   (let ((text (string-trim " " (ui:edit-state-text (file-dialog-filter-edit dialog)))))
     (cond ((plusp (length text))
-           (format nil "Nothing here matches ~s." text))
+           (i18n:trf "Nothing here matches ~s." text))
           ((file-dialog-show-all dialog)
-           "This folder is empty.")
+           (i18n:tr "This folder is empty."))
           (t
-           "No drawings in this folder."))))
+           (i18n:tr "No drawings in this folder.")))))
 
 (defun list-widgets (app
                      dialog
@@ -334,7 +334,7 @@ BLOCKED: true while a prompt covers the dialog."
          (modified-x (- (+ main-x main-width) +modified-column-width+))
          (size-x (- modified-x +size-column-width+))
          (widgets (list (make-label :dialog-heading-name
-                                    "Name"
+                                    (i18n:tr "Name")
                                     (+ main-x ui:+padding+)
                                     heading-top
                                     main-width
@@ -342,7 +342,7 @@ BLOCKED: true while a prompt covers the dialog."
                                     :size ui:+small-font-pixels+
                                     :color (scene:theme-text-faint theme))
                         (make-label :dialog-heading-size
-                                    "Size"
+                                    (i18n:tr "Size")
                                     size-x
                                     heading-top
                                     (- +size-column-width+ ui:+gap+)
@@ -351,7 +351,7 @@ BLOCKED: true while a prompt covers the dialog."
                                     :size ui:+small-font-pixels+
                                     :color (scene:theme-text-faint theme))
                         (make-label :dialog-heading-modified
-                                    "Modified"
+                                    (i18n:tr "Modified")
                                     (+ modified-x ui:+padding+)
                                     heading-top
                                     (- +modified-column-width+ ui:+padding+)
@@ -444,7 +444,17 @@ BLOCKED: true while a prompt covers the dialog."
          (buttons-y (+ name-y +browser-control-height+ ui:+padding+))
          (right (- (+ x width) +browser-inset+))
          (open-p (eq (file-dialog-mode dialog) :open))
-         (inner-left (+ x +browser-inset+)))
+         (inner-left (+ x +browser-inset+))
+         (name-label (i18n:tr "File name"))
+         (name-label-width (max +name-label-width+
+                                (+ (ui:text-width-pixels name-label ui:+small-font-pixels+) ui:+gap+)))
+         (all-files-label (i18n:tr "All files"))
+         (all-files-width (max +all-files-chip-width+ (chip-width all-files-label nil)))
+         (new-folder-label (i18n:tr "New folder"))
+         (new-folder-width (max +new-folder-button-width+
+                                (+ (ui:text-width-pixels new-folder-label ui:+small-font-pixels+)
+                                   ui:+small-icon-size+
+                                   (* 4 ui:+gap+)))))
     (append
      (list (make-separator :dialog-footer-line
                            (+ x +browser-inset+)
@@ -462,18 +472,18 @@ BLOCKED: true while a prompt covers the dialog."
                          :icon (if error-p :warning :info)
                          :color (if error-p (scene:theme-danger theme) (scene:theme-text-dim theme)))))
      (list (make-label :dialog-name-label
-                       "File name"
+                       name-label
                        inner-left
                        name-y
-                       +name-label-width+
+                       name-label-width
                        +browser-control-height+
                        :size ui:+small-font-pixels+
                        :color (scene:theme-text-dim theme))
            (ui:make-widget :field
                            :dialog-filename
-                           (+ inner-left +name-label-width+)
+                           (+ inner-left name-label-width)
                            name-y
-                           (- right inner-left +name-label-width+)
+                           (- right inner-left name-label-width)
                            +browser-control-height+
                            :label (ui:edit-state-text (file-dialog-name-edit dialog))
                            :align :left
@@ -484,9 +494,9 @@ BLOCKED: true while a prompt covers the dialog."
                            :dialog-all-files
                            inner-left
                            (+ buttons-y (/ (- +action-button-height+ ui:+chip-height+) 2))
-                           +all-files-chip-width+
+                           all-files-width
                            ui:+chip-height+
-                           :label "All files"
+                           :label all-files-label
                            :active (file-dialog-show-all dialog)
                            :variant :chip
                            :size ui:+small-font-pixels+
@@ -494,21 +504,21 @@ BLOCKED: true while a prompt covers the dialog."
                            :action (lambda ()
                                      (setf (file-dialog-show-all dialog) (not (file-dialog-show-all dialog)))
                                      (clamp-scroll dialog))
-                           :hint "List every file, not only drawings"))
+                           :hint (i18n:tr "List every file, not only drawings")))
      (unless open-p
        (list (ui:make-widget :button
                              :dialog-new-folder
-                             (+ inner-left +all-files-chip-width+ ui:+gap+)
+                             (+ inner-left all-files-width ui:+gap+)
                              buttons-y
-                             +new-folder-button-width+
+                             new-folder-width
                              +action-button-height+
-                             :label "New folder"
+                             :label new-folder-label
                              :icon :new-folder
                              :variant :ghost
                              :size ui:+small-font-pixels+
                              :blocked blocked
                              :action (lambda () (ask-for-folder-name app dialog))
-                             :hint "Create a folder here"
+                             :hint (i18n:tr "Create a folder here")
                              :shortcut "Ctrl+Shift+N")))
      (list (ui:make-widget :button
                            :dialog-cancel
@@ -516,7 +526,7 @@ BLOCKED: true while a prompt covers the dialog."
                            buttons-y
                            +accept-button-width+
                            +action-button-height+
-                           :label "Cancel"
+                           :label (i18n:tr "Cancel")
                            :blocked blocked
                            :action (lambda () (close-file-dialog app)))
            (ui:make-widget :button
@@ -525,7 +535,7 @@ BLOCKED: true while a prompt covers the dialog."
                            buttons-y
                            +accept-button-width+
                            +action-button-height+
-                           :label (if open-p "Open" "Save")
+                           :label (if open-p (i18n:tr "Open") (i18n:tr "Save"))
                            :variant :primary
                            :enabled (accept-enabled-p dialog)
                            :blocked blocked

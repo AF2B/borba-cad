@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Languages.** The interface speaks English (US), always the default, and Brazilian Portuguese. The
+  globe button in the title bar opens a menu of languages; the choice is kept between runs, and
+  `--language pt-BR` or `BORBA_CAD_LANGUAGE=pt-BR` override it. The English text of the program is the
+  key of each message, so a text that has no translation shows in English; a catalog is a UTF-8
+  data file (`src/i18n/pt-br.catalog`), and the lint fails when a text of the program has no
+  translation in it or the catalog keeps one the program does not use. Messages with plurals,
+  tool prompts, property names, errors and the file dialog are translated; the messages about the
+  internal structure of a damaged `.bcad` file, the performance overlay, the log and the
+  command-line help stay in English.
 - **File dialog.** Open and Save As are one friendly screen: folders and drawings with size and
   date, places (home, documents, desktop, downloads, sample drawings), recent drawings, a clickable
   folder trail with a path field, live search, an All files switch, new folder, overwrite

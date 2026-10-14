@@ -95,29 +95,29 @@ RADIUS: replacement radius."
 
 (defmethod entity-properties ((circle circle-entity))
   (list (make-property :center-x
-                       "Center X"
+                       (i18n:tr "Center X")
                        :coordinate
                        (circle-center-x circle)
                        t)
         (make-property :center-y
-                       "Center Y"
+                       (i18n:tr "Center Y")
                        :coordinate
                        (circle-center-y circle)
                        t)
         (make-property :radius
-                       "Radius"
+                       (i18n:tr "Radius")
                        :length
                        (circle-radius circle)
                        t)))
 
 (defmethod entity-derived-values ((circle circle-entity))
-  (list (make-derived-value "Diameter"
+  (list (make-derived-value (i18n:tr "Diameter")
                             :length
                             (* 2d0 (circle-radius circle)))
-        (make-derived-value "Circumference"
+        (make-derived-value (i18n:tr "Circumference")
                             :length
                             (geo:circle-circumference (circle-radius circle)))
-        (make-derived-value "Area"
+        (make-derived-value (i18n:tr "Area")
                             :area
                             (geo:circle-area (circle-radius circle)))))
 

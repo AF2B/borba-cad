@@ -8,6 +8,9 @@
 ;;;; Layout rule: a call to one of the project's own functions with three or more parameters
 ;;;; puts each parameter on its own line (keyword and value count as one parameter).
 ;;;; Architecture rule: the headless core never depends on a window, GPU or foreign library.
+;;;; Translation rule: every English text that the program passes through a translating function
+;;;; has a translation in each language catalog, and no catalog keeps an entry the program does
+;;;; not use.
 
 (in-package #:borba-cad/scripts)
 
@@ -570,6 +573,86 @@ SYMBOL: an exported symbol."
       (visit "borba-cad" '()))
     violations))
 
+;;; Translations
+
+(defparameter *translated-call-arguments*
+  '(("tr" . 0) ("trf" . 0) ("mark" . 0)
+    ("invalid-entity-failure" . 1) ("layer-failure" . 0) ("io-failure" . 1) ("path-failure" . 1))
+  "The functions that take an English text for the user, as (name . position of that argument).")
+
+(defparameter *translated-languages* '(:pt-br)
+  "The languages whose catalogs must hold every text of the program.")
+
+(defun string-literal-value (text)
+  "Return the string that a string literal of the source denotes, or NIL when TEXT is not one.
+
+TEXT: the source text of an atom."
+  (when (and (> (length text) 1) (char= #\" (char text 0)) (char= #\" (char text (1- (length text)))))
+    (with-output-to-string (stream)
+      (let ((index 1)
+            (end (1- (length text))))
+        (loop while (< index end)
+              do (when (and (char= #\\ (char text index)) (< (1+ index) end))
+                   (incf index))
+                 (write-char (char text index) stream)
+                 (incf index))))))
+
+(defun translated-literals (nodes
+                            file)
+  "Return the English texts that the code of NODES passes to a translating function, as
+(file line text) lists.
+
+NODES: top-level nodes of a source file.
+FILE: the name of the file, for the report."
+  (let ((found '()))
+    (labels ((visit (node)
+               (when (eq :list (source-node-kind node))
+                 (let* ((elements (remove :comment (source-node-children node) :key #'source-node-kind))
+                        (head (first elements))
+                        (position (and head
+                                       (null (source-node-text node))
+                                       (eq :atom (source-node-kind head))
+                                       (cdr (assoc (bare-name (source-node-text head))
+                                                   *translated-call-arguments*
+                                                   :test #'string=))))
+                        (argument (and position (nth (1+ position) elements)))
+                        (text (and argument (eq :atom (source-node-kind argument))
+                                   (string-literal-value (source-node-text argument)))))
+                   (when text
+                     (push (list file (source-node-line argument) text) found))
+                   (mapc #'visit (source-node-children node))))))
+      (mapc #'visit nodes))
+    (nreverse found)))
+
+(defun source-translated-literals ()
+  "Return every English text the program's own source passes to a translating function."
+  (loop for path in (directory (merge-pathnames "**/*.lisp" (project-path "src/")))
+        append (translated-literals (parse-source (with-open-file (stream path :external-format :utf-8)
+                                                    (let ((text (make-string (file-length stream))))
+                                                      (subseq text 0 (read-sequence text stream)))))
+                                    (relative-name path))))
+
+(defun translation-violations ()
+  "Return the violations of the translation rule: a text without a translation in a catalog, and
+a catalog entry that no text of the program asks for."
+  (asdf:load-system "borba-cad")
+  (let ((literals (source-translated-literals))
+        (violations '()))
+    (dolist (language *translated-languages*)
+      (let ((entries (uiop:symbol-call :borba-cad/i18n :catalog-translations language))
+            (used (make-hash-table :test 'equal)))
+        (dolist (entry entries)
+          (setf (gethash (first entry) used) nil))
+        (loop for (file line text) in literals
+              do (if (nth-value 1 (gethash text used))
+                     (setf (gethash text used) t)
+                     (push (format nil "~a:~d: no ~a translation of ~s" file line language text) violations)))
+        (loop for (key) in entries
+              unless (gethash key used)
+                do (push (format nil "catalog ~a: the entry ~s is not used by the program" language key)
+                         violations))))
+    (nreverse violations)))
+
 ;;; Entry point
 
 (defun lint ()
@@ -579,7 +662,8 @@ SYMBOL: an exported symbol."
          (violations (append (loop for file in files append (line-violations file))
                              (loop for file in (layout-files) append (layout-violations file functions))
                              (core-dependency-violations)
-                             (documentation-violations))))
+                             (documentation-violations)
+                             (translation-violations))))
     (cond (violations
            (format *error-output* "~&~{~a~%~}~%LINT FAILED: ~d violation(s) in ~d files.~%"
                    violations (length violations) (length files))

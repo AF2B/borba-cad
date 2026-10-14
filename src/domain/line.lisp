@@ -118,17 +118,20 @@ Y2: replacement end y."
         (list (line-x2 line) (line-y2 line) :endpoint)))
 
 (defmethod entity-properties ((line line-entity))
-  (coordinate-properties '((:x1 "Start X") (:y1 "Start Y") (:x2 "End X") (:y2 "End Y"))
+  (coordinate-properties (list (list :x1 (i18n:mark "Start X"))
+                               (list :y1 (i18n:mark "Start Y"))
+                               (list :x2 (i18n:mark "End X"))
+                               (list :y2 (i18n:mark "End Y")))
                          (list (line-x1 line) (line-y1 line) (line-x2 line) (line-y2 line))))
 
 (defmethod entity-derived-values ((line line-entity))
-  (list (make-derived-value "Length"
+  (list (make-derived-value (i18n:tr "Length")
                             :length
                             (geo:segment-length (line-x1 line)
                                                 (line-y1 line)
                                                 (line-x2 line)
                                                 (line-y2 line)))
-        (make-derived-value "Angle"
+        (make-derived-value (i18n:tr "Angle")
                             :angle
                             (geo:segment-angle (line-x1 line)
                                                (line-y1 line)

@@ -429,13 +429,13 @@ sample drawings of the project, each only when it exists.
 CONFIG: the application configuration."
   (let* ((home (user-homedir-pathname))
          (candidates
-           (list (list "Home" :home home)
+           (list (list (i18n:tr "Home") :home home)
                  (list nil :folder (persist:default-drawings-directory))
                  (list nil :folder (or (existing-directory (persist:user-directories-entry "XDG_DESKTOP_DIR"))
                                        (existing-directory (merge-pathnames "Desktop/" home))))
                  (list nil :folder (or (existing-directory (persist:user-directories-entry "XDG_DOWNLOAD_DIR"))
                                        (existing-directory (merge-pathnames "Downloads/" home))))
-                 (list "Examples" :folder
+                 (list (i18n:tr "Examples") :folder
                        (and (base:config-project-root config)
                             (existing-directory (merge-pathnames (concatenate 'string
                                                                               *examples-folder-name*
@@ -515,12 +515,12 @@ NAME: the new folder's name."
   (let ((trimmed (string-trim " " name)))
     (cond ((zerop (length trimmed))
            (dialog-say dialog
-                       "Type a name for the folder."
+                       (i18n:tr "Type a name for the folder.")
                        :error)
            nil)
           ((find-if (lambda (character) (find character "/\\")) trimmed)
            (dialog-say dialog
-                       "A folder name cannot contain a slash."
+                       (i18n:tr "A folder name cannot contain a slash.")
                        :error)
            nil)
           (t
@@ -528,7 +528,7 @@ NAME: the new folder's name."
                                         trimmed
                                         :directory))
                   (problem (if (sbcl:file-kind path)
-                               (format nil "~a already exists." trimmed)
+                               (i18n:trf "~a already exists." trimmed)
                                (sbcl:make-directory path))))
              (cond (problem
                     (dialog-say dialog
@@ -540,5 +540,5 @@ NAME: the new folder's name."
                     (let ((entry (find-entry dialog trimmed)))
                       (when entry
                         (select-entry dialog entry)))
-                    (dialog-say dialog (format nil "Created the folder ~a." trimmed))
+                    (dialog-say dialog (i18n:trf "Created the folder ~a." trimmed))
                     t)))))))

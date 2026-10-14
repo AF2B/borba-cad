@@ -101,7 +101,7 @@ NAME: layer name."
 CONTROL: format control string.
 ARGUMENTS: format arguments."
   (error 'base:layer-error
-         :reason (apply #'format nil control arguments)))
+         :reason (apply #'i18n:trf control arguments)))
 
 (defun require-layer (drawing
                       id)
@@ -339,7 +339,7 @@ SPACING: spacing in millimetres, at least +MINIMUM-GRID-SPACING+."
   (unless (valid-grid-spacing-p spacing)
     (error 'base:invalid-input
            :text (princ-to-string spacing)
-           :reason (format nil "the grid spacing must be between ~f and ~f mm"
+           :reason (i18n:trf "the grid spacing must be between ~f and ~f mm"
                            +minimum-grid-spacing+
                            base:+maximum-coordinate-magnitude+)))
   (setf (drawing-grid-spacing drawing) spacing)
@@ -385,7 +385,7 @@ HEIGHT: height in millimetres, above the length tolerance."
   (unless (base:positive-length-p height)
     (error 'base:invalid-input
            :text (princ-to-string height)
-           :reason "the text height must be a positive length"))
+           :reason (i18n:tr "the text height must be a positive length")))
   (setf (drawing-default-text-height drawing) height)
   (touch-drawing drawing)
   height)

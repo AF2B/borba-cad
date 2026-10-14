@@ -109,10 +109,10 @@ APP: the application."
   (let ((layer (dom:find-layer (app-drawing app) (creation-layer-id app))))
     (when (dom:layer-locked layer)
       (error 'base:layer-error
-             :reason (format nil "layer ~s is locked; unlock it or choose another layer" (dom:layer-name layer))))
+             :reason (i18n:trf "layer ~s is locked; unlock it or choose another layer" (dom:layer-name layer))))
     (unless (dom:layer-visible layer)
       (error 'base:layer-error
-             :reason (format nil "layer ~s is hidden; show it or choose another layer" (dom:layer-name layer))))))
+             :reason (i18n:trf "layer ~s is hidden; show it or choose another layer" (dom:layer-name layer))))))
 
 (defun create-entity (app
                       thunk)
@@ -159,7 +159,7 @@ Y: world y."
 
 (defmethod tool-prompt ((tool select-tool) app)
   (declare (ignore app))
-  "Select: click an entity, drag it to move, drag on empty space to select a window (Shift adds).")
+  (i18n:tr "Select: click an entity, drag it to move, drag on empty space to select a window (Shift adds)."))
 
 (defun pick-radius-in-world (app)
   "Return the pick radius in millimetres at the current zoom.
@@ -240,7 +240,9 @@ APP: the application."
                                           changes
                                           "entity.edit"
                                           :context "move")
-                      (set-message app (format nil "Moved ~d.~a" (length changes) (skipped-note skipped)))))
+                      (set-message app (i18n:trf "Moved ~d.~a"
+                                                 (length changes)
+                                                 (skipped-note skipped)))))
                 (base:borba-cad-error (condition) (report-error app
                                                                 condition
                                                                 "move"))))
@@ -345,7 +347,7 @@ TOOL: the tool."))
   (:documentation "Creates a line segment from two clicks."))
 (defmethod tool-kind ((tool line-tool)) :line)
 (defmethod two-click-prompts ((tool line-tool))
-  (values "Line: click the start point" "Line: click the end point (Esc cancels)"))
+  (values (i18n:tr "Line: click the start point") (i18n:tr "Line: click the end point (Esc cancels)")))
 (defmethod build-two-click-entity ((tool line-tool) app x1 y1 x2 y2)
   (dom:make-line :id (creation-id app)
                  :layer-id (creation-layer-id app)
@@ -358,7 +360,7 @@ TOOL: the tool."))
   (:documentation "Creates an axis-aligned rectangle from two opposite corners."))
 (defmethod tool-kind ((tool rectangle-tool)) :rectangle)
 (defmethod two-click-prompts ((tool rectangle-tool))
-  (values "Rectangle: click the first corner" "Rectangle: click the opposite corner (Esc cancels)"))
+  (values (i18n:tr "Rectangle: click the first corner") (i18n:tr "Rectangle: click the opposite corner (Esc cancels)")))
 (defmethod build-two-click-entity ((tool rectangle-tool) app x1 y1 x2 y2)
   (dom:make-rectangle-from-corners :id (creation-id app)
                                    :layer-id (creation-layer-id app)
@@ -371,7 +373,7 @@ TOOL: the tool."))
   (:documentation "Creates a circle from its center and a point on its outline."))
 (defmethod tool-kind ((tool circle-tool)) :circle)
 (defmethod two-click-prompts ((tool circle-tool))
-  (values "Circle: click the center" "Circle: click a point on the circle (Esc cancels)"))
+  (values (i18n:tr "Circle: click the center") (i18n:tr "Circle: click a point on the circle (Esc cancels)")))
 (defmethod build-two-click-entity ((tool circle-tool) app x1 y1 x2 y2)
   (dom:make-circle :id (creation-id app)
                    :layer-id (creation-layer-id app)
@@ -393,8 +395,8 @@ TOOL: the tool."))
 (defmethod tool-prompt ((tool polyline-tool) app)
   (declare (ignore app))
   (if (polyline-points tool)
-      "Polyline: click vertices; Enter finishes; click the first vertex to close; Backspace removes the last"
-      "Polyline: click the first vertex"))
+      (i18n:tr "Polyline: click vertices; Enter finishes; click the first vertex to close; Backspace removes the last")
+      (i18n:tr "Polyline: click the first vertex")))
 
 (defun polyline-coordinates-from (points)
   "Return the flat coordinate array of POINTS, which are stored last-first.
@@ -437,7 +439,7 @@ CLOSED: true to close it."
                             t))
           ((and points (= (car (first points)) (cursor-x cursor)) (= (cdr (first points)) (cursor-y cursor)))
            (set-message app
-                        "That vertex is already placed."
+                        (i18n:tr "That vertex is already placed.")
                         :error))
           (t (push (point-key (cursor-x cursor) (cursor-y cursor)) (polyline-points tool))
              (app-request-redraw app)))))
@@ -454,7 +456,7 @@ CLOSED: true to close it."
                                                                            app
                                                                            nil) t)
                   ((polyline-points tool) (set-message app
-                                                       "A polyline needs at least two vertices."
+                                                       (i18n:tr "A polyline needs at least two vertices.")
                                                        :error) t)
                   (t nil)))
     (:backspace (when (polyline-points tool)
@@ -492,14 +494,14 @@ CLOSED: true to close it."
 
 (defmethod tool-prompt ((tool text-tool) app)
   (declare (ignore app))
-  "Text: click where the text starts")
+  (i18n:tr "Text: click where the text starts"))
 
 (defmethod tool-pointer-down ((tool text-tool) app cursor)
   (let ((x (cursor-x cursor))
         (y (cursor-y cursor)))
     (open-text-prompt app
-                      "Text"
-                      "Text to place at the clicked point:"
+                      (i18n:tr "Text")
+                      (i18n:tr "Text to place at the clicked point:")
                       ""
                       (lambda (string)
                         (create-entity app
@@ -523,9 +525,9 @@ CLOSED: true to close it."
 
 (defmethod tool-prompt ((tool dimension-tool) app)
   (declare (ignore app))
-  (cond ((null (dimension-first-point tool)) "Dimension: click the first point")
-        ((null (dimension-second-point tool)) "Dimension: click the second point (Esc cancels)")
-        (t "Dimension: click to place the dimension line (Esc cancels)")))
+  (cond ((null (dimension-first-point tool)) (i18n:tr "Dimension: click the first point"))
+        ((null (dimension-second-point tool)) (i18n:tr "Dimension: click the second point (Esc cancels)"))
+        (t (i18n:tr "Dimension: click to place the dimension line (Esc cancels)"))))
 
 (defun dimension-offset-for (tool
                              x
@@ -584,7 +586,7 @@ Y: world y of the line."
                                                      y))
                (setf (dimension-second-point tool) (point-key x y))
                (set-message app
-                            "The two points must be apart."
+                            (i18n:tr "The two points must be apart.")
                             :error))
            (app-request-redraw app))
           (t (when (create-entity app (lambda () (build-dimension tool
