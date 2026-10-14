@@ -116,6 +116,7 @@ EVENT: a pointer event."
          (hit (ui:widget-at widgets
                             x
                             y)))
+    (clear-message app)
     (when (and (app-focus app) (not (member (app-focus app) '(:prompt :dialog)))
                (not (and hit (equal (ui:widget-id hit) (app-focus app)))))
       (commit-field-edit app)
@@ -356,6 +357,8 @@ APP: the application.
 EVENT: a key event."
   (let ((key (key-event-key event))
         (modifiers (key-event-modifiers event)))
+    (when (eq (key-event-action event) :down)
+      (clear-message app))
     (cond ((eq (key-event-action event) :up)
            (when (eq key :space)
              (setf (app-space-down app) nil)))

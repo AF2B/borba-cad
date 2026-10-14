@@ -867,6 +867,20 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
       (is (not (app:expire-message application (+ set-at (* 7 sbcl:+nanoseconds-per-second+)))) "an error stays longer")
       (is (app:expire-message application (+ set-at (* 13 sbcl:+nanoseconds-per-second+)))))))
 
+(test the-next-key-or-click-clears-the-last-message-and-what-it-produces-stays
+  (let ((application (make-test-app)))
+    (app:set-message application "Old news.")
+    (press application :g)                                      ; any key, here the grid toggle
+    (is (null (app:app-message application)))
+    (app:set-message application "More old news.")
+    (click application 0 0)
+    (is (null (app:app-message application)) "a click clears it too")
+    (press application :a :control)                             ; select all says how many it selected
+    (is (search "selected" (message-text application)) "the message the key itself makes stays")
+    (app:report-error application (make-condition 'base:invalid-input :text "x" :reason "bad"))
+    (send application (app:make-key-event :g nil :up))          ; a key release is not a new beginning
+    (is (eq :error (cdr (app:app-message application))))))
+
 (test once-the-message-is-gone-the-tool-prompt-and-the-hints-show-again
   (let ((application (make-test-app)))
     (app:set-message application "Layer created.")

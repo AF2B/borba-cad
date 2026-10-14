@@ -199,6 +199,16 @@ SEVERITY: :info or :error."
         (app-message-time app) (sbcl:monotonic-nanoseconds))
   (app-request-redraw app))
 
+(defun clear-message (app)
+  "Take the message out of the status bar. The next thing the user does is a new beginning, and
+what the last one said no longer applies.
+
+APP: the application."
+  (when (app-message app)
+    (setf (app-message app) nil
+          (app-message-time app) nil)
+    (app-request-redraw app)))
+
 (defun expire-message (app
                        &optional (now (sbcl:monotonic-nanoseconds)))
   "Take the message out of the status bar once it has been there long enough, so that the hint

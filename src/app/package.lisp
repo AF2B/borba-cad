@@ -123,6 +123,7 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:report-error
    #:set-message
    #:expire-message
+   #:clear-message
    ;; Tools
    #:tool
    #:select-tool
