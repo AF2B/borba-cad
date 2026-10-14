@@ -1,0 +1,216 @@
+(in-package #:borba-cad/base)
+
+(defconstant +default-log-max-bytes+ (* 5 1024 1024)
+  "Default size at which a log file is rotated: 5 MiB keeps hours of info-level output.")
+
+(defconstant +default-log-max-files+ 5
+  "Default number of log files kept (current plus rotated); with 5 MiB each, disk use is
+bounded at 25 MiB.")
+
+(defconstant +default-window-width+ 1440
+  "Default window width in logical pixels.")
+
+(defconstant +default-window-height+ 900
+  "Default window height in logical pixels.")
+
+(defconstant +default-frame-summary-interval-seconds+ 1
+  "Seconds between aggregated frame/input summary log entries.")
+
+(defconstant +default-memory-sample-interval-seconds+ 5
+  "Seconds between memory.sample log entries.")
+
+(defconstant +minimum-log-max-bytes+ 1024
+  "Smallest accepted rotation size, so a misconfiguration cannot rotate on every line.")
+
+(defparameter *log-levels* '(:error :warn :info :debug :trace)
+  "Log severities from most to least severe.")
+
+(defun log-levels ()
+  "Return the list of log level keywords, from most to least severe."
+  (copy-list *log-levels*))
+
+(defstruct (config (:copier copy-config))
+  "Central application configuration; every default lives here.
+
+PROJECT-ROOT: directory containing the project (logs and examples are relative to it).
+LOG-DIRECTORY: directory receiving the rotating log file.
+LOG-LEVEL: least severe level that is written.
+LOG-MAX-BYTES: size at which the log file is rotated.
+LOG-MAX-FILES: number of log files kept, including the current one.
+LOG-TO-STDERR: also echo log lines to standard error.
+LOG-SAMPLING: alist of event name and N; only one in N entries of that event is written.
+FRAME-SUMMARY-INTERVAL-SECONDS: period of aggregated summary entries.
+MEMORY-SAMPLE-INTERVAL-SECONDS: period of memory samples.
+FONT-PATH: monospace TrueType font file, or NIL to search the usual locations.
+WINDOW-WIDTH: initial window width in logical pixels.
+WINDOW-HEIGHT: initial window height in logical pixels.
+INITIAL-FILE: drawing file to open at startup, or NIL."
+  (project-root nil :type (or null pathname))
+  (log-directory nil :type (or null pathname))
+  (log-level :info :type keyword)
+  (log-max-bytes +default-log-max-bytes+ :type integer)
+  (log-max-files +default-log-max-files+ :type integer)
+  (log-to-stderr nil :type boolean)
+  (log-sampling nil :type list)
+  (frame-summary-interval-seconds +default-frame-summary-interval-seconds+ :type real)
+  (memory-sample-interval-seconds +default-memory-sample-interval-seconds+ :type real)
+  (font-path nil :type (or null string))
+  (window-width +default-window-width+ :type integer)
+  (window-height +default-window-height+ :type integer)
+  (initial-file nil :type (or null string)))
+
+(defun configuration-failure (control
+                              &rest arguments)
+  "Signal a CONFIGURATION-ERROR whose reason is built from CONTROL and ARGUMENTS.
+
+CONTROL: a format control string.
+ARGUMENTS: format arguments."
+  (error 'configuration-error
+         :reason (apply #'format nil control arguments)))
+
+(defun parse-log-level (text)
+  "Return the log level keyword named by TEXT, signaling CONFIGURATION-ERROR when unknown.
+
+TEXT: a level name such as \"debug\" (case-insensitive)."
+  (or (find text *log-levels* :test #'string-equal)
+      (configuration-failure "unknown log level ~s; use one of ~{~(~a~)~^, ~}"
+                             text
+                             *log-levels*)))
+
+(defun parse-positive-integer-option (text
+                                      option-name)
+  "Parse TEXT as a positive integer, signaling CONFIGURATION-ERROR otherwise.
+
+TEXT: the option value.
+OPTION-NAME: option name used in the error message."
+  (let ((value (handler-case (parse-integer text)
+                 (parse-error ()
+                   (configuration-failure "~a expects a positive integer, got ~s"
+                                          option-name
+                                          text)))))
+    (unless (plusp value)
+      (configuration-failure "~a expects a positive integer, got ~s"
+                             option-name
+                             text))
+    value))
+
+(defun parse-sampling-option (text)
+  "Parse \"event=N\" into a cons of event name and positive integer N.
+
+TEXT: a sampling rule such as \"input.event=10\"."
+  (let ((separator (position #\= text)))
+    (unless separator
+      (configuration-failure "sampling rule ~s must look like event.name=N" text))
+    (cons (subseq text 0 separator)
+          (parse-positive-integer-option (subseq text (1+ separator)) "log sampling"))))
+
+(defun parse-boolean-option (text)
+  "Parse a boolean option value (1, true, yes, on / 0, false, no, off).
+
+TEXT: the option value."
+  (cond ((member text '("1" "true" "yes" "on") :test #'string-equal) t)
+        ((member text '("0" "false" "no" "off") :test #'string-equal) nil)
+        (t (configuration-failure "expected 1/0, true/false, yes/no or on/off, got ~s" text))))
+
+(defun directory-pathname (text)
+  "Return TEXT as a directory pathname.
+
+TEXT: a directory name with or without a trailing slash."
+  (uiop:ensure-directory-pathname text))
+
+(defun detect-project-root ()
+  "Return the project root directory.
+Order: BORBA_CAD_ROOT, the ASDF source directory of the borba-cad system, the current directory."
+  (let ((from-environment (environment-variable "BORBA_CAD_ROOT")))
+    (cond ((and from-environment (plusp (length from-environment)))
+           (directory-pathname from-environment))
+          (t (or (handler-case (asdf:system-source-directory "borba-cad")
+                   (asdf:missing-component () nil))
+                 (uiop:getcwd))))))
+
+(defun default-config (&key (project-root (detect-project-root)))
+  "Return the default configuration.
+
+PROJECT-ROOT: the project directory; logs default to var/log/ below it."
+  (make-config :project-root project-root
+               :log-directory (merge-pathnames "var/log/" project-root)))
+
+(defun config-with-environment (config
+                                &optional (reader #'environment-variable))
+  "Return a copy of CONFIG with BORBA_CAD_* environment overrides applied.
+Signals CONFIGURATION-ERROR for invalid values.
+
+CONFIG: the configuration to start from.
+READER: function from variable name to string or NIL; defaults to the process environment."
+  (let ((result (copy-config config)))
+    (flet ((value-of (name)
+             (let ((value (funcall reader name)))
+               (and value (plusp (length value)) value))))
+      (let ((log-dir (value-of "BORBA_CAD_LOG_DIR"))
+            (log-level (value-of "BORBA_CAD_LOG_LEVEL"))
+            (max-bytes (value-of "BORBA_CAD_LOG_MAX_BYTES"))
+            (max-files (value-of "BORBA_CAD_LOG_MAX_FILES"))
+            (to-stderr (value-of "BORBA_CAD_LOG_STDERR"))
+            (sampling (value-of "BORBA_CAD_LOG_SAMPLING"))
+            (font (value-of "BORBA_CAD_FONT")))
+        (when log-dir
+          (setf (config-log-directory result) (directory-pathname log-dir)))
+        (when log-level
+          (setf (config-log-level result) (parse-log-level log-level)))
+        (when max-bytes
+          (setf (config-log-max-bytes result)
+                (max +minimum-log-max-bytes+
+                     (parse-positive-integer-option max-bytes "BORBA_CAD_LOG_MAX_BYTES"))))
+        (when max-files
+          (setf (config-log-max-files result)
+                (parse-positive-integer-option max-files "BORBA_CAD_LOG_MAX_FILES")))
+        (when to-stderr
+          (setf (config-log-to-stderr result) (parse-boolean-option to-stderr)))
+        (when sampling
+          (setf (config-log-sampling result)
+                (mapcar #'parse-sampling-option (uiop:split-string sampling :separator ","))))
+        (when font
+          (setf (config-font-path result) font))))
+    result))
+
+(defun config-with-arguments (config
+                              arguments)
+  "Apply core command-line options to a copy of CONFIG.
+Returns two values: the new configuration and the arguments that were not recognized, in order.
+Recognized: --log-dir DIR, --log-level LEVEL, --log-stderr, --log-sample EVENT=N, --font PATH,
+--file PATH, --width N, --height N.
+
+CONFIG: the configuration to start from.
+ARGUMENTS: list of argument strings."
+  (let ((result (copy-config config))
+        (remaining '())
+        (queue arguments))
+    (flet ((next-value (option)
+             (when (null (rest queue))
+               (configuration-failure "~a needs a value" option))
+             (pop queue)
+             (first queue)))
+      (loop while queue
+            do (let ((option (first queue)))
+                 (cond ((string= option "--log-dir")
+                        (setf (config-log-directory result) (directory-pathname (next-value option))))
+                       ((string= option "--log-level")
+                        (setf (config-log-level result) (parse-log-level (next-value option))))
+                       ((string= option "--log-stderr")
+                        (setf (config-log-to-stderr result) t))
+                       ((string= option "--log-sample")
+                        (push (parse-sampling-option (next-value option))
+                              (config-log-sampling result)))
+                       ((string= option "--font")
+                        (setf (config-font-path result) (next-value option)))
+                       ((string= option "--file")
+                        (setf (config-initial-file result) (next-value option)))
+                       ((string= option "--width")
+                        (setf (config-window-width result)
+                              (parse-positive-integer-option (next-value option) option)))
+                       ((string= option "--height")
+                        (setf (config-window-height result)
+                              (parse-positive-integer-option (next-value option) option)))
+                       (t (push option remaining)))
+                 (pop queue))))
+    (values result (nreverse remaining))))
