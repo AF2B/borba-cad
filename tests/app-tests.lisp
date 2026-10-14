@@ -976,16 +976,40 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
          (x (rng:prng-next-double prng 0d0 width))
          (y (rng:prng-next-double prng 0d0 height))
          (modifiers (rng:prng-pick prng '(() () (:shift) (:control) (:shift :control)))))
-    (case (rng:prng-next-below prng 8)
+    (case (rng:prng-next-below prng 10)
       (0 (app:make-pointer-event :move nil x y modifiers))
       ((1 2) (app:make-pointer-event :down (rng:prng-pick prng '(:left :left :left :middle :right)) x y modifiers))
       ((3 4) (app:make-pointer-event :up (rng:prng-pick prng '(:left :left :middle :right)) x y modifiers))
       (5 (app:make-wheel-event (rng:prng-pick prng '(-2d0 -1d0 1d0 2d0)) x y modifiers))
       (6 (app:make-key-event (rng:prng-pick prng '(:l :r :c :p :t :d :escape :enter :backspace :delete :a :z :y :s :o :n
-                                                    :g :u :home :f3 :space :left :right))
+                                                    :g :u :home :f3 :space :left :right :up :down :page-up
+                                                    :page-down :tab :end :v :c :x :l))
                              modifiers
                              (rng:prng-pick prng '(:down :down :up))))
-      (t (app:make-text-event (rng:prng-pick prng '("a" "12" "-5.5" "m" "x y" "")))))))
+      (7 (app:make-file-drop-event (rng:prng-pick prng '("/nonexistent/x.bcad" "" "/proc/version" "relative.bcad"))))
+      (8 (progn (app:set-clipboard-text application
+                                        (rng:prng-pick prng (list nil "" "pasted" "12,5" (format nil "two~%lines")
+                                                                  (make-string 600 :initial-element #\x))))
+                (app:make-key-event :v '(:control))))
+      (t (app:make-text-event (rng:prng-pick prng (list "a" "12" "-5.5" "m" "x y" "" "a/b" "ok" "name with spaces"
+                                                        "\"quoted\"" (format nil "caf~c" (code-char 233)))))))))
+
+(defun check-dialog-invariants (application)
+  "Check what must hold of an open file dialog after any event: the keyboard is on a field that
+exists, no caret lies outside its text, the scroll is not negative, the selection names an entry
+of the folder, and the folder shown exists."
+  (let ((dialog (app:app-dialog application)))
+    (when dialog
+      (is (member (app:file-dialog-focus dialog) '(:name :filter :location)))
+      (let ((edit (app::focused-edit dialog)))
+        (is-true edit "the focused field has an edit state")
+        (when edit
+          (is (<= 0 (ui:edit-state-caret edit) (length (ui:edit-state-text edit))))))
+      (dolist (edit (list (app:file-dialog-name-edit dialog) (app:file-dialog-filter-edit dialog)))
+        (is (<= 0 (ui:edit-state-caret edit) (length (ui:edit-state-text edit)))))
+      (is (>= (app:file-dialog-scroll dialog) 0))
+      (is (or (null (app:file-dialog-selected dialog)) (app::find-entry dialog (app:file-dialog-selected dialog))))
+      (is (eq :directory (sbcl:file-kind (app:file-dialog-directory dialog)))))))
 
 (test random-event-sequences-never-escape-as-errors-and-keep-the-model-consistent
   ;; Monkey test: thousands of pseudo-random events (clicks, drags, keys, text, wheel). The
@@ -993,12 +1017,21 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
   (with-temporary-directory (directory)
     (dolist (seed '(1 2 3))
       (let ((application (make-test-app))
-            (prng (rng:make-prng (* 1000 seed))))
+            (prng (rng:make-prng (* 1000 seed)))
+            (events-with-a-dialog 0))
         (dotimes (i 1500)
           (let ((event (random-event application prng)))
+            ;; Now and then open a file dialog, so that the random events spend time inside it.
+            (when (and (zerop (mod i 40)) (null (app:app-dialog application)) (null (app:app-prompt application)))
+              (if (evenp (floor i 40))
+                  (app:operation-open application)
+                  (app:operation-save-as application)))
             (handler-case (app:app-handle-event application event)
               (error (condition)
                 (fail "event ~d (~a) escaped as an error: ~a" i (type-of event) condition)))
+            (check-dialog-invariants application)
+            (when (app:app-dialog application)
+              (incf events-with-a-dialog))
             ;; Never let a random "Save" write outside the sandbox: close file prompts, and close a
             ;; file dialog the moment a random click on a place or on the folder trail takes it
             ;; anywhere but the folder made for tests.
@@ -1011,6 +1044,7 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
                 (app:close-file-dialog application)))
             (when (zerop (mod i 50))
               (app:app-render application))))
+        (is (> events-with-a-dialog 30) "the monkey really spent time in the file dialog")
         ;; Invariants.
         (let ((ids (entity-ids (app:app-drawing application))))
           (is (equal ids (sort (copy-list ids) #'<)))
