@@ -91,3 +91,14 @@ PATH: file to delete."
 PATH: an existing file."
   (with-open-file (stream path :element-type '(unsigned-byte 8))
     (file-length stream)))
+
+(defun fold-for-search (string)
+  "Return STRING in lower case and without accents, the form in which names are sorted and
+searched, so that A-acute plus gua, agua and AGUA are the same and a name that starts with an
+accented letter sorts among the plain ones.
+
+STRING: a name."
+  (remove-if (lambda (character)
+               (member (sb-unicode:general-category character) '(:mn :mc :me)))
+             (sb-unicode:normalize-string (string-downcase string) :nfd)))
+

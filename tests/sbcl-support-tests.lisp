@@ -180,3 +180,14 @@
   (is (plusp (sbcl:process-id)))
   (is (= (sbcl:process-id) (sb-posix:getpid))))
 
+
+(test names-are-folded-to-lower-case-without-accents-for-sorting-and-searching
+  (flet ((fold (&rest codes) (sbcl:fold-for-search (map 'string #'code-char codes))))
+    (is (string= "agua" (fold 193 71 85 65)))                         ; A-acute, G, U, A
+    (is (string= "terrea" (fold 84 233 114 114 101 97)))             ; T, e-acute, r, r, e, a
+    (is (string= "coracao" (fold 67 111 114 97 231 227 111)))        ; C, o, r, a, c-cedilla, a-tilde, o
+    (is (string= "cafe" (fold 99 97 102 101 769)))                    ; cafe with a combining acute accent
+    (is (string= "plain" (sbcl:fold-for-search "PLAIN")))
+    (is (string= "" (sbcl:fold-for-search "")))
+    (is (string= "x y-1.bcad" (sbcl:fold-for-search "X Y-1.bcad")) "punctuation and spaces are kept")
+    (is (= (length (fold 945 946 947)) 3) "letters of other scripts are kept, only lower-cased")))

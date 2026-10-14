@@ -30,15 +30,17 @@
                                                       kind
                                                       path
                                                       size
-                                                      modified)))
+                                                      modified
+                                                      &aux (key (sbcl:fold-for-search name)))))
   "One line of a folder listing.
 
 NAME: the file or folder name.
 KIND: :directory or :file.
 PATH: its absolute pathname; a folder's ends in a slash.
 SIZE: the byte count of a file, NIL for a folder.
-MODIFIED: universal time of the last change."
-  name kind path size modified)
+MODIFIED: universal time of the last change.
+KEY: the name in lower case without accents, by which entries are sorted and searched."
+  name kind path size modified key)
 
 (defstruct (file-dialog (:constructor %make-file-dialog (mode
                                                          continuation)))
@@ -120,8 +122,9 @@ KIND: :directory or :file."
 
 (defun entry-name< (first
                     second)
-  "Return true when entry FIRST sorts before SECOND: folders before files, then by name, ignoring
-case.
+  "Return true when entry FIRST sorts before SECOND: folders before files, then by name ignoring
+case and accents (a name that starts with A-acute sorts among the As), and by the exact name when
+those are the same.
 
 FIRST: a file entry.
 SECOND: a file entry."
@@ -129,7 +132,9 @@ SECOND: a file entry."
         (second-directory (eq (file-entry-kind second) :directory)))
     (cond ((and first-directory (not second-directory)) t)
           ((and second-directory (not first-directory)) nil)
-          (t (and (string-lessp (file-entry-name first) (file-entry-name second)) t)))))
+          ((string/= (file-entry-key first) (file-entry-key second))
+           (and (string< (file-entry-key first) (file-entry-key second)) t))
+          (t (and (string< (file-entry-name first) (file-entry-name second)) t)))))
 
 (defun list-entries (directory)
   "Return the entries of the folder DIRECTORY, folders first and each group by name, and a second
@@ -165,18 +170,20 @@ NAME: a file name."
                                 show-all
                                 text)
   "Return the entries of ENTRIES the list shows: folders always, files only when they are drawings
-unless all files were asked for, and only those whose names contain TEXT, ignoring case.
+unless all files were asked for, and only those whose names contain TEXT, ignoring case and
+accents (agua finds the name that begins with A-acute and gua).
 
 ENTRIES: every entry of the folder.
 SHOW-ALL: true to list every file.
 TEXT: the search text, without the blanks around it."
-  (remove-if-not (lambda (entry)
-                   (and (or (eq (file-entry-kind entry) :directory)
-                            show-all
-                            (drawing-name-p (file-entry-name entry)))
-                        (or (zerop (length text))
-                            (search text (file-entry-name entry) :test #'char-equal))))
-                 entries))
+  (let ((wanted (sbcl:fold-for-search text)))
+    (remove-if-not (lambda (entry)
+                     (and (or (eq (file-entry-kind entry) :directory)
+                              show-all
+                              (drawing-name-p (file-entry-name entry)))
+                          (or (zerop (length wanted))
+                              (search wanted (file-entry-key entry)))))
+                   entries)))
 
 (defun visible-entries (dialog)
   "Return the entries the list shows (see COMPUTE-VISIBLE-ENTRIES). The answer is kept until the
