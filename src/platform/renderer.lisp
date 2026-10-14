@@ -39,6 +39,7 @@ void main() {
 (defstruct (renderer (:constructor %make-renderer (program
                                                    viewport-location
                                                    atlas-location
+                                                   fonts
                                                    atlas
                                                    main-vao
                                                    main-vbo
@@ -49,13 +50,14 @@ void main() {
 PROGRAM: the linked shader program.
 VIEWPORT-LOCATION: uniform location of the logical window size.
 ATLAS-LOCATION: uniform location of the glyph texture sampler.
+FONTS: the font set.
 ATLAS: the glyph atlas.
 MAIN-VAO: vertex array for the draw list's lines and triangles.
 MAIN-VBO: its buffer.
 TEXT-VAO: vertex array for generated glyph triangles.
 TEXT-VBO: its buffer.
 TEXT-BUFFER: scratch array the glyph triangles are built in."
-  program viewport-location atlas-location atlas main-vao main-vbo text-vao text-vbo
+  program viewport-location atlas-location fonts atlas main-vao main-vbo text-vao text-vbo
   (text-buffer (make-array 8192 :element-type 'single-float) :type (simple-array single-float (*))))
 
 (defun compile-shader (type
@@ -96,11 +98,12 @@ VBO: buffer name."
   (gl:vertex-attrib-pointer 2 4 :float nil +vertex-stride-bytes+ 16)
   (gl:enable-vertex-attrib-array 2))
 
-(defun make-renderer (font-path)
+(defun make-renderer (font-paths)
   "Create the renderer: shader, buffers and glyph atlas. Needs a current OpenGL context.
 
-FONT-PATH: path of the monospace font."
-  (let* ((program (link-program))
+FONT-PATHS: property list (:mono path :ui path :ui-strong path) of font files."
+  (let* ((fonts (open-font-set font-paths))
+         (program (link-program))
          (main-vao (gl:gen-vertex-array))
          (main-vbo (gl:gen-buffer))
          (text-vao (gl:gen-vertex-array))
@@ -112,11 +115,18 @@ FONT-PATH: path of the monospace font."
     (%make-renderer program
                     (gl:get-uniform-location program "viewport")
                     (gl:get-uniform-location program "atlas")
-                    (make-glyph-atlas font-path)
+                    fonts
+                    (make-glyph-atlas fonts)
                     main-vao
                     main-vbo
                     text-vao
                     text-vbo)))
+
+(defun renderer-text-measurer (renderer)
+  "Return the text measurer that reads the glyph advances of the renderer's fonts.
+
+RENDERER: the renderer."
+  (font-set-measurer (renderer-fonts renderer)))
 
 (defun close-renderer (renderer)
   "Release every OpenGL object and the font.

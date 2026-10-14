@@ -167,6 +167,33 @@ RENDERER: the renderer."
             :tiny-ink (count-ink frame 900 490 930 505 background)
             :huge-ink (count-ink frame 900 540 1200 650 background)))))
 
+(defun observe-interface-text (window
+                                renderer)
+  "Render interface text in both interface fonts and report where its ink is, against the width
+the layout measured for it.
+
+WINDOW: the SDL window.
+RENDERER: the renderer."
+  (let* ((list (scene:make-draw-list))
+         (white (scene:make-rgba 1f0 1f0 1f0 1f0))
+         (text "Properties and layers")
+         (size 13f0)
+         (regular-width (ui:text-width-pixels text size :ui))
+         (strong-width (ui:text-width-pixels text size :ui-strong)))
+    (scene:add-text list text 100f0 100f0 size white :font :ui)
+    (scene:add-text list text 100f0 160f0 size white :font :ui-strong)
+    (let* ((frame (render-frame window renderer list))
+           (background (color-octets *test-background*))
+           (regular-end (+ 102 (ceiling regular-width)))
+           (strong-end (+ 102 (ceiling strong-width))))
+      (list :regular-width regular-width
+            :strong-width strong-width
+            :regular-ink (count-ink frame 98 85 regular-end 106 background)
+            :regular-past-the-end-ink (count-ink frame (+ regular-end 2) 85 (+ regular-end 62) 106 background)
+            :strong-ink (count-ink frame 98 145 strong-end 166 background)
+            :strong-past-the-end-ink (count-ink frame (+ strong-end 2) 145 (+ strong-end 62) 166 background)
+            :measurer-installed (not (eq ui:*text-measurer* (function ui:fixed-advance-width)))))))
+
 (defun observe-application-frame (window
                                   renderer)
   "Render a whole application frame (canvas and panels) for a generated drawing.
@@ -208,6 +235,7 @@ RENDERER: the renderer."
      (list :startup phases
            :shapes (observe-shapes window renderer)
            :text (observe-text window renderer)
+           :interface-text (observe-interface-text window renderer)
            :application (observe-application-frame window renderer)))))
 
 (defun observation (&rest path)
@@ -251,6 +279,21 @@ PATH: keywords leading to the value, for example :shapes :background."
     (is (> (observation :text :rotated-ink) 30) "no ink along the vertical baseline")
     (is (< (observation :text :rotated-wrong-place-ink) (observation :text :rotated-ink))
         "rotated text must not be laid out horizontally")))
+
+(test interface-text-ends-where-the-layout-says-it-does
+  (when (display-or-skip)
+    (is (observation :interface-text :measurer-installed) "the window installs the real measurer")
+    (is (> (observation :interface-text :regular-ink) 100))
+    (is (> (observation :interface-text :strong-ink) 100))
+    (is (= 0 (observation :interface-text :regular-past-the-end-ink)) "no ink past the measured width")
+    (is (= 0 (observation :interface-text :strong-past-the-end-ink)))
+    (is (> (observation :interface-text :strong-width) (observation :interface-text :regular-width))
+        "the strong face is wider")))
+
+(test the-measurer-is-removed-when-the-window-closes
+  (when (display-or-skip)
+    (observation :interface-text :regular-width)
+    (is (eq (function ui:fixed-advance-width) ui:*text-measurer*))))
 
 (test text-is-drawn-at-both-extreme-sizes
   (when (display-or-skip)

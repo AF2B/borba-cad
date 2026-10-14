@@ -115,7 +115,7 @@ HEIGHT: initial window height in logical pixels.
 TITLE: initial window title.
 FUNCTION: function of the window, the renderer and the phase list.
 SWAP-INTERVAL: 1 to wait for the display refresh at each buffer swap, 0 to swap at once."
-  (let ((font-path (find-font-path config))
+  (let ((font-paths (find-font-paths config))
         (begin (sbcl:monotonic-nanoseconds))
         (failure nil)
         (result nil))
@@ -149,19 +149,24 @@ SWAP-INTERVAL: 1 to wait for the display refresh at each buffer swap, 0 to swap 
                               (let* ((vsync (handler-case (progn (sdl2:gl-set-swap-interval swap-interval) t)
                                               (error () nil)))
                                      (context-ready (sbcl:monotonic-nanoseconds))
-                                     (renderer (make-renderer font-path))
+                                     (renderer (make-renderer font-paths))
                                      (renderer-ready (sbcl:monotonic-nanoseconds)))
                                 (unwind-protect
-                                     (setf result
-                                           (funcall function
-                                                    window
-                                                    renderer
-                                                    (list :window-ms (phase-milliseconds begin window-ready)
-                                                          :context-ms (phase-milliseconds window-ready
-                                                                                          context-ready)
-                                                          :renderer-ms (phase-milliseconds context-ready
-                                                                                           renderer-ready)
-                                                          :vsync vsync)))
+                                     (progn
+                                       ;; Layout measures text with the glyph advances of the very
+                                       ;; fonts that draw it.
+                                       (setf ui:*text-measurer* (renderer-text-measurer renderer))
+                                       (setf result
+                                             (funcall function
+                                                      window
+                                                      renderer
+                                                      (list :window-ms (phase-milliseconds begin window-ready)
+                                                            :context-ms (phase-milliseconds window-ready
+                                                                                            context-ready)
+                                                            :renderer-ms (phase-milliseconds context-ready
+                                                                                             renderer-ready)
+                                                            :vsync vsync))))
+                                  (setf ui:*text-measurer* #'ui:fixed-advance-width)
                                   (close-renderer renderer))))
                          (sdl2:gl-delete-context context)))
                   (sdl2:destroy-window window)))))

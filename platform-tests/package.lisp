@@ -7,6 +7,7 @@
                     (#:geo #:borba-cad/geometry)
                     (#:rng #:borba-cad/test-support)
                     (#:scene #:borba-cad/scene)
+                    (#:ui #:borba-cad/ui)
                     (#:app #:borba-cad/app)
                     (#:dom #:borba-cad/domain)
                     (#:obs #:borba-cad/observability)
