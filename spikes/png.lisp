@@ -1,0 +1,67 @@
+;;;; Spike helper: minimal dependency-free PNG encoder (RGB8, stored deflate blocks).
+(defpackage #:spike-png (:use #:cl) (:export #:write-rgb-png))
+(in-package #:spike-png)
+
+(declaim (type (simple-array (unsigned-byte 32) (256)) *crc-table*))
+(sb-ext:defglobal *crc-table*
+  (let ((table (make-array 256 :element-type '(unsigned-byte 32))))
+    (dotimes (n 256 table)
+      (let ((c n))
+        (dotimes (k 8)
+          (setf c (if (logbitp 0 c)
+                      (logxor #xEDB88320 (ash c -1))
+                      (ash c -1))))
+        (setf (aref table n) c)))))
+
+(defun crc32 (bytes)
+  (let ((c #xFFFFFFFF))
+    (declare (type (unsigned-byte 32) c))
+    (loop for b across bytes
+          do (setf c (logxor (aref *crc-table* (logand (logxor c b) #xFF)) (ash c -8))))
+    (logxor c #xFFFFFFFF)))
+
+(defun adler32 (bytes)
+  (let ((a 1) (b 0))
+    (loop for byte across bytes
+          do (setf a (mod (+ a byte) 65521)
+                   b (mod (+ b a) 65521)))
+    (logior (ash b 16) a)))
+
+(defun u32be (n) (list (ldb (byte 8 24) n) (ldb (byte 8 16) n) (ldb (byte 8 8) n) (ldb (byte 8 0) n)))
+
+(defun chunk (stream type data)
+  (let ((type-bytes (map 'vector #'char-code type)))
+    (write-sequence (coerce (u32be (length data)) '(vector (unsigned-byte 8))) stream)
+    (write-sequence type-bytes stream)
+    (write-sequence data stream)
+    (write-sequence (coerce (u32be (crc32 (concatenate '(vector (unsigned-byte 8)) type-bytes data))) '(vector (unsigned-byte 8)))
+                    stream)))
+
+(defun write-rgb-png (path width height pixels &key (flip-vertical t))
+  "PIXELS: (unsigned-byte 8) vector of WIDTH*HEIGHT*3 RGB bytes, rows bottom-up when FLIP-VERTICAL."
+  (let* ((stride (* width 3))
+         (raw (make-array (* height (1+ stride)) :element-type '(unsigned-byte 8))))
+    (dotimes (row height)
+      (let ((src-row (if flip-vertical (- height 1 row) row))
+            (dst (* row (1+ stride))))
+        (setf (aref raw dst) 0)
+        (replace raw pixels :start1 (1+ dst) :start2 (* src-row stride) :end2 (* (1+ src-row) stride))))
+    (let ((z (make-array 0 :element-type '(unsigned-byte 8) :adjustable t :fill-pointer 0)))
+      (vector-push-extend #x78 z) (vector-push-extend #x01 z)
+      (loop with n = (length raw)
+            for start from 0 below n by 65535
+            for end = (min n (+ start 65535))
+            for len = (- end start)
+            do (vector-push-extend (if (= end n) 1 0) z)
+               (vector-push-extend (ldb (byte 8 0) len) z)
+               (vector-push-extend (ldb (byte 8 8) len) z)
+               (vector-push-extend (ldb (byte 8 0) (lognot len)) z)
+               (vector-push-extend (ldb (byte 8 8) (lognot len)) z)
+               (loop for i from start below end do (vector-push-extend (aref raw i) z)))
+      (dolist (b (u32be (adler32 raw))) (vector-push-extend b z))
+      (with-open-file (out path :direction :output :if-exists :supersede :element-type '(unsigned-byte 8))
+        (write-sequence #(137 80 78 71 13 10 26 10) out)
+        (chunk out "IHDR" (coerce (append (u32be width) (u32be height) (list 8 2 0 0 0)) '(vector (unsigned-byte 8))))
+        (chunk out "IDAT" (coerce z '(vector (unsigned-byte 8))))
+        (chunk out "IEND" (make-array 0 :element-type '(unsigned-byte 8))))
+      path)))
