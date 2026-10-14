@@ -1,0 +1,193 @@
+;;;; Borba CAD: ASDF systems.
+;;;;
+;;;; borba-cad            headless core: no window, GPU or foreign-library dependency
+;;;; borba-cad/platform   SDL window, OpenGL renderer, FreeType fonts, event loop
+;;;; borba-cad/test-support, borba-cad/tests, borba-cad/bench(-gui)   correctness tests and benchmarks
+
+(asdf:defsystem "borba-cad"
+  :description "Borba CAD core: headless 2D CAD engine (domain, geometry, persistence, observability, scene, UI and application logic)."
+  :version "1.0.0"
+  :depends-on ("uiop"
+               (:require "sb-posix"))
+  :pathname "src/"
+  :serial t
+  :components ((:module "sbcl-support"
+                :serial t
+                :components ((:file "package")
+                             (:file "clock")
+                             (:file "memory")
+                             (:file "system")))
+               (:module "base"
+                :serial t
+                :components ((:file "package")
+                             (:file "tolerances")
+                             (:file "conditions")
+                             (:file "units")
+                             (:file "config")))
+               (:module "geometry"
+                :serial t
+                :components ((:file "package")
+                             (:file "bounds")
+                             (:file "distance")
+                             (:file "clipping")
+                             (:file "shapes")
+                             (:file "text-extent")
+                             (:file "dimension")))
+               (:module "domain"
+                :serial t
+                :components ((:file "package")
+                             (:file "layer")
+                             (:file "entity")
+                             (:file "line")
+                             (:file "rectangle")
+                             (:file "circle")
+                             (:file "polyline")
+                             (:file "text")
+                             (:file "dimension")
+                             (:file "store")
+                             (:file "drawing")
+                             (:file "changes")
+                             (:file "picking")
+                             (:file "commands")))
+               (:module "viewport"
+                :serial t
+                :components ((:file "package")
+                             (:file "viewport")
+                             (:file "grid")))
+               (:module "persistence"
+                :serial t
+                :components ((:file "package")
+                             (:file "reader")
+                             (:file "format")
+                             (:file "writer")
+                             (:file "loader")
+                             (:file "files")))
+               (:module "observability"
+                :serial t
+                :components ((:file "package")
+                             (:file "statistics")
+                             (:file "logger")
+                             (:file "metrics")
+                             (:file "telemetry")
+                             (:file "timing")
+                             (:file "summary")))
+               (:module "scene"
+                :serial t
+                :components ((:file "package")
+                             (:file "draw-list")
+                             (:file "theme")
+                             (:file "scene")))
+               (:module "ui"
+                :serial t
+                :components ((:file "package")
+                             (:file "metrics")
+                             (:file "text-edit")
+                             (:file "widgets")))
+               (:module "app"
+                :serial t
+                :components ((:file "package")
+                             (:file "events")
+                             (:file "state")
+                             (:file "prompts")
+                             (:file "operations")
+                             (:file "tools")
+                             (:file "panels")
+                             (:file "input")
+                             (:file "frame")
+                             (:file "scenario"))))
+  :in-order-to ((test-op (test-op "borba-cad/tests"))))
+
+(asdf:defsystem "borba-cad/platform"
+  :description "Borba CAD window program: SDL window, OpenGL renderer, FreeType glyph atlas, event loop."
+  :depends-on ("borba-cad"
+               "cffi"
+               "cl-opengl"
+               "cl-freetype2"
+               "sdl2")
+  :pathname "src/platform/"
+  :serial t
+  :components ((:file "package")
+               (:file "png")
+               (:file "font")
+               (:file "renderer")
+               (:file "events")
+               (:file "main")))
+
+(asdf:defsystem "borba-cad/test-support"
+  :description "Seeded PRNG and deterministic workload generator shared by tests and benchmarks."
+  :depends-on ("borba-cad")
+  :pathname "test-support/"
+  :serial t
+  :components ((:file "package")
+               (:file "prng")
+               (:file "workload")
+               (:file "checksum")
+               (:file "files")))
+
+(asdf:defsystem "borba-cad/bench"
+  :description "Reproducible benchmarks with environment fingerprints and workload checksums."
+  :depends-on ("borba-cad"
+               "borba-cad/test-support")
+  :pathname "bench/"
+  :serial t
+  :components ((:file "package")
+               (:file "measure")
+               (:file "environment")
+               (:file "scenarios")
+               (:file "report")
+               (:file "run")))
+
+(asdf:defsystem "borba-cad/bench-gui"
+  :description "Windowed frame benchmark: the real renderer and display (needs a graphical session)."
+  :depends-on ("borba-cad/bench"
+               "borba-cad/platform")
+  :pathname "bench/"
+  :serial t
+  :components ((:file "gui")))
+
+(asdf:defsystem "borba-cad/platform-tests"
+  :description "Tests of the window program; the renderer tests need a graphical session and skip with a message otherwise."
+  :depends-on ("borba-cad/platform"
+               "borba-cad/test-support"
+               "fiveam")
+  :pathname "platform-tests/"
+  :serial t
+  :components ((:file "package")
+               (:file "png-tests")
+               (:file "events-tests")
+               (:file "font-tests")
+               (:file "session-tests")
+               (:file "renderer-tests"))
+  :perform (test-op (operation component)
+             (declare (ignore operation component))
+             (unless (uiop:symbol-call '#:borba-cad/platform-tests '#:run-all)
+               (error "Borba CAD platform tests failed"))))
+
+(asdf:defsystem "borba-cad/tests"
+  :description "Headless correctness tests for Borba CAD (FiveAM)."
+  :depends-on ("borba-cad"
+               "borba-cad/test-support"
+               "borba-cad/bench"
+               "fiveam")
+  :pathname "tests/"
+  :serial t
+  :components ((:file "package")
+               (:file "support")
+               (:file "base-tests")
+               (:file "sbcl-support-tests")
+               (:file "prng-tests")
+               (:file "checksum-tests")
+               (:file "geometry-tests")
+               (:file "domain-entity-tests")
+               (:file "domain-drawing-tests")
+               (:file "viewport-tests")
+               (:file "persistence-tests")
+               (:file "observability-tests")
+               (:file "scene-tests")
+               (:file "ui-tests")
+               (:file "app-tests")
+               (:file "bench-tests"))
+  :perform (test-op (operation component)
+             (declare (ignore operation component))
+             (unless (uiop:symbol-call '#:borba-cad/tests '#:run-all)
+               (error "Borba CAD tests failed"))))

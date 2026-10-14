@@ -1,0 +1,12 @@
+# Generated: compiled output, executables, logs, benchmark output, spike output.
+/build/
+/var/
+/spikes/out/
+/bench/reports/*
+!/bench/reports/.gitkeep
+!/bench/reports/baseline/
+*.fasl
+*.tmp
+.DS_Store
+/drawings/
+/.vscode/
