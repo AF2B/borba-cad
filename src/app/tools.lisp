@@ -497,32 +497,100 @@ CLOSED: true to close it."
 
 ;;; Text
 
-(defclass text-tool (tool) ()
-  (:documentation "Places a text annotation at a click, asking for its content."))
+(defconstant +text-angle-snap-degrees+ 15d0
+  "Step, in degrees, of the angles a dragged text snaps to.")
+
+(defconstant +text-angle-snap-tolerance-degrees+ 3d0
+  "How close, in degrees, a dragged text's angle must be to a multiple of the step to snap to it.")
+
+(defclass text-tool (tool)
+  ((anchor :initform nil :accessor text-tool-anchor)
+   (angle :initform 0d0 :accessor text-tool-angle)
+   (dragged :initform nil :accessor text-tool-dragged))
+  (:documentation "Places a text annotation: a click puts it at that point, and dragging from the point
+sets the direction of its baseline. The content is asked for when the button is released."))
 
 (defmethod tool-kind ((tool text-tool)) :text)
 
 (defmethod tool-prompt ((tool text-tool) app)
   (declare (ignore app))
-  (i18n:tr "Text: click where the text starts"))
+  (i18n:tr "Text: click where the text starts, or drag to set its angle"))
+
+(defun snapped-text-angle (angle)
+  "Return ANGLE, in radians, moved onto the nearest multiple of the snap step when it is within the
+tolerance of it.
+
+ANGLE: a direction in radians."
+  (let* ((degrees (base:radians->degrees angle))
+         (nearest (* +text-angle-snap-degrees+ (fround degrees +text-angle-snap-degrees+))))
+    (if (<= (abs (- degrees nearest)) +text-angle-snap-tolerance-degrees+)
+        (base:degrees->radians nearest)
+        angle)))
 
 (defmethod tool-pointer-down ((tool text-tool) app cursor)
-  (let ((x (cursor-x cursor))
-        (y (cursor-y cursor)))
-    (open-text-prompt app
-                      (i18n:tr "Text")
-                      (i18n:tr "Text to place at the clicked point:")
-                      ""
-                      (lambda (string)
-                        (create-entity app
-                                       (lambda ()
-                                         (dom:make-text :id (creation-id app)
-                                                        :layer-id (creation-layer-id app)
-                                                        :x x
-                                                        :y y
-                                                        :string string
-                                                        :height (dom:drawing-default-text-height
-                                                                 (app-drawing app)))))))))
+  (setf (text-tool-anchor tool) (point-key (cursor-x cursor) (cursor-y cursor))
+        (text-tool-angle tool) 0d0
+        (text-tool-dragged tool) nil)
+  (app-request-redraw app))
+
+(defmethod tool-pointer-move ((tool text-tool) app cursor)
+  (let ((anchor (text-tool-anchor tool)))
+    (when anchor
+      (let ((dx (- (cursor-x cursor) (car anchor)))
+            (dy (- (cursor-y cursor) (cdr anchor))))
+        (when (> (geo:distance 0d0
+                               0d0
+                               dx
+                               dy) (* 2 (pick-radius-in-world app)))
+          (setf (text-tool-dragged tool) t
+                (text-tool-angle tool) (snapped-text-angle (geo:normalize-angle (atan dy dx))))))
+      (app-request-redraw app))))
+
+(defmethod tool-pointer-up ((tool text-tool) app cursor)
+  (declare (ignore cursor))
+  (let ((anchor (text-tool-anchor tool))
+        (angle (if (text-tool-dragged tool) (text-tool-angle tool) 0d0)))
+    (setf (text-tool-anchor tool) nil
+          (text-tool-dragged tool) nil)
+    (when anchor
+      (let ((x (car anchor))
+            (y (cdr anchor)))
+        (open-text-prompt app
+                          (i18n:tr "Text")
+                          (i18n:tr "Text to place at the clicked point:")
+                          ""
+                          (lambda (string)
+                            (create-entity app
+                                           (lambda ()
+                                             (dom:make-text :id (creation-id app)
+                                                            :layer-id (creation-layer-id app)
+                                                            :x x
+                                                            :y y
+                                                            :string string
+                                                            :height (dom:drawing-default-text-height
+                                                                     (app-drawing app))
+                                                            :angle angle)))))))))
+
+(defmethod tool-preview-entities ((tool text-tool) app)
+  (let ((anchor (text-tool-anchor tool)))
+    (when (and anchor (text-tool-dragged tool))
+      (let ((entity (try-entity (lambda ()
+                                  (dom:make-text :id (creation-id app)
+                                                 :layer-id (creation-layer-id app)
+                                                 :x (car anchor)
+                                                 :y (cdr anchor)
+                                                 :string "Abc"
+                                                 :height (dom:drawing-default-text-height (app-drawing app))
+                                                 :angle (text-tool-angle tool))))))
+        (and entity (list entity))))))
+
+(defmethod tool-cancel ((tool text-tool) app)
+  (setf (text-tool-anchor tool) nil
+        (text-tool-dragged tool) nil)
+  (app-request-redraw app))
+
+(defmethod tool-in-progress-p ((tool text-tool))
+  (and (text-tool-anchor tool) (text-tool-dragged tool) t))
 
 ;;; Dimension
 

@@ -291,7 +291,7 @@
     (is (equal '(:x1 :y1 :x2 :y2) (keys (a-line))))
     (is (equal '(:min-x :min-y :width :height) (keys (a-rectangle))))
     (is (equal '(:center-x :center-y :radius) (keys (a-circle))))
-    (is (equal '(:x :y :string :height) (keys (a-text))))
+    (is (equal '(:x :y :string :height :angle) (keys (a-text))))
     (is (equal '(:x1 :y1 :x2 :y2 :offset :text-height :unit :precision) (keys (a-dimension)))))
   (is (every #'dom:property-editable (dom:entity-properties (a-line))))
   (is (eq :length (dom:property-kind (third (dom:entity-properties (a-rectangle)))))))

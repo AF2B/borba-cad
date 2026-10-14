@@ -121,16 +121,22 @@ FIELD-NODE: the whole field, for error positions."
                                                  0
                                                  255)) value-nodes)))))
 
+(defvar *format-version* +supported-format-version+
+  "The format version of the file being read: fields and entity kinds that it predates are not in it.")
+
 (defun parse-named-fields (node
-                           specs
+                           all-specs
                            owner)
   "Interpret NODE, a list (head (name value...)...), as a set of named fields. Unknown,
-repeated and missing fields are errors. Returns a property list from field keys to values.
+repeated and missing fields are errors. A field that the version of the file predates is not
+allowed in it and takes its default value, which is how an older file is migrated. Returns a
+property list from field keys to values.
 
 NODE: the list element.
-SPECS: list of FIELD-SPEC the list may contain; all are required.
+ALL-SPECS: list of FIELD-SPEC the list may contain; all that the file's version has are required.
 OWNER: description of the list used in error messages."
   (let ((seen (make-hash-table :test 'equal))
+        (specs (remove-if (lambda (spec) (> (field-spec-since spec) *format-version*)) all-specs))
         (values '()))
     (dolist (field-node (rest (node-value node)))
       (unless (eq (node-kind field-node) :list)
@@ -162,6 +168,9 @@ OWNER: description of the list used in error messages."
                          "missing field ~s in ~a"
                          (field-spec-name spec)
                          owner)))
+    (dolist (spec all-specs)
+      (when (> (field-spec-since spec) *format-version*)
+        (setf (getf values (field-spec-key spec)) (field-spec-default spec))))
     values))
 
 (defparameter *common-entity-fields*
@@ -244,7 +253,7 @@ NODE: the field element, for example (format-version 1)."
 
 (defun check-format-version (node)
   "Check the format-version field, signaling DRAWING-FILE-VERSION-ERROR for versions this
-program cannot read.
+program cannot read, and return the version.
 
 NODE: the (format-version N) element."
   (let ((value-node (field-single-value node)))
@@ -260,13 +269,16 @@ NODE: the (format-version N) element."
                                          reads; open it with a newer Borba CAD"
                                     version
                                     +supported-format-version+)))
-            ((< version +supported-format-version+)
+            ((< version +oldest-supported-format-version+)
              (error 'base:drawing-file-version-error
                     :path *file-path*
                     :line (node-line value-node)
                     :column (node-column value-node)
-                    :reason (format nil "format version ~d is not supported; this program reads version ~d"
-                                    version +supported-format-version+)))))))
+                    :reason (format nil "format version ~d is not supported; this program reads versions ~d to ~d"
+                                    version
+                                    +oldest-supported-format-version+
+                                    +supported-format-version+)))
+            (t version)))))
 
 (defun parse-layers (node
                      drawing)
@@ -322,7 +334,7 @@ SEEN-IDS: hash table of entity ids already read."
     (unless (and head (eq (node-kind head) :word))
       (content-failure node "an entity must start with its type name"))
     (let ((entity-format (find-format-by-name (node-value head))))
-      (unless entity-format
+      (unless (and entity-format (<= (entity-format-since entity-format) *format-version*))
         (content-failure head
                          "unknown entity type ~s"
                          (node-value head)))
@@ -398,7 +410,7 @@ SOURCE: the source."
         (drawing (dom:make-drawing)))
     (unless (and (eq (node-kind head) :word) (string= (node-value head) "drawing"))
       (content-failure head "a drawing file must start with (drawing ...)"))
-    (check-format-version (expect-field source "format-version"))
+    (setf *format-version* (check-format-version (expect-field source "format-version")))
     (let ((unit-node (expect-field source "unit")))
       (unless (eq :millimeter (node-unit (field-single-value unit-node)))
         (content-failure unit-node "only millimeter is supported as the storage unit")))
@@ -467,6 +479,7 @@ subclass naming the line and column of the first problem. Nothing is evaluated.
 TEXT: the file contents.
 PATH: file name used in error messages, or NIL."
   (let ((*file-path* path)
+        (*format-version* +supported-format-version+)
         (source (make-source (coerce text '(simple-array character (*))))))
     (when (and (plusp (length (source-text source)))
                (char= (schar (source-text source) 0) (code-char #xFEFF)))

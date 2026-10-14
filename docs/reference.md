@@ -43,6 +43,8 @@ The whole application state.
 - `INTERACTION`: current pointer drag (:pan or a tool-owned drag) or NIL.
 - `TRANSLATION`: (dx . dy) move preview in millimetres, or NIL.
 - `WINDOW`: world bounds of the window-selection rectangle, or NIL.
+- `WINDOW-CROSSING`: true when that rectangle selects what it touches (dragged from right to left), and
+NIL when it selects only what it holds (dragged from left to right).
 - `SPACE-DOWN`: true while the space bar is held (pan modifier).
 - `FILE-PATH`: path of the drawing file, or NIL.
 - `SAVED-REVISION`: drawing revision at the last save or load.
@@ -50,9 +52,16 @@ The whole application state.
 - `EDIT`: edit state of that field.
 - `PROMPT`: the open modal prompt, or NIL.
 - `DIALOG`: the open file dialog, or NIL.
+- `MENU`: the open drop-down menu, or NIL.
+- `CLIPBOARD-READER`: function of no arguments that returns the text on the system clipboard, or NIL.
+- `CLIPBOARD-WRITER`: function of one string that puts it on the system clipboard, or NIL.
+- `CLIPBOARD-FALLBACK`: the clipboard text kept here while there is no system clipboard.
 - `MESSAGE`: (text . severity) shown in the status bar, or NIL.
+- `MESSAGE-TIME`: monotonic time when the message was set, in nanoseconds.
 - `OVERLAY-VISIBLE`: whether the performance overlay is shown.
 - `LAYER-SCROLL`: first visible layer row.
+- `SEEN-CURRENT-LAYER`: the current layer when the layers card was last built, to scroll the card to a
+new one.
 - `INSPECTOR-SCROLL`: first visible inspector row.
 - `FIELD-COMMIT`: function of the typed string run when the focused field is committed.
 - `FIELD-ORIGINAL`: the text the focused field started with; an unchanged field commits nothing.
@@ -63,6 +72,22 @@ The whole application state.
 - `QUIT-REQUESTED`: true when the application should close.
 - `LAST-SCENE-RESULT`: statistics of the last scene build.
 - `LAST-ERROR`: the last error condition reported, for tests and diagnostics.
+
+### `app-clipboard-reader` (function)
+
+```lisp
+(app-clipboard-reader instance)
+```
+
+(undocumented)
+
+### `app-clipboard-writer` (function)
+
+```lisp
+(app-clipboard-writer instance)
+```
+
+(undocumented)
 
 ### `app-config` (function)
 
@@ -185,6 +210,14 @@ Handle one input event and record its handling time for the aggregated input sta
 
 ```lisp
 (app-layer-scroll instance)
+```
+
+(undocumented)
+
+### `app-menu` (function)
+
+```lisp
+(app-menu instance)
 ```
 
 (undocumented)
@@ -351,6 +384,14 @@ Return true when typed characters should be delivered as text events.
 
 (undocumented)
 
+### `app-window-crossing` (function)
+
+```lisp
+(app-window-crossing instance)
+```
+
+(undocumented)
+
 ### `app-window-height` (function)
 
 ```lisp
@@ -398,13 +439,45 @@ Return the trail from the root to DIRECTORY as (label . directory) pairs, the ro
 
 Build every widget of the window, in drawing order, from the application state: the side
 panel, the title bar, the tool palette, the status bar, the tooltip of the widget under the
-pointer, the file dialog when one is open, and the modal prompt when one is.
+pointer, the open menu, the file dialog when one is open, and the modal prompt when one is.
 
 - `APP`: the application.
 
 ### `circle-tool` (type)
 
 Creates a circle from its center and a point on its outline.
+
+### `clear-message` (function)
+
+```lisp
+(clear-message app)
+```
+
+Take the message out of the status bar. The next thing the user does is a new beginning, and
+what the last one said no longer applies.
+
+- `APP`: the application.
+
+### `clipboard-drawing` (function)
+
+```lisp
+(clipboard-drawing app)
+```
+
+Return the drawing whose text is on the clipboard, or NIL when the clipboard holds anything else
+or is empty.
+
+- `APP`: the application.
+
+### `clipboard-text` (function)
+
+```lisp
+(clipboard-text app)
+```
+
+Return the text on the clipboard, or NIL when there is none.
+
+- `APP`: the application.
 
 ### `close-file-dialog` (function)
 
@@ -413,6 +486,16 @@ Creates a circle from its center and a point on its outline.
 ```
 
 Close the file dialog without doing anything.
+
+- `APP`: the application.
+
+### `close-menu` (function)
+
+```lisp
+(close-menu app)
+```
+
+Close the open menu, if there is one.
 
 - `APP`: the application.
 
@@ -540,6 +623,33 @@ plan drawn with every tool, a selection and a move, undo, zoom, pan, the overlay
 
 Creates an aligned dimension from two clicks and a third that places its line.
 
+### `edit-with-clipboard` (function)
+
+```lisp
+(edit-with-clipboard app edit key modifiers)
+```
+
+Apply a key to the text of a field: the editing keys, and with Control A (select all), C (copy
+the text), X (cut it) and V (paste at the caret, over the text when it is selected). Returns the
+new edit state, or NIL when the key does nothing to a field.
+
+- `APP`: the application.
+- `EDIT`: the field's edit state.
+- `KEY`: key keyword.
+- `MODIFIERS`: modifier keys held.
+
+### `expire-message` (function)
+
+```lisp
+(expire-message app &optional (now (monotonic-nanoseconds)))
+```
+
+Take the message out of the status bar once it has been there long enough, so that the hint
+under the pointer and the prompt of the tool show again. Returns true when it was removed.
+
+- `APP`: the application.
+- `NOW`: the monotonic time to judge by, in nanoseconds.
+
 ### `file-dialog` (type)
 
 The dialog where the user chooses a drawing to open or a place and a name to save to.
@@ -561,6 +671,8 @@ The dialog where the user chooses a drawing to open or a place and a name to sav
 - `PLACES`: the shortcuts on the side, as (label icon pathname).
 - `RECENT`: the recently used drawings, as pathnames, latest first.
 - `LAST-CLICK`: the row last clicked and when, to recognize a double click.
+- `VISIBLE-CACHE`: the entries the list showed last time with what they were computed from, so that
+a folder of tens of thousands of files is not filtered again for every widget of every frame.
 
 ### `file-dialog-capacity` (function)
 
@@ -713,6 +825,7 @@ One line of a folder listing.
 - `PATH`: its absolute pathname; a folder's ends in a slash.
 - `SIZE`: the byte count of a file, NIL for a folder.
 - `MODIFIED`: universal time of the last change.
+- `KEY`: the name in lower case without accents, by which entries are sorted and searched.
 
 ### `file-entry-kind` (function)
 
@@ -939,6 +1052,30 @@ Create the tool named by KIND.
 
 (undocumented)
 
+### `make-window-state-event` (function)
+
+```lisp
+(make-window-state-event kind)
+```
+
+(undocumented)
+
+### `menu` (type)
+
+An open drop-down menu.
+
+- `KIND`: :draw or :language.
+- `ANCHOR`: id of the button the menu hangs from.
+- `HIGHLIGHT`: position, among the choices, of the one the keyboard is on.
+
+### `menu-kind` (function)
+
+```lisp
+(menu-kind instance)
+```
+
+(undocumented)
+
 ### `move-selection` (function)
 
 ```lisp
@@ -988,6 +1125,18 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 - `MODE`: :open or :save.
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
 
+### `open-menu` (function)
+
+```lisp
+(open-menu app kind anchor)
+```
+
+Open the menu KIND hanging from the button ANCHOR, with the keyboard on the choice in force.
+
+- `APP`: the application.
+- `KIND`: :draw or :language.
+- `ANCHOR`: id of the button.
+
 ### `open-parent-directory` (function)
 
 ```lisp
@@ -1034,6 +1183,26 @@ Move the selected entities to another layer.
 
 - `APP`: the application.
 - `LAYER-ID`: id of the destination layer.
+
+### `operation-copy` (function)
+
+```lisp
+(operation-copy app)
+```
+
+Copy the selected entities to the clipboard.
+
+- `APP`: the application.
+
+### `operation-cut` (function)
+
+```lisp
+(operation-cut app)
+```
+
+Copy the selected entities to the clipboard and delete them.
+
+- `APP`: the application.
 
 ### `operation-cycle-display-unit` (function)
 
@@ -1110,6 +1279,20 @@ Open the dialog where the user finds a drawing to open, after offering to save t
 
 - `APP`: the application.
 
+### `operation-paste` (function)
+
+```lisp
+(operation-paste app &key in-place)
+```
+
+Paste the entities on the clipboard as new entities, selected, so that they can be moved at
+once: centered on the pointer, or where they were copied from when IN-PLACE. They go onto the layer
+of the same name when there is one that is visible and unlocked, and onto the current layer
+otherwise.
+
+- `APP`: the application.
+- `IN-PLACE`: true to keep the coordinates they were copied with.
+
 ### `operation-quit` (function)
 
 ```lisp
@@ -1185,6 +1368,17 @@ Make a layer the one that receives new entities.
 
 - `APP`: the application.
 - `LAYER-ID`: layer id.
+
+### `operation-set-language` (function)
+
+```lisp
+(operation-set-language app language)
+```
+
+Make the interface speak LANGUAGE now and keep the choice for the next run.
+
+- `APP`: the application.
+- `LANGUAGE`: a language keyword.
 
 ### `operation-set-tool` (function)
 
@@ -1404,6 +1598,21 @@ Tell the user about a failure and log it; nothing is swallowed.
 - `CONDITION`: the condition that was signaled.
 - `CONTEXT`: short name of what failed, used in the log event.
 
+### `report-internal-error` (function)
+
+```lisp
+(report-internal-error app condition context backtrace)
+```
+
+Tell the user that the program itself failed, a bug rather than something they did, and log it
+with the call stack. The program goes on: a failed event leaves the drawing as the last finished
+operation left it.
+
+- `APP`: the application.
+- `CONDITION`: the condition that was signaled.
+- `CONTEXT`: what the program was doing, as a phrase that follows "while", for the message.
+- `BACKTRACE`: the call stack at the moment of the failure, as text, or NIL.
+
 ### `resize-event` (type)
 
 The window changed size.
@@ -1528,7 +1737,8 @@ leaves the field alone.
 
 ### `select-tool` (type)
 
-Selects by click or window and moves the selection by dragging.
+Selects by click, by window (left to right: what lies inside) or by crossing (right to
+left: what it touches), and moves the selection by dragging.
 
 ### `selected-entities` (function)
 
@@ -1560,6 +1770,17 @@ Return the ids of the selected entities in ascending order.
 
 - `APP`: the application.
 
+### `set-clipboard-text` (function)
+
+```lisp
+(set-clipboard-text app text)
+```
+
+Put TEXT on the clipboard.
+
+- `APP`: the application.
+- `TEXT`: the string to copy.
+
 ### `set-message` (function)
 
 ```lisp
@@ -1571,6 +1792,17 @@ Show TEXT in the status bar.
 - `APP`: the application.
 - `TEXT`: the message.
 - `SEVERITY`: :info or :error.
+
+### `single-line` (function)
+
+```lisp
+(single-line text)
+```
+
+Return TEXT as a line to paste into a one-line field: line breaks and tabs become spaces, a run
+of them becomes one, and the ends are trimmed.
+
+- `TEXT`: a string that may have several lines.
 
 ### `text-event` (type)
 
@@ -1588,7 +1820,20 @@ Text produced by the keyboard layout, one or more code points.
 
 ### `text-tool` (type)
 
-Places a text annotation at a click, asking for its content.
+Places a text annotation: a click puts it at that point, and dragging from the point
+sets the direction of its baseline. The content is asked for when the button is released.
+
+### `toggle-menu` (function)
+
+```lisp
+(toggle-menu app kind anchor)
+```
+
+Open the menu KIND, or close it when it is already open.
+
+- `APP`: the application.
+- `KIND`: :draw or :language.
+- `ANCHOR`: id of the button it hangs from.
 
 ### `tool` (type)
 
@@ -1654,8 +1899,8 @@ shown, unless it is absolute or starts with ~.
 (visible-entries dialog)
 ```
 
-Return the entries the list shows: folders always, files only when they are drawings unless
-all files were asked for, and only those whose names contain the search text, ignoring case.
+Return the entries the list shows (see COMPUTE-VISIBLE-ENTRIES). The answer is kept until the
+folder, the search text or the All files switch changes.
 
 - `DIALOG`: the file dialog.
 
@@ -1696,6 +1941,21 @@ A mouse-wheel step.
 
 ```lisp
 (wheel-event-y instance)
+```
+
+(undocumented)
+
+### `window-state-event` (type)
+
+The window changed in a way that matters to input.
+
+- `KIND`: :focus-lost (another window took the keyboard; releases of keys and buttons that happen
+elsewhere never arrive) or :pointer-left (the pointer left the window).
+
+### `window-state-event-kind` (function)
+
+```lisp
+(window-state-event-kind instance)
 ```
 
 (undocumented)
@@ -1770,7 +2030,7 @@ the bound also keeps every product and sum computed from lengths far from overfl
 ### `borba-cad-error` (condition)
 
 Root of every error that Borba CAD signals deliberately. Its report is a
-complete, user-facing English message.
+complete, user-facing message in the language of the interface.
 
 ### `config` (type)
 
@@ -1793,6 +2053,8 @@ the user's documents folder.
 - `WINDOW-WIDTH`: initial window width in logical pixels.
 - `WINDOW-HEIGHT`: initial window height in logical pixels.
 - `INITIAL-FILE`: drawing file to open at startup, or NIL.
+- `LANGUAGE`: the language keyword the user asked for with an option or the environment, or NIL to use the
+one saved last time and, failing that, English (US).
 
 ### `config-drawings-directory` (function)
 
@@ -1822,6 +2084,14 @@ the user's documents folder.
 
 ```lisp
 (config-initial-file instance)
+```
+
+(undocumented)
+
+### `config-language` (function)
+
+```lisp
+(config-language instance)
 ```
 
 (undocumented)
@@ -1923,7 +2193,7 @@ the user's documents folder.
 Apply core command-line options to a copy of CONFIG.
 Returns two values: the new configuration and the arguments that were not recognized, in order.
 Recognized: --log-dir DIR, --state-dir DIR, --drawings-dir DIR, --log-level LEVEL, --log-stderr,
---log-sample EVENT=N, --font PATH, --file PATH, --width N, --height N.
+--log-sample EVENT=N, --font PATH, --language TAG, --file PATH, --width N, --height N.
 
 - `CONFIG`: the configuration to start from.
 - `ARGUMENTS`: list of argument strings.
@@ -2066,6 +2336,16 @@ The file text is not well-formed.
 
 The file declares a format version this program cannot read.
 
+### `entity-kind-label` (function)
+
+```lisp
+(entity-kind-label kind)
+```
+
+Return the name of an entity kind in the current language, in lower case, for example "line".
+
+- `KIND`: an entity kind keyword.
+
 ### `format-area` (function)
 
 ```lisp
@@ -2206,7 +2486,7 @@ Return the list of log level keywords, from most to least severe.
 ```lisp
 (make-config &key ((project-root project-root) nil) ((log-directory log-directory) nil) ((state-directory state-directory) nil) ((drawings-directory drawings-directory) nil) ((log-level log-level) info) ((log-max-bytes log-max-bytes) +default-log-max-bytes+) ((log-max-files log-max-files) +default-log-max-files+) ((log-to-stderr log-to-stderr) nil) ((log-sampling log-sampling) nil) ((frame-summary-interval-seconds frame-summary-interval-seconds)
  +default-frame-summary-interval-seconds+) ((memory-sample-interval-seconds memory-sample-interval-seconds)
- +default-memory-sample-interval-seconds+) ((font-path font-path) nil) ((window-width window-width) +default-window-width+) ((window-height window-height) +default-window-height+) ((initial-file initial-file) nil))
+ +default-memory-sample-interval-seconds+) ((font-path font-path) nil) ((window-width window-width) +default-window-width+) ((window-height window-height) +default-window-height+) ((initial-file initial-file) nil) ((language language) nil))
 ```
 
 (undocumented)
@@ -2232,6 +2512,17 @@ Parse TEXT as a plain decimal number and return a double-float.
 Signals INVALID-INPUT when TEXT is not a number.
 
 - `TEXT`: user-typed text such as "12.5" or "-3,25".
+
+### `parse-language-option` (function)
+
+```lisp
+(parse-language-option text)
+```
+
+Return the language keyword named by TEXT, signaling CONFIGURATION-ERROR when the program does
+not speak it.
+
+- `TEXT`: a language tag such as "pt-BR" (any case; a hyphen or an underscore).
 
 ### `parse-length` (function)
 
@@ -2992,6 +3283,16 @@ The drawing aggregate: layers, entities and drawing-wide settings.
 
 (undocumented)
 
+### `drawing-entities` (function)
+
+```lisp
+(drawing-entities drawing)
+```
+
+Return every entity of DRAWING in stacking order.
+
+- `DRAWING`: the drawing.
+
 ### `drawing-entity-count` (function)
 
 ```lisp
@@ -3099,6 +3400,28 @@ Return true when ENTITY may be changed: its layer exists and is not locked.
 
 - `DRAWING`: the drawing.
 - `ENTITY`: an entity.
+
+### `entities-bounds` (function)
+
+```lisp
+(entities-bounds entities)
+```
+
+Return the bounds that contain every one of ENTITIES.
+
+- `ENTITIES`: a non-empty list of entities.
+
+### `entities-crossing-window` (function)
+
+```lisp
+(entities-crossing-window drawing window)
+```
+
+Return the pickable entities that lie inside WINDOW or touch it, in stacking order: what a
+crossing selection takes.
+
+- `DRAWING`: the drawing.
+- `WINDOW`: a bounds value in world coordinates.
 
 ### `entities-in-window` (function)
 
@@ -3222,6 +3545,20 @@ All entities of a drawing, ordered by id.
 - `VECTOR`: entities sorted by ascending id; only the first COUNT slots are meaningful.
 - `COUNT`: number of entities.
 
+### `entity-touches-bounds-p` (generic function)
+
+```lisp
+(entity-touches-bounds-p entity bounds)
+```
+
+Return true when the selectable geometry of ENTITY has a point inside BOUNDS or on
+its edge, which is what a crossing selection asks: an outline passing through the window touches it,
+a shape that holds the whole window without its outline reaching it does not. The default is that the
+bounds of the entity overlap BOUNDS, right for shapes that are filled boxes.
+
+- `ENTITY`: an entity.
+- `BOUNDS`: the window, in world coordinates.
+
 ### `entity-translated` (generic function)
 
 ```lisp
@@ -3233,6 +3570,19 @@ Return a copy of ENTITY moved by (DX, DY), with the same id.
 - `ENTITY`: an entity.
 - `DX`: displacement along x.
 - `DY`: displacement along y.
+
+### `entity-with-identity` (generic function)
+
+```lisp
+(entity-with-identity entity id layer-id)
+```
+
+Return a copy of ENTITY with another id on another layer, for an entity that is
+pasted as a new one.
+
+- `ENTITY`: an entity.
+- `ID`: the new id, unused in the drawing it goes into.
+- `LAYER-ID`: id of the layer it goes onto.
 
 ### `entity-with-layer` (generic function)
 
@@ -3257,6 +3607,18 @@ constructor. Signals INVALID-ENTITY when the result would be invalid.
 - `ENTITY`: an entity.
 - `KEY`: a PROPERTY-KEY returned by ENTITY-PROPERTIES.
 - `VALUE`: new value (double-float, string, boolean or unit keyword according to the kind).
+
+### `extract-entities` (function)
+
+```lisp
+(extract-entities drawing entities)
+```
+
+Return a new drawing that holds ENTITIES, with the ids and layer ids they have, and the layers
+they are on, with the settings of DRAWING that give its numbers meaning.
+
+- `DRAWING`: the drawing the entities come from.
+- `ENTITIES`: a non-empty list of entities of DRAWING.
 
 ### `find-layer` (function)
 
@@ -3661,7 +4023,7 @@ Create a rectangle from two opposite corners given in any order.
 ### `make-text` (function)
 
 ```lisp
-(make-text &key id layer-id x y string height)
+(make-text &key id layer-id x y string height (angle 0.0d0))
 ```
 
 Create a validated text annotation. Signals INVALID-ENTITY when an invariant is violated.
@@ -3672,6 +4034,8 @@ Create a validated text annotation. Signals INVALID-ENTITY when an invariant is 
 - `Y`: y of the insertion point.
 - `STRING`: non-empty single-line text without control characters; copied.
 - `HEIGHT`: text height (em size), above the length tolerance.
+- `ANGLE`: direction of the baseline in radians, counter-clockwise from +x; any finite angle, kept
+reduced to [0, 2 pi).
 
 ### `map-entities` (function)
 
@@ -3684,6 +4048,20 @@ FUNCTION must not add or remove entities.
 
 - `FUNCTION`: a function of one argument, the entity.
 - `STORE`: an entity store.
+
+### `pasted-entities` (function)
+
+```lisp
+(pasted-entities drawing snippet dx dy)
+```
+
+Return the entities of SNIPPET as new entities of DRAWING: with fresh ids, on the layers that
+PASTE-LAYER-ID picks, and moved by (DX, DY).
+
+- `DRAWING`: the drawing they are pasted into.
+- `SNIPPET`: the copied drawing.
+- `DX`: displacement along x.
+- `DY`: displacement along y.
 
 ### `pick-entity` (function)
 
@@ -3749,7 +4127,7 @@ One row of the property inspector.
 
 - `KEY`: identifies the property for ENTITY-WITH-PROPERTY.
 - `LABEL`: English label shown to the user.
-- `KIND`: :coordinate, :length, :text, :boolean, :unit or :integer.
+- `KIND`: :coordinate, :length, :angle (radians), :text, :boolean, :unit or :integer.
 - `VALUE`: current value (millimetres for lengths and coordinates).
 - `EDITABLE`: true when the user may change it.
 
@@ -4153,6 +4531,14 @@ Replace the stored entity that has the same id as ENTITY. Signals an error when 
 - `STORE`: an entity store.
 - `ENTITY`: the new value.
 
+### `text-angle` (function)
+
+```lisp
+(text-angle instance)
+```
+
+(undocumented)
+
 ### `text-entity` (type)
 
 A single-line text annotation laid out on a fixed-advance grid (see geometry text extents).
@@ -4161,6 +4547,7 @@ A single-line text annotation laid out on a fixed-advance grid (see geometry tex
 - `Y`: y of the baseline start.
 - `STRING`: the text, one character cell per code point.
 - `HEIGHT`: text height (em size) in millimetres.
+- `ANGLE`: direction of the baseline in radians, counter-clockwise from +x, in [0, 2 pi).
 
 ### `text-height` (function)
 
@@ -4211,12 +4598,13 @@ Signals INVALID-ENTITY when a moved entity would leave the drawing limits.
 ### `update-circle` (function)
 
 ```lisp
-(update-circle circle &key (layer-id (entity-layer-id circle)) (center-x (circle-center-x circle)) (center-y (circle-center-y circle)) (radius (circle-radius circle)))
+(update-circle circle &key (id (entity-id circle)) (layer-id (entity-layer-id circle)) (center-x (circle-center-x circle)) (center-y (circle-center-y circle)) (radius (circle-radius circle)))
 ```
 
 Return a validated copy of CIRCLE with the given fields replaced.
 
 - `CIRCLE`: the circle to copy.
+- `ID`: replacement id.
 - `LAYER-ID`: replacement layer id.
 - `CENTER-X`: replacement center x.
 - `CENTER-Y`: replacement center y.
@@ -4225,12 +4613,13 @@ Return a validated copy of CIRCLE with the given fields replaced.
 ### `update-dimension` (function)
 
 ```lisp
-(update-dimension dimension &key (layer-id (entity-layer-id dimension)) (x1 (dimension-x1 dimension)) (y1 (dimension-y1 dimension)) (x2 (dimension-x2 dimension)) (y2 (dimension-y2 dimension)) (offset (dimension-offset dimension)) (text-height (dimension-text-height dimension)) (unit (dimension-unit dimension)) (precision (dimension-precision dimension)))
+(update-dimension dimension &key (id (entity-id dimension)) (layer-id (entity-layer-id dimension)) (x1 (dimension-x1 dimension)) (y1 (dimension-y1 dimension)) (x2 (dimension-x2 dimension)) (y2 (dimension-y2 dimension)) (offset (dimension-offset dimension)) (text-height (dimension-text-height dimension)) (unit (dimension-unit dimension)) (precision (dimension-precision dimension)))
 ```
 
 Return a validated copy of DIMENSION with the given fields replaced.
 
 - `DIMENSION`: the dimension to copy.
+- `ID`: replacement id.
 - `LAYER-ID`: replacement layer id.
 - `X1`: replacement x of the first point.
 - `Y1`: replacement y of the first point.
@@ -4244,12 +4633,13 @@ Return a validated copy of DIMENSION with the given fields replaced.
 ### `update-line` (function)
 
 ```lisp
-(update-line line &key (layer-id (entity-layer-id line)) (x1 (line-x1 line)) (y1 (line-y1 line)) (x2 (line-x2 line)) (y2 (line-y2 line)))
+(update-line line &key (id (entity-id line)) (layer-id (entity-layer-id line)) (x1 (line-x1 line)) (y1 (line-y1 line)) (x2 (line-x2 line)) (y2 (line-y2 line)))
 ```
 
 Return a validated copy of LINE with the given fields replaced.
 
 - `LINE`: the line to copy.
+- `ID`: replacement id.
 - `LAYER-ID`: replacement layer id.
 - `X1`: replacement start x.
 - `Y1`: replacement start y.
@@ -4259,12 +4649,13 @@ Return a validated copy of LINE with the given fields replaced.
 ### `update-polyline` (function)
 
 ```lisp
-(update-polyline polyline &key (layer-id (entity-layer-id polyline)) (coordinates (polyline-coordinates polyline)) (closed (polyline-closed polyline)))
+(update-polyline polyline &key (id (entity-id polyline)) (layer-id (entity-layer-id polyline)) (coordinates (polyline-coordinates polyline)) (closed (polyline-closed polyline)))
 ```
 
 Return a validated copy of POLYLINE with the given fields replaced.
 
 - `POLYLINE`: the polyline to copy.
+- `ID`: replacement id.
 - `LAYER-ID`: replacement layer id.
 - `COORDINATES`: replacement coordinates (copied).
 - `CLOSED`: replacement closed flag.
@@ -4272,12 +4663,13 @@ Return a validated copy of POLYLINE with the given fields replaced.
 ### `update-rectangle` (function)
 
 ```lisp
-(update-rectangle rectangle &key (layer-id (entity-layer-id rectangle)) (min-x (rectangle-min-x rectangle)) (min-y (rectangle-min-y rectangle)) (width (rectangle-width rectangle)) (height (rectangle-height rectangle)))
+(update-rectangle rectangle &key (id (entity-id rectangle)) (layer-id (entity-layer-id rectangle)) (min-x (rectangle-min-x rectangle)) (min-y (rectangle-min-y rectangle)) (width (rectangle-width rectangle)) (height (rectangle-height rectangle)))
 ```
 
 Return a validated copy of RECTANGLE with the given fields replaced.
 
 - `RECTANGLE`: the rectangle to copy.
+- `ID`: replacement id.
 - `LAYER-ID`: replacement layer id.
 - `MIN-X`: replacement left edge.
 - `MIN-Y`: replacement bottom edge.
@@ -4287,17 +4679,19 @@ Return a validated copy of RECTANGLE with the given fields replaced.
 ### `update-text` (function)
 
 ```lisp
-(update-text text &key (layer-id (entity-layer-id text)) (x (text-x text)) (y (text-y text)) (string (text-string text)) (height (text-height text)))
+(update-text text &key (id (entity-id text)) (layer-id (entity-layer-id text)) (x (text-x text)) (y (text-y text)) (string (text-string text)) (height (text-height text)) (angle (text-angle text)))
 ```
 
 Return a validated copy of TEXT with the given fields replaced.
 
 - `TEXT`: the text entity to copy.
+- `ID`: replacement id.
 - `LAYER-ID`: replacement layer id.
 - `X`: replacement insertion x.
 - `Y`: replacement insertion y.
 - `STRING`: replacement text.
 - `HEIGHT`: replacement height.
+- `ANGLE`: replacement baseline direction in radians.
 
 ### `valid-grid-spacing-p` (function)
 
@@ -4533,6 +4927,21 @@ Return the circumference of a circle.
 
 - `RADIUS`: circle radius.
 
+### `circle-outline-touches-bounds-p` (function)
+
+```lisp
+(circle-outline-touches-bounds-p center-x center-y radius bounds)
+```
+
+Return true when the outline of a circle has a point inside BOUNDS or on its edge: the window
+holds a point at the distance RADIUS from the center, which is so when the nearest point of the
+window is no farther than that and the farthest corner no nearer.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: the radius.
+- `BOUNDS`: the window.
+
 ### `clip-segment-to-bounds` (function)
 
 ```lisp
@@ -4729,6 +5138,24 @@ perpendicular to it (left of the direction is positive).
 - `DESCENT`: extent on the right side of the direction.
 - `ANGLE`: direction in radians, counter-clockwise from +x.
 
+### `oriented-box-touches-bounds-p` (function)
+
+```lisp
+(oriented-box-touches-bounds-p origin-x origin-y length ascent descent angle bounds)
+```
+
+Return true when a filled rotated box and BOUNDS have a point in common: an edge of the box
+reaches the window, or the window lies inside the box. The box is the one that
+ORIENTED-BOX-BOUNDS describes.
+
+- `ORIGIN-X`: x of the box origin.
+- `ORIGIN-Y`: y of the box origin.
+- `LENGTH`: extent along the direction.
+- `ASCENT`: extent on the left of the direction.
+- `DESCENT`: extent on the right of the direction.
+- `ANGLE`: direction in radians, counter-clockwise from +x.
+- `BOUNDS`: the window.
+
 ### `point-bounds-distance` (function)
 
 ```lisp
@@ -4838,6 +5265,18 @@ Return the total length of a polyline, including the closing segment when CLOSED
 - `COORDINATES`: simple-array of double-float holding x0 y0 x1 y1 ...
 - `CLOSED`: when true, add the segment from the last vertex back to the first.
 
+### `polyline-touches-bounds-p` (function)
+
+```lisp
+(polyline-touches-bounds-p coordinates closed bounds)
+```
+
+Return true when a polyline has a point inside BOUNDS or on its edge.
+
+- `COORDINATES`: vector of alternating x and y values, at least one vertex.
+- `CLOSED`: true when the last vertex joins the first.
+- `BOUNDS`: the window.
+
 ### `polyline-vertex-count` (function)
 
 ```lisp
@@ -4896,6 +5335,20 @@ Return the length of the segment between two points.
 - `X2`: x of the end.
 - `Y2`: y of the end.
 
+### `segment-touches-bounds-p` (function)
+
+```lisp
+(segment-touches-bounds-p x1 y1 x2 y2 bounds)
+```
+
+Return true when a segment has a point inside BOUNDS or on its edge.
+
+- `X1`: x of the segment start.
+- `Y1`: y of the segment start.
+- `X2`: x of the segment end.
+- `Y2`: y of the segment end.
+- `BOUNDS`: the window.
+
 ### `snap-coordinate` (function)
 
 ```lisp
@@ -4917,6 +5370,137 @@ Return the width of a text line in world units.
 
 - `CHARACTER-COUNT`: number of characters (one cell per code point).
 - `HEIGHT`: text height (em size) in world units.
+
+## BORBA-CAD/I18N
+
+The languages of the interface. The English text of the program is the key of every
+message, and a catalog gives the translation of a key; English (US) is the default and needs no
+catalog, and a text with no translation shows in English.
+
+### `*language*` (variable)
+
+The language the interface speaks now, a keyword such as :en-us or :pt-br.
+
+### `+default-language+` (constant)
+
+The language of the program when nothing else was chosen: English as written in the United States.
+
+### `catalog-language-p` (function)
+
+```lisp
+(catalog-language-p language)
+```
+
+Return true when there is a catalog for LANGUAGE.
+
+- `LANGUAGE`: a language keyword.
+
+### `catalog-translations` (function)
+
+```lisp
+(catalog-translations language)
+```
+
+Return the translations of LANGUAGE as a list of (english translation) lists, or NIL for the
+default language.
+
+- `LANGUAGE`: a language keyword.
+
+### `format-directives` (function)
+
+```lisp
+(format-directives control)
+```
+
+Return the directives of a format control as a list of strings, in order and in lower case, so
+that a translation can be checked to ask for the same values as the English text. A doubled tilde
+is a tilde, not a directive.
+
+- `CONTROL`: a format control string.
+
+### `language-name` (function)
+
+```lisp
+(language-name language)
+```
+
+Return the name of LANGUAGE in that language, as the language menu shows it.
+
+- `LANGUAGE`: a language keyword.
+
+### `language-tag` (function)
+
+```lisp
+(language-tag language)
+```
+
+Return the tag of LANGUAGE as people write it, for example "pt-BR".
+
+- `LANGUAGE`: a language keyword.
+
+### `mark` (function)
+
+```lisp
+(mark text)
+```
+
+Return TEXT unchanged. It marks a text that sits in a table as one to be translated, so that
+the catalog check finds it; where the text is shown it goes through TR.
+
+- `TEXT`: the English text.
+
+### `parse-language` (function)
+
+```lisp
+(parse-language text)
+```
+
+Return the language keyword that TEXT names, or NIL when the program does not speak it. The
+tag is accepted in any case with a hyphen or an underscore (pt-BR, pt_br), and the bare language
+(en, pt) stands for the one the program has.
+
+- `TEXT`: a language tag typed by the user.
+
+### `supported-languages` (function)
+
+```lisp
+(supported-languages)
+```
+
+Return the languages the program speaks, as keywords, the default one first.
+
+### `tr` (function)
+
+```lisp
+(tr text)
+```
+
+Return TEXT in the current language: its translation, or TEXT itself when the language is the
+default or the catalog has none.
+
+- `TEXT`: the English text.
+
+### `trf` (function)
+
+```lisp
+(trf control &rest arguments)
+```
+
+Return CONTROL, translated, filled in with ARGUMENTS as FORMAT does.
+
+- `CONTROL`: the English format control.
+- `ARGUMENTS`: the values for its directives.
+
+### `with-language` (macro)
+
+```lisp
+(with-language (language) &body body)
+```
+
+Run BODY speaking LANGUAGE.
+
+- `LANGUAGE`: a language keyword.
+- `BODY`: the forms to run.
 
 ## BORBA-CAD/OBSERVABILITY
 
@@ -5784,13 +6368,17 @@ Deepest list nesting accepted. The format needs 4; the limit protects the stack.
 
 Longest word or number accepted, in characters. Doubles print in at most 24.
 
+### `+oldest-supported-format-version+` (constant)
+
+The oldest format version this program still reads, migrating it as it is read.
+
 ### `+recent-file-limit+` (constant)
 
 Most drawings the recent list remembers.
 
 ### `+supported-format-version+` (constant)
 
-The only format version this program reads and writes.
+The newest format version: the one this program writes, and the newest it reads.
 
 ### `clean-path-text` (function)
 
@@ -5881,6 +6469,28 @@ there is none, when it cannot be read, or when STATE-DIRECTORY is NIL.
 
 - `STATE-DIRECTORY`: the folder where the program keeps what it remembers, or NIL.
 
+### `load-setting` (function)
+
+```lisp
+(load-setting state-directory name)
+```
+
+Return the saved value of the setting NAME as a string, or NIL when it was never saved.
+
+- `STATE-DIRECTORY`: the folder where the program keeps what it remembers, or NIL.
+- `NAME`: the name of the setting.
+
+### `load-settings` (function)
+
+```lisp
+(load-settings state-directory)
+```
+
+Return the saved settings as a list of (name . value) conses of strings, in file order. The
+list is empty when there is none, when the file cannot be read, or when STATE-DIRECTORY is NIL.
+
+- `STATE-DIRECTORY`: the folder where the program keeps what it remembers, or NIL.
+
 ### `native-path` (function)
 
 ```lisp
@@ -5937,6 +6547,19 @@ property list with :bytes, :serialize-nanoseconds (including the disk flush) and
 - `BEFORE-COMMIT`: optional function called with the temporary pathname just before the rename;
 a test seam for injecting failures.
 
+### `save-setting` (function)
+
+```lisp
+(save-setting state-directory name value)
+```
+
+Save the setting NAME with VALUE, keeping the other settings. Returns true when the file was
+written, and NIL when it could not be (or STATE-DIRECTORY is NIL, or the text has a line break).
+
+- `STATE-DIRECTORY`: the folder where the program keeps what it remembers, or NIL.
+- `NAME`: the name of the setting, with no `=` in it.
+- `VALUE`: its value.
+
 ### `user-directories-entry` (function)
 
 ```lisp
@@ -5954,7 +6577,7 @@ Brazilian Portuguese desktop learns that the documents folder is called Document
 (write-drawing drawing stream)
 ```
 
-Write DRAWING in the .bcad format (version 1).
+Write DRAWING in the .bcad format (the newest version).
 
 - `DRAWING`: the drawing.
 - `STREAM`: character output stream; UTF-8 is expected.
@@ -6086,6 +6709,16 @@ exact integers up to 32, then a ladder of sizes growing by 25 percent, capped at
 
 - `PHYSICAL-SIZE`: the on-screen em size in framebuffer pixels.
 
+### `install-system-clipboard` (function)
+
+```lisp
+(install-system-clipboard app)
+```
+
+Make the application use the system clipboard.
+
+- `APP`: the application.
+
 ### `keycode->key` (function)
 
 ```lisp
@@ -6189,6 +6822,25 @@ times. Needs a display.
 - `HEIGHT`: window height in logical pixels.
 - `SWAP-INTERVAL`: 1 to wait for the display refresh at each swap, 0 to swap at once.
 
+### `sdl-clipboard-text` (function)
+
+```lisp
+(sdl-clipboard-text)
+```
+
+Return the text on the system clipboard, or NIL when there is none or it is empty. SDL gives
+the text in memory of its own, which is freed here.
+
+### `set-sdl-clipboard-text` (function)
+
+```lisp
+(set-sdl-clipboard-text text)
+```
+
+Put TEXT on the system clipboard. Returns true when SDL accepted it.
+
+- `TEXT`: the string to copy.
+
 ### `translate-sdl-event` (function)
 
 ```lisp
@@ -6237,6 +6889,17 @@ Nanoseconds in one second.
 ```
 
 Return the total number of bytes allocated by Lisp code since process start.
+
+### `backtrace-string` (function)
+
+```lisp
+(backtrace-string &optional (count 30))
+```
+
+Return the current call stack, innermost call first, as text, for the log of an unexpected
+error.
+
+- `COUNT`: how many calls to show.
 
 ### `command-line-arguments` (function)
 
@@ -6348,6 +7011,18 @@ Return the permission bits of the file at PATH as an integer, or NIL when it can
 Return the size in bytes of the file at PATH.
 
 - `PATH`: an existing file.
+
+### `fold-for-search` (function)
+
+```lisp
+(fold-for-search string)
+```
+
+Return STRING in lower case and without accents, the form in which names are sorted and
+searched, so that A-acute plus gua, agua and AGUA are the same and a name that starts with an
+accented letter sorts among the plain ones.
+
+- `STRING`: a name.
 
 ### `format-utc-timestamp` (function)
 
@@ -7047,7 +7722,7 @@ Create an empty draw list.
 ### `make-scene-state` (function)
 
 ```lisp
-(make-scene-state &key selected-ids translation preview-entities window snap)
+(make-scene-state &key selected-ids translation preview-entities window window-crossing snap)
 ```
 
 (undocumented)
@@ -7151,6 +7826,7 @@ The interaction state that decorates the drawing.
 - `TRANSLATION`: (dx . dy) in millimetres applied to selected entities while dragging, or NIL.
 - `PREVIEW-ENTITIES`: entities being created, drawn in the preview color.
 - `WINDOW`: world bounds of a window-selection rectangle, or NIL.
+- `WINDOW-CROSSING`: true when that rectangle is a crossing selection, drawn dashed and in another color.
 - `SNAP`: (x y kind) in world coordinates of the snap marker, or NIL.
 
 ### `scene-state-preview-entities` (function)
@@ -8093,6 +8769,14 @@ The content of a text field.
 
 ```lisp
 (edit-state-maximum-length instance)
+```
+
+(undocumented)
+
+### `edit-state-replace-on-type` (function)
+
+```lisp
+(edit-state-replace-on-type instance)
 ```
 
 (undocumented)

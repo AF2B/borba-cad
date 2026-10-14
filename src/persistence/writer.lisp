@@ -89,7 +89,7 @@ STREAM: output stream."
 
 (defun write-drawing (drawing
                       stream)
-  "Write DRAWING in the .bcad format (version 1).
+  "Write DRAWING in the .bcad format (the newest version).
 
 DRAWING: the drawing.
 STREAM: character output stream; UTF-8 is expected."

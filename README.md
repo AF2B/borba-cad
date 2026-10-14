@@ -90,8 +90,8 @@ input is rejected with a message and the previous value is kept.
 
 ## Files
 
-Drawings are saved as `.bcad`: UTF-8 text, one S-expression, an explicit `format-version`, doubles
-that round-trip exactly. Loading never evaluates code; a malformed file is refused with its line
+Drawings are saved as `.bcad`: UTF-8 text, one S-expression, an explicit `format-version` (2; files
+of version 1 open and are migrated), doubles that round-trip exactly. Loading never evaluates code; a malformed file is refused with its line
 and column, and a failed open leaves the current drawing untouched. Saving is atomic (temporary
 file, flush, rename). Canonical length unit: the millimetre. A sample is in
 `examples/floor-plan.bcad`.

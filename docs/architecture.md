@@ -107,13 +107,13 @@ World space is right-handed with +Y up; angles are counter-clockwise radians. Ke
 - Move-by-drag renders a preview offset and commits one change set on release (one undo step).
 - Errors are conditions (`borba-cad/base`): `invalid-entity`, `invalid-input`, `drawing-file-error`, `layer-error`, `configuration-error`. `app` converts them into status messages and log entries; nothing is swallowed.
 
-## 9. Persistence (`.bcad`, format version 1)
+## 9. Persistence (`.bcad`, format version 2)
 
 UTF-8 text, one S-expression. Numbers are decimal or exponent doubles printed shortest-round-trip, so doubles survive bit-exactly. Strings use `\"` and `\\` escapes. Keywords are bare words.
 
 ```lisp
 (drawing
- (format-version 1)
+ (format-version 2)
  (unit millimeter)
  (display-unit meter)
  (grid (spacing 100.0) (visible t) (snap t) (object-snap t))
@@ -125,10 +125,10 @@ UTF-8 text, one S-expression. Numbers are decimal or exponent doubles printed sh
   (layer (id 1) (name "walls") (color 255 120 80) (visible t) (locked nil)))
  (entities
   (line (id 1) (layer 1) (x1 0.0) (y1 0.0) (x2 5000.0) (y2 0.0))
-  (text (id 3) (layer 0) (x 100.0) (y 100.0) (height 250.0) (string "Living room"))))
+  (text (id 3) (layer 0) (x 100.0) (y 100.0) (height 250.0) (string "Living room") (angle 0.0))))
 ```
 
-The reader rejects unknown keys and entity types, wrong arity or types, non-finite or out-of-range numbers, duplicate ids, dangling layer references, a missing default layer, ids at or above `next-*-id`, and any `format-version` other than the supported one, each with line and column. A dimension stores its `unit` and `precision` next to its geometry. Exponents are bounded before conversion. `save-drawing` writes a sibling temporary file, flushes and `fsync`s it, then renames over the target; the temporary file is removed on failure. Migrations: version 1 is the first version, so none exist yet. The loader accepts exactly the supported version and refuses older and newer ones with `drawing-file-version-error`; the first format change must add an explicit, tested migration before the fields are parsed (development.md §7).
+The reader rejects unknown keys and entity types, wrong arity or types, non-finite or out-of-range numbers, duplicate ids, dangling layer references, a missing default layer, ids at or above `next-*-id`, and a `format-version` that is newer than the program or older than the oldest it reads, each with line and column. A dimension stores its `unit` and `precision` next to its geometry. Exponents are bounded before conversion. `save-drawing` writes a sibling temporary file, flushes and `fsync`s it, then renames over the target; the temporary file is removed on failure. Versions and migration: the program writes the newest version (2) and reads every version from the oldest it supports (1). What a version added is recorded in the format table (`persistence/format.lisp`) as the `since` of a field or of an entity kind, with the `default` that a field gets when the file is older than the field; that table is the migration. A version 1 file is read with the fields that came later filled in with their defaults (a text gets the angle 0), is not allowed to contain them, and is written back as version 2. Version 2 added the angle of a text. A newer file is refused with `drawing-file-version-error`, which names the version this program reads. The fixture `tests/fixtures/v1-floor-plan.bcad` is a version 1 file kept as it was written, and the migration suite reads it (development.md §7).
 
 ## 10. Observability
 

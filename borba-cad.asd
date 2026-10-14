@@ -218,6 +218,8 @@
                (:file "menu-tests")
                (:file "entity-clipboard-tests")
                (:file "crossing-tests")
+               (:file "migration-tests")
+               (:file "text-angle-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

@@ -8,18 +8,21 @@
                                                   x
                                                   y
                                                   string
-                                                  height))
+                                                  height
+                                                  angle))
                         (:copier nil))
   "A single-line text annotation laid out on a fixed-advance grid (see geometry text extents).
 
 X: x of the baseline start (insertion point).
 Y: y of the baseline start.
 STRING: the text, one character cell per code point.
-HEIGHT: text height (em size) in millimetres."
+HEIGHT: text height (em size) in millimetres.
+ANGLE: direction of the baseline in radians, counter-clockwise from +x, in [0, 2 pi)."
   (x 0d0 :type double-float :read-only t)
   (y 0d0 :type double-float :read-only t)
   (string "" :type string :read-only t)
-  (height 1d0 :type double-float :read-only t))
+  (height 1d0 :type double-float :read-only t)
+  (angle 0d0 :type double-float :read-only t))
 
 (defun printable-text-p (string)
   "Return true when STRING is non-empty, at most +MAXIMUM-TEXT-LENGTH+ characters long and
@@ -36,26 +39,29 @@ STRING: the candidate text."
 (defun text-box-bounds (x
                         y
                         character-count
-                        height)
+                        height
+                        angle)
   "Return the nominal bounds of a text line.
 
 X: x of the baseline start.
 Y: y of the baseline start.
 CHARACTER-COUNT: number of characters.
-HEIGHT: text height."
+HEIGHT: text height.
+ANGLE: direction of the baseline in radians."
   (geo:oriented-box-bounds x
                            y
                            (geo:text-width character-count height)
                            (* geo:+text-ascent-ratio+ height)
                            (* geo:+text-descent-ratio+ height)
-                           0d0))
+                           angle))
 
 (defun make-text (&key id
                        layer-id
                        x
                        y
                        string
-                       height)
+                       height
+                       (angle 0d0))
   "Create a validated text annotation. Signals INVALID-ENTITY when an invariant is violated.
 
 ID: positive entity id.
@@ -63,7 +69,9 @@ LAYER-ID: id of the layer.
 X: x of the insertion point, in millimetres.
 Y: y of the insertion point.
 STRING: non-empty single-line text without control characters; copied.
-HEIGHT: text height (em size), above the length tolerance."
+HEIGHT: text height (em size), above the length tolerance.
+ANGLE: direction of the baseline in radians, counter-clockwise from +x; any finite angle, kept
+reduced to [0, 2 pi)."
   (require-identifiers :text
                        id
                        layer-id)
@@ -76,15 +84,20 @@ HEIGHT: text height (em size), above the length tolerance."
   (require-positive-length :text
                            "height"
                            height)
+  (require-angle :text
+                 "angle"
+                 angle)
   (unless (printable-text-p string)
     (invalid-entity-failure :text
                             "the text must be 1 to ~d characters without control characters"
                             +maximum-text-length+))
   (let* ((copy (coerce (copy-seq string) '(simple-array character (*))))
+         (turn (geo:normalize-angle angle))
          (bounds (text-box-bounds x
                                   y
                                   (length copy)
-                                  height)))
+                                  height
+                                  turn)))
     (require-bounds-in-range :text bounds)
     (%make-text id
                 layer-id
@@ -92,7 +105,8 @@ HEIGHT: text height (em size), above the length tolerance."
                 x
                 y
                 copy
-                height)))
+                height
+                turn)))
 
 (defun update-text (text
                     &key (id (entity-id text))
@@ -100,7 +114,8 @@ HEIGHT: text height (em size), above the length tolerance."
                          (x (text-x text))
                          (y (text-y text))
                          (string (text-string text))
-                         (height (text-height text)))
+                         (height (text-height text))
+                         (angle (text-angle text)))
   "Return a validated copy of TEXT with the given fields replaced.
 
 TEXT: the text entity to copy.
@@ -109,13 +124,15 @@ LAYER-ID: replacement layer id.
 X: replacement insertion x.
 Y: replacement insertion y.
 STRING: replacement text.
-HEIGHT: replacement height."
+HEIGHT: replacement height.
+ANGLE: replacement baseline direction in radians."
   (make-text :id id
              :layer-id layer-id
              :x x
              :y y
              :string string
-             :height height))
+             :height height
+             :angle angle))
 
 (defmethod entity-kind ((text text-entity))
   :text)
@@ -123,9 +140,14 @@ HEIGHT: replacement height."
 (defmethod entity-pick-distance ((text text-entity)
                                  x
                                  y)
-  (geo:point-bounds-distance x
-                             y
-                             (entity-bounds text)))
+  (geo:point-oriented-box-distance x
+                                   y
+                                   (text-x text)
+                                   (text-y text)
+                                   (geo:text-width (length (text-string text)) (text-height text))
+                                   (* geo:+text-ascent-ratio+ (text-height text))
+                                   (* geo:+text-descent-ratio+ (text-height text))
+                                   (text-angle text)))
 
 (defmethod entity-translated ((text text-entity)
                               dx
@@ -157,6 +179,11 @@ HEIGHT: replacement height."
                        (i18n:tr "Height")
                        :length
                        (text-height text)
+                       t)
+        (make-property :angle
+                       (i18n:tr "Angle")
+                       :angle
+                       (text-angle text)
                        t)))
 
 (defmethod entity-derived-values ((text text-entity))
@@ -171,7 +198,8 @@ HEIGHT: replacement height."
     (:x (update-text text :x value))
     (:y (update-text text :y value))
     (:string (update-text text :string value))
-    (:height (update-text text :height value))))
+    (:height (update-text text :height value))
+    (:angle (update-text text :angle value))))
 
 (defmethod entity-with-layer ((text text-entity)
                               layer-id)
@@ -181,5 +209,15 @@ HEIGHT: replacement height."
                                  id
                                  layer-id)
   (update-text text
-                 :id id
-                 :layer-id layer-id))
+               :id id
+               :layer-id layer-id))
+
+(defmethod entity-touches-bounds-p ((text text-entity)
+                                    bounds)
+  (geo:oriented-box-touches-bounds-p (text-x text)
+                                     (text-y text)
+                                     (geo:text-width (length (text-string text)) (text-height text))
+                                     (* geo:+text-ascent-ratio+ (text-height text))
+                                     (* geo:+text-descent-ratio+ (text-height text))
+                                     (text-angle text)
+                                     bounds))

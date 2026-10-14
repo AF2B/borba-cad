@@ -56,7 +56,8 @@
   ("Polyline: click the first vertex" "Polilinha: clique no primeiro vértice")
   ("Polyline: click vertices; Enter finishes; click the first vertex to close; Backspace removes the last"
    "Polilinha: clique nos vértices; Enter conclui; clique no primeiro vértice para fechar; Backspace remove o último")
-  ("Text: click where the text starts" "Texto: clique onde o texto começa")
+  ("Text: click where the text starts, or drag to set its angle"
+   "Texto: clique onde o texto começa, ou arraste para definir o ângulo")
   ("Text to place at the clicked point:" "Texto a colocar no ponto clicado:")
   ("Dimension: click the first point" "Cota: clique no primeiro ponto")
   ("Dimension: click the second point (Esc cancels)" "Cota: clique no segundo ponto (Esc cancela)")
@@ -223,6 +224,7 @@
   ("the layer id must be a non-negative integer, got ~s" "o id da camada deve ser um inteiro não negativo, mas é ~s")
   ("~a must be a number between -~f and ~f mm, got ~a" "~a deve ser um número entre -~f e ~f mm, mas é ~a")
   ("~a must be a number above ~f mm, got ~a" "~a deve ser um número acima de ~f mm, mas é ~a")
+  ("~a must be an angle in radians, got ~a" "~a deve ser um ângulo em radianos, mas é ~a")
   ("it extends beyond the drawing limit of ~f mm" "ultrapassa o limite do desenho de ~f mm")
   ("its length is ~f mm; a line needs a length above ~f mm"
    "seu comprimento é ~f mm; uma linha precisa de comprimento acima de ~f mm")

@@ -20,7 +20,7 @@
             (dom:make-circle :id 3 :layer-id 0 :center-x 500d0 :center-y 600d0 :radius 250d0)
             (dom:make-polyline :id 4 :layer-id 1 :coordinates (doubles 0d0 0d0 100d0 0d0 100d0 100d0)
                                :closed nil)
-            (dom:make-text :id 5 :layer-id 0 :x 10d0 :y 20d0 :height 150d0 :string "Hi \"you\"")
+            (dom:make-text :id 5 :layer-id 0 :x 10d0 :y 20d0 :height 150d0 :string "Hi \"you\"" :angle 0.5d0)
             (dom:make-dimension :id 6 :layer-id 0 :x1 0d0 :y1 0d0 :x2 1000d0 :y2 0d0 :offset 500d0
                                 :text-height 100d0 :unit :meter :precision 2))))
     drawing))
@@ -28,7 +28,7 @@
 (defparameter *golden-text*
   (format nil "~{~a~%~}"
           (list "(drawing"
-            " (format-version 1)"
+            " (format-version 2)"
             " (unit millimeter)"
             " (display-unit millimeter)"
             " (grid (spacing 100.0) (visible t) (snap t) (object-snap t))"
@@ -45,12 +45,12 @@
             "  (rectangle (id 2) (layer 1) (min-x 100.0) (min-y 200.0) (width 3000.0) (height 2500.0))"
             "  (circle (id 3) (layer 0) (center-x 500.0) (center-y 600.0) (radius 250.0))"
             "  (polyline (id 4) (layer 1) (closed nil) (vertices 0.0 0.0 100.0 0.0 100.0 100.0))"
-            "  (text (id 5) (layer 0) (x 10.0) (y 20.0) (height 150.0) (string \"Hi \\\"you\\\"\"))"
+            "  (text (id 5) (layer 0) (x 10.0) (y 20.0) (height 150.0) (string \"Hi \\\"you\\\"\") (angle 0.5))"
             (concatenate 'string
                          "  (dimension (id 6) (layer 0) (x1 0.0) (y1 0.0) (x2 1000.0) (y2 0.0) "
                          "(offset 500.0) (text-height 100.0) (unit meter) (precision 2))")
             " ))"))
-  "The exact text the writer must produce for GOLDEN-DRAWING (documents format version 1).")
+  "The exact text the writer must produce for GOLDEN-DRAWING (documents format version 2).")
 
 (defun replace-once (text old new)
   "Return TEXT with the single occurrence of OLD replaced by NEW; fails the test if OLD is not
@@ -260,11 +260,11 @@ fragment."
 
 (test version-errors-are-distinct-and-explicit
   (signals-file-error (base:drawing-file-version-error :line 2 :message "newer")
-                      (replace-once *golden-text* "(format-version 1)" "(format-version 2)"))
+                      (replace-once *golden-text* "(format-version 2)" "(format-version 3)"))
   (signals-file-error (base:drawing-file-version-error :message "not supported")
-                      (replace-once *golden-text* "(format-version 1)" "(format-version 0)"))
+                      (replace-once *golden-text* "(format-version 2)" "(format-version 0)"))
   (signals-file-error (base:drawing-file-content-error :message "whole number")
-                      (replace-once *golden-text* "(format-version 1)" "(format-version 1.0)")))
+                      (replace-once *golden-text* "(format-version 2)" "(format-version 2.0)")))
 
 (test header-fields-are-required-ordered-and-validated
   (signals-file-error (base:drawing-file-content-error :message "expected the field (unit")

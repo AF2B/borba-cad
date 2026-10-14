@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Text at an angle.** A text can be turned to any angle: drag from the insertion point with the
+  text tool (the angle snaps to multiples of 15 degrees when it is within 3 of one, and the text is
+  previewed while dragging), or edit the Angle field of the inspector, in degrees. The text is
+  drawn, picked and selected by crossing in its rotated box.
+- **`.bcad` format version 2, and migration.** Version 2 stores the angle of a text. Version 1
+  files still open: the format table records what each version added, with the value an older file
+  gets, so a version 1 file is read as the version 2 file that says angle 0, and is written back as
+  version 2. A version 1 file is not allowed to have what version 2 added. A version 1 fixture and a
+  migration suite keep this honest.
 - **Crossing selection.** Dragging on empty space from right to left selects what the rectangle
   touches (drawn dashed and green); from left to right it selects what lies inside, as before
   (solid). A diagonal line is taken only when it really passes through the rectangle, and a circle

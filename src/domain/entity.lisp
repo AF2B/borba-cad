@@ -8,6 +8,10 @@
 (defconstant +maximum-polyline-vertices+ 100000
   "Largest vertex count of a polyline. Bounds memory use when loading untrusted files.")
 
+(defconstant +maximum-angle-radians+ 1d6
+  "Largest magnitude of an angle accepted, in radians: far more turns than a drawing needs, and
+small enough that reducing it to a turn loses no precision that matters.")
+
 (defconstant +maximum-text-length+ 256
   "Largest number of characters in a text annotation.")
 
@@ -44,7 +48,7 @@ BOUNDS: world-space bounds, computed once at construction."
 
 KEY: identifies the property for ENTITY-WITH-PROPERTY.
 LABEL: English label shown to the user.
-KIND: :coordinate, :length, :text, :boolean, :unit or :integer.
+KIND: :coordinate, :length, :angle (radians), :text, :boolean, :unit or :integer.
 VALUE: current value (millimetres for lengths and coordinates).
 EDITABLE: true when the user may change it."
   key
@@ -180,6 +184,21 @@ VALUE: the value to check."
                             name
                             base:+maximum-coordinate-magnitude+
                             base:+maximum-coordinate-magnitude+
+                            value)))
+
+(defun require-angle (kind
+                      name
+                      value)
+  "Signal INVALID-ENTITY unless VALUE is a finite double-float angle in radians.
+
+KIND: entity kind keyword.
+NAME: property name used in the message.
+VALUE: the value to check."
+  (unless (and (typep value 'double-float)
+               (<= (- +maximum-angle-radians+) value +maximum-angle-radians+))
+    (invalid-entity-failure kind
+                            "~a must be an angle in radians, got ~a"
+                            name
                             value)))
 
 (defun require-positive-length (kind

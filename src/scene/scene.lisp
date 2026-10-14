@@ -396,7 +396,7 @@ COLOR: an RGBA."
                     (dom:text-x entity)
                     (dom:text-y entity)
                     (dom:text-height entity)
-                    0d0
+                    (dom:text-angle entity)
                     color))
     (dom:dimension-entity
      (emit-dimension frame

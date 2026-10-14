@@ -373,6 +373,7 @@ PROPERTY: an inspector property."
   (let ((value (dom:property-value property)))
     (ecase (dom:property-kind property)
       ((:coordinate :length) (format-model-number app value))
+      (:angle (trim-decimal-zeros (base:format-decimal (base:radians->degrees value) 4)))
       (:text value)
       (:integer (format nil "~d" value))
       (:boolean (if value (i18n:tr "Yes") (i18n:tr "No")))

@@ -2,39 +2,57 @@
 
 ;;;; The entity format table. One entry per entity kind drives both the writer and the reader,
 ;;;; so they cannot drift apart. Adding an entity kind means adding one entry here.
+;;;;
+;;;; Format versions. The program writes the newest version and reads every version from the oldest
+;;;; supported one. What a version added is recorded here, in the table, as the SINCE of a field or of
+;;;; an entity kind, together with the DEFAULT that a field gets when a file is older than the field:
+;;;; that table is the migration, and a file of an older version is read as the newer one with the
+;;;; defaults filled in. Version 2 added the angle of a text.
 
-(defconstant +supported-format-version+ 1
-  "The only format version this program reads and writes.")
+(defconstant +supported-format-version+ 2
+  "The newest format version: the one this program writes, and the newest it reads.")
+
+(defconstant +oldest-supported-format-version+ 1
+  "The oldest format version this program still reads, migrating it as it is read.")
 
 (defstruct (field-spec (:constructor make-field-spec (key
                                                       name
                                                       type
-                                                      accessor)))
+                                                      accessor
+                                                      &key (since +oldest-supported-format-version+)
+                                                           default)))
   "How one entity property is stored.
 
 KEY: keyword passed to the entity constructor.
 NAME: field name in the file.
 TYPE: :real, :reals, :boolean, :string, :unit or :integer.
-ACCESSOR: symbol of the function that reads the property from an entity."
+ACCESSOR: symbol of the function that reads the property from an entity.
+SINCE: the first format version that has the field; a file of an older version does not have it.
+DEFAULT: the value the property gets when the file is older than SINCE."
   (key :x :type keyword :read-only t)
   (name "" :type string :read-only t)
   (type :real :type keyword :read-only t)
-  (accessor nil :type symbol :read-only t))
+  (accessor nil :type symbol :read-only t)
+  (since +oldest-supported-format-version+ :type integer :read-only t)
+  (default nil :read-only t))
 
 (defstruct (entity-format (:constructor make-entity-format (kind
                                                             name
                                                             constructor
-                                                            fields)))
+                                                            fields
+                                                            &key (since +oldest-supported-format-version+))))
   "How one entity kind is stored.
 
 KIND: entity kind keyword.
 NAME: name of the entity list in the file.
 CONSTRUCTOR: symbol of the validating constructor, called with keyword arguments.
-FIELDS: list of FIELD-SPEC for every property except id and layer."
+FIELDS: list of FIELD-SPEC for every property except id and layer.
+SINCE: the first format version that has this kind of entity."
   (kind :line :type keyword :read-only t)
   (name "" :type string :read-only t)
   (constructor nil :type symbol :read-only t)
-  (fields nil :type list :read-only t))
+  (fields nil :type list :read-only t)
+  (since +oldest-supported-format-version+ :type integer :read-only t))
 
 (defun real-fields (&rest names-and-accessors)
   "Build :real field specs whose keyword is the upcased field name.
@@ -101,7 +119,13 @@ NAMES-AND-ACCESSORS: alternating field names and accessor symbols."
                                     (list (make-field-spec :string
                                                            "string"
                                                            :string
-                                                           'dom:text-string))))
+                                                           'dom:text-string)
+                                          (make-field-spec :angle
+                                                           "angle"
+                                                           :real
+                                                           'dom:text-angle
+                                                           :since 2
+                                                           :default 0d0))))
         (make-entity-format :dimension
                             "dimension"
                             'dom:make-dimension

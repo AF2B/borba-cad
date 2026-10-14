@@ -111,7 +111,11 @@ The monospace fonts used by the renderer advance exactly 0.6 em (verified for No
 the renderer places every glyph on the same grid and the domain bounds match what is drawn.
 `oriented-box-bounds` returns the axis-aligned bounds of that box rotated about its origin, and
 `point-oriented-box-distance` the distance from a point to the filled rotated box; picking text
-and dimensions uses them.
+and dimensions uses them. A text has an angle (radians, counter-clockwise from +x, kept in
+[0, 2π)) that turns its baseline about the insertion point, so its bounds, its picking and its
+crossing test all use the rotated box, and a text turned 45 degrees is not picked in the empty
+corner of its bounds. The text tool sets it by dragging from the insertion point (snapped to
+multiples of 15 degrees within 3 degrees); the inspector edits it in degrees.
 
 An aligned dimension measures the segment between two definition points P1 and P2. The dimension
 line is parallel to it, displaced by a signed offset along the left normal (a negative offset
@@ -231,7 +235,7 @@ reference. The suites are `geometry`, `viewport`, `base`, `domain-entity` and `d
 
 ## 11. Known limits
 
-- No arcs, splines, rotated rectangles or rotated text; aligned linear dimensions only.
+- No splines or rotated rectangles; aligned linear dimensions only.
 - The text box is a nominal model (fixed advance, 0.95 / 0.25 of the height), not the ink bounds of
   the glyphs, and assumes one cell per code point: combining characters and double-width characters
   are not laid out specially.

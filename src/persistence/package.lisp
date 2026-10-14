@@ -8,6 +8,7 @@
 numbers round-trip exactly, strict validation, and atomic saving.")
   (:export
    #:+supported-format-version+
+   #:+oldest-supported-format-version+
    #:+maximum-file-bytes+
    #:+maximum-nesting-depth+
    #:+maximum-token-length+

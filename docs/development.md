@@ -237,12 +237,16 @@ registered in `run-workload` in `bench/run.lisp`. Scenarios record; they never a
 
 ### Changing the file format
 
-Every change to what a `.bcad` file may contain bumps `+supported-format-version+` in
-`persistence/format.lisp`. Today the loader accepts exactly the supported version and refuses older
-and newer ones with a `drawing-file-version-error` that says which version it reads. The first change
-must therefore add, before the fields are parsed, an explicit migration from the previous version to
-the new one, tested on a file of the old version kept in the tests as a fixture; the specification
-requires it, and none exists yet because only version 1 has ever been written.
+A change to what a `.bcad` file may contain is a new format version, and the version keeps reading
+the old ones. In `persistence/format.lisp`: raise `+supported-format-version+`; give a new field the
+`:since` of the new version and the `:default` that an older file gets for it, and a new entity kind
+the `:since` of the new version. The loader then reads an older file as the newer one with the
+defaults in place, refuses in it what its version does not have, and the writer writes the newest
+version. Keep the fixture of the old version in `tests/fixtures/` (version 1 is
+`v1-floor-plan.bcad`, kept as it was written) and add a test to `tests/migration-tests.lisp` that
+reads it, saves it and reads it back. A migration that a default cannot express (a field that changes
+meaning) is a function from the parsed fields of the old version to those of the new one, applied in
+`parse-named-fields` or `parse-entity` for files older than the change; it too gets a fixture.
 
 ## 8. Build and packaging
 

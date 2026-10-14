@@ -90,6 +90,7 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:text-y
    #:text-string
    #:text-height
+   #:text-angle
    #:dimension-entity
    #:make-dimension
    #:update-dimension

@@ -158,6 +158,7 @@ TEXT: what the user typed.
 DISPLAY-UNIT: the drawing's display unit, assumed for numbers without a unit suffix."
   (ecase kind
     ((:coordinate :length) (base:parse-length text display-unit))
+    (:angle (base:degrees->radians (base:parse-decimal text)))
     (:integer (handler-case (parse-integer (string-trim " " text))
                 (parse-error ()
                   (error 'base:invalid-input :text text :reason (i18n:tr "expected a whole number")))))
