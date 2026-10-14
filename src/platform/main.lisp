@@ -233,6 +233,31 @@ HEIGHT: framebuffer height in pixels."
                  height
                  (gl:read-pixels 0 0 width height :rgb :unsigned-byte)))
 
+(defun call-guarded (app
+                     context
+                     function)
+  "Call FUNCTION. When it signals an error that the application did not expect, the user is told,
+the log gets the error with its call stack, and the program goes on: one bad event must not end
+a session and lose the drawing. Returns what FUNCTION returns, or NIL after such an error. With
+BORBA_CAD_DEBUG=1 the error goes to the debugger instead.
+
+APP: the application.
+CONTEXT: what is being done, as a phrase that follows \"while\".
+FUNCTION: function of no arguments."
+  (if (debug-mode-p)
+      (funcall function)
+      (let ((backtrace nil))
+        (handler-case (handler-bind ((error (lambda (condition)
+                                              (declare (ignore condition))
+                                              (setf backtrace (sbcl:backtrace-string)))))
+                        (funcall function))
+          (error (condition)
+            (app:report-internal-error app
+                                       condition
+                                       context
+                                       backtrace)
+            nil)))))
+
 (defun dispatch-sdl-events (app
                             window
                             event
@@ -251,7 +276,9 @@ WAIT-MILLISECONDS: 0 to poll, positive to wait."
           do (dolist (translated (translate-sdl-event event window))
                (if (eq translated :redraw)
                    (app:app-request-redraw app)
-                   (app:app-handle-event app translated)))
+                   (call-guarded app
+                                 "handling input"
+                                 (lambda () (app:app-handle-event app translated)))))
              (setf available (sdl2-ffi.functions:sdl-poll-event event)))))
 
 (defconstant +bytes-per-mebibyte+ 1048576d0
@@ -284,7 +311,8 @@ SETTLED: frames presented since the demonstration steps ran out.
 FIRST-FRAME-LOGGED: true once the app.startup entry has been written.
 TEXT-INPUT-ACTIVE: whether SDL text input is enabled at the moment.
 TITLE: the window title set last.
-CPU-START: monotonic time at which the CPU work of the current frame began."
+CPU-START: monotonic time at which the CPU work of the current frame began.
+FRAME-FAILURES: frames in a row that failed to draw."
   app
   window
   renderer
@@ -300,7 +328,8 @@ CPU-START: monotonic time at which the CPU work of the current frame began."
   (first-frame-logged nil)
   (text-input-active nil)
   (title nil)
-  (cpu-start 0))
+  (cpu-start 0)
+  (frame-failures 0))
 
 (defun demo-running-p (session)
   "Return true while the demonstration still needs frames of its own: its steps have not run
@@ -455,6 +484,28 @@ SESSION: the session."
   (unless (getf (session-phases session) :vsync)
     (sleep +no-vsync-sleep-seconds+)))
 
+(defconstant +maximum-frame-failures+ 3
+  "Frames in a row that may fail to draw before the program gives up: a failure that repeats every
+frame would fill the log and never end.")
+
+(defun draw-guarded (session
+                     draw)
+  "Draw a frame, and record it when it was drawn. A frame that fails is reported (see CALL-GUARDED)
+and the next one is tried; after +MAXIMUM-FRAME-FAILURES+ in a row the last error is signaled
+again and ends the program.
+
+SESSION: the session.
+DRAW: function of the session that draws and presents a frame."
+  (if (call-guarded (session-app session)
+                    "drawing the window"
+                    (lambda ()
+                      (funcall draw session)
+                      (note-frame-presented session)
+                      t))
+      (setf (session-frame-failures session) 0)
+      (when (>= (incf (session-frame-failures session)) +maximum-frame-failures+)
+        (error (app:app-last-error (session-app session))))))
+
 (defun step-session (session
                      draw)
   "Do what one pass of the window loop does once the pending events have been handled: run the
@@ -469,8 +520,7 @@ DRAW: function of the session that draws and presents a frame (DRAW-FRAME in the
   (sync-text-input session)
   (sync-window-title session)
   (when (frame-due-p session)
-    (funcall draw session)
-    (note-frame-presented session))
+    (draw-guarded session draw))
   (obs:telemetry-tick (session-telemetry session)))
 
 (defun run-event-loop (session)

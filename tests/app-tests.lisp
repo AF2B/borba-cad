@@ -867,6 +867,19 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
       (is (not (app:expire-message application (+ set-at (* 7 sbcl:+nanoseconds-per-second+)))) "an error stays longer")
       (is (app:expire-message application (+ set-at (* 13 sbcl:+nanoseconds-per-second+)))))))
 
+(test an-internal-error-is-told-to-the-user-without-touching-the-drawing
+  (let ((application (two-lines-app)))
+    (app:report-internal-error application
+                               (make-condition 'type-error :datum 1 :expected-type 'string)
+                               "handling input"
+                               nil)
+    (is (= 2 (dom:drawing-entity-count (app:app-drawing application))))
+    (is (eq :error (cdr (app:app-message application))))
+    (is (search "Internal error while handling input" (message-text application)))
+    (is (typep (app:app-last-error application) 'type-error))
+    (app:app-render application)
+    (is (some (lambda (text) (search "Internal error" text)) (all-text application)) "and it is drawn")))
+
 (test the-next-key-or-click-clears-the-last-message-and-what-it-produces-stays
   (let ((application (make-test-app)))
     (app:set-message application "Old news.")

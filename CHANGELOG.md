@@ -41,6 +41,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Fixed
 
+- An unexpected error in the program (a bug, not something the user did) while handling an event or
+  drawing a frame ended the session and lost the unsaved drawing. It is now reported in the status
+  bar, logged with its call stack (`app.internal-error`), and the program goes on; a frame that
+  cannot be drawn three times in a row still ends it, so a failure that repeats cannot fill the log.
+  `BORBA_CAD_DEBUG=1` leaves the error to the debugger as before.
 - Messages in the status bar (Saved..., Layer created...) stayed there until another one replaced
   them, which hid the hint under the pointer and the tool's prompt; they now go after six seconds
   (errors after twelve).

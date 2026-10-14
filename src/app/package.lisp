@@ -124,6 +124,7 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:save-app-drawing
    #:commit-changes
    #:report-error
+   #:report-internal-error
    #:set-message
    #:expire-message
    #:clear-message

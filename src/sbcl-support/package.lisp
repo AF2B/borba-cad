@@ -37,6 +37,7 @@
    #:set-file-permissions
    #:describe-os-error
    #:fold-for-search
+   #:backtrace-string
    #:directory-listing
    #:make-directory
    #:utf-8-octets->string

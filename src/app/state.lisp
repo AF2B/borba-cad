@@ -246,6 +246,37 @@ CONTEXT: short name of what failed, used in the log event."
                        (format nil "app.~a-failed" context)
                        condition)))
 
+(defparameter *internal-error-advice*
+  "Save your work and restart if things look wrong; the log has the details."
+  "What the user is told to do after a failure of the program itself.")
+
+(defun report-internal-error (app
+                              condition
+                              context
+                              backtrace)
+  "Tell the user that the program itself failed, a bug rather than something they did, and log it
+with the call stack. The program goes on: a failed event leaves the drawing as the last finished
+operation left it.
+
+APP: the application.
+CONDITION: the condition that was signaled.
+CONTEXT: what the program was doing, as a phrase that follows \"while\", for the message.
+BACKTRACE: the call stack at the moment of the failure, as text, or NIL."
+  (setf (app-last-error app) condition)
+  (set-message app
+               (format nil "Internal error while ~a: ~a. ~a"
+                       context
+                       (remove #\Newline (princ-to-string condition))
+                       *internal-error-advice*)
+               :error)
+  (when (app-telemetry app)
+    (obs:log-condition (obs:telemetry-logger (app-telemetry app))
+                       :error
+                       "app.internal-error"
+                       condition
+                       :context context
+                       :backtrace (substitute #\| #\Newline (or backtrace "")))))
+
 (defun selection-ids (app)
   "Return the ids of the selected entities in ascending order.
 

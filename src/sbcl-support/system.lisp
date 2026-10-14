@@ -102,3 +102,12 @@ STRING: a name."
                (member (sb-unicode:general-category character) '(:mn :mc :me)))
              (sb-unicode:normalize-string (string-downcase string) :nfd)))
 
+(defun backtrace-string (&optional (count 30))
+  "Return the current call stack, innermost call first, as text, for the log of an unexpected
+error.
+
+COUNT: how many calls to show."
+  (with-output-to-string (stream)
+    (sb-debug:print-backtrace :count count
+                              :stream stream)))
+

@@ -93,3 +93,99 @@ SCREENSHOT: true to also wait for the demonstration screenshot."
              (run-pass)
              (is (= 2 frames)))
         (obs:close-telemetry telemetry)))))
+
+;;; An unexpected error ends one event or one frame, never the session
+
+(defun a-guarded-application (directory)
+  "Return an application, and the log file's directory, with telemetry written into DIRECTORY."
+  (let* ((config (base:default-config :project-root directory))
+         (telemetry (obs:make-telemetry config)))
+    (values (app:make-app config :telemetry telemetry) telemetry)))
+
+(defun log-text (directory)
+  "Return the text of the log written under DIRECTORY."
+  (let ((file (merge-pathnames "var/log/borba-cad.log" directory)))
+    (if (probe-file file)
+        (with-open-file (in file)
+          (let ((text (make-string (file-length in))))
+            (subseq text 0 (read-sequence text in))))
+        "")))
+
+(test an-unexpected-error-in-an-event-is-reported-logged-and-survived
+  (with-temporary-directory (directory)
+    (multiple-value-bind (application telemetry) (a-guarded-application directory)
+      (unwind-protect
+           (progn
+             (is (null (platform::call-guarded application
+                                               "handling input"
+                                               (lambda () (error 'type-error :datum 1 :expected-type 'string))))
+                 "after the error the call returns nothing")
+             (let ((message (app:app-message application)))
+               (is (eq :error (cdr message)))
+               (is (search "Internal error while handling input" (car message)))
+               (is (search "Save your work" (car message))))
+             (is (typep (app:app-last-error application) 'type-error))
+             (is (= 7 (platform::call-guarded application "anything" (lambda () 7))) "and success passes through"))
+        (obs:close-telemetry telemetry))
+      (let ((text (log-text directory)))
+        (is (search "app.internal-error" text))
+        (is (search "context=" text))
+        (is (search "backtrace=" text) "the log keeps the call stack")))))
+
+(test with-the-debug-switch-an-unexpected-error-is-left-for-the-debugger
+  (with-temporary-directory (directory)
+    (multiple-value-bind (application telemetry) (a-guarded-application directory)
+      (unwind-protect
+           (progn
+             (sb-posix:setenv "BORBA_CAD_DEBUG" "1" 1)
+             (unwind-protect
+                  (signals error
+                    (platform::call-guarded application "handling input" (lambda () (error "boom"))))
+               (sb-posix:unsetenv "BORBA_CAD_DEBUG")))
+        (obs:close-telemetry telemetry)))))
+
+(test a-frame-that-fails-is-retried-and-three-failures-in-a-row-end-the-program
+  (with-temporary-directory (directory)
+    (multiple-value-bind (application telemetry) (a-guarded-application directory)
+      (let ((session (platform::make-session :app application
+                                             :window nil
+                                             :renderer nil
+                                             :telemetry telemetry
+                                             :phases (list :vsync t)
+                                             :begun 0))
+            (attempts 0))
+        (unwind-protect
+             (flet ((fails (session)
+                      (declare (ignore session))
+                      (incf attempts)
+                      (error "the frame cannot be drawn")))
+               (platform::draw-guarded session #'fails)
+               (platform::draw-guarded session #'fails)
+               (is (= 2 attempts) "two failures are survived")
+               (is (= 2 (platform::session-frame-failures session)))
+               (signals error (platform::draw-guarded session #'fails)))
+          (obs:close-telemetry telemetry))))))
+
+(test a-frame-that-draws-resets-the-count-of-failures
+  (with-temporary-directory (directory)
+    (multiple-value-bind (application telemetry) (a-guarded-application directory)
+      (let ((session (platform::make-session :app application
+                                             :window nil
+                                             :renderer nil
+                                             :telemetry telemetry
+                                             :phases (list :vsync t)
+                                             :begun 0))
+            (fail-next t))
+        (unwind-protect
+             (flet ((sometimes (session)
+                      (declare (ignore session))
+                      (when fail-next
+                        (error "not this time"))
+                      (app:app-render application)))
+               (platform::draw-guarded session #'sometimes)
+               (platform::draw-guarded session #'sometimes)
+               (is (= 2 (platform::session-frame-failures session)))
+               (setf fail-next nil)
+               (platform::draw-guarded session #'sometimes)
+               (is (= 0 (platform::session-frame-failures session))))
+          (obs:close-telemetry telemetry))))))
