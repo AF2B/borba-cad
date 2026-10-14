@@ -221,3 +221,26 @@ ANGLE: replacement baseline direction in radians."
                                      (* geo:+text-descent-ratio+ (text-height text))
                                      (text-angle text)
                                      bounds))
+
+(defmethod entity-grips ((text text-entity))
+  (let ((width (geo:text-width (length (text-string text)) (text-height text)))
+        (angle (text-angle text)))
+    (list (make-grip :move
+                     (text-x text)
+                     (text-y text)
+                     :move)
+          (make-grip :angle
+                     (+ (text-x text) (* width (cos angle)))
+                     (+ (text-y text) (* width (sin angle)))
+                     :point))))
+
+(defmethod entity-with-grip ((text text-entity)
+                             grip
+                             x
+                             y)
+  (ecase (grip-id grip)
+    (:move (moved-by-grip text
+                          grip
+                          x
+                          y))
+    (:angle (update-text text :angle (atan (- y (text-y text)) (- x (text-x text)))))))

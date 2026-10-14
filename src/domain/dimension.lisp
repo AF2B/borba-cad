@@ -305,3 +305,39 @@ DIMENSION: a dimension entity."
                                            (* geo:+text-descent-ratio+ (dimension-text-height dimension))
                                            (geo:dimension-layout-text-angle layout)
                                            bounds))))
+
+(defmethod entity-grips ((dimension dimension-entity))
+  (let* ((layout (dimension-layout dimension))
+         (line (geo:dimension-layout-dimension-line layout)))
+    (list (make-grip :first
+                     (dimension-x1 dimension)
+                     (dimension-y1 dimension)
+                     :point)
+          (make-grip :second
+                     (dimension-x2 dimension)
+                     (dimension-y2 dimension)
+                     :point)
+          (make-grip :offset
+                     (/ (+ (aref line 0) (aref line 2)) 2)
+                     (/ (+ (aref line 1) (aref line 3)) 2)
+                     :point))))
+
+(defmethod entity-with-grip ((dimension dimension-entity)
+                             grip
+                             x
+                             y)
+  (ecase (grip-id grip)
+    (:first (update-dimension dimension
+                              :x1 x
+                              :y1 y))
+    (:second (update-dimension dimension
+                               :x2 x
+                               :y2 y))
+    (:offset
+     (let* ((dx (- (dimension-x2 dimension) (dimension-x1 dimension)))
+            (dy (- (dimension-y2 dimension) (dimension-y1 dimension)))
+            (length (sqrt (+ (* dx dx) (* dy dy)))))
+       (update-dimension dimension
+                         :offset (/ (+ (* (- x (dimension-x1 dimension)) (- dy))
+                                       (* (- y (dimension-y1 dimension)) dx))
+                                    length))))))

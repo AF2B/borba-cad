@@ -209,3 +209,49 @@ ROTATION: replacement direction of the first axis."
                                 (ellipse-radius-y ellipse)
                                 (ellipse-rotation ellipse)
                                 bounds))
+
+(defmethod entity-grips ((ellipse ellipse-entity))
+  (let ((snaps (entity-snap-points ellipse)))
+    (list (make-grip :first-axis-end
+                     (first (second snaps))
+                     (second (second snaps))
+                     :point)
+          (make-grip :first-axis-start
+                     (first (third snaps))
+                     (second (third snaps))
+                     :point)
+          (make-grip :second-axis-end
+                     (first (fourth snaps))
+                     (second (fourth snaps))
+                     :point)
+          (make-grip :second-axis-start
+                     (first (fifth snaps))
+                     (second (fifth snaps))
+                     :point)
+          (make-grip :move
+                     (ellipse-center-x ellipse)
+                     (ellipse-center-y ellipse)
+                     :move))))
+
+(defmethod entity-with-grip ((ellipse ellipse-entity)
+                             grip
+                             x
+                             y)
+  (let* ((dx (- x (ellipse-center-x ellipse)))
+         (dy (- y (ellipse-center-y ellipse)))
+         (reach (sqrt (+ (* dx dx) (* dy dy)))))
+    (ecase (grip-id grip)
+      (:first-axis-end (update-ellipse ellipse
+                                       :radius-x reach
+                                       :rotation (atan dy dx)))
+      (:first-axis-start (update-ellipse ellipse
+                                         :radius-x reach
+                                         :rotation (atan (- dy) (- dx))))
+      ((:second-axis-end :second-axis-start)
+       (update-ellipse ellipse
+                       :radius-y (abs (- (* dy (cos (ellipse-rotation ellipse)))
+                                         (* dx (sin (ellipse-rotation ellipse)))))))
+      (:move (moved-by-grip ellipse
+                            grip
+                            x
+                            y)))))

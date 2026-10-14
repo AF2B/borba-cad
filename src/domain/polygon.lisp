@@ -197,3 +197,31 @@ ROTATION: replacement direction of the first vertex."
   (geo:polyline-touches-bounds-p (polygon-vertices polygon)
                                  t
                                  bounds))
+
+(defmethod entity-grips ((polygon polygon-entity))
+  (let ((vertices (polygon-vertices polygon)))
+    (cons (make-grip :move
+                     (polygon-center-x polygon)
+                     (polygon-center-y polygon)
+                     :move)
+          (loop for index from 0 below (polygon-sides polygon)
+                collect (make-grip index
+                                   (aref vertices (* 2 index))
+                                   (aref vertices (1+ (* 2 index)))
+                                   :point)))))
+
+(defmethod entity-with-grip ((polygon polygon-entity)
+                             grip
+                             x
+                             y)
+  (if (eq (grip-id grip) :move)
+      (moved-by-grip polygon
+                     grip
+                     x
+                     y)
+      (let ((dx (- x (polygon-center-x polygon)))
+            (dy (- y (polygon-center-y polygon))))
+        (update-polygon polygon
+                        :radius (sqrt (+ (* dx dx) (* dy dy)))
+                        :rotation (- (atan dy dx)
+                                     (* (grip-id grip) (/ geo:+two-pi+ (polygon-sides polygon))))))))

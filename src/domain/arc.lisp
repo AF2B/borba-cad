@@ -213,3 +213,56 @@ END-ANGLE: replacement end angle."
                             (arc-start-angle arc)
                             (arc-sweep arc)
                             bounds))
+
+(defmethod entity-grips ((arc arc-entity))
+  (let ((center-x (arc-center-x arc))
+        (center-y (arc-center-y arc))
+        (radius (arc-radius arc)))
+    (multiple-value-bind (start-x start-y)
+        (geo:arc-end-point center-x
+                           center-y
+                           radius
+                           (arc-start-angle arc))
+      (multiple-value-bind (end-x end-y)
+          (geo:arc-end-point center-x
+                             center-y
+                             radius
+                             (arc-end-angle arc))
+        (multiple-value-bind (middle-x middle-y)
+            (geo:arc-end-point center-x
+                               center-y
+                               radius
+                               (+ (arc-start-angle arc) (/ (arc-sweep arc) 2)))
+          (list (make-grip :start
+                           start-x
+                           start-y
+                           :point)
+                (make-grip :end
+                           end-x
+                           end-y
+                           :point)
+                (make-grip :radius
+                           middle-x
+                           middle-y
+                           :point)
+                (make-grip :move
+                           center-x
+                           center-y
+                           :move)))))))
+
+(defmethod entity-with-grip ((arc arc-entity)
+                             grip
+                             x
+                             y)
+  (let ((direction (atan (- y (arc-center-y arc)) (- x (arc-center-x arc)))))
+    (ecase (grip-id grip)
+      (:start (update-arc arc :start-angle direction))
+      (:end (update-arc arc :end-angle direction))
+      (:radius (update-arc arc :radius (geo:distance (arc-center-x arc)
+                                                     (arc-center-y arc)
+                                                     x
+                                                     y)))
+      (:move (moved-by-grip arc
+                            grip
+                            x
+                            y)))))

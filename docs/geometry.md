@@ -171,6 +171,16 @@ entities cannot be deleted either.
   bounds overlap the window but which passes beside it is not taken, and a circle or a rectangle
   that holds the whole window without its outline reaching it is not taken either. A filled box
   (a text) is taken when its bounds overlap.
+- **Grips** (`entity-grips`, `entity-with-grip`): each kind lists the handles that change it and
+  answers what it becomes when a handle is dragged to a point, with the same id and layer, through its
+  validating constructor; so a drag that would make it invalid signals `invalid-entity` and changes
+  nothing. Line: both ends and the middle (moves it). Rectangle: the four corners, the opposite one
+  staying put, and the center. Circle: four points of the outline (radius) and the center. Polyline:
+  each vertex (the first 1000). Text: the insertion point (moves it) and the end of the baseline
+  (angle). Dimension: the two definition points and the dimension line (offset). Arc: the two ends
+  (angles), the middle (radius) and the center. Ellipse: the four ends of the axes and the center.
+  Polygon: each vertex (radius and rotation) and the center. `grip-changes` builds the change set,
+  checking that the entity can be edited.
 - **Object snap** offers endpoints (line ends, rectangle corners, polyline vertices, dimension
   definition points, a text insertion point) and centers (circles) within 12 pixels, converted to
   millimetres. **Grid snap** rounds to the drawing's own grid spacing, not to the displayed one.

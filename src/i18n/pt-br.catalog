@@ -51,6 +51,8 @@
    "Ctrl+O abre um desenho; um arquivo .bcad solto na janela também abre.")
 
   ;; Prompts of the tools
+  ("Drag a handle to change the shape, or the shape itself to move it; Esc deselects."
+   "Arraste uma alça para mudar a forma, ou a própria forma para movê-la; Esc desmarca.")
   ("Select: click or drag; left to right takes what is inside, right to left what it touches (Shift adds)."
    "Selecionar: clique ou arraste; da esquerda p/ direita pega o que está dentro, da direita p/ esquerda o que toca (Shift soma).")
   ("Line: click the start point" "Linha: clique no ponto inicial")

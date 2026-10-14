@@ -91,6 +91,9 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:selection-ids
    #:selected-entities
    #:select-ids
+   #:selection-grips
+   #:grip-under-pointer
+   #:app-grip-drag
    ;; Cursor
    #:cursor
    #:cursor-raw-x

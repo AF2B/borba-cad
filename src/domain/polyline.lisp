@@ -194,3 +194,21 @@ CLOSED: replacement closed flag."
   (geo:polyline-touches-bounds-p (polyline-coordinates polyline)
                                  (polyline-closed polyline)
                                  bounds))
+
+(defmethod entity-grips ((polyline polyline-entity))
+  (let ((coordinates (polyline-coordinates polyline)))
+    (loop for index from 0 below (min +maximum-polyline-grips+ (floor (length coordinates) 2))
+          collect (make-grip index
+                             (aref coordinates (* 2 index))
+                             (aref coordinates (1+ (* 2 index)))
+                             :point))))
+
+(defmethod entity-with-grip ((polyline polyline-entity)
+                             grip
+                             x
+                             y)
+  (let ((coordinates (copy-seq (polyline-coordinates polyline)))
+        (index (grip-id grip)))
+    (setf (aref coordinates (* 2 index)) x
+          (aref coordinates (1+ (* 2 index))) y)
+    (update-polyline polyline :coordinates coordinates)))

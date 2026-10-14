@@ -105,6 +105,34 @@ VALUE: new value."
                            entity
                            updated))))))
 
+(defun grip-changes (drawing
+                     id
+                     grip
+                     x
+                     y)
+  "Return the change set that drags a grip of one entity to a point, or NIL when that leaves the
+entity as it is. Signals LAYER-ERROR when the entity is missing or locked, and INVALID-ENTITY when
+the result would be invalid.
+
+DRAWING: the drawing.
+ID: entity id.
+GRIP: one of the grips of the entity, from ENTITY-GRIPS.
+X: world x the grip is dragged to.
+Y: world y the grip is dragged to."
+  (let ((entity (store-find (drawing-store drawing) id)))
+    (unless entity
+      (error 'base:layer-error :reason (i18n:trf "entity ~d does not exist" id)))
+    (unless (editable-entity-p drawing entity)
+      (error 'base:layer-error :reason (i18n:trf "entity ~d is on a locked layer" id)))
+    (let ((updated (entity-with-grip entity
+                                     grip
+                                     x
+                                     y)))
+      (unless (equalp entity updated)
+        (list (make-change id
+                           entity
+                           updated))))))
+
 (defun assign-layer-changes (drawing
                              ids
                              layer-id)

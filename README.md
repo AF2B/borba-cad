@@ -74,7 +74,9 @@ that switch the grid, grid snap, object snap, display unit and zoom to fit. Keys
 (Enter finishes, clicking the first vertex closes), `A` arc (center, start, direction of the end),
 `E` ellipse (center, end of an axis, the other half-axis), `N` regular polygon (center, a vertex; Up and
 Down set the number of sides), `T` text (drag to turn it), `D` dimension, `Esc` back to select.
-Click picks an entity (Shift+click toggles), dragging on empty space from left to right selects
+Select one entity and its grips appear (squares to change the shape, a circle to move it): drag one
+to stretch a line, resize a rectangle, circle or polygon, move a vertex, turn a text or an ellipse
+axis; Escape abandons the drag. Click picks an entity (Shift+click toggles), dragging on empty space from left to right selects
 what lies fully inside the rectangle and from right to left (dashed) what it touches, dragging a
 selection moves it. `Delete` removes the selection, `Ctrl+A` selects all.
 `Ctrl+C`, `Ctrl+X` and `Ctrl+V` copy, cut and paste the selection (centered on the pointer;

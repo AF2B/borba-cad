@@ -148,3 +148,43 @@ RADIUS: replacement radius."
                                        (circle-center-y circle)
                                        (circle-radius circle)
                                        bounds))
+
+(defmethod entity-grips ((circle circle-entity))
+  (let ((x (circle-center-x circle))
+        (y (circle-center-y circle))
+        (radius (circle-radius circle)))
+    (list (make-grip :east
+                     (+ x radius)
+                     y
+                     :point)
+          (make-grip :north
+                     x
+                     (+ y radius)
+                     :point)
+          (make-grip :west
+                     (- x radius)
+                     y
+                     :point)
+          (make-grip :south
+                     x
+                     (- y radius)
+                     :point)
+          (make-grip :move
+                     x
+                     y
+                     :move))))
+
+(defmethod entity-with-grip ((circle circle-entity)
+                             grip
+                             x
+                             y)
+  (if (eq (grip-id grip) :move)
+      (moved-by-grip circle
+                     grip
+                     x
+                     y)
+      (update-circle circle
+                     :radius (geo:distance (circle-center-x circle)
+                                           (circle-center-y circle)
+                                           x
+                                           y))))

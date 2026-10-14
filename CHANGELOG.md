@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Grips.** Select one entity and handles appear on it: drag the end of a line, a corner of a
+  rectangle, a point on a circle (the radius), the vertices of a polyline, the start, the end or the
+  middle of an arc, the ends of the axes of an ellipse, a vertex of a polygon, the end of a text (its
+  angle), the points and the line of a dimension. A circle handle in the middle moves the whole
+  entity. The entity as it would become is previewed while you drag, the drag follows the grid and
+  object snaps, Escape abandons it, and releasing it is one step of undo. A drag that would make
+  the entity invalid changes nothing and says why. Polylines of more than 1000 vertices have handles
+  on the first 1000 only.
 - **New drawing types: arc, ellipse and regular polygon.** The arc takes its center, its start and
   a direction for its end (counter-clockwise); the ellipse takes its center, the end of its first axis
   and the other half-axis; the polygon takes its center and a vertex, and Up and Down set the number of

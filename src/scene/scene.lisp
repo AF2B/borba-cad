@@ -35,6 +35,8 @@ visibly at the edge.")
                                                              preview-entities
                                                              window
                                                              window-crossing
+                                                             grips
+                                                             hot-grip
                                                              snap)))
   "The interaction state that decorates the drawing.
 
@@ -43,8 +45,10 @@ TRANSLATION: (dx . dy) in millimetres applied to selected entities while draggin
 PREVIEW-ENTITIES: entities being created, drawn in the preview color.
 WINDOW: world bounds of a window-selection rectangle, or NIL.
 WINDOW-CROSSING: true when that rectangle is a crossing selection, drawn dashed and in another color.
+GRIPS: the grips of the selected entity, drawn as handles.
+HOT-GRIP: the one of them the pointer is on, drawn filled.
 SNAP: (x y kind) in world coordinates of the snap marker, or NIL."
-  selected-ids translation preview-entities window window-crossing snap)
+  selected-ids translation preview-entities window window-crossing grips hot-grip snap)
 
 (defstruct (scene-result (:constructor make-scene-result (drawn-entities
                                                           culled-entities)))
@@ -733,6 +737,61 @@ THEME: the theme."
                                      height
                                      (theme-selection theme))))))))
 
+(defconstant +grip-size-pixels+ 8f0
+  "Side of the square of a grip, in pixels.")
+
+(defconstant +grip-ring-width-pixels+ 1.5f0
+  "Width of the outline of a grip, in pixels.")
+
+(defun add-grips (list
+                  viewport
+                  grips
+                  hot-grip
+                  theme)
+  "Emit the handles of the selected entity: a square for a grip that changes its shape and a circle
+for the one that moves it, hollow, and filled for the one under the pointer.
+
+LIST: the draw list.
+VIEWPORT: the viewport.
+GRIPS: a list of grips, or NIL.
+HOT-GRIP: the grip under the pointer, or NIL.
+THEME: the theme."
+  (dolist (grip grips)
+    (multiple-value-bind (x y)
+        (view:world->screen viewport
+                            (dom:grip-x grip)
+                            (dom:grip-y grip))
+      (let* ((half (/ +grip-size-pixels+ 2))
+             (left (- (to-single x) half))
+             (top (- (to-single y) half))
+             (hot (and hot-grip (equal (dom:grip-id grip) (dom:grip-id hot-grip))))
+             (outline (theme-selection theme))
+             (fill (if hot outline (theme-canvas-background theme))))
+        (if (eq :move (dom:grip-kind grip))
+            (progn (add-disc list
+                             (to-single x)
+                             (to-single y)
+                             half
+                             fill)
+                   (add-ring list
+                             (to-single x)
+                             (to-single y)
+                             half
+                             +grip-ring-width-pixels+
+                             outline))
+            (progn (add-filled-rectangle list
+                                         left
+                                         top
+                                         +grip-size-pixels+
+                                         +grip-size-pixels+
+                                         fill)
+                   (add-rectangle-outline list
+                                          left
+                                          top
+                                          +grip-size-pixels+
+                                          +grip-size-pixels+
+                                          outline)))))))
+
 (defun build-scene (list
                     drawing
                     viewport
@@ -768,6 +827,11 @@ THEME: the theme."
                             (scene-state-window state)
                             (scene-state-window-crossing state)
                             theme)
+      (add-grips list
+                 viewport
+                 (scene-state-grips state)
+                 (scene-state-hot-grip state)
+                 theme)
       (add-snap-marker list
                        viewport
                        (scene-state-snap state)

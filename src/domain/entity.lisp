@@ -15,6 +15,9 @@ small enough that reducing it to a turn loses no precision that matters.")
 (defconstant +maximum-text-length+ 256
   "Largest number of characters in a text annotation.")
 
+(defconstant +maximum-polyline-grips+ 1000
+  "Most vertices of a polyline that get a grip; a polyline with more is changed in the inspector.")
+
 (defconstant +maximum-polygon-sides+ 1000
   "Largest number of sides of a regular polygon.")
 
@@ -135,6 +138,54 @@ pasted as a new one.
 ENTITY: an entity.
 ID: the new id, unused in the drawing it goes into.
 LAYER-ID: id of the layer it goes onto."))
+
+(defstruct (grip (:constructor make-grip (id
+                                          x
+                                          y
+                                          kind)))
+  "A handle on an entity that the user can drag to change it.
+
+ID: identifies the grip among the grips of its entity, for ENTITY-WITH-GRIP.
+X: world x of the grip.
+Y: world y of the grip.
+KIND: :point for a grip that changes the shape (an end, a corner, a radius), :move for the grip that
+moves the whole entity."
+  id
+  (x 0d0 :type double-float)
+  (y 0d0 :type double-float)
+  (kind :point :type keyword))
+
+(defgeneric entity-grips (entity)
+  (:documentation "Return the grips of ENTITY, the handles that the user drags to change it, as a list
+of GRIP values. The default is none.
+
+ENTITY: an entity.")
+  (:method ((entity entity))
+    nil))
+
+(defgeneric entity-with-grip (entity grip x y)
+  (:documentation "Return a copy of ENTITY, with the same id, changed as the dragging of GRIP to the
+world point (X, Y) asks. Signals INVALID-ENTITY when the result would be invalid.
+
+ENTITY: an entity.
+GRIP: one of the grips returned by ENTITY-GRIPS.
+X: world x the grip is dragged to.
+Y: world y the grip is dragged to."))
+
+(defun moved-by-grip (entity
+                      grip
+                      x
+                      y)
+  "Return ENTITY moved so that what GRIP held is at (X, Y): the displacement of a grip that moves the
+whole entity.
+
+ENTITY: an entity.
+GRIP: the grip of kind :move.
+X: world x it is dragged to.
+Y: world y it is dragged to."
+  (entity-translated entity
+                     (- x (grip-x grip))
+                     (- y (grip-y grip))))
 
 (defgeneric entity-with-layer (entity layer-id)
   (:documentation "Return a copy of ENTITY on another layer, with the same id.

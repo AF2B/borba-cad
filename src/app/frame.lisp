@@ -54,6 +54,8 @@ APP: the application."
                    :preview-entities (tool-preview-entities tool app)
                    :window (app-window app)
                    :window-crossing (app-window-crossing app)
+                   :grips (selection-grips app)
+                   :hot-grip (grip-under-pointer app)
                    :snap (and cursor (cursor-snap-kind cursor) (null (app-prompt app))
                               (list (cursor-x cursor) (cursor-y cursor) (cursor-snap-kind cursor)))))
            (result (scene:build-scene list

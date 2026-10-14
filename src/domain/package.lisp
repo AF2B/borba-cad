@@ -38,6 +38,14 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:entity-with-layer
    #:entity-with-identity
    #:entity-touches-bounds-p
+   #:grip
+   #:make-grip
+   #:grip-id
+   #:grip-x
+   #:grip-y
+   #:grip-kind
+   #:entity-grips
+   #:entity-with-grip
    #:entities-crossing-window
    #:entity-kinds
    #:property
@@ -105,6 +113,7 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:polygon-rotation
    #:polygon-vertices
    #:+maximum-polygon-sides+
+   #:+maximum-polyline-grips+
    #:polyline-entity
    #:make-polyline
    #:update-polyline
@@ -212,6 +221,7 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:delete-entities-changes
    #:translate-entities-changes
    #:edit-property-changes
+   #:grip-changes
    #:assign-layer-changes
    #:editable-entity-p
    ;; Picking and snapping

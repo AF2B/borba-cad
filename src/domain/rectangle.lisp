@@ -225,3 +225,55 @@ HEIGHT: replacement height."
                                       left
                                       bottom
                                       bounds))))
+
+(defun rectangle-corner (rectangle
+                         corner)
+  "Return, as two values, the coordinates of a corner of RECTANGLE.
+
+RECTANGLE: a rectangle.
+CORNER: :bottom-left, :bottom-right, :top-right or :top-left."
+  (let ((left (rectangle-min-x rectangle))
+        (bottom (rectangle-min-y rectangle)))
+    (let ((right (+ left (rectangle-width rectangle)))
+          (top (+ bottom (rectangle-height rectangle))))
+      (ecase corner
+        (:bottom-left (values left bottom))
+        (:bottom-right (values right bottom))
+        (:top-right (values right top))
+        (:top-left (values left top))))))
+
+(defparameter *opposite-corners*
+  '((:bottom-left . :top-right) (:bottom-right . :top-left) (:top-right . :bottom-left)
+    (:top-left . :bottom-right))
+  "The corner opposite to each corner of a rectangle, which stays where it is when a corner is dragged.")
+
+(defmethod entity-grips ((rectangle rectangle-entity))
+  (append (loop for (corner) in *opposite-corners*
+                collect (multiple-value-bind (x y)
+                            (rectangle-corner rectangle corner)
+                          (make-grip corner
+                                     x
+                                     y
+                                     :point)))
+          (list (make-grip :move
+                           (+ (rectangle-min-x rectangle) (/ (rectangle-width rectangle) 2))
+                           (+ (rectangle-min-y rectangle) (/ (rectangle-height rectangle) 2))
+                           :move))))
+
+(defmethod entity-with-grip ((rectangle rectangle-entity)
+                             grip
+                             x
+                             y)
+  (if (eq (grip-id grip) :move)
+      (moved-by-grip rectangle
+                     grip
+                     x
+                     y)
+      (multiple-value-bind (fixed-x fixed-y)
+          (rectangle-corner rectangle (cdr (assoc (grip-id grip) *opposite-corners*)))
+        (make-rectangle-from-corners :id (entity-id rectangle)
+                                     :layer-id (entity-layer-id rectangle)
+                                     :x1 fixed-x
+                                     :y1 fixed-y
+                                     :x2 x
+                                     :y2 y))))

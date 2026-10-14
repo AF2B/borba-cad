@@ -54,6 +54,7 @@ NIL when it selects only what it holds (dragged from left to right).
 - `DIALOG`: the open file dialog, or NIL.
 - `MENU`: the open drop-down menu, or NIL.
 - `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
+- `GRIP-DRAG`: the grip being dragged, or NIL.
 - `CLIPBOARD-READER`: function of no arguments that returns the text on the system clipboard, or NIL.
 - `CLIPBOARD-WRITER`: function of one string that puts it on the system clipboard, or NIL.
 - `CLIPBOARD-FALLBACK`: the clipboard text kept here while there is no system clipboard.
@@ -160,6 +161,14 @@ Return true when the drawing has unsaved changes.
 
 ```lisp
 (app-focus instance)
+```
+
+(undocumented)
+
+### `app-grip-drag` (function)
+
+```lisp
+(app-grip-drag instance)
 ```
 
 (undocumented)
@@ -928,6 +937,17 @@ Return the text that shows a property's value in the inspector and in its edit f
 
 - `APP`: the application.
 - `PROPERTY`: an inspector property.
+
+### `grip-under-pointer` (function)
+
+```lisp
+(grip-under-pointer app)
+```
+
+Return the grip of the selected entity that the pointer is on, the nearest when several are, or
+NIL.
+
+- `APP`: the application.
 
 ### `key-event` (type)
 
@@ -1795,6 +1815,16 @@ Return the selected entities in stacking order.
 Return the selected entry, or NIL when none is selected or it is not in the list.
 
 - `DIALOG`: the file dialog.
+
+### `selection-grips` (function)
+
+```lisp
+(selection-grips app)
+```
+
+Return the grips to show: those of the selected entity, or none.
+
+- `APP`: the application.
 
 ### `selection-ids` (function)
 
@@ -2985,6 +3015,10 @@ Largest number of decimals shown in a dimension text.
 
 Largest number of sides of a regular polygon.
 
+### `+maximum-polyline-grips+` (constant)
+
+Most vertices of a polyline that get a grip; a polyline with more is changed in the inspector.
+
 ### `+maximum-polyline-vertices+` (constant)
 
 Largest vertex count of a polyline. Bounds memory use when loading untrusted files.
@@ -3616,6 +3650,17 @@ Return the read-only derived quantities of ENTITY as DERIVED-VALUE values.
 
 - `ENTITY`: an entity.
 
+### `entity-grips` (generic function)
+
+```lisp
+(entity-grips entity)
+```
+
+Return the grips of ENTITY, the handles that the user drags to change it, as a list
+of GRIP values. The default is none.
+
+- `ENTITY`: an entity.
+
 ### `entity-id` (function)
 
 ```lisp
@@ -3727,6 +3772,20 @@ Return a copy of ENTITY moved by (DX, DY), with the same id.
 - `DX`: displacement along x.
 - `DY`: displacement along y.
 
+### `entity-with-grip` (generic function)
+
+```lisp
+(entity-with-grip entity grip x y)
+```
+
+Return a copy of ENTITY, with the same id, changed as the dragging of GRIP to the
+world point (X, Y) asks. Signals INVALID-ENTITY when the result would be invalid.
+
+- `ENTITY`: an entity.
+- `GRIP`: one of the grips returned by ENTITY-GRIPS.
+- `X`: world x the grip is dragged to.
+- `Y`: world y the grip is dragged to.
+
 ### `entity-with-identity` (generic function)
 
 ```lisp
@@ -3811,6 +3870,64 @@ or NIL. Candidates are the endpoints and centers of pickable entities.
 - `X`: point x in millimetres.
 - `Y`: point y in millimetres.
 - `RADIUS`: snap radius in millimetres.
+
+### `grip` (type)
+
+A handle on an entity that the user can drag to change it.
+
+- `ID`: identifies the grip among the grips of its entity, for ENTITY-WITH-GRIP.
+- `X`: world x of the grip.
+- `Y`: world y of the grip.
+- `KIND`: :point for a grip that changes the shape (an end, a corner, a radius), :move for the grip that
+moves the whole entity.
+
+### `grip-changes` (function)
+
+```lisp
+(grip-changes drawing id grip x y)
+```
+
+Return the change set that drags a grip of one entity to a point, or NIL when that leaves the
+entity as it is. Signals LAYER-ERROR when the entity is missing or locked, and INVALID-ENTITY when
+the result would be invalid.
+
+- `DRAWING`: the drawing.
+- `ID`: entity id.
+- `GRIP`: one of the grips of the entity, from ENTITY-GRIPS.
+- `X`: world x the grip is dragged to.
+- `Y`: world y the grip is dragged to.
+
+### `grip-id` (function)
+
+```lisp
+(grip-id instance)
+```
+
+(undocumented)
+
+### `grip-kind` (function)
+
+```lisp
+(grip-kind instance)
+```
+
+(undocumented)
+
+### `grip-x` (function)
+
+```lisp
+(grip-x instance)
+```
+
+(undocumented)
+
+### `grip-y` (function)
+
+```lisp
+(grip-y instance)
+```
+
+(undocumented)
 
 ### `history` (type)
 
@@ -4121,6 +4238,14 @@ Create a validated ellipse. Signals INVALID-ENTITY when an invariant is violated
 
 ```lisp
 (make-entity-store)
+```
+
+(undocumented)
+
+### `make-grip` (function)
+
+```lisp
+(make-grip id x y kind)
 ```
 
 (undocumented)
@@ -8260,7 +8385,7 @@ Create an empty draw list.
 ### `make-scene-state` (function)
 
 ```lisp
-(make-scene-state &key selected-ids translation preview-entities window window-crossing snap)
+(make-scene-state &key selected-ids translation preview-entities window window-crossing grips hot-grip snap)
 ```
 
 (undocumented)
@@ -8365,6 +8490,8 @@ The interaction state that decorates the drawing.
 - `PREVIEW-ENTITIES`: entities being created, drawn in the preview color.
 - `WINDOW`: world bounds of a window-selection rectangle, or NIL.
 - `WINDOW-CROSSING`: true when that rectangle is a crossing selection, drawn dashed and in another color.
+- `GRIPS`: the grips of the selected entity, drawn as handles.
+- `HOT-GRIP`: the one of them the pointer is on, drawn filled.
 - `SNAP`: (x y kind) in world coordinates of the snap marker, or NIL.
 
 ### `scene-state-preview-entities` (function)

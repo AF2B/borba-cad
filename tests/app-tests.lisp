@@ -923,8 +923,8 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
     (is (equal '(1) (app:selection-ids application)))
     (let ((line-before (dom:line-y1 (first (entities-of application)))))
       (send application
-            (pointer application :down :left 500 0)
-            (pointer application :move nil 500 100))
+            (pointer application :down :left 300 0)         ; away from the grips, which sit at 0, 500 and 1000
+            (pointer application :move nil 300 100))
       (is (app:app-translation application) "the move is previewed")
       (send application (app:make-window-state-event :focus-lost))
       (is (null (app:app-translation application)) "and abandoned")

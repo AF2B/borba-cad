@@ -167,3 +167,33 @@ Y2: replacement end y."
                                 (line-x2 line)
                                 (line-y2 line)
                                 bounds))
+
+(defmethod entity-grips ((line line-entity))
+  (list (make-grip :start
+                   (line-x1 line)
+                   (line-y1 line)
+                   :point)
+        (make-grip :end
+                   (line-x2 line)
+                   (line-y2 line)
+                   :point)
+        (make-grip :move
+                   (/ (+ (line-x1 line) (line-x2 line)) 2)
+                   (/ (+ (line-y1 line) (line-y2 line)) 2)
+                   :move)))
+
+(defmethod entity-with-grip ((line line-entity)
+                             grip
+                             x
+                             y)
+  (ecase (grip-id grip)
+    (:start (update-line line
+                         :x1 x
+                         :y1 y))
+    (:end (update-line line
+                       :x2 x
+                       :y2 y))
+    (:move (moved-by-grip line
+                          grip
+                          x
+                          y))))

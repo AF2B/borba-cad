@@ -159,8 +159,10 @@ left: what it touches), and moves the selection by dragging."))
   :select)
 
 (defmethod tool-prompt ((tool select-tool) app)
-  (declare (ignore app))
-  (i18n:tr "Select: click or drag; left to right takes what is inside, right to left what it touches (Shift adds)."))
+  (if (selection-grips app)
+      (i18n:tr "Drag a handle to change the shape, or the shape itself to move it; Esc deselects.")
+      (i18n:tr
+       "Select: click or drag; left to right takes what is inside, right to left what it touches (Shift adds).")))
 
 (defun pick-radius-in-world (app)
   "Return the pick radius in millimetres at the current zoom.
@@ -173,6 +175,22 @@ APP: the application."
         (select-press-pointer-x tool) (app-pointer-x app)
         (select-press-pointer-y tool) (app-pointer-y app)
         (select-additive tool) (modifier-p (cursor-modifiers cursor) :shift))
+  (let ((grip (grip-under-pointer app)))
+    (if grip
+        (progn (start-grip-drag app grip)
+               (setf (select-mode tool) :grip))
+        (select-by-pointer-down tool
+                                app
+                                cursor))))
+
+(defun select-by-pointer-down (tool
+                               app
+                               cursor)
+  "Handle a press of the select tool that is not on a grip: it picks, or begins a window.
+
+TOOL: the select tool.
+APP: the application.
+CURSOR: the pointer position."
   (let ((entity (obs:with-operation ((app-telemetry app) "geometry.pick"
                                      :fields (list :entity-count (dom:drawing-entity-count (app-drawing app)))
                                      :level :debug)
@@ -216,6 +234,9 @@ APP: the application."
       (:move (setf (app-translation app)
                    (cons (- (cursor-x cursor) (select-start-x tool))
                          (- (cursor-y cursor) (select-start-y tool)))))
+      (:grip (update-grip-drag app
+                               (cursor-x cursor)
+                               (cursor-y cursor)))
       (:window (setf (app-window app)
                      (geo:bounds-from-corners (select-start-x tool)
                                               (select-start-y tool)
@@ -226,8 +247,13 @@ APP: the application."
     (app-request-redraw app)))
 
 (defmethod tool-pointer-up ((tool select-tool) app cursor)
-  (declare (ignore cursor))
   (case (select-mode tool)
+    (:grip
+     (if (select-moved tool)
+         (finish-grip-drag app
+                           (cursor-x cursor)
+                           (cursor-y cursor))
+         (cancel-grip-drag app)))
     (:move
      (let ((translation (app-translation app)))
        (setf (app-translation app) nil)
@@ -277,7 +303,12 @@ APP: the application."
         (select-moved tool) nil)
   (app-request-redraw app))
 
+(defmethod tool-preview-entities ((tool select-tool) app)
+  (let ((drag (app-grip-drag app)))
+    (and drag (grip-drag-preview drag) (list (grip-drag-preview drag)))))
+
 (defmethod tool-cancel ((tool select-tool) app)
+  (cancel-grip-drag app)
   (setf (select-mode tool) nil
         (select-moved tool) nil
         (app-translation app) nil

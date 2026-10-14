@@ -99,6 +99,7 @@ PROMPT: the open modal prompt, or NIL.
 DIALOG: the open file dialog, or NIL.
 MENU: the open drop-down menu, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
+GRIP-DRAG: the grip being dragged, or NIL.
 CLIPBOARD-READER: function of no arguments that returns the text on the system clipboard, or NIL.
 CLIPBOARD-WRITER: function of one string that puts it on the system clipboard, or NIL.
 CLIPBOARD-FALLBACK: the clipboard text kept here while there is no system clipboard.
@@ -138,6 +139,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   dialog
   menu
   (polygon-sides 6 :type (integer 3))
+  grip-drag
   clipboard-reader
   clipboard-writer
   clipboard-fallback
