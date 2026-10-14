@@ -4,6 +4,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ## [Unreleased]
 
+### Changed
+
+- **New interface.** A dark theme with a teal accent, a title bar (brand mark, file and history
+  buttons, document name with an unsaved-changes dot, performance toggle), a tool palette on the left
+  with tooltips that show each tool's key, the layers and the properties as cards on the right, and a
+  status bar with chips for the grid, the snaps, the display unit and zoom to fit. Buttons, rows,
+  fields and dialogs are rounded, with soft shadows; icons and the brand mark are drawn from vector
+  shapes, so they stay sharp at any size.
+- Interface text is proportional (Noto Sans) and measured from the real glyph advances; drawing text
+  keeps the fixed grid of the geometry module. Long text typed into a field scrolls with the caret
+  instead of running out of the field, and long dialog messages wrap.
+
 ### Fixed
 
 - Saving: a name without an extension is saved as `name.bcad`; blanks, one pair of quotes and
@@ -16,6 +28,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 - The Save As and Open prompts start in the documents folder of the desktop (`Documentos` on a
   Portuguese desktop) instead of a path relative to wherever the program was started.
 - Messages report sizes in KB and MB.
+- The outline of a rounded rectangle with a small corner radius was stitched with the wrong
+  neighbours and drew a filled, broken shape.
 
 ## [1.0.0] - 2026-10-14
 

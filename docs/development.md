@@ -13,7 +13,7 @@ rule that the tooling in the repository supports; `make help` lists the targets.
 | SDL2 | `libSDL2-2.0.so.0`; on Arch `sdl2-compat` (an SDL2 API over SDL3) works and is what was tested. |
 | OpenGL 3.3 core | `libGL.so.1` from the GPU driver. |
 | FreeType | `libfreetype.so.6` and its headers (`/usr/include/freetype2/ft2build.h`), plus `gcc`: `cl-freetype2` compiles a small C helper on first load. Arch: `pacman -S freetype2 gcc`. |
-| A monospace font | Noto Sans Mono (`/usr/share/fonts/noto/NotoSansMono-Regular.ttf`), DejaVu Sans Mono, Liberation Mono or FreeMono are found automatically; otherwise `--font FILE` or `BORBA_CAD_FONT`. |
+| Fonts | Noto Sans Mono (`/usr/share/fonts/noto/NotoSansMono-Regular.ttf`), DejaVu Sans Mono, Liberation Mono or FreeMono are found automatically for drawing text; otherwise `--font FILE` or `BORBA_CAD_FONT`. The interface uses Noto Sans Regular and Medium (or DejaVu Sans, Liberation Sans) and falls back to the monospace font when none is installed. A `fonts/` directory beside the executable is searched first. |
 | A graphical session | Only for `run`, `demo`, `debug`, `test-gui` (renderer tests) and `bench-gui`. |
 
 ```bash
@@ -183,7 +183,8 @@ step that is forgotten fails loudly at run time or in a test, except the documen
 4. **Scene** (`src/scene/scene.lisp`): a clause in the `etypecase` of `emit-entity` (an entity of an
    unknown type is a run-time error, so a forgotten clause is caught by the scene tests).
 5. **Application** (`src/app/`): a tool class and its clause in `make-tool` (`tools.lisp`), the
-   shortcut in the key table (`input.lisp`) and the toolbar button (`tool-spec` in `panels.lisp`).
+   shortcut in the key table (`input.lisp`), the palette entry (`*palette-tools*` in `panels.lisp`) and
+   its icon (`ui/icons.lisp`).
 6. **Workload** (`test-support/workload.lisp`): a generator for the kind and its weight. This changes
    the checksums of W1 to W3, so the baseline must be recorded again.
 7. **Tests**: entity invariants, a round trip and the corruption cases in the persistence suite, the
@@ -194,13 +195,14 @@ The dimension, the last type added, appears in 14 source files. Three hold the t
 (`domain/dimension.lisp`, `geometry/dimension.lisp` and the tool in `app/tools.lisp`); four need a
 block of a few lines (the export lists of `domain` and `geometry`, the format row, the scene
 clause); seven need one line or a mention in a docstring (the entity kind list, the key table, the
-toolbar button, `app` exports, and docstrings in `operations.lisp` and `drawing.lisp`; a comment in the
+palette entry, `app` exports, and docstrings in `operations.lisp` and `drawing.lisp`; a comment in the
 demo script).
 
 ### Adding a tool
 
 A class that specializes the generic functions of `tools.lisp` (`tool-kind`, the pointer, key and
-cancel handlers, `tool-preview-entities`), a clause in `make-tool`, a shortcut and a toolbar entry.
+cancel handlers, `tool-preview-entities`), a clause in `make-tool`, a shortcut, a palette entry and
+an icon.
 A tool only proposes change sets; `app` commits them through the history, which times and logs them.
 
 ### Adding a measured operation

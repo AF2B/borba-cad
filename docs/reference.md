@@ -148,6 +148,14 @@ Handle one input event and record its handling time for the aggregated input sta
 
 (undocumented)
 
+### `app-inspector-scroll` (function)
+
+```lisp
+(app-inspector-scroll instance)
+```
+
+(undocumented)
+
 ### `app-last-error` (function)
 
 ```lisp
@@ -160,6 +168,14 @@ Handle one input event and record its handling time for the aggregated input sta
 
 ```lisp
 (app-last-scene-result instance)
+```
+
+(undocumented)
+
+### `app-layer-scroll` (function)
+
+```lisp
+(app-layer-scroll instance)
 ```
 
 (undocumented)
@@ -361,7 +377,9 @@ uses this same interaction so that their frame costs are comparable.
 (build-widgets app)
 ```
 
-Build every widget of the window, in drawing order, from the application state.
+Build every widget of the window, in drawing order, from the application state: the side
+panel, the title bar, the tool palette, the status bar, the tooltip of the widget under the
+pointer, and the modal prompt when one is open.
 
 - `APP`: the application.
 
@@ -535,7 +553,7 @@ Creates a line segment from two clicks.
 ```
 
 Load the drawing at PATH-TEXT and make it the current one. On failure the current drawing is
-untouched and the error is shown. Returns true on success.
+untouched and the reason is shown. Returns true on success.
 
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
@@ -1069,8 +1087,8 @@ The window changed size.
 (save-app-drawing app path-text)
 ```
 
-Save the drawing to PATH-TEXT, creating its directory when needed. On failure the previous
-file is untouched and the error is shown. Returns true on success.
+Save the drawing to PATH-TEXT; a name without an extension gets .bcad. On failure the
+previous file is untouched and the reason is shown. Returns true on success.
 
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
@@ -1639,6 +1657,16 @@ Format an area for display.
 - `UNIT`: display length unit keyword (the area is shown in its square).
 - `PRECISION`: decimals to show; defaults to the unit's default precision.
 - `WITH-UNIT`: when true, append the area unit abbreviation.
+
+### `format-byte-size` (function)
+
+```lisp
+(format-byte-size bytes)
+```
+
+Format a file size for people: bytes below one KB, then KB, MB and GB with one decimal.
+
+- `BYTES`: a non-negative integer.
 
 ### `format-decimal` (function)
 
@@ -5285,6 +5313,11 @@ appears around every measured operation.
 The .bcad drawing format: a small safe S-expression reader, a writer whose
 numbers round-trip exactly, strict validation, and atomic saving.
 
+### `*drawing-extension*` (variable)
+
+Extension that a drawing file name gets when it does not already end in one that the program
+writes.
+
 ### `+maximum-file-bytes+` (constant)
 
 Largest drawing file that will be read. A 100,000-entity drawing is about 12 MB; the limit
@@ -5301,6 +5334,51 @@ Longest word or number accepted, in characters. Doubles print in at most 24.
 ### `+supported-format-version+` (constant)
 
 The only format version this program reads and writes.
+
+### `clean-path-text` (function)
+
+```lisp
+(clean-path-text text)
+```
+
+Return the path that TEXT means: blanks around it and one pair of quotes around it are
+removed, and a file:// address becomes the path it names. Signals INVALID-INPUT when nothing is
+left.
+
+- `TEXT`: what the user typed, pasted or dropped.
+
+### `default-drawings-directory` (function)
+
+```lisp
+(default-drawings-directory)
+```
+
+Return the folder where a drawing is offered to be saved or opened when nothing else is known:
+the user's documents folder, in whatever language the desktop calls it, or the home folder.
+The folder is the first that exists among the XDG documents directory, Documents and Documentos.
+
+### `directory-of` (function)
+
+```lisp
+(directory-of path)
+```
+
+Return the folder that contains the file PATH, as a directory pathname.
+
+- `PATH`: a pathname.
+
+### `drawing-file-path` (function)
+
+```lisp
+(drawing-file-path text)
+```
+
+Return the pathname of the drawing file that TEXT names. A name that does not end in an
+extension that the program writes gets .bcad after it (plan becomes plan.bcad and v1.2 final
+becomes v1.2 final.bcad); a trailing dot is dropped first. A path that names a folder is returned
+as it is, for the caller to refuse.
+
+- `TEXT`: a file name as typed by the user.
 
 ### `drawing-to-string` (function)
 
@@ -5341,9 +5419,10 @@ building). Signals a DRAWING-FILE-ERROR subclass on any problem; no partial resu
 (native-path text)
 ```
 
-Return the pathname that the user-typed TEXT names. Characters such as * and [ are taken
-literally, a leading ~ means the home directory, and relative names are resolved against
-the current directory.
+Return the pathname that the user-typed TEXT names. Blanks, quotes and file:// addresses are
+dealt with (see CLEAN-PATH-TEXT), characters such as * and [ are taken literally, a leading ~
+means the home directory, and relative names are resolved against the current directory, so the
+result is always absolute.
 
 - `TEXT`: a file name as typed by the user.
 
@@ -5367,9 +5446,10 @@ subclass naming the line and column of the first problem. Nothing is evaluated.
 
 Save DRAWING atomically: write a sibling temporary file, flush it to disk, then rename it
 over PATH. A failure at any point leaves any existing file at PATH untouched and removes the
-temporary file. Returns two values: the saved pathname and a property list with :bytes,
-:serialize-nanoseconds (including the disk flush) and :rename-nanoseconds. Signals
-DRAWING-FILE-IO-ERROR on failure.
+temporary file. When PATH is a symbolic link the file it points to is replaced, not the link,
+and a replaced file keeps its permissions. Returns two values: the saved pathname and a
+property list with :bytes, :serialize-nanoseconds (including the disk flush) and
+:rename-nanoseconds. Signals DRAWING-FILE-IO-ERROR on failure.
 
 - `DRAWING`: the drawing to save.
 - `PATH`: destination pathname.
@@ -5418,6 +5498,19 @@ terminal that may not exist.
 
 Return the path of the monospace font to use: the configured one, or the first usual
 location that exists. Signals CONFIGURATION-ERROR when there is none.
+
+- `CONFIG`: the application configuration.
+
+### `find-font-paths` (function)
+
+```lisp
+(find-font-paths config)
+```
+
+Return the font file of every role as a property list (:mono path :ui path :ui-strong path).
+The interface fonts fall back to the monospace font, and the strong one to the regular one, so
+text is always drawn, only less handsomely. Signals CONFIGURATION-ERROR when no monospace font
+exists.
 
 - `CONFIG`: the application configuration.
 
@@ -5647,6 +5740,18 @@ Delete the file at PATH if it exists; return true when a file was deleted.
 
 - `PATH`: file to delete.
 
+### `describe-os-error` (function)
+
+```lisp
+(describe-os-error condition)
+```
+
+Return the operating system's wording of the problem behind CONDITION, for example
+"Permission denied" or "No space left on device", or the condition's own one-line text when
+it carries no error number.
+
+- `CONDITION`: an error condition.
+
 ### `drain-gc-events` (function)
 
 ```lisp
@@ -5664,6 +5769,27 @@ Return the GC events recorded since the last call, oldest first, and clear the q
 Return the value of the environment variable NAME as a string, or NIL when unset.
 
 - `NAME`: the variable name.
+
+### `file-kind` (function)
+
+```lisp
+(file-kind path)
+```
+
+Return :file, :directory or :other for what PATH names, following symbolic links, or NIL when
+nothing can be found there.
+
+- `PATH`: a pathname.
+
+### `file-permissions` (function)
+
+```lisp
+(file-permissions path)
+```
+
+Return the permission bits of the file at PATH as an integer, or NIL when it cannot be read.
+
+- `PATH`: a pathname.
 
 ### `file-size-bytes` (function)
 
@@ -5776,6 +5902,17 @@ Return a reading of the monotonic clock in nanoseconds.
 The origin is arbitrary (system boot), so only differences are meaningful.
 CL:GET-INTERNAL-REAL-TIME is not used: it advances in ~1 ms ticks on SBCL 2.6.9.
 
+### `path-accessible-p` (function)
+
+```lisp
+(path-accessible-p path access)
+```
+
+Return true when the current user has the given access to PATH.
+
+- `PATH`: a pathname.
+- `ACCESS`: :read, :write or :execute.
+
 ### `process-id` (function)
 
 ```lisp
@@ -5811,6 +5948,18 @@ Atomically rename FROM to TO, replacing TO if it exists (same file system).
 
 Return the resident set size of the process in bytes, or NIL when /proc is unavailable.
 
+### `set-file-permissions` (function)
+
+```lisp
+(set-file-permissions path permissions)
+```
+
+Give the file at PATH the permission bits PERMISSIONS. Returns true on success and NIL when
+the system refuses; callers use it to keep a replaced file's permissions, which is best effort.
+
+- `PATH`: a pathname.
+- `PERMISSIONS`: permission bits as returned by FILE-PERMISSIONS.
+
 ### `sync-output-stream` (function)
 
 ```lisp
@@ -5820,6 +5969,27 @@ Return the resident set size of the process in bytes, or NIL when /proc is unava
 Flush STREAM and force its data to stable storage (fsync).
 
 - `STREAM`: an open file output stream backed by a file descriptor.
+
+### `true-path` (function)
+
+```lisp
+(true-path path)
+```
+
+Return the pathname of the file that PATH names after following symbolic links, or PATH itself
+when nothing exists there.
+
+- `PATH`: a pathname.
+
+### `utf-8-octets->string` (function)
+
+```lisp
+(utf-8-octets->string octets)
+```
+
+Decode UTF-8 octets into a string. Returns NIL when they are not valid UTF-8.
+
+- `OCTETS`: a vector of integers 0 to 255.
 
 ## BORBA-CAD/SCENE
 
@@ -5848,6 +6018,14 @@ visibly at the edge.
 
 Single-floats per vertex: x y u v r g b a.
 
+### `+maximum-shape-segments+` (constant)
+
+Most segments of any round shape.
+
+### `+minimum-shape-segments+` (constant)
+
+Fewest segments of any round shape.
+
 ### `+minimum-text-pixels+` (constant)
 
 Text smaller than this many pixels is drawn as a baseline stroke instead of glyphs.
@@ -5855,6 +6033,55 @@ Text smaller than this many pixels is drawn as a baseline stroke instead of glyp
 ### `+snap-marker-half-size-pixels+` (constant)
 
 Half the size of the snap marker, in pixels.
+
+### `add-arc-stroke` (function)
+
+```lisp
+(add-arc-stroke list center-x center-y radius start-angle end-angle thickness color)
+```
+
+Append a stroked arc: the part of a ring between two angles. Angles grow clockwise on screen,
+because the y axis points down; a full turn is a ring.
+
+- `LIST`: a draw list.
+- `CENTER-X`: center x in pixels.
+- `CENTER-Y`: center y in pixels.
+- `RADIUS`: radius of the middle of the stroke, in pixels.
+- `START-ANGLE`: where the arc begins, in radians.
+- `END-ANGLE`: where it ends, in radians.
+- `THICKNESS`: stroke width in pixels.
+- `COLOR`: an RGBA.
+
+### `add-dashed-line` (function)
+
+```lisp
+(add-dashed-line list x1 y1 x2 y2 dash gap color)
+```
+
+Append a dashed one-pixel line.
+
+- `LIST`: a draw list.
+- `X1`: start x in pixels.
+- `Y1`: start y in pixels.
+- `X2`: end x in pixels.
+- `Y2`: end y in pixels.
+- `DASH`: length of each dash in pixels.
+- `GAP`: length of each gap in pixels.
+- `COLOR`: an RGBA.
+
+### `add-disc` (function)
+
+```lisp
+(add-disc list center-x center-y radius color)
+```
+
+Append a filled circle as a fan of triangles.
+
+- `LIST`: a draw list.
+- `CENTER-X`: center x in pixels.
+- `CENTER-Y`: center y in pixels.
+- `RADIUS`: radius in pixels.
+- `COLOR`: an RGBA.
 
 ### `add-drawing-entities` (function)
 
@@ -5884,6 +6111,22 @@ Append a filled rectangle as two triangles, in pixels.
 - `HEIGHT`: height.
 - `COLOR`: an RGBA.
 
+### `add-gradient-rectangle` (function)
+
+```lisp
+(add-gradient-rectangle list x y width height top-color bottom-color)
+```
+
+Append a rectangle that shades from one color at the top to another at the bottom.
+
+- `LIST`: a draw list.
+- `X`: left edge.
+- `Y`: top edge.
+- `WIDTH`: width.
+- `HEIGHT`: height.
+- `TOP-COLOR`: an RGBA at the top edge.
+- `BOTTOM-COLOR`: an RGBA at the bottom edge.
+
 ### `add-grid` (function)
 
 ```lisp
@@ -5912,6 +6155,18 @@ Append one line segment, in pixels.
 - `Y2`: end y.
 - `COLOR`: an RGBA.
 
+### `add-polygon` (function)
+
+```lisp
+(add-polygon list points color)
+```
+
+Append a filled convex polygon as a fan from its first point.
+
+- `LIST`: a draw list.
+- `POINTS`: a list of (x . y) conses, three or more, in order around the polygon.
+- `COLOR`: an RGBA.
+
 ### `add-rectangle-outline` (function)
 
 ```lisp
@@ -5926,6 +6181,73 @@ Append the four edges of a rectangle as lines, in pixels.
 - `WIDTH`: width.
 - `HEIGHT`: height.
 - `COLOR`: an RGBA.
+
+### `add-ring` (function)
+
+```lisp
+(add-ring list center-x center-y radius thickness color)
+```
+
+Append a circle outline of the given thickness.
+
+- `LIST`: a draw list.
+- `CENTER-X`: center x in pixels.
+- `CENTER-Y`: center y in pixels.
+- `RADIUS`: radius of the middle of the stroke, in pixels.
+- `THICKNESS`: stroke width in pixels.
+- `COLOR`: an RGBA.
+
+### `add-rounded-rectangle` (function)
+
+```lisp
+(add-rounded-rectangle list x y width height radius color)
+```
+
+Append a filled rectangle with rounded corners.
+
+- `LIST`: a draw list.
+- `X`: left edge.
+- `Y`: top edge.
+- `WIDTH`: width.
+- `HEIGHT`: height.
+- `RADIUS`: corner radius in pixels.
+- `COLOR`: an RGBA.
+
+### `add-rounded-rectangle-outline` (function)
+
+```lisp
+(add-rounded-rectangle-outline list x y width height radius thickness color)
+```
+
+Append the outline of a rounded rectangle, with its stroke inside the given bounds.
+
+- `LIST`: a draw list.
+- `X`: left edge.
+- `Y`: top edge.
+- `WIDTH`: width.
+- `HEIGHT`: height.
+- `RADIUS`: corner radius in pixels.
+- `THICKNESS`: stroke width in pixels.
+- `COLOR`: an RGBA.
+
+### `add-shadow` (function)
+
+```lisp
+(add-shadow list x y width height radius spread color)
+```
+
+Append a soft drop shadow under a rounded rectangle: translucent copies that grow and fade
+outward, lowered a little so that the light seems to come from above. Draw it before the
+rectangle itself.
+
+- `LIST`: a draw list.
+- `X`: left edge of the rectangle that casts it.
+- `Y`: top edge.
+- `WIDTH`: width.
+- `HEIGHT`: height.
+- `RADIUS`: corner radius of that rectangle.
+- `SPREAD`: how far the shadow reaches beyond it, in pixels.
+- `COLOR`: an RGBA; its opacity is the opacity of the whole shadow near the rectangle.
 
 ### `add-snap-marker` (function)
 
@@ -5943,7 +6265,7 @@ Emit the snap indicator: a square for endpoints, a circle for centers, a cross f
 ### `add-text` (function)
 
 ```lisp
-(add-text list string x y size color &key (angle 0.0))
+(add-text list string x y size color &key (angle 0.0) (font mono))
 ```
 
 Append a text run.
@@ -5955,6 +6277,23 @@ Append a text run.
 - `SIZE`: em size in pixels.
 - `COLOR`: an RGBA.
 - `ANGLE`: counter-clockwise rotation in radians.
+- `FONT`: :mono, :ui or :ui-strong.
+
+### `add-thick-line` (function)
+
+```lisp
+(add-thick-line list x1 y1 x2 y2 thickness color)
+```
+
+Append a straight stroke of the given thickness as a quad. A zero-length stroke adds nothing.
+
+- `LIST`: a draw list.
+- `X1`: start x in pixels.
+- `Y1`: start y in pixels.
+- `X2`: end x in pixels.
+- `Y2`: end y in pixels.
+- `THICKNESS`: stroke width in pixels.
+- `COLOR`: an RGBA.
 
 ### `add-triangle` (function)
 
@@ -6204,6 +6543,22 @@ A color with channels in [0, 1].
 
 (undocumented)
 
+### `rounded-rectangle-points` (function)
+
+```lisp
+(rounded-rectangle-points x y width height radius &key (steps (corner-steps radius)))
+```
+
+Return the outline of a rounded rectangle as a list of (x . y) points, clockwise from the end
+of the top-left corner arc.
+
+- `X`: left edge.
+- `Y`: top edge.
+- `WIDTH`: width.
+- `HEIGHT`: height.
+- `RADIUS`: corner radius, limited to half the smaller side.
+- `STEPS`: segments per corner; outlines that must pair up point for point share it.
+
 ### `scene-result` (type)
 
 What building a scene did.
@@ -6277,16 +6632,29 @@ The interaction state that decorates the drawing.
 
 (undocumented)
 
+### `shape-segments` (function)
+
+```lisp
+(shape-segments radius)
+```
+
+Return how many segments make a circle of RADIUS pixels look round, between the minimum and
+the maximum.
+
+- `RADIUS`: radius in pixels.
+
 ### `text-run` (type)
 
 A line of text to draw.
 
-- `STRING`: the characters, one cell per code point on a 0.6 em grid.
+- `STRING`: the characters.
 - `X`: x of the baseline start, in pixels.
 - `Y`: y of the baseline start, in pixels (down).
 - `SIZE`: em size in pixels.
 - `ANGLE`: counter-clockwise rotation of the baseline as seen on screen, in radians.
 - `COLOR`: an RGBA.
+- `FONT`: :mono for drawing text, one cell per code point on a 0.6 em grid; :ui or :ui-strong for
+the proportional faces of the user interface, whose widths the renderer measures.
 
 ### `text-run-angle` (function)
 
@@ -6300,6 +6668,14 @@ A line of text to draw.
 
 ```lisp
 (text-run-color instance)
+```
+
+(undocumented)
+
+### `text-run-font` (function)
+
+```lisp
+(text-run-font instance)
 ```
 
 (undocumented)
@@ -6343,22 +6719,32 @@ Every color the application draws with.
 - `CANVAS-BACKGROUND`: drawing area.
 - `GRID-MINOR`: minor grid lines.
 - `GRID-MAJOR`: major grid lines.
-- `AXIS`: the x and y axes.
+- `AXIS-X`: the x axis, the horizontal line through the origin.
+- `AXIS-Y`: the y axis, the vertical line through the origin.
 - `SELECTION`: selected entities.
-- `SELECTION-FILL`: translucent window-selection fill.
+- `SELECTION-FILL`: translucent fill of a window selection, which takes what lies inside.
+- `CROSSING-FILL`: translucent fill of a crossing selection, which takes what it touches.
 - `PREVIEW`: entity being created.
 - `SNAP-MARKER`: snap indicator.
-- `PANEL-BACKGROUND`: toolbar and side panels.
+- `PANEL-BACKGROUND`: panels and cards.
 - `PANEL-BORDER`: separators and outlines.
+- `TITLE-BAR-TOP`: top of the title bar's shading.
+- `TITLE-BAR-BOTTOM`: bottom of the title bar's shading.
 - `TEXT`: primary text.
 - `TEXT-DIM`: secondary text.
+- `TEXT-FAINT`: tertiary text and disabled items.
 - `BUTTON`: idle button.
 - `BUTTON-HOVER`: button under the pointer.
-- `BUTTON-ACTIVE`: pressed or toggled-on button.
-- `ACCENT`: highlights.
+- `BUTTON-ACTIVE`: toggled-on button; a soft tint of the accent.
+- `ACCENT`: highlights and the primary action.
+- `ACCENT-SOFT`: translucent accent for the background of active items.
+- `ACCENT-CONTRAST`: text on a solid accent.
 - `DANGER`: error messages.
+- `WARNING`: cautions.
 - `FIELD-BACKGROUND`: text fields.
 - `OVERLAY-BACKGROUND`: translucent background of the performance overlay.
+- `SHADOW`: drop shadows of cards and dialogs.
+- `SCRIM`: the veil drawn over the window behind a dialog.
 
 ### `theme-accent` (function)
 
@@ -6368,10 +6754,34 @@ Every color the application draws with.
 
 (undocumented)
 
-### `theme-axis` (function)
+### `theme-accent-contrast` (function)
 
 ```lisp
-(theme-axis instance)
+(theme-accent-contrast instance)
+```
+
+(undocumented)
+
+### `theme-accent-soft` (function)
+
+```lisp
+(theme-accent-soft instance)
+```
+
+(undocumented)
+
+### `theme-axis-x` (function)
+
+```lisp
+(theme-axis-x instance)
+```
+
+(undocumented)
+
+### `theme-axis-y` (function)
+
+```lisp
+(theme-axis-y instance)
 ```
 
 (undocumented)
@@ -6404,6 +6814,14 @@ Every color the application draws with.
 
 ```lisp
 (theme-canvas-background instance)
+```
+
+(undocumented)
+
+### `theme-crossing-fill` (function)
+
+```lisp
+(theme-crossing-fill instance)
 ```
 
 (undocumented)
@@ -6472,6 +6890,14 @@ Every color the application draws with.
 
 (undocumented)
 
+### `theme-scrim` (function)
+
+```lisp
+(theme-scrim instance)
+```
+
+(undocumented)
+
 ### `theme-selection` (function)
 
 ```lisp
@@ -6484,6 +6910,14 @@ Every color the application draws with.
 
 ```lisp
 (theme-selection-fill instance)
+```
+
+(undocumented)
+
+### `theme-shadow` (function)
+
+```lisp
+(theme-shadow instance)
 ```
 
 (undocumented)
@@ -6511,6 +6945,49 @@ Every color the application draws with.
 ```
 
 (undocumented)
+
+### `theme-text-faint` (function)
+
+```lisp
+(theme-text-faint instance)
+```
+
+(undocumented)
+
+### `theme-title-bar-bottom` (function)
+
+```lisp
+(theme-title-bar-bottom instance)
+```
+
+(undocumented)
+
+### `theme-title-bar-top` (function)
+
+```lisp
+(theme-title-bar-top instance)
+```
+
+(undocumented)
+
+### `theme-warning` (function)
+
+```lisp
+(theme-warning instance)
+```
+
+(undocumented)
+
+### `with-alpha` (function)
+
+```lisp
+(with-alpha color alpha)
+```
+
+Return COLOR with its opacity multiplied by ALPHA.
+
+- `COLOR`: an RGBA.
+- `ALPHA`: a factor from 0 to 1.
 
 ## BORBA-CAD/SCRIPTS
 
@@ -6810,13 +7287,56 @@ Declarative user-interface widgets: layout of the window, drawing and hit
 testing of buttons, labels, rows and text fields into the draw list, single-line text
 editing, and the performance overlay. No input device and no renderer appear here.
 
+### `*text-measurer*` (variable)
+
+Function of a font keyword (:ui, :ui-strong or :mono), a string and an em size in pixels that
+returns the width of the text in pixels. The window program installs one that reads the real
+glyph advances; the default measures a fixed 0.6 em per character. A global because layout is
+computed far from any renderer and every widget must measure the same way.
+
+### `+card-radius+` (constant)
+
+Corner radius of cards and dialogs, in logical pixels.
+
+### `+chip-height+` (constant)
+
+Height of a pill-shaped toggle, in logical pixels.
+
+### `+chip-padding+` (constant)
+
+Space between a chip's edge and its content, in logical pixels.
+
 ### `+font-pixels+` (constant)
 
 Em size of the user-interface text, in logical pixels.
 
+### `+gap+` (constant)
+
+Standard gap between neighbouring user-interface elements, in logical pixels.
+
+### `+heading-font-pixels+` (constant)
+
+Em size of headings, in logical pixels.
+
+### `+icon-button-size+` (constant)
+
+Side of a square icon button, in logical pixels.
+
+### `+icon-size+` (constant)
+
+Size of an icon inside a title bar button, in logical pixels.
+
 ### `+padding+` (constant)
 
-Standard gap between user-interface elements, in logical pixels.
+Standard gap between a container's edge and its content, in logical pixels.
+
+### `+panel-margin+` (constant)
+
+Gap between the side panel's edge and its cards, and between the cards, in logical pixels.
+
+### `+radius+` (constant)
+
+Corner radius of buttons and rows, in logical pixels.
 
 ### `+row-height+` (constant)
 
@@ -6830,13 +7350,33 @@ Width of the right-hand panel, in logical pixels.
 
 Em size of secondary text, in logical pixels.
 
+### `+small-icon-size+` (constant)
+
+Size of an icon that stands beside a label, in logical pixels.
+
+### `+small-radius+` (constant)
+
+Corner radius of fields and chips' inner parts, in logical pixels.
+
 ### `+status-height+` (constant)
 
 Height of the status bar, in logical pixels.
 
+### `+tool-icon-size+` (constant)
+
+Size of an icon inside a button of the tool palette, in logical pixels.
+
+### `+tool-palette-width+` (constant)
+
+Width of the column of drawing tools, in logical pixels.
+
 ### `+toolbar-height+` (constant)
 
-Height of the toolbar, in logical pixels.
+Height of the title bar, in logical pixels.
+
+### `+tooltip-height+` (constant)
+
+Height of a tooltip, in logical pixels.
 
 ### `compute-layout` (function)
 
@@ -6849,13 +7389,43 @@ Divide a window of WIDTH x HEIGHT logical pixels into regions.
 - `WIDTH`: window width in pixels.
 - `HEIGHT`: window height in pixels.
 
+### `draw-icon` (function)
+
+```lisp
+(draw-icon list name x y size color)
+```
+
+Draw the icon NAME inside the square whose top-left corner is (X, Y). An unknown name draws
+nothing.
+
+- `LIST`: the draw list.
+- `NAME`: an icon keyword from ICON-NAMES.
+- `X`: left edge in pixels.
+- `Y`: top edge in pixels.
+- `SIZE`: side of the square in pixels.
+- `COLOR`: an RGBA.
+
+### `draw-logo` (function)
+
+```lisp
+(draw-logo list x y size theme)
+```
+
+Draw the brand mark: the tile and the letter in the colors of the theme.
+
+- `LIST`: the draw list.
+- `X`: left edge in pixels.
+- `Y`: top edge in pixels.
+- `SIZE`: side of the tile in pixels.
+- `THEME`: the theme.
+
 ### `draw-overlay` (function)
 
 ```lisp
 (draw-overlay list theme lines x y)
 ```
 
-Draw the performance overlay: a translucent box with one text line per entry.
+Draw the performance overlay: a translucent card with one monospaced text line per entry.
 
 - `LIST`: the draw list.
 - `THEME`: the theme.
@@ -6977,14 +7547,47 @@ The content of a text field.
 ### `fit-text` (function)
 
 ```lisp
-(fit-text string maximum-width &optional (size +font-pixels+))
+(fit-text string maximum-width &optional (size +font-pixels+) (font ui))
 ```
 
-Return STRING, shortened with an ellipsis when it would be wider than MAXIMUM-WIDTH.
+Return STRING, shortened with an ellipsis when it would be wider than MAXIMUM-WIDTH. When not
+even one character and the ellipsis fit, the longest prefix that fits is returned.
 
 - `STRING`: the text.
 - `MAXIMUM-WIDTH`: available width in pixels.
 - `SIZE`: em size in pixels.
+- `FONT`: :ui, :ui-strong or :mono.
+
+### `fixed-advance-width` (function)
+
+```lisp
+(fixed-advance-width font string size)
+```
+
+Measure STRING on the fixed 0.6 em grid, whatever the font. It is the default text measurer,
+which keeps layout deterministic where no renderer exists, as in tests.
+
+- `FONT`: the font keyword; ignored.
+- `STRING`: the text.
+- `SIZE`: em size in pixels.
+
+### `icon-names` (function)
+
+```lisp
+(icon-names)
+```
+
+Return the names of the available icons.
+
+### `icon-shapes` (function)
+
+```lisp
+(icon-shapes name)
+```
+
+Return the shape list of the icon NAME, or NIL when there is none.
+
+- `NAME`: an icon keyword.
 
 ### `interactive-widget-p` (function)
 
@@ -6998,9 +7601,10 @@ Return true for widgets that react to the pointer.
 
 ### `layout` (type)
 
-The regions of the window.
+The regions of the window. They tile it without gaps.
 
-- `TOOLBAR`: strip along the top.
+- `TOOLBAR`: the title bar along the top.
+- `TOOL-PALETTE`: the column of drawing tools along the left.
 - `CANVAS`: the drawing area.
 - `SIDE-PANEL`: right-hand column.
 - `LAYERS-PANEL`: upper part of the side panel.
@@ -7047,6 +7651,14 @@ The regions of the window.
 
 (undocumented)
 
+### `layout-tool-palette` (function)
+
+```lisp
+(layout-tool-palette instance)
+```
+
+(undocumented)
+
 ### `layout-toolbar` (function)
 
 ```lisp
@@ -7074,7 +7686,7 @@ The regions of the window.
 ### `make-widget` (function)
 
 ```lisp
-(make-widget kind id x y width height &key label active (enabled t) blocked swatch action edit (align center) color hint)
+(make-widget kind id x y width height &key label active (enabled t) blocked swatch action edit (align center) color hint shortcut icon (variant default) (font ui) (size +font-pixels+) (trailing 0.0))
 ```
 
 (undocumented)
@@ -7135,19 +7747,49 @@ Return true when the point lies inside RECT.
 ### `text-width-pixels` (function)
 
 ```lisp
-(text-width-pixels string &optional (size +font-pixels+))
+(text-width-pixels string &optional (size +font-pixels+) (font ui))
 ```
 
-Return the width of STRING at SIZE on the fixed 0.6 em grid, as a single-float.
+Return the width of STRING at SIZE in FONT, as a single-float, as measured by the installed
+text measurer.
 
 - `STRING`: the text.
 - `SIZE`: em size in pixels.
+- `FONT`: :ui, :ui-strong or :mono.
+
+### `tooltip-width` (function)
+
+```lisp
+(tooltip-width label shortcut)
+```
+
+Return the width of a tooltip with the given text and key cap.
+
+- `LABEL`: what the tooltip says.
+- `SHORTCUT`: the keys that do the same, or NIL.
+
+### `visible-text-window` (function)
+
+```lisp
+(visible-text-window string caret maximum-width size font)
+```
+
+Return the start and end of the part of STRING to show in a field MAXIMUM-WIDTH wide so that
+the caret is visible: the window ends at the caret when the text before it is too long to fit,
+and otherwise starts at the beginning.
+
+- `STRING`: the text.
+- `CARET`: caret position, a count of characters from the start.
+- `MAXIMUM-WIDTH`: width of the text area in pixels.
+- `SIZE`: em size in pixels.
+- `FONT`: :ui, :ui-strong or :mono.
 
 ### `widget` (type)
 
 One user-interface element.
 
-- `KIND`: :panel, :button, :label, :row, :field or :swatch.
+- `KIND`: :panel, :card, :button, :label, :row, :field, :swatch, :scrim, :separator, :icon, :logo or
+:tooltip.
 - `ID`: identifies the widget for focus and tests.
 - `X`: left edge in pixels.
 - `Y`: top edge in pixels.
@@ -7160,9 +7802,17 @@ One user-interface element.
 - `SWATCH`: an RGBA drawn as a color chip.
 - `ACTION`: function of no arguments called on click.
 - `EDIT`: the EDIT-STATE of a field that has the keyboard focus, or NIL.
-- `ALIGN`: :center or :left text alignment.
-- `COLOR`: text color override, an RGBA.
-- `HINT`: tooltip-like text shown in the status bar while hovering.
+- `ALIGN`: :left, :center or :right text alignment.
+- `COLOR`: text or icon color override, an RGBA.
+- `HINT`: what the widget does, shown as a tooltip and in the status bar while hovering.
+- `SHORTCUT`: the keys that do the same, shown beside the hint, or NIL.
+- `ICON`: the name of the icon drawn in a button, row or on its own.
+- `VARIANT`: for buttons, :default, :primary, :ghost, :tool (palette), :icon (title bar) or :chip
+(a pill that toggles); for panels, :default, :title-bar, :status-bar, :palette or :side.
+- `FONT`: :ui, :ui-strong or :mono.
+- `SIZE`: em size of the text in pixels.
+- `TRAILING`: pixels at the right edge that the text must stay clear of, where other widgets sit
+over the widget.
 
 ### `widget-action` (function)
 
@@ -7217,6 +7867,18 @@ are on top.
 
 (undocumented)
 
+### `widget-contains-p` (function)
+
+```lisp
+(widget-contains-p widget x y)
+```
+
+Return true when the point lies inside WIDGET.
+
+- `WIDGET`: a widget.
+- `X`: point x in pixels.
+- `Y`: point y in pixels.
+
 ### `widget-edit` (function)
 
 ```lisp
@@ -7233,6 +7895,14 @@ are on top.
 
 (undocumented)
 
+### `widget-font` (function)
+
+```lisp
+(widget-font instance)
+```
+
+(undocumented)
+
 ### `widget-height` (function)
 
 ```lisp
@@ -7245,6 +7915,14 @@ are on top.
 
 ```lisp
 (widget-hint instance)
+```
+
+(undocumented)
+
+### `widget-icon` (function)
+
+```lisp
+(widget-icon instance)
 ```
 
 (undocumented)
@@ -7273,10 +7951,42 @@ are on top.
 
 (undocumented)
 
+### `widget-shortcut` (function)
+
+```lisp
+(widget-shortcut instance)
+```
+
+(undocumented)
+
+### `widget-size` (function)
+
+```lisp
+(widget-size instance)
+```
+
+(undocumented)
+
 ### `widget-swatch` (function)
 
 ```lisp
 (widget-swatch instance)
+```
+
+(undocumented)
+
+### `widget-trailing` (function)
+
+```lisp
+(widget-trailing instance)
+```
+
+(undocumented)
+
+### `widget-variant` (function)
+
+```lisp
+(widget-variant instance)
 ```
 
 (undocumented)
@@ -7304,6 +8014,22 @@ are on top.
 ```
 
 (undocumented)
+
+### `wrap-text` (function)
+
+```lisp
+(wrap-text string maximum-width maximum-lines &optional (size +font-pixels+) (font ui))
+```
+
+Break STRING into lines no wider than MAXIMUM-WIDTH, at spaces where there are any. A word
+wider than a line is cut where it overflows. When the text needs more than MAXIMUM-LINES lines,
+the last one is truncated with an ellipsis.
+
+- `STRING`: the text.
+- `MAXIMUM-WIDTH`: width of a line in pixels.
+- `MAXIMUM-LINES`: most lines returned, at least 1.
+- `SIZE`: em size in pixels.
+- `FONT`: :ui, :ui-strong or :mono.
 
 ## BORBA-CAD/VIEWPORT
 

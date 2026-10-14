@@ -17,7 +17,7 @@ Pending: the author's review of the acceptance criteria and a license. Linux x86
 | SBCL | 2.6.9 (2.4 or newer is accepted, with a warning) |
 | Quicklisp | installed at `~/quicklisp`, dist `2026-01-01` (checked by `make check-env`) |
 | Native libraries | SDL2 (`sdl2-compat` works), OpenGL, FreeType plus its headers, `gcc` |
-| A monospace font | Noto Sans Mono, or any font named by `--font FILE` / `BORBA_CAD_FONT` |
+| Fonts | Noto Sans and Noto Sans Mono (DejaVu or Liberation also work), or a monospace font named by `--font FILE` / `BORBA_CAD_FONT` |
 | A graphical session | Wayland or X11, for the window; everything else runs headless |
 
 ## Quick start
@@ -51,7 +51,10 @@ with `LOG_LEVEL=debug`, pass any program option with `ARGS="..."`.
 
 ## Using the program
 
-Tools are on the toolbar and on the keyboard: `L` line, `R` rectangle, `C` circle, `P` polyline
+The tools are in the palette on the left and on the keyboard; hover a button to see its name and key.
+The title bar holds the file and history buttons, the document name (a dot marks unsaved changes)
+and the performance overlay; the status bar holds the hints, the pointer position and the chips
+that switch the grid, grid snap, object snap, display unit and zoom to fit. Keys: `L` line, `R` rectangle, `C` circle, `P` polyline
 (Enter finishes, clicking the first vertex closes), `T` text, `D` dimension, `Esc` back to select.
 Click picks an entity (Shift+click toggles), dragging on empty space selects what lies fully inside
 the window, dragging a selection moves it. `Delete` removes the selection, `Ctrl+A` selects all.
@@ -61,9 +64,9 @@ stays put), `Home` fits the drawing. `G` toggles the grid, `S` grid snap, `O` ob
 `Ctrl+Shift+Z` redoes. `Ctrl+N`, `Ctrl+O`, `Ctrl+S` and `Ctrl+Shift+S` manage files through an
 in-app path prompt. `F3` (the **Perf** button) shows the live performance overlay.
 
-The side panels hold the layers (add, rename, delete, recolor, show/hide, lock, set current) and
-the inspector, where every property of the selection is editable numerically; invalid input is
-rejected with a message and the previous value is kept.
+The side panel holds two cards: the layers (add, rename, delete, recolor, show/hide, lock, set
+current) and the properties, where every property of the selection is editable numerically; invalid
+input is rejected with a message and the previous value is kept.
 
 ## Files
 

@@ -26,9 +26,9 @@ One ASDF file (`borba-cad.asd`), seven systems. One package per module directory
 | | `persistence` | `.bcad` reader/writer/validator, atomic save. | `domain`, `base` |
 | | `observability` | Structured log, rotation, timers, aggregators, GC/memory sampling, perf snapshot, log summary. | `sbcl-support`, `base` |
 | | `scene` | Draw list and the scene builder (drawing + viewport + selection + preview → draw list). | `domain`, `viewport`, `geometry` |
-| | `ui` | Immediate-mode widgets writing into the draw list; theme; text fields. | `scene`, `base` |
+| | `ui` | Window layout; widgets drawn into the draw list (buttons, chips, cards, rows, fields, tooltips); vector icons and the brand mark; visual tokens; text measuring, fitting and wrapping; text fields. | `scene`, `base` |
 | | `app` | Application state, input-event handling, tools, commands, file operations, scripted scenarios. | all of the above |
-| `borba-cad/platform` | `platform` | SDL window + GL context, GL renderer, font atlas, event translation, main loop, CLI, screenshot. | core, `sdl2`, `cl-opengl`, `cl-freetype2` |
+| `borba-cad/platform` | `platform` | SDL window + GL context, GL renderer, font set and glyph atlas (three fonts), text measurer, event translation, main loop, CLI, screenshot. | core, `sdl2`, `cl-opengl`, `cl-freetype2` |
 | `borba-cad/test-support` | `test-support` | Seeded PRNG, deterministic workload generator. | core |
 | `borba-cad/tests` | `tests` | Correctness suites (FiveAM), headless. | core, test-support, bench (for the harness tests), `fiveam` |
 | `borba-cad/platform-tests` | `platform-tests` | Tests of the window program: PNG, SDL event translation, fonts, the window loop's logic and, with a display, the renderer on real pixels. | platform, test-support, `fiveam` |
@@ -68,6 +68,8 @@ Native libraries: `libSDL2` (sdl2-compat), `libGL` (libglvnd/NVIDIA), `libfreety
 | A13 | Float traps stay enabled in Lisp code. S1 showed no trap in SDL/GL calls with defaults, so no masking is needed; the platform masks only if a trap is observed. | Keeps NaN/infinity detection in geometry. |
 | A14 | Layer deletion (only allowed when the layer is empty) clears undo history. Other layer edits are immediate and not undoable. | Prevents dangling layer references from undo; keeps D1 scope to entity edits. |
 | A15 | The demonstration is data: `*demo-script*` (rows such as `(:click 0 0)`) interpreted by `run-scenario-step`. The same script drives the demo, the tests and the shipped `examples/floor-plan.bcad`. | One definition; the example is always what the program itself draws. |
+| A17 | Interface text (`:ui`, `:ui-strong`) is proportional (Noto Sans) and measured through `ui:*text-measurer*`. The window program installs a measurer that reads the glyph advances of the very fonts that draw, so layout and drawing agree to the pixel; headless code and tests keep the fixed 0.6 em default. Drawing text (`:mono`) stays on the fixed grid of A6. | Truncation, centering and caret placement need real widths; geometry must not depend on a font. A window test checks that no ink lies beyond the measured width. |
+| A18 | The look of the interface is data: colors in the theme, strokes and opacities in `ui/tokens.lisp`, icons and the brand mark as shape lists on a 24-unit grid, everything built from triangles by `scene/shapes.lisp`. No image files. | One place to tune; crisp at any size or display scale; nothing to ship or load. |
 | A16 | The window loop is a `session` plus `step-session`: everything between two batches of SDL events is a plain function of the session, testable without a window. | The scripted demo once stalled when a window received no event; the fix needed a regression test that does not open a window. |
 
 ## 5. Data structures
@@ -90,7 +92,7 @@ World space is right-handed with +Y up; angles are counter-clockwise radians. Ke
 2. `ui` appends panel chrome, widgets and the performance overlay to the same draw list.
 3. `platform` uploads the vertex array once per frame (`glBufferSubData` through a pinned Lisp vector) and replays the commands with one shader: `color × texture(atlas, uv).r`. Solid shapes sample a white texel; glyphs sample the atlas. Lines are `GL_LINES` (1 px) with 4× MSAA.
 4. Circles are tessellated by on-screen radius (sagitta ≤ `+circle-chordal-error-pixels+`, segment count clamped to `[+circle-minimum-segments+, +circle-maximum-segments+]`). Entities smaller than one pixel draw as a 1-px dash.
-5. Text: glyph bitmaps are rasterized by FreeType per pixel size into a shelf-packed R8 atlas (sizes ≤ 32 px exact, larger sizes rounded up to a ×1.25 ladder), cached by (size, code point). Runs support rotation (aligned dimensions).
+5. Text: glyph bitmaps are rasterized by FreeType per font and pixel size into a shelf-packed R8 atlas (sizes ≤ 32 px exact, larger sizes rounded up to a ×1.25 ladder), cached by (font, size, code point). Runs support rotation (aligned dimensions). Interface text is placed glyph by glyph on whole framebuffer pixels so that it stays crisp.
 6. The first renderer rebuilds the draw list whenever the scene is dirty (pan/zoom included). The baseline shows the CPU bottleneck the plan anticipated: with 100,000 entities all in view a frame takes about 30 ms, almost all of it in the scene build, while the GPU wait is under 1 ms (performance.md §4 and §6). The planned optimization, world-space retained buffers with a GPU view transform or a spatial index, is not done: it must start from a profile and be measured before and after (spec §6.4).
 
 ## 8. Input and application model
