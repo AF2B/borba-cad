@@ -388,9 +388,11 @@ DERIVED: a derived-value."
         (value (dom:derived-value-value derived)))
     (ecase (dom:derived-value-kind derived)
       (:length (format nil "~a ~a" (format-model-number app value) (base:unit-abbreviation unit)))
-      (:area (format nil "~a ~a" (base:format-area value
-                                                   unit
-                                                   :precision 4) (base:unit-area-abbreviation unit)))
+      (:area (format nil "~a ~a"
+                     (trim-decimal-zeros (base:format-area value
+                                                           unit
+                                                           :precision 4))
+                     (base:unit-area-abbreviation unit)))
       (:angle (format nil "~a~a" (base:format-decimal (base:radians->degrees value) 2) *degree-sign*))
       (:count (format nil "~d" value)))))
 

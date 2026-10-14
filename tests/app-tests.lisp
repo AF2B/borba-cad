@@ -943,6 +943,31 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
       (send application (pointer application :move nil 120 120))
       (is (/= center (view:viewport-center-x (app:app-viewport application))) "the pan goes on"))))
 
+(test areas-and-lengths-read-the-same-way-without-trailing-zeros
+  (let ((application (make-test-app)))
+    (press application :r)
+    (click application 0 0)
+    (click application 1000 500)
+    (press application :escape)
+    (click application 500 0)
+    (let ((texts (mapcar #'ui:widget-label (app:build-widgets application))))
+      (is (some (lambda (text) (and text (search "Area: 500000 mm" text))) texts)
+          "mm: 1000 by 500 is 500000, with no .0000 after it")
+      (is (notany (lambda (text) (and text (search ".0000" text))) texts)))
+    (app:operation-cycle-display-unit application)             ; cm
+    (app:operation-cycle-display-unit application)             ; m
+    (let ((texts (mapcar #'ui:widget-label (app:build-widgets application))))
+      (is (some (lambda (text) (and text (search "Area: 0.5 m" text))) texts) "m: half a square metre"))))
+
+(defun trim-zeros-cases ()
+  "Return (input expected) pairs for TRIM-DECIMAL-ZEROS."
+  '(("12.500" "12.5") ("70.0000" "70") ("0.0" "0") ("100" "100")
+    ("100.5" "100.5") ("-3.250" "-3.25") ("0.001" "0.001")))
+
+(test trailing-zeros-and-a-lonely-point-are-trimmed
+  (dolist (case (trim-zeros-cases))
+    (is (string= (second case) (app::trim-decimal-zeros (first case))) "~s" (first case))))
+
 (test the-creation-preview-follows-the-pointer
   (let ((application (make-test-app)))
     (press application :l)

@@ -302,6 +302,16 @@ APP: the application."
           unless (and entity (dom:pickable-p drawing entity))
             do (remhash id (app-selection app)))))
 
+(defun trim-decimal-zeros (text)
+  "Return TEXT, a decimal number, without the zeros that end its fraction and without a point left
+at the end: 12.500 is 12.5 and 70.0000 is 70.
+
+TEXT: a number written with a decimal point or without."
+  (let ((trimmed (if (find #\. text)
+                     (string-right-trim "0" text)
+                     text)))
+    (string-right-trim "." trimmed)))
+
 (defun format-model-number (app
                             millimeters)
   "Format a length for display in the drawing's display unit with up to six decimals and no
@@ -309,8 +319,6 @@ trailing zeros, so that editing a shown value does not change it.
 
 APP: the application.
 MILLIMETERS: the length in millimetres."
-  (let* ((text (base:format-length millimeters
-                                   (dom:drawing-display-unit (app-drawing app))
-                                   :precision 6))
-         (trimmed (if (find #\. text) (string-right-trim "0" text) text)))
-    (string-right-trim "." trimmed)))
+  (trim-decimal-zeros (base:format-length millimeters
+                                          (dom:drawing-display-unit (app-drawing app))
+                                          :precision 6)))
