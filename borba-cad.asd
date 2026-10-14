@@ -63,6 +63,7 @@
                              (:file "writer")
                              (:file "loader")
                              (:file "paths")
+                             (:file "recent")
                              (:file "files")))
                (:module "observability"
                 :serial t

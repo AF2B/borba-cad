@@ -77,3 +77,52 @@
            (is (borba-cad/sbcl-support:delete-file-if-exists target))
            (is (not (borba-cad/sbcl-support:delete-file-if-exists target))))
       (uiop:delete-directory-tree directory :validate t :if-does-not-exist :ignore))))
+
+(defmacro with-scratch-directory ((directory) &body body)
+  "Run BODY with DIRECTORY bound to a new empty folder, removed afterwards."
+  `(let ((,directory (uiop:ensure-directory-pathname
+                      (merge-pathnames (format nil "borba-cad-listing-~d-~d/" (sbcl:process-id) (random 1000000))
+                                       (uiop:temporary-directory)))))
+     (ensure-directories-exist ,directory)
+     (unwind-protect (progn ,@body)
+       (uiop:delete-directory-tree ,directory :validate t :if-does-not-exist :ignore))))
+
+(test a-folder-listing-describes-files-folders-and-links
+  (with-scratch-directory (directory)
+    (with-open-file (out (merge-pathnames "data.txt" directory) :direction :output)
+      (write-string "12345" out))
+    (ensure-directories-exist (merge-pathnames "inside/" directory))
+    (sb-posix:symlink "data.txt" (uiop:native-namestring (merge-pathnames "alias.txt" directory)))
+    (sb-posix:symlink "gone" (uiop:native-namestring (merge-pathnames "dangling" directory)))
+    (multiple-value-bind (entries problem) (sbcl:directory-listing directory)
+      (is (null problem))
+      (let ((by-name (lambda (name) (find name entries :key #'first :test #'string=))))
+        (is (equal '(:file 5) (subseq (funcall by-name "data.txt") 1 3)))
+        (is (equal '(:file 5) (subseq (funcall by-name "alias.txt") 1 3)) "a link shows what it points to")
+        (is (equal '(:directory nil) (subseq (funcall by-name "inside") 1 3)))
+        (is (null (funcall by-name "dangling")) "a link to nowhere is left out")
+        (is (null (funcall by-name ".")))
+        (is (null (funcall by-name "..")))
+        (is (= 3 (length entries)))
+        (is (< (abs (- (get-universal-time) (fourth (funcall by-name "data.txt")))) 120)
+            "the modification time is a universal time near now")))))
+
+(test listing-a-folder-that-is-missing-or-is-a-file-says-so
+  (with-scratch-directory (directory)
+    (multiple-value-bind (entries problem) (sbcl:directory-listing (merge-pathnames "missing/" directory))
+      (is (null entries))
+      (is (search "cannot be read" problem))
+      (is (search "No such file" problem)))
+    (with-open-file (out (merge-pathnames "plain" directory) :direction :output)
+      (write-string "x" out))
+    (multiple-value-bind (entries problem) (sbcl:directory-listing (merge-pathnames "plain/" directory))
+      (is (null entries))
+      (is (search "Not a directory" problem)))))
+
+(test making-a-folder-reports-why-it-cannot-be-made
+  (with-scratch-directory (directory)
+    (is (null (sbcl:make-directory (merge-pathnames "new/" directory))))
+    (is (eq :directory (sbcl:file-kind (merge-pathnames "new/" directory))))
+    (is (search "File exists" (sbcl:make-directory (merge-pathnames "new/" directory))))
+    (is (search "No such file" (sbcl:make-directory (merge-pathnames "a/b/" directory))))))
+

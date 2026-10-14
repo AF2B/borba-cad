@@ -146,6 +146,8 @@
                                       ("BORBA_CAD_LOG_MAX_FILES" . "2")
                                       ("BORBA_CAD_LOG_STDERR" . "yes")
                                       ("BORBA_CAD_LOG_SAMPLING" . "input.event=10,geometry.pick=2")
+                                      ("BORBA_CAD_STATE_DIR" . "/var/lib/borba")
+                                      ("BORBA_CAD_DRAWINGS_DIR" . "/home/me/obras")
                                       ("BORBA_CAD_FONT" . "/fonts/mono.ttf"))))))
     (is (equal #p"/tmp/logs/" (borba-cad/base:config-log-directory config)))
     (is (eq :debug (borba-cad/base:config-log-level config)))
@@ -155,8 +157,15 @@
     (is (equal '(("input.event" . 10) ("geometry.pick" . 2))
                (borba-cad/base:config-log-sampling config)))
     (is (string= "/fonts/mono.ttf" (borba-cad/base:config-font-path config)))
+    (is (equal #p"/var/lib/borba/" (borba-cad/base:config-state-directory config)))
+    (is (equal #p"/home/me/obras/" (borba-cad/base:config-drawings-directory config)))
     ;; The original is untouched.
     (is (eq :info (borba-cad/base:config-log-level base)))))
+
+(test the-default-configuration-remembers-state-below-the-project-and-leaves-the-drawings-folder-open
+  (let ((config (borba-cad/base:default-config :project-root #p"/proj/")))
+    (is (equal #p"/proj/var/state/" (borba-cad/base:config-state-directory config)))
+    (is (null (borba-cad/base:config-drawings-directory config)))))
 
 (test environment-overrides-reject-bad-values
   (let ((base (borba-cad/base:default-config :project-root #p"/proj/")))
@@ -173,8 +182,11 @@
     (multiple-value-bind (config remaining)
         (borba-cad/base:config-with-arguments
          base
-         '("--log-level" "trace" "--demo" "--file" "a.bcad" "--width" "800" "--log-stderr" "--extra"))
+         '("--log-level" "trace" "--demo" "--file" "a.bcad" "--width" "800" "--log-stderr" "--extra"
+           "--state-dir" "/s" "--drawings-dir" "/d"))
       (is (eq :trace (borba-cad/base:config-log-level config)))
+      (is (equal #p"/s/" (borba-cad/base:config-state-directory config)))
+      (is (equal #p"/d/" (borba-cad/base:config-drawings-directory config)))
       (is (string= "a.bcad" (borba-cad/base:config-initial-file config)))
       (is (= 800 (borba-cad/base:config-window-width config)))
       (is (borba-cad/base:config-log-to-stderr config))

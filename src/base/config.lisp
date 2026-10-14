@@ -34,6 +34,10 @@ bounded at 25 MiB.")
 
 PROJECT-ROOT: directory containing the project (logs and examples are relative to it).
 LOG-DIRECTORY: directory receiving the rotating log file.
+STATE-DIRECTORY: directory for what the program remembers between runs (the recent files), or NIL
+to remember nothing.
+DRAWINGS-DIRECTORY: folder where the file dialogs start when no drawing is being edited, or NIL for
+the user's documents folder.
 LOG-LEVEL: least severe level that is written.
 LOG-MAX-BYTES: size at which the log file is rotated.
 LOG-MAX-FILES: number of log files kept, including the current one.
@@ -47,6 +51,8 @@ WINDOW-HEIGHT: initial window height in logical pixels.
 INITIAL-FILE: drawing file to open at startup, or NIL."
   (project-root nil :type (or null pathname))
   (log-directory nil :type (or null pathname))
+  (state-directory nil :type (or null pathname))
+  (drawings-directory nil :type (or null pathname))
   (log-level :info :type keyword)
   (log-max-bytes +default-log-max-bytes+ :type integer)
   (log-max-files +default-log-max-files+ :type integer)
@@ -131,9 +137,11 @@ Order: BORBA_CAD_ROOT, the ASDF source directory of the borba-cad system, the cu
 (defun default-config (&key (project-root (detect-project-root)))
   "Return the default configuration.
 
-PROJECT-ROOT: the project directory; logs default to var/log/ below it."
+PROJECT-ROOT: the project directory; logs default to var/log/ and remembered state to var/state/
+below it."
   (make-config :project-root project-root
-               :log-directory (merge-pathnames "var/log/" project-root)))
+               :log-directory (merge-pathnames "var/log/" project-root)
+               :state-directory (merge-pathnames "var/state/" project-root)))
 
 (defun config-with-environment (config
                                 &optional (reader #'environment-variable))
@@ -147,6 +155,8 @@ READER: function from variable name to string or NIL; defaults to the process en
              (let ((value (funcall reader name)))
                (and value (plusp (length value)) value))))
       (let ((log-dir (value-of "BORBA_CAD_LOG_DIR"))
+            (state-dir (value-of "BORBA_CAD_STATE_DIR"))
+            (drawings-dir (value-of "BORBA_CAD_DRAWINGS_DIR"))
             (log-level (value-of "BORBA_CAD_LOG_LEVEL"))
             (max-bytes (value-of "BORBA_CAD_LOG_MAX_BYTES"))
             (max-files (value-of "BORBA_CAD_LOG_MAX_FILES"))
@@ -155,6 +165,10 @@ READER: function from variable name to string or NIL; defaults to the process en
             (font (value-of "BORBA_CAD_FONT")))
         (when log-dir
           (setf (config-log-directory result) (directory-pathname log-dir)))
+        (when state-dir
+          (setf (config-state-directory result) (directory-pathname state-dir)))
+        (when drawings-dir
+          (setf (config-drawings-directory result) (directory-pathname drawings-dir)))
         (when log-level
           (setf (config-log-level result) (parse-log-level log-level)))
         (when max-bytes
@@ -177,8 +191,8 @@ READER: function from variable name to string or NIL; defaults to the process en
                               arguments)
   "Apply core command-line options to a copy of CONFIG.
 Returns two values: the new configuration and the arguments that were not recognized, in order.
-Recognized: --log-dir DIR, --log-level LEVEL, --log-stderr, --log-sample EVENT=N, --font PATH,
---file PATH, --width N, --height N.
+Recognized: --log-dir DIR, --state-dir DIR, --drawings-dir DIR, --log-level LEVEL, --log-stderr,
+--log-sample EVENT=N, --font PATH, --file PATH, --width N, --height N.
 
 CONFIG: the configuration to start from.
 ARGUMENTS: list of argument strings."
@@ -194,6 +208,10 @@ ARGUMENTS: list of argument strings."
             do (let ((option (first queue)))
                  (cond ((string= option "--log-dir")
                         (setf (config-log-directory result) (directory-pathname (next-value option))))
+                       ((string= option "--state-dir")
+                        (setf (config-state-directory result) (directory-pathname (next-value option))))
+                       ((string= option "--drawings-dir")
+                        (setf (config-drawings-directory result) (directory-pathname (next-value option))))
                        ((string= option "--log-level")
                         (setf (config-log-level result) (parse-log-level (next-value option))))
                        ((string= option "--log-stderr")

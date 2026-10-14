@@ -36,6 +36,8 @@
    #:file-permissions
    #:set-file-permissions
    #:describe-os-error
+   #:directory-listing
+   #:make-directory
    #:utf-8-octets->string
    #:sync-output-stream
    #:rename-over

@@ -64,6 +64,8 @@
    #:copy-config
    #:config-project-root
    #:config-log-directory
+   #:config-state-directory
+   #:config-drawings-directory
    #:config-log-level
    #:config-log-max-bytes
    #:config-log-max-files

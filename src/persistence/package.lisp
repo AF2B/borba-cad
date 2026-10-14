@@ -18,7 +18,12 @@ numbers round-trip exactly, strict validation, and atomic saving.")
    #:drawing-file-path
    #:directory-of
    #:default-drawings-directory
+   #:user-directories-entry
+   #:load-recent-files
+   #:remember-recent-file
+   #:+recent-file-limit+
    #:*drawing-extension*
+   #:*known-drawing-extensions*
    #:save-drawing
    #:load-drawing
    #:format-double))

@@ -33,6 +33,8 @@
   "Usage: borba-cad [options]
   --file PATH            open a drawing at startup
   --log-dir DIR          directory of the rotating log (default: var/log in the project)
+  --state-dir DIR        directory of what is remembered between runs (default: var/state)
+  --drawings-dir DIR     folder where the file dialogs start (default: your documents folder)
   --log-level LEVEL      error, warn, info, debug or trace (default: info)
   --log-stderr           also print log lines on standard error
   --log-sample EVENT=N   write only one in N entries of an event
@@ -42,7 +44,8 @@
   --exit-after-demo      close the window when the demonstration ends
   --screenshot FILE      save the last frame of the demonstration as a PNG, then exit
   --help                 show this help
-Environment: BORBA_CAD_ROOT, BORBA_CAD_LOG_DIR, BORBA_CAD_LOG_LEVEL, BORBA_CAD_LOG_MAX_BYTES,
+Environment: BORBA_CAD_ROOT, BORBA_CAD_LOG_DIR, BORBA_CAD_STATE_DIR,
+BORBA_CAD_DRAWINGS_DIR, BORBA_CAD_LOG_LEVEL, BORBA_CAD_LOG_MAX_BYTES,
 BORBA_CAD_LOG_MAX_FILES, BORBA_CAD_LOG_STDERR, BORBA_CAD_LOG_SAMPLING, BORBA_CAD_FONT,
 BORBA_CAD_DEBUG (1: do not catch unexpected errors, for use with a debugger)."
   "Command-line help text.")

@@ -89,3 +89,67 @@ OCTETS: a vector of integers 0 to 255."
                                         :external-format (list :utf-8 :replacement replacement))))
     (and (not (find replacement text))
          text)))
+
+(defconstant +unix-epoch-universal-time+ 2208988800
+  "Seconds from 1900-01-01, where Common Lisp universal time begins, to 1970-01-01, where the
+operating system's file times begin.")
+
+(defparameter *current-and-parent-names* (list "." "..")
+  "The entries every folder lists that are not files.")
+
+(defun describe-entry (directory
+                       name)
+  "Return what a folder entry is as (name kind size modified), or NIL when the entry points
+nowhere (a broken symbolic link) or cannot be examined. A symbolic link shows what it points to.
+
+DIRECTORY: the folder that holds the entry, as a native name ending in a slash.
+NAME: the entry's name."
+  (handler-case
+      (let* ((stat (sb-posix:stat (concatenate 'string directory name)))
+             (mode (sb-posix:stat-mode stat))
+             (kind (cond ((sb-posix:s-isdir mode) :directory)
+                         ((sb-posix:s-isreg mode) :file)
+                         (t :other))))
+        (list name
+              kind
+              (and (eq kind :file) (sb-posix:stat-size stat))
+              (+ +unix-epoch-universal-time+ (sb-posix:stat-mtime stat))))
+    (sb-posix:syscall-error ()
+      nil)))
+
+(defun directory-listing (directory)
+  "Return the entries of the folder DIRECTORY, in no particular order, as a list of
+(name kind size modified), and a second value: NIL, or a sentence that says why the folder
+cannot be read. KIND is :directory, :file or :other (devices, sockets); SIZE is the byte count of
+a file and NIL otherwise; MODIFIED is a universal time.
+
+DIRECTORY: a pathname."
+  (let ((native (sb-ext:native-namestring (uiop:ensure-directory-pathname directory)))
+        (handle nil)
+        (entries '()))
+    (handler-case
+        (progn
+          (setf handle (sb-posix:opendir (sb-ext:native-namestring directory)))
+          (unwind-protect
+               (loop for entry = (sb-posix:readdir handle)
+                     until (sb-alien:null-alien entry)
+                     do (let ((name (sb-posix:dirent-name entry)))
+                          (unless (member name *current-and-parent-names* :test #'string=)
+                            (let ((description (describe-entry native name)))
+                              (when description
+                                (push description entries))))))
+            (sb-posix:closedir handle))
+          (values (nreverse entries) nil))
+      (sb-posix:syscall-error (condition)
+        (values nil (format nil "This folder cannot be read: ~a." (describe-os-error condition)))))))
+
+(defun make-directory (path)
+  "Create the folder PATH, which must not exist yet and whose parent must. Returns NIL on
+success, and otherwise a sentence that says why it could not be made.
+
+PATH: a pathname."
+  (handler-case
+      (progn (sb-posix:mkdir (sb-ext:native-namestring path) #o755)
+             nil)
+    (sb-posix:syscall-error (condition)
+      (format nil "The folder cannot be created: ~a." (describe-os-error condition)))))
