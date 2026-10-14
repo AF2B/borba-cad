@@ -1,0 +1,173 @@
+# Borba CAD — Architecture
+
+| | |
+|---|---|
+| Status | Accepted for implementation (human instruction of 2026-10-13: proceed to v1 without further gates) |
+| Inputs | [specification.md](specification.md) (approved, all recommended defaults), spike evidence in §12 |
+
+## 1. Principles
+
+- The core is **headless**: domain, geometry, persistence, observability, scene building, UI logic and application logic load and test with no window, GPU or foreign library (NFR-2).
+- Only `borba-cad/platform` touches SDL, OpenGL and FreeType. It consumes a plain data structure (the *draw list*) and produces plain data (*input events*).
+- Data first: entities are immutable values; every document change is an explicit, invertible *change set*.
+- Measure before optimizing. The first renderer is simple; optimization happens only against a baseline.
+
+## 2. Systems and packages
+
+One ASDF file (`borba-cad.asd`), seven systems. One package per module directory, named `borba-cad/<module>`, with explicit exports.
+
+| System | Packages (directory under `src/`) | Responsibility | Depends on |
+|---|---|---|---|
+| `borba-cad` (core) | `sbcl-support` | Everything SBCL-specific: monotonic clock, wall clock, heap/RSS, GC-event queue, environment, `fsync`/`rename`. | SBCL contribs `sb-posix` |
+| | `base` | Units, tolerances, conditions, configuration. | `sbcl-support` |
+| | `geometry` | Bounds, distances, clipping, dimension layout, text extents. Doubles only; no screen types. | `base` |
+| | `domain` | Entities, layers, drawing, change sets, history, picking, snapping, inspector property model. | `geometry`, `base` |
+| | `viewport` | World↔screen transform, zoom/pan, extents, adaptive grid. | `geometry`, `base` |
+| | `persistence` | `.bcad` reader/writer/validator, atomic save. | `domain`, `base` |
+| | `observability` | Structured log, rotation, timers, aggregators, GC/memory sampling, perf snapshot, log summary. | `sbcl-support`, `base` |
+| | `scene` | Draw list and the scene builder (drawing + viewport + selection + preview → draw list). | `domain`, `viewport`, `geometry` |
+| | `ui` | Immediate-mode widgets writing into the draw list; theme; text fields. | `scene`, `base` |
+| | `app` | Application state, input-event handling, tools, commands, file operations, scripted scenarios. | all of the above |
+| `borba-cad/platform` | `platform` | SDL window + GL context, GL renderer, font atlas, event translation, main loop, CLI, screenshot. | core, `sdl2`, `cl-opengl`, `cl-freetype2` |
+| `borba-cad/test-support` | `test-support` | Seeded PRNG, deterministic workload generator. | core |
+| `borba-cad/tests` | `tests` | Correctness suites (FiveAM), headless. | core, test-support, bench (for the harness tests), `fiveam` |
+| `borba-cad/platform-tests` | `platform-tests` | Tests of the window program: PNG, SDL event translation, fonts, the window loop's logic and, with a display, the renderer on real pixels. | platform, test-support, `fiveam` |
+| `borba-cad/bench` | `bench` | Headless benchmarks: scenarios, report writer, benchmark log. | core, test-support |
+| `borba-cad/bench-gui` | `bench-gui` | Windowed frame benchmark with the real renderer. | bench, platform |
+
+Dependency rule: arrows only point down the table. `app` never references `platform`; the loop in `platform` calls `app`.
+
+## 3. Dependencies (verified 2026-10-13)
+
+| Dependency | Used by | Dist version | License | Last upstream commit | Why / risk |
+|---|---|---|---|---|---|
+| `sdl2` (cl-sdl2) | platform | 20231021 | MIT | 2025-07-06 | Window, GL context, events. Runs over `sdl2-compat` 2.32.74 (SDL3 3.4.18). |
+| `cl-opengl` | platform | 20260101 | BSD | 2026-06-26 | OpenGL 3.3 core bindings. |
+| `cl-freetype2` | platform | 20241012 | BSD-3-Clause | 2024-02-10 | Glyph rasterization. Low upstream activity but stable; works with FreeType 2.14.3. Needs `gcc` and FreeType headers on first load (cffi-grovel). |
+| `fiveam` | tests | 20241012 | BSD-3-Clause | 2024-09-27 | Test framework (decision D4). |
+| Transitive | platform / tests | — | MIT / BSD / public domain | — | `cffi`, `cl-autowrap`, `cl-plus-c`, `alexandria`, `trivial-garbage`, `trivial-features`, `bordeaux-threads`, `trivial-channels`, `trivial-backtrace`, `asdf-flv`. |
+
+Native libraries: `libSDL2` (sdl2-compat), `libGL` (libglvnd/NVIDIA), `libfreetype`. SBCL contribs: `sb-posix` (core), `sb-introspect` (lint and the API reference generator only). The core has **no** third-party Lisp dependency. Dependencies are acquired from Quicklisp dist `2026-01-01`, pinned and verified by `make check-env` (decision D5).
+
+## 4. Key decisions
+
+| # | Decision | Why |
+|---|---|---|
+| A1 | Entities are immutable `defstruct` values with validating constructors; raw constructors are private. | Invariants hold by construction; undo is trivial; no aliasing bugs. |
+| A2 | Mutations are **change sets**: lists of `(id, before, after)`. Undo = apply the inverse. | One uniform mechanism for create, delete, move, edit (decision D1). No snapshots, bounded memory. |
+| A3 | Entity ids increase monotonically and are never reused; stacking order = id order. | Undo of a delete restores the original stacking position by id alone. |
+| A4 | CLOS generic functions for entity behavior (`entity-bounds`, `entity-pick-distance`, …) and for tools. | Open dispatch over six types and seven tools; adding a type is a documented checklist (H6). Closed sets (input events) use `etypecase`. |
+| A5 | Canonical unit: millimetre, `double-float` (decision D3). Display unit (mm/cm/m) is a drawing setting converted only in `base/units`. | One conversion site; integers such as 150 mm are exact. |
+| A6 | Text uses a **fixed-advance** layout: advance = `+text-advance-ratio+` × height (0.6 em). Domain bounds and rendering share the model. | Verified: Noto Sans Mono advances exactly 0.6 em (S3). Keeps `domain` independent of fonts and text bounds exact. |
+| A7 | The **draw list** is the renderer boundary: one `single-float` vertex array (x y u v r g b a) plus ordered commands (`:lines`, `:triangles`, `:text`). Tests read the draw list directly. | No recording-renderer duplicate; GPU-free integration tests. |
+| A8 | Screen space is logical pixels; the GL backend rasterizes text at logical size × display scale. | Fractional scaling handled in one place. |
+| A9 | Single-threaded main loop (SDL main thread). The GC hook runs in SBCL's `finalizer` thread and only does a lock-free push; the main thread drains it (S2). | No locks in the hot path; no logging from the hook. |
+| A10 | Persistence uses a small custom S-expression reader, not `cl:read`. | No code evaluation, no symbol interning, line/column errors, bounded exponents (NFR-7). |
+| A11 | No spatial index and no incremental redraw until the baseline demands them (spec §8). Pick and window selection scan with a bounds pre-filter. | Avoids speculative complexity; measured in W0–W3. |
+| A12 | SBCL-specific code lives in `sbcl-support` only. | One place to port or replace. |
+| A13 | Float traps stay enabled in Lisp code. S1 showed no trap in SDL/GL calls with defaults, so no masking is needed; the platform masks only if a trap is observed. | Keeps NaN/infinity detection in geometry. |
+| A14 | Layer deletion (only allowed when the layer is empty) clears undo history. Other layer edits are immediate and not undoable. | Prevents dangling layer references from undo; keeps D1 scope to entity edits. |
+| A15 | The demonstration is data: `*demo-script*` (rows such as `(:click 0 0)`) interpreted by `run-scenario-step`. The same script drives the demo, the tests and the shipped `examples/floor-plan.bcad`. | One definition; the example is always what the program itself draws. |
+| A16 | The window loop is a `session` plus `step-session`: everything between two batches of SDL events is a plain function of the session, testable without a window. | The scripted demo once stalled when a window received no event; the fix needed a regression test that does not open a window. |
+
+## 5. Data structures
+
+- **Geometry**: `bounds` (min-x min-y max-x max-y). Kernel functions take raw doubles.
+- **Entities** (`domain`): base `entity` (`id`, `layer-id`) included by `line-entity` (x1 y1 x2 y2), `rectangle-entity` (min-x min-y width height), `circle-entity` (center-x center-y radius), `polyline-entity` (flat `(simple-array double-float (*))` of x y pairs, `closed`), `text-entity` (x y string height), `dimension-entity` (x1 y1 x2 y2 offset text-height unit precision; its text and layout are computed once). Flat unboxed storage keeps the GC heap small (H2 lever); about 260 bytes per entity are retained (performance.md §3).
+- **Layer**: `id`, `name`, `color` (RGB bytes), `visible`, `locked`.
+- **Drawing**: layers (ordered vector + id table), entity store (id table + id-sorted vector), `current-layer-id`, grid settings, unit and display unit, default text height, `next-entity-id`, `next-layer-id`, `revision` (bumped on every mutation).
+- **Session / history** (`app`): undo and redo stacks of change sets (depth `+history-depth-limit+`), file path, saved revision (dirty = revision ≠ saved revision).
+- **Viewport**: world point at the canvas center + scale (pixels per mm) + logical canvas size + the window position of the canvas's top-left corner (`origin-x`, `origin-y`, so every coordinate is a window coordinate). Screen = origin + canvas size / 2 + (world − center) × scale, with y flipped; the center-relative form avoids cancellation at large coordinates.
+- **Draw list**: described in §7.
+
+## 6. Geometry (details in `geometry.md`)
+
+World space is right-handed with +Y up; angles are counter-clockwise radians. Kernel: point–segment distance and closest point, point–circle-outline distance, point–rectangle-outline distance, bounds algebra, Liang–Barsky segment clipping (so no far-off coordinate ever reaches single-float vertices), aligned-dimension layout (extension lines, dimension line, arrowheads, text anchor and angle), text extents. Tolerances are centralized in `base/tolerances.lisp` with written rationale; pixel-based pick and snap radii live in `app`.
+
+## 7. Rendering
+
+1. `scene:build-scene` walks visible entities (layer visible, bounds intersect the culled view), emits lines/triangles/text runs into a reused draw list (no per-frame consing in steady state), then grid, selection highlight, tool preview, snap marker.
+2. `ui` appends panel chrome, widgets and the performance overlay to the same draw list.
+3. `platform` uploads the vertex array once per frame (`glBufferSubData` through a pinned Lisp vector) and replays the commands with one shader: `color × texture(atlas, uv).r`. Solid shapes sample a white texel; glyphs sample the atlas. Lines are `GL_LINES` (1 px) with 4× MSAA.
+4. Circles are tessellated by on-screen radius (sagitta ≤ `+circle-chordal-error-pixels+`, segment count clamped to `[+circle-minimum-segments+, +circle-maximum-segments+]`). Entities smaller than one pixel draw as a 1-px dash.
+5. Text: glyph bitmaps are rasterized by FreeType per pixel size into a shelf-packed R8 atlas (sizes ≤ 32 px exact, larger sizes rounded up to a ×1.25 ladder), cached by (size, code point). Runs support rotation (aligned dimensions).
+6. The first renderer rebuilds the draw list whenever the scene is dirty (pan/zoom included). The baseline shows the CPU bottleneck the plan anticipated: with 100,000 entities all in view a frame takes about 30 ms, almost all of it in the scene build, while the GPU wait is under 1 ms (performance.md §4 and §6). The planned optimization, world-space retained buffers with a GPU view transform or a spatial index, is not done: it must start from a profile and be measured before and after (spec §6.4).
+
+## 8. Input and application model
+
+- Events (`app`): `pointer-event` (move/down/up, button, x, y, modifiers), `wheel-event`, `key-event`, `text-event`, `resize-event`, `quit-event`. `platform` translates SDL events; tests build events directly. The window loop (`platform/main.lisp`) is a `session` and `step-session` (decision A16). Synthetic SDL text events are **not** pushed through SDL (S1: `SDL_PushEvent` of text input crashes sdl2-compat); the translator is tested on locally built event structs.
+- `handle-event` routes: modal prompt → UI widgets → canvas (pan/zoom → active tool). Cursor world position passes through snapping: object snap (endpoint, center; radius in pixels) → grid snap → raw.
+- Tools (CLOS): select, line, rectangle, circle, polyline, text, dimension. Each exposes pointer-down/move/up, key, cancel and preview. Tools only *propose* change sets; `app` commits them to history.
+- Move-by-drag renders a preview offset and commits one change set on release (one undo step).
+- Errors are conditions (`borba-cad/base`): `invalid-entity`, `invalid-input`, `drawing-file-error`, `layer-error`, `configuration-error`. `app` converts them into status messages and log entries; nothing is swallowed.
+
+## 9. Persistence (`.bcad`, format version 1)
+
+UTF-8 text, one S-expression. Numbers are decimal or exponent doubles printed shortest-round-trip, so doubles survive bit-exactly. Strings use `\"` and `\\` escapes. Keywords are bare words.
+
+```lisp
+(drawing
+ (format-version 1)
+ (unit millimeter)
+ (display-unit meter)
+ (grid (spacing 100.0) (visible t) (snap t) (object-snap t))
+ (current-layer 0)
+ (next-layer-id 2)
+ (next-entity-id 4)
+ (layers
+  (layer (id 0) (name "0") (color 235 235 235) (visible t) (locked nil))
+  (layer (id 1) (name "walls") (color 255 120 80) (visible t) (locked nil)))
+ (entities
+  (line (id 1) (layer 1) (x1 0.0) (y1 0.0) (x2 5000.0) (y2 0.0))
+  (text (id 3) (layer 0) (x 100.0) (y 100.0) (height 250.0) (string "Living room"))))
+```
+
+The reader rejects unknown keys and entity types, wrong arity or types, non-finite or out-of-range numbers, duplicate ids, dangling layer references, a missing default layer, ids at or above `next-*-id`, and any `format-version` other than the supported one, each with line and column. A dimension stores its `unit` and `precision` next to its geometry. Exponents are bounded before conversion. `save-drawing` writes a sibling temporary file, flushes and `fsync`s it, then renames over the target; the temporary file is removed on failure. Migrations: version 1 is the first version, so none exist yet. The loader accepts exactly the supported version and refuses older and newer ones with `drawing-file-version-error`; the first format change must add an explicit, tested migration before the fields are parsed (development.md §7).
+
+## 10. Observability
+
+- **Log line**: `2026-10-13T21:00:00.123Z INFO geometry.pick duration_ms=0.412 entity_count=1500 result=success`. Wall-clock timestamp (UTC, ms), severity, event name, `key=value` pairs; values with spaces are quoted. Durations come from the monotonic clock (`clock-gettime`, ~16 ns per read, S2).
+- **Sinks**: rotating file under `var/log/` (default 5 files × 5 MiB, rotated by size; constants in `base/config`), optional stderr. One flush per entry.
+- **Levels** `error warn info debug trace`; per-event sampling (log 1 of N) for high-frequency events. Per-interval aggregators emit one entry per interval, named like the event (count, mean, p95, max), for `render.frame`, `input.event` (per event type) and `viewport.update`. Mouse moves are never logged individually, and at the default level neither are redraws or picks (those are debug-level). Benchmarks log one `bench.run` entry per scenario to `benchmark.log` next to the program's log.
+- **GC**: `sb-ext:*after-gc-hooks*` pushes `(timestamp, delta of sb-ext:*gc-run-time*)` onto a lock-free list; the main loop drains it into `gc.event`. `*gc-run-time*` has µs resolution and matched an independent stall detector (86.3 ms vs 85.9 ms); `*gc-real-time*` has only ms resolution and is not used.
+- **Memory**: `sb-kernel:dynamic-usage`, `sb-ext:get-bytes-consed`, RSS from `/proc/self/statm` (≈3.6 µs per read), sampled every `+memory-sample-interval-seconds+`.
+- **Overlay**: `telemetry-overlay-lines` (rolling frame stats, last operation durations, entity counts, GC, memory) drawn by `ui` on F3 or the Perf button; its measured cost is in performance.md §8.
+- **Headless inspection**: `make logs-tail`, `make logs-summary` (`observability` log parser; count/total/p50/p95/max per event).
+
+## 11. Testing, benchmarks, build
+
+- **Tests**: FiveAM suites mirror the packages (`tests/`, headless) and the window program (`platform-tests/`). Seeded SplitMix64 PRNG (own implementation, stable across SBCL versions) feeds the workload generator and randomized round-trip tests. Checks that need a display report `Skip` with the reason when there is none.
+- **Static gates** (`make compile` and `make lint`): zero WARNING/STYLE-WARNING on forced rebuild of every system; every exported symbol documented with each parameter named in its docstring (`sb-introspect`); ASCII-only sources, no tabs or trailing blanks, lines of at most 120 columns; no placeholder markers; no `ignore-errors`, `read-from-string`, `eval` or `cl:read`; one parameter per line in calls to the project's functions with three or more parameters (production code); the core's dependency closure contains no GUI/CFFI system.
+- **Benchmarks**: `make bench` runs W0–W3 headless (scene, pick, window selection, snap, edits, persistence, memory soak, instrumentation overhead with a control); `make bench-gui` adds real-GL frame timing with the GPU wait. Reports go to `bench/reports/` with an environment fingerprint and workload checksums; `make bench-baseline` records them in `bench/reports/baseline/`.
+- **Build**: ASDF, with fasls redirected to `build/fasl/`; `make compile` is the warning-free build of every system, `make build` adds the executable `build/borba-cad` (`save-lisp-and-die`, `:save-runtime-options t`); `make check` runs the whole gate.
+
+## 12. Spike evidence (2026-10-13, SBCL 2.6.9, Wayland, RTX 4060)
+
+| Spike | Result |
+|---|---|
+| S1 window/GPU/input | `sdl2` + `cl-opengl` open a Wayland window with a GL 3.3 core context (NVIDIA 615.71.09) over sdl2-compat. No float trap with default traps. 10,000 line segments rebuilt and uploaded every frame: CPU time p50 0.42 ms, p95 0.57 ms, max 78 ms (cause not yet attributed); swap with vsync p50 12.8 ms; frame interval p50 13.2 ms. UTF-8 text decoding by cl-sdl2 is correct. `SDL_PushEvent` of a wheel event works; of a text event it crashes sdl2-compat. `sdl2:with-init` runs its body on a dedicated "SDL2 Main Thread". |
+| S2 metrics | `clock-gettime` monotonic: 16 ns per read. `get-internal-real-time` ticks at ~1 ms (not used). GC hook fires in the `finalizer` thread; `*gc-run-time*` (µs) tracks real stalls; with ~110 MiB live (1.5 M objects) pauses reached 48–86 ms, with a small live set 1–2 ms. Default heap here is 1 GiB. |
+| S3 text | FreeType + GL atlas renders accented Latin glyphs correctly. Per-size rasterization is crisp; scaling one bitmap blurs. 100 glyphs rasterized and uploaded in 3.1 ms. Noto Sans Mono advance is exactly 0.6 em. |
+| S4 packaging | A 64 MB executable (no compression) reopens SDL, GL and FreeType at startup; first frame 79–95 ms after `main`. cl-freetype2's load-time `*library*` is a dangling pointer after `save-lisp-and-die`: the app creates its own handle at startup and the build clears `*library*`. `:save-runtime-options t` keeps the heap size and passes every CLI argument to `main`. |
+
+Spike code is archived in `spikes/` (not part of any system); its output is git-ignored.
+
+## 13. Deviations from the specification
+
+The specification stays as approved; these are the places where the implementation differs from it or
+makes it more precise.
+
+| Topic | Specification | Implementation |
+|---|---|---|
+| Selection and geometry events | `selection.pick`, `selection.window` | `geometry.pick`, `geometry.window-select`; also `entity.edit`, `history.undo`, `history.redo` |
+| Dimension | two points, offset, text height | also `unit` and `precision`, so its text does not change with the display unit |
+| Polyline in the inspector | every vertex editable | the first 6 vertices are listed for numeric editing (`+inspector-maximum-vertex-rows+`) |
+| Viewport | center, scale, size | also the window position of the canvas, so that all coordinates are window coordinates |
+| File load phases | read, parse, validate, build | read and parse; parsing includes validation and building |
+| GC pause | "pause" | CPU time of the collector per collection (`*gc-run-time*`), which equals the stop time with one working thread |
+| Frame GPU time | measured only with reliable timer queries | not measured with a vendor timer; the windowed benchmark reports the `glFinish` wait instead |
+| `make build` | strict build and executable | `make compile` is the strict build, `make build` adds the executable; `make check` is the whole gate |
+| `make docs` | tool chosen in Design | a Markdown reference generated from the docstrings with `sb-introspect` |
+| Migrations | explicit, tested migration for every format change | none yet: version 1 is the only version; the loader refuses any other |
+| Spikes | S1 to S4 before Design | done; evidence in §12 |
+
