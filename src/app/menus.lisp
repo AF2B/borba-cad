@@ -112,15 +112,32 @@ APP: the application."
                                     (operation-set-language app language))
                                   (eq language i18n:*language*)))))
 
+(defun more-menu-items (app)
+  "Return the choices of the menu of the other things the program does with files.
+
+APP: the application."
+  (flet ((choice (id label icon shortcut function)
+           (make-menu-item id
+                           label
+                           icon
+                           shortcut
+                           (lambda ()
+                             (close-menu app)
+                             (funcall function app))
+                           nil)))
+    (list (choice :import-dxf (i18n:tr "Import DXF...") :import "Ctrl+Shift+I" #'operation-import-dxf)
+          (choice :export-dxf (i18n:tr "Export DXF...") :export "Ctrl+Shift+E" #'operation-export-dxf))))
+
 (defun menu-items (app
                    kind)
   "Return the choices of the menu KIND, with NIL between groups.
 
 APP: the application.
-KIND: :draw or :language."
+KIND: :draw, :language or :more."
   (ecase kind
     (:draw (draw-menu-items app))
-    (:language (language-menu-items app))))
+    (:language (language-menu-items app))
+    (:more (more-menu-items app))))
 
 (defun selectable-items (items)
   "Return the choices among ITEMS, without the NILs that separate groups.
@@ -134,7 +151,7 @@ ITEMS: a list of menu items and NILs."
   "Open the menu KIND hanging from the button ANCHOR, with the keyboard on the choice in force.
 
 APP: the application.
-KIND: :draw or :language.
+KIND: :draw, :language or :more.
 ANCHOR: id of the button."
   (let* ((items (selectable-items (menu-items app kind)))
          (current (position-if #'menu-item-current items)))
@@ -149,7 +166,7 @@ ANCHOR: id of the button."
   "Open the menu KIND, or close it when it is already open.
 
 APP: the application.
-KIND: :draw or :language.
+KIND: :draw, :language or :more.
 ANCHOR: id of the button it hangs from."
   (if (and (app-menu app) (eq (menu-kind (app-menu app)) kind))
       (close-menu app)

@@ -517,7 +517,8 @@ HOVER: true when the pointer is over it."
                         (- (+ x (widget-width widget)) +padding+ (text-width-pixels shortcut +small-font-pixels+))
                         (baseline-for widget +small-font-pixels+)
                         +small-font-pixels+
-                        (scene:theme-text-faint theme))))))
+                        (scene:theme-text-faint theme)
+                        :font :ui)))))
 
 (defun draw-label-widget (list
                           widget

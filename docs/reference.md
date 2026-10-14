@@ -678,12 +678,26 @@ under the pointer and the prompt of the tool show again. Returns true when it wa
 - `APP`: the application.
 - `NOW`: the monotonic time to judge by, in nanoseconds.
 
+### `export-dxf-from-app` (function)
+
+```lisp
+(export-dxf-from-app app path-text)
+```
+
+Save the drawing as a DXF file at PATH-TEXT (.dxf is added to a name without an extension) and say what
+changed shape in the writing. On failure the previous file is untouched and the reason is shown. Returns
+true on success.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
+
 ### `file-dialog` (type)
 
 The dialog where the user chooses a drawing to open or a place and a name to save to.
 
 - `MODE`: :open or :save.
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
+- `PURPOSE`: :drawing for a drawing of the program, or :dxf to import or export a DXF file.
 - `DIRECTORY`: the folder shown, as a directory pathname.
 - `ENTRIES`: every entry of that folder, folders first, each group by name.
 - `SELECTED`: the name of the selected entry, or NIL.
@@ -949,6 +963,19 @@ NIL.
 
 - `APP`: the application.
 
+### `import-dxf-into-app` (function)
+
+```lisp
+(import-dxf-into-app app path-text)
+```
+
+Read the DXF file at PATH-TEXT and make a new drawing of it. A file that does not say the unit of its
+numbers is followed by a question, and the import goes on when it is answered. On failure the current
+drawing is untouched and the reason is shown. Returns true on success, or when the question was asked.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
+
 ### `key-event` (type)
 
 A key press or release.
@@ -1103,7 +1130,7 @@ Create the tool named by KIND.
 
 An open drop-down menu.
 
-- `KIND`: :draw or :language.
+- `KIND`: :draw, :language or :more.
 - `ANCHOR`: id of the button the menu hangs from.
 - `HIGHLIGHT`: position, among the choices, of the one the keyboard is on.
 
@@ -1130,7 +1157,7 @@ down selects the first entry and going up the last.
 ### `open-choice-prompt` (function)
 
 ```lisp
-(open-choice-prompt app title message choices)
+(open-choice-prompt app title message choices &optional message-lines)
 ```
 
 Open a modal prompt with a row of buttons. Each function runs after the prompt closes.
@@ -1139,6 +1166,7 @@ Open a modal prompt with a row of buttons. Each function runs after the prompt c
 - `TITLE`: heading.
 - `MESSAGE`: explanation under the heading.
 - `CHOICES`: list of (label . function-or-nil); the first is chosen by Enter, the last by Escape.
+- `MESSAGE-LINES`: how many lines the message may take, or NIL for the usual three.
 
 ### `open-directory` (function)
 
@@ -1155,7 +1183,7 @@ Returns true when the folder was shown.
 ### `open-file-dialog` (function)
 
 ```lisp
-(open-file-dialog app mode &optional continuation)
+(open-file-dialog app mode &optional continuation (purpose drawing))
 ```
 
 Open the file dialog to choose a drawing to open or a place and a name to save to.
@@ -1163,6 +1191,7 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 - `APP`: the application.
 - `MODE`: :open or :save.
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
+- `PURPOSE`: :drawing for a drawing of the program, or :dxf to import or export a DXF file.
 
 ### `open-menu` (function)
 
@@ -1173,7 +1202,7 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 Open the menu KIND hanging from the button ANCHOR, with the keyboard on the choice in force.
 
 - `APP`: the application.
-- `KIND`: :draw or :language.
+- `KIND`: :draw, :language or :more.
 - `ANCHOR`: id of the button.
 
 ### `open-parent-directory` (function)
@@ -1297,6 +1326,27 @@ Set one property of one entity to an already interpreted value.
 - `ENTITY-ID`: id of the entity.
 - `KEY`: property key from the entity's property list.
 - `VALUE`: the new value (double-float, string, integer, boolean or unit keyword).
+
+### `operation-export-dxf` (function)
+
+```lisp
+(operation-export-dxf app)
+```
+
+Open the dialog where the user picks a folder and a name, and export the drawing there as a DXF file.
+
+- `APP`: the application.
+
+### `operation-import-dxf` (function)
+
+```lisp
+(operation-import-dxf app)
+```
+
+Open the dialog where the user finds a DXF file to import as a new drawing, after offering to save the
+current one.
+
+- `APP`: the application.
 
 ### `operation-new` (function)
 
@@ -1581,6 +1631,7 @@ A modal question.
 - `EDIT`: the EDIT-STATE of the text field, for :text prompts.
 - `CHOICES`: for :text, a list of (label . function) with the accept function first; for :choice, the buttons.
 The accept function of a :text prompt receives the typed string.
+- `MESSAGE-LINES`: how many lines the message may take before it is cut, or NIL for the usual three.
 
 ### `prompt-choices` (function)
 
@@ -1898,7 +1949,7 @@ sets the direction of its baseline. The content is asked for when the button is 
 Open the menu KIND, or close it when it is already open.
 
 - `APP`: the application.
-- `KIND`: :draw or :language.
+- `KIND`: :draw, :language or :more.
 - `ANCHOR`: id of the button it hangs from.
 
 ### `tool` (type)
@@ -3010,6 +3061,10 @@ Number of polyline vertices that the inspector lists for numeric editing.
 ### `+maximum-dimension-precision+` (constant)
 
 Largest number of decimals shown in a dimension text.
+
+### `+maximum-layer-name-length+` (constant)
+
+Longest accepted layer name.
 
 ### `+maximum-polygon-sides+` (constant)
 
@@ -5144,6 +5199,309 @@ Return true when VALUE is an acceptable grid spacing in millimetres.
 
 - `VALUE`: any object.
 
+## BORBA-CAD/DXF
+
+Import and export of drawings in the ASCII DXF format: a reader of the groups of a DXF
+file, the mapping of its entities to the entities of a drawing with a report of what could not be
+mapped, and a writer of a DXF file of the oldest widely read version (AutoCAD R12).
+
+### `+maximum-groups+` (constant)
+
+Most groups (pairs of lines) a DXF file may have: well above the largest drawing the program is meant
+to open, and enough to bound the memory a file can ask for.
+
+### `aci->rgb` (function)
+
+```lisp
+(aci->rgb index)
+```
+
+Return the color of an AutoCAD color index as an RGB of the domain, or NIL for an index that has
+none (0 and 256 mean the color of the block or of the layer, and a negative one is a layer that is off,
+whose color is that of its absolute value).
+
+- `INDEX`: an integer.
+
+### `decode-dxf-octets` (function)
+
+```lisp
+(decode-dxf-octets octets)
+```
+
+Return the text of a DXF file given its bytes: UTF-8 when they are well-formed UTF-8 (which pure
+ASCII is), and Windows Western European otherwise, the code page that DXF files from Brazil have
+been written in. Signals DRAWING-FILE-ERROR for a binary DXF file.
+
+- `OCTETS`: the bytes of the file.
+
+### `document-units` (function)
+
+```lisp
+(document-units document)
+```
+
+Return the unit in which the drawing of DOCUMENT is made, as :millimeter, :centimeter or :meter,
+:inch or :foot, or NIL when the file does not say (no $INSUNITS, or 0, which is unitless) or says one
+that the program does not take.
+
+- `DOCUMENT`: a DXF-DOCUMENT.
+
+### `dxf-document` (type)
+
+What a DXF file holds that a drawing is made from.
+
+- `HEADER`: the header variables, as records.
+- `LAYERS`: the layer records of the layer table.
+- `BLOCKS`: the blocks, as DXF-BLOCK values.
+- `ENTITIES`: the entity records of the entities section, in order.
+
+### `dxf-document-blocks` (function)
+
+```lisp
+(dxf-document-blocks instance)
+```
+
+(undocumented)
+
+### `dxf-document-entities` (function)
+
+```lisp
+(dxf-document-entities instance)
+```
+
+(undocumented)
+
+### `dxf-document-header` (function)
+
+```lisp
+(dxf-document-header instance)
+```
+
+(undocumented)
+
+### `dxf-document-layers` (function)
+
+```lisp
+(dxf-document-layers instance)
+```
+
+(undocumented)
+
+### `dxf-report` (type)
+
+What an import did and could not do.
+
+- `IMPORTED`: hash table from the kind of entity to how many were made.
+- `IGNORED`: hash table from the DXF type of an entity to how many were left out.
+- `NOTES`: the sentences that say what was approximated, moved or refused, newest first.
+- `PROBLEMS`: the reasons that entities could not be made, newest first.
+
+### `export-drawing-text` (function)
+
+```lisp
+(export-drawing-text drawing)
+```
+
+Return the DXF text of DRAWING, and a DXF-REPORT of how many entities of each kind were written and
+what changed shape in the writing.
+
+- `DRAWING`: the drawing.
+
+### `export-summary` (function)
+
+```lisp
+(export-summary report)
+```
+
+Return what an export did as a sentence or two for the user.
+
+- `REPORT`: the DXF-REPORT of the export.
+
+### `import-document` (function)
+
+```lisp
+(import-document document &key units)
+```
+
+Make a drawing from a DXF-DOCUMENT. Returns two values: the drawing and the DXF-REPORT that says how
+many entities of each kind were made, which DXF types were left out, and what was approximated.
+
+- `DOCUMENT`: the DXF-DOCUMENT.
+- `UNITS`: the unit of the numbers in the file as :millimeter, :centimeter, :meter, :inch or :foot, or NIL to
+take the one the file says, and millimetres when it says none.
+
+### `load-dxf` (function)
+
+```lisp
+(load-dxf path &key units)
+```
+
+Read the DXF file at PATH and make a drawing from it. Returns the drawing and the DXF-REPORT of what was
+imported and left out. Signals a DRAWING-FILE-ERROR subclass on any problem.
+
+- `PATH`: pathname of the file.
+- `UNITS`: the unit of its numbers (:millimeter, :centimeter, :meter, :inch or :foot), or NIL to take the one it
+says, and millimetres when it says none.
+
+### `make-dxf-report` (function)
+
+```lisp
+(make-dxf-report)
+```
+
+(undocumented)
+
+### `parse-dxf-text` (function)
+
+```lisp
+(parse-dxf-text text)
+```
+
+Read the text of an ASCII DXF file and return the DXF-DOCUMENT that has what a drawing is made
+from: the header variables, the layers, the blocks and the entities. Signals DRAWING-FILE-ERROR,
+naming the line, when the text is not a DXF file.
+
+- `TEXT`: the text of the file.
+
+### `read-dxf-file` (function)
+
+```lisp
+(read-dxf-file path)
+```
+
+Read and parse the ASCII DXF file at PATH, and return its DXF-DOCUMENT. Signals a DRAWING-FILE-ERROR
+subclass when the file cannot be read or is not a DXF file.
+
+- `PATH`: pathname of the file.
+
+### `record` (type)
+
+One record of a DXF file: group 0 gives its type, and the groups after it, up to the next group 0, its
+data.
+
+- `TYPE`: the type, a string such as "LINE", or the name of a header variable such as "$INSUNITS".
+- `PAIRS`: the groups after it, as (code . value) conses with the value as a string, in order.
+- `LINE`: the line of the file the record starts on.
+- `CHILDREN`: for a polyline, its vertex records, in order.
+
+### `record-children` (function)
+
+```lisp
+(record-children instance)
+```
+
+(undocumented)
+
+### `record-line` (function)
+
+```lisp
+(record-line instance)
+```
+
+(undocumented)
+
+### `record-pairs` (function)
+
+```lisp
+(record-pairs instance)
+```
+
+(undocumented)
+
+### `record-type` (function)
+
+```lisp
+(record-type instance)
+```
+
+(undocumented)
+
+### `report-ignored` (function)
+
+```lisp
+(report-ignored report)
+```
+
+Return how many entities of each DXF type were left out, as an alist from the type name to the
+count, the most frequent first.
+
+- `REPORT`: a DXF-REPORT.
+
+### `report-ignored-total` (function)
+
+```lisp
+(report-ignored-total report)
+```
+
+Return how many entities were left out.
+
+- `REPORT`: a DXF-REPORT.
+
+### `report-imported` (function)
+
+```lisp
+(report-imported report)
+```
+
+Return how many entities of each kind were made, as an alist from the kind keyword to the count.
+
+- `REPORT`: a DXF-REPORT.
+
+### `report-imported-total` (function)
+
+```lisp
+(report-imported-total report)
+```
+
+Return how many entities were made.
+
+- `REPORT`: a DXF-REPORT.
+
+### `report-notes` (function)
+
+```lisp
+(report-notes report)
+```
+
+Return the sentences that say what was approximated, moved or refused, oldest first.
+
+- `REPORT`: a DXF-REPORT.
+
+### `report-summary` (function)
+
+```lisp
+(report-summary report)
+```
+
+Return the report as a few sentences for the user: how many entities were made, which DXF types
+were left out and how many of each, and the notes.
+
+- `REPORT`: a DXF-REPORT.
+
+### `rgb->aci` (function)
+
+```lisp
+(rgb->aci color)
+```
+
+Return the index of the color of the AutoCAD color index that is nearest to COLOR. White stays
+7, which is white on a dark background and black on a light one, as the program draws.
+
+- `COLOR`: an RGB of the domain.
+
+### `save-dxf` (function)
+
+```lisp
+(save-dxf drawing path)
+```
+
+Save DRAWING as an ASCII DXF file of version R12 at PATH, atomically as drawings are saved. Returns
+three values: the saved pathname, the properties of the save (see PERSIST:SAVE-TEXT-FILE) and the
+DXF-REPORT of what was written and what changed shape.
+
+- `DRAWING`: the drawing.
+- `PATH`: destination pathname.
+
 ## BORBA-CAD/GEOMETRY
 
 Computational geometry on world coordinates (double-float millimetres).
@@ -7043,6 +7401,17 @@ Most drawings the recent list remembers.
 
 The newest format version: the one this program writes, and the newest it reads.
 
+### `check-open-source` (function)
+
+```lisp
+(check-open-source file)
+```
+
+Signal DRAWING-FILE-IO-ERROR, with a reason a person can act on, when FILE cannot be opened as
+a drawing: it does not exist, is a folder or another kind of file, or may not be read.
+
+- `FILE`: the pathname to open.
+
 ### `clean-path-text` (function)
 
 ```lisp
@@ -7097,6 +7466,21 @@ as it is, for the caller to refuse.
 Return DRAWING serialized as a string.
 
 - `DRAWING`: the drawing.
+
+### `file-path-with-extension` (function)
+
+```lisp
+(file-path-with-extension text extension known-extensions)
+```
+
+Return the pathname of the file that TEXT names. A name that does not end in one of
+KNOWN-EXTENSIONS gets EXTENSION after it (plan becomes plan.bcad and v1.2 final becomes
+v1.2 final.bcad); a trailing dot is dropped first. A path that names a folder is returned as it is,
+for the caller to refuse.
+
+- `TEXT`: a file name as typed by the user.
+- `EXTENSION`: the extension to add, without the dot.
+- `KNOWN-EXTENSIONS`: the extensions that need nothing added.
 
 ### `format-double` (function)
 
@@ -7179,6 +7563,16 @@ subclass naming the line and column of the first problem. Nothing is evaluated.
 - `TEXT`: the file contents.
 - `PATH`: file name used in error messages, or NIL.
 
+### `read-file-octets` (function)
+
+```lisp
+(read-file-octets file)
+```
+
+Read a whole file into a vector of bytes, enforcing the size limit.
+
+- `FILE`: pathname of an existing file.
+
 ### `remember-recent-file` (function)
 
 ```lisp
@@ -7198,12 +7592,8 @@ entries beyond the limit. Returns true when the list was written, and NIL when i
 (save-drawing drawing path &key before-commit)
 ```
 
-Save DRAWING atomically: write a sibling temporary file, flush it to disk, then rename it
-over PATH. A failure at any point leaves any existing file at PATH untouched and removes the
-temporary file. When PATH is a symbolic link the file it points to is replaced, not the link,
-and a replaced file keeps its permissions. Returns two values: the saved pathname and a
-property list with :bytes, :serialize-nanoseconds (including the disk flush) and
-:rename-nanoseconds. Signals DRAWING-FILE-IO-ERROR on failure.
+Save DRAWING atomically in the .bcad format: see SAVE-TEXT-FILE for how, and for what is
+returned. Signals DRAWING-FILE-IO-ERROR on failure.
 
 - `DRAWING`: the drawing to save.
 - `PATH`: destination pathname.
@@ -7222,6 +7612,25 @@ written, and NIL when it could not be (or STATE-DIRECTORY is NIL, or the text ha
 - `STATE-DIRECTORY`: the folder where the program keeps what it remembers, or NIL.
 - `NAME`: the name of the setting, with no `=` in it.
 - `VALUE`: its value.
+
+### `save-text-file` (function)
+
+```lisp
+(save-text-file path writer &key before-commit (external-format utf-8))
+```
+
+Write a text file atomically: write a sibling temporary file, flush it to disk, then rename it
+over PATH. A failure at any point leaves any existing file at PATH untouched and removes the
+temporary file. When PATH is a symbolic link the file it points to is replaced, not the link,
+and a replaced file keeps its permissions. Returns two values: the saved pathname and a
+property list with :bytes, :serialize-nanoseconds (including the disk flush) and
+:rename-nanoseconds. Signals DRAWING-FILE-IO-ERROR on failure.
+
+- `PATH`: destination pathname.
+- `WRITER`: function of the output stream that writes the contents.
+- `BEFORE-COMMIT`: optional function called with the temporary pathname just before the rename;
+a test seam for injecting failures.
+- `EXTERNAL-FORMAT`: the encoding of the file.
 
 ### `user-directories-entry` (function)
 
@@ -7798,6 +8207,17 @@ Return a reading of the monotonic clock in nanoseconds.
 
 The origin is arbitrary (system boot), so only differences are meaningful.
 CL:GET-INTERNAL-REAL-TIME is not used: it advances in ~1 ms ticks on SBCL 2.6.9.
+
+### `octets->string` (function)
+
+```lisp
+(octets->string octets external-format)
+```
+
+Decode a vector of bytes as text in an encoding.
+
+- `OCTETS`: the bytes.
+- `EXTERNAL-FORMAT`: :utf-8 or :cp1252 (Windows Western European).
 
 ### `path-accessible-p` (function)
 

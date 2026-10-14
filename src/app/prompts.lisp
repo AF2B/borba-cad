@@ -29,18 +29,21 @@ ON-ACCEPT: function of one argument, the typed string."
 (defun open-choice-prompt (app
                            title
                            message
-                           choices)
+                           choices
+                           &optional message-lines)
   "Open a modal prompt with a row of buttons. Each function runs after the prompt closes.
 
 APP: the application.
 TITLE: heading.
 MESSAGE: explanation under the heading.
-CHOICES: list of (label . function-or-nil); the first is chosen by Enter, the last by Escape."
+CHOICES: list of (label . function-or-nil); the first is chosen by Enter, the last by Escape.
+MESSAGE-LINES: how many lines the message may take, or NIL for the usual three."
   (setf (app-prompt app) (make-prompt :choice
                                       title
                                       message
                                       nil
-                                      choices)
+                                      choices
+                                      message-lines)
         (app-menu app) nil
         (app-focus app) :prompt)
   (app-request-redraw app))

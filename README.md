@@ -113,6 +113,26 @@ file cannot be opened or saved the dialog stays open and says why. The recent li
 `var/state/recent-files.txt` (`--state-dir`); the dialog starts in the folder of the open drawing,
 or in your documents folder (`--drawings-dir`).
 
+## DXF
+
+The More button of the title bar (three dots) has **Import DXF** (`Ctrl+Shift+I`) and **Export DXF**
+(`Ctrl+Shift+E`), which open the file dialog for `.dxf` files.
+
+- **Import** reads an ASCII DXF of any version as a new drawing that is not saved yet: layers (with name,
+  color, off, locked), lines, circles, arcs, polylines (arc segments become short straight ones), texts
+  and multiline texts, ellipses, filled shapes (as outlines), blocks (inserts are expanded, scaled,
+  turned, mirrored, repeated, nested) and dimensions (as what their block draws). A file that does not say
+  its unit asks for it; one far from the origin (survey coordinates) is moved to it. What the program
+  cannot draw (splines, hatches, points, leaders, images, 3D) and what is in paper space is left out, and
+  a report says how many of each; it also goes to the log.
+- **Export** writes DXF version R12, which every program reads: lines, circles, arcs, texts and polylines
+  as themselves; rectangles, polygons and ellipses as closed polylines; dimensions as lines, arrowheads
+  and text; layers with their state and the nearest of AutoCAD's 256 colors. The status bar says what
+  changed shape.
+
+The `.bcad` file stays the program's own format: it keeps rectangles, polygons, ellipses and dimensions as
+what they are.
+
 ## Observability
 
 Every run writes `var/log/borba-cad.log` (rotated, 5 files of 5 MiB by default), one line per event:
@@ -140,6 +160,7 @@ unavailable, never estimated.
 ## Known limits
 
 Tried on Linux x86_64 with SBCL only (the Windows folder and CI workflow are written and have never
-run); single-line unrotated text, axis-aligned rectangles and aligned linear dimensions only; window
-selection only (no crossing selection); no copy and paste of entities, grips, DXF, scripting console
-or printing. No `LICENSE` file yet: the author has not chosen one.
+run); single-line text, axis-aligned rectangles and aligned linear dimensions only; DXF import leaves out
+splines, hatches, points, leaders and paper space, and export writes R12 (an ellipse, a polygon and a
+dimension leave as polylines, lines and text); no scripting console or printing yet. No `LICENSE` file
+yet: the author has not chosen one.

@@ -31,7 +31,7 @@ BLOCKED: true while a prompt covers the dialog."
                           width
                           (browser-layout-height layout))
           (make-label :dialog-title
-                      (if (eq (file-dialog-mode dialog) :open) (i18n:tr "Open a drawing") (i18n:tr "Save drawing as"))
+                      (dialog-title dialog)
                       (+ x +browser-inset+)
                       y
                       (- width (* 2 +browser-inset+) +browser-control-height+)
@@ -535,11 +535,28 @@ BLOCKED: true while a prompt covers the dialog."
                            buttons-y
                            +accept-button-width+
                            +action-button-height+
-                           :label (if open-p (i18n:tr "Open") (i18n:tr "Save"))
+                           :label (dialog-accept-label dialog)
                            :variant :primary
                            :enabled (accept-enabled-p dialog)
                            :blocked blocked
                            :action (lambda () (accept-dialog app)))))))
+
+(defun dialog-title (dialog)
+  "Return the heading of the dialog: what it asks the user to do.
+
+DIALOG: the file dialog."
+  (if (eq :dxf (file-dialog-purpose dialog))
+      (if (eq (file-dialog-mode dialog) :open) (i18n:tr "Import a DXF file") (i18n:tr "Export as a DXF file"))
+      (if (eq (file-dialog-mode dialog) :open) (i18n:tr "Open a drawing") (i18n:tr "Save drawing as"))))
+
+(defun dialog-accept-label (dialog)
+  "Return the text of the button that does what the dialog is for.
+
+DIALOG: the file dialog."
+  (cond ((eq :dxf (file-dialog-purpose dialog))
+         (if (eq (file-dialog-mode dialog) :open) (i18n:tr "Import") (i18n:tr "Export")))
+        ((eq (file-dialog-mode dialog) :open) (i18n:tr "Open"))
+        (t (i18n:tr "Save"))))
 
 (defun file-dialog-widgets (app
                             blocked)

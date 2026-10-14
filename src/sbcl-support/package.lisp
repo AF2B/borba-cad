@@ -25,6 +25,7 @@
    #:environment-variable
    #:command-line-arguments
    #:process-id
+   #:octets->string
    #:lisp-version-string
    #:kernel-release-string
    #:cpu-model-string

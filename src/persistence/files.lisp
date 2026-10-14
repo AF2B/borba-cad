@@ -47,20 +47,22 @@ TARGET: the pathname to save to."
                 (not (sbcl:path-accessible-p target :write)))
            (io-failure target "cannot be saved: the file is read-only")))))
 
-(defun save-drawing (drawing
-                     path
-                     &key before-commit)
-  "Save DRAWING atomically: write a sibling temporary file, flush it to disk, then rename it
+(defun save-text-file (path
+                       writer
+                       &key before-commit
+                            (external-format :utf-8))
+  "Write a text file atomically: write a sibling temporary file, flush it to disk, then rename it
 over PATH. A failure at any point leaves any existing file at PATH untouched and removes the
 temporary file. When PATH is a symbolic link the file it points to is replaced, not the link,
 and a replaced file keeps its permissions. Returns two values: the saved pathname and a
 property list with :bytes, :serialize-nanoseconds (including the disk flush) and
 :rename-nanoseconds. Signals DRAWING-FILE-IO-ERROR on failure.
 
-DRAWING: the drawing to save.
 PATH: destination pathname.
+WRITER: function of the output stream that writes the contents.
 BEFORE-COMMIT: optional function called with the temporary pathname just before the rename;
-a test seam for injecting failures."
+a test seam for injecting failures.
+EXTERNAL-FORMAT: the encoding of the file."
   (let* ((target (sbcl:true-path (merge-pathnames path)))
          (temporary (temporary-path-for target))
          (permissions (and (eq :file (sbcl:file-kind target))
@@ -75,8 +77,8 @@ a test seam for injecting failures."
                (with-open-file (stream temporary
                                        :direction :output
                                        :if-exists :error
-                                       :external-format :utf-8)
-                 (write-drawing drawing stream)
+                                       :external-format external-format)
+                 (funcall writer stream)
                  (sbcl:sync-output-stream stream))
                (setf written (sbcl:monotonic-nanoseconds))
                (when permissions
@@ -97,6 +99,20 @@ a test seam for injecting failures."
             (list :bytes (sbcl:file-size-bytes target)
                   :serialize-nanoseconds (- written started)
                   :rename-nanoseconds (- (sbcl:monotonic-nanoseconds) written)))))
+
+(defun save-drawing (drawing
+                     path
+                     &key before-commit)
+  "Save DRAWING atomically in the .bcad format: see SAVE-TEXT-FILE for how, and for what is
+returned. Signals DRAWING-FILE-IO-ERROR on failure.
+
+DRAWING: the drawing to save.
+PATH: destination pathname.
+BEFORE-COMMIT: optional function called with the temporary pathname just before the rename;
+a test seam for injecting failures."
+  (save-text-file path
+                  (lambda (stream) (write-drawing drawing stream))
+                  :before-commit before-commit))
 
 (defun check-open-source (file)
   "Signal DRAWING-FILE-IO-ERROR, with a reason a person can act on, when FILE cannot be opened as
@@ -138,6 +154,29 @@ FILE: pathname of an existing file."
     (stream-error (condition)
       (io-failure file
                   "is not a text file that Borba CAD can read (it must be UTF-8 text): ~a"
+                  (sbcl:describe-os-error condition)))))
+
+(defun read-file-octets (file)
+  "Read a whole file into a vector of bytes, enforcing the size limit.
+
+FILE: pathname of an existing file."
+  (handler-case
+      (let ((size (sbcl:file-size-bytes file)))
+        (when (> size +maximum-file-bytes+)
+          (io-failure file
+                      "is larger than the ~d MiB limit"
+                      (floor +maximum-file-bytes+ (* 1024 1024))))
+        (with-open-file (stream file :element-type '(unsigned-byte 8))
+          (let* ((buffer (make-array size :element-type '(unsigned-byte 8)))
+                 (count (read-sequence buffer stream)))
+            (if (= count size)
+                buffer
+                (subseq buffer 0 count)))))
+    (base:drawing-file-error (condition)
+      (error condition))
+    (file-error (condition)
+      (io-failure file
+                  "cannot be opened: ~a"
                   (sbcl:describe-os-error condition)))))
 
 (defun load-drawing (path)

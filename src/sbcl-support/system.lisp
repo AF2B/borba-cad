@@ -111,3 +111,11 @@ COUNT: how many calls to show."
     (sb-debug:print-backtrace :count count
                               :stream stream)))
 
+
+(defun octets->string (octets
+                       external-format)
+  "Decode a vector of bytes as text in an encoding.
+
+OCTETS: the bytes.
+EXTERNAL-FORMAT: :utf-8 or :cp1252 (Windows Western European)."
+  (sb-ext:octets-to-string octets :external-format external-format))

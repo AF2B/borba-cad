@@ -148,6 +148,31 @@ TEXT: a file name as typed by the user."
         path
         (merge-pathnames path (uiop:getcwd)))))
 
+(defun file-path-with-extension (text
+                                 extension
+                                 known-extensions)
+  "Return the pathname of the file that TEXT names. A name that does not end in one of
+KNOWN-EXTENSIONS gets EXTENSION after it (plan becomes plan.bcad and v1.2 final becomes
+v1.2 final.bcad); a trailing dot is dropped first. A path that names a folder is returned as it is,
+for the caller to refuse.
+
+TEXT: a file name as typed by the user.
+EXTENSION: the extension to add, without the dot.
+KNOWN-EXTENSIONS: the extensions that need nothing added."
+  (let* ((path (native-path text))
+         (type (pathname-type path)))
+    (cond ((null (pathname-name path))
+           path)
+          ((and type (member type known-extensions :test #'string-equal))
+           path)
+          ((and type (plusp (length type)))
+           (make-pathname :name (concatenate 'string (pathname-name path) "." type)
+                          :type extension
+                          :defaults path))
+          (t
+           (make-pathname :type extension
+                          :defaults path)))))
+
 (defun drawing-file-path (text)
   "Return the pathname of the drawing file that TEXT names. A name that does not end in an
 extension that the program writes gets .bcad after it (plan becomes plan.bcad and v1.2 final
@@ -155,19 +180,9 @@ becomes v1.2 final.bcad); a trailing dot is dropped first. A path that names a f
 as it is, for the caller to refuse.
 
 TEXT: a file name as typed by the user."
-  (let* ((path (native-path text))
-         (type (pathname-type path)))
-    (cond ((null (pathname-name path))
-           path)
-          ((and type (member type *known-drawing-extensions* :test #'string-equal))
-           path)
-          ((and type (plusp (length type)))
-           (make-pathname :name (concatenate 'string (pathname-name path) "." type)
-                          :type *drawing-extension*
-                          :defaults path))
-          (t
-           (make-pathname :type *drawing-extension*
-                          :defaults path)))))
+  (file-path-with-extension text
+                            *drawing-extension*
+                            *known-drawing-extensions*))
 
 (defun directory-of (path)
   "Return the folder that contains the file PATH, as a directory pathname.

@@ -127,14 +127,14 @@
     (setf (app:app-file-path application) #p"/tmp/plan-a.bcad")
     (is (string= "plan-a.bcad" (ui:widget-label (find-widget application :document-name))))))
 
-(test the-document-name-is-centered-between-the-buttons-and-the-language-and-performance-buttons
+(test the-document-name-is-centered-between-the-file-buttons-and-the-ones-on-the-right
   (let* ((application (make-test-app))
          (name (find-widget application :document-name))
          (redo (find-widget application :redo))
-         (language (find-widget application :language))
+         (more (find-widget application :more))
          (middle (+ (ui:widget-x name) (/ (ui:widget-width name) 2)))
          (free-left (+ (ui:widget-x redo) (ui:widget-width redo)))
-         (free-right (ui:widget-x language)))
+         (free-right (ui:widget-x more)))
     (is (< (abs (- middle (/ (+ free-left free-right) 2))) 1f0))))
 
 (test file-and-history-buttons-are-icons-with-hints-and-shortcuts

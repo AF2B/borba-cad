@@ -63,6 +63,7 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:+inspector-maximum-vertex-rows+
    #:+maximum-polyline-vertices+
    #:+maximum-text-length+
+   #:+maximum-layer-name-length+
    #:+maximum-dimension-precision+
    ;; Entity types
    #:line-entity

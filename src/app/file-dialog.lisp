@@ -139,15 +139,18 @@ APP: the application."
 
 (defun open-file-dialog (app
                          mode
-                         &optional continuation)
+                         &optional continuation
+                                   (purpose :drawing))
   "Open the file dialog to choose a drawing to open or a place and a name to save to.
 
 APP: the application.
 MODE: :open or :save.
-CONTINUATION: function of no arguments run after a successful save, or NIL."
+CONTINUATION: function of no arguments run after a successful save, or NIL.
+PURPOSE: :drawing for a drawing of the program, or :dxf to import or export a DXF file."
   (setf (app-dialog app) (make-file-dialog app
                                            mode
-                                           continuation)
+                                           continuation
+                                           purpose)
         (app-menu app) nil
         (app-focus app) :dialog)
   (app-request-redraw app))
@@ -240,7 +243,8 @@ APP: the application.
 DIALOG: the file dialog.
 TEXT: a name or a path."
   (handler-case
-      (let* ((path (resolve-open-path (uiop:native-namestring (typed-path dialog text))))
+      (let* ((path (resolve-open-path (uiop:native-namestring (typed-path dialog text))
+                                      (lambda (name) (dialog-file-path dialog name))))
              (kind (sbcl:file-kind path)))
         (cond ((eq kind :directory)
                (open-directory dialog path)
@@ -249,7 +253,9 @@ TEXT: a name or a path."
                (dialog-say dialog
                            (i18n:trf "~a does not exist." (string-trim " " text))
                            :error))
-              ((load-drawing-into-app app (uiop:native-namestring path))
+              ((open-dialog-file app
+                                 dialog
+                                 (uiop:native-namestring path))
                (close-file-dialog app))
               (t
                (show-failure-in-dialog app dialog))))
@@ -257,6 +263,45 @@ TEXT: a name or a path."
       (dialog-say dialog
                   (base:invalid-input-reason condition)
                   :error))))
+
+(defun dialog-file-path (dialog
+                         text)
+  "Return the pathname that a name typed in the dialog names, with the extension of the files it is
+about added when it has none.
+
+DIALOG: the file dialog.
+TEXT: a name or a path."
+  (ecase (file-dialog-purpose dialog)
+    (:drawing (persist:drawing-file-path text))
+    (:dxf (persist:file-path-with-extension text
+                                            (first *dxf-extensions*)
+                                            *dxf-extensions*))))
+
+(defun open-dialog-file (app
+                         dialog
+                         path-text)
+  "Open the file that the dialog has chosen, as what the dialog is for: a drawing of the program, or a
+DXF file to import. Returns true when the dialog may close.
+
+APP: the application.
+DIALOG: the file dialog.
+PATH-TEXT: the file name."
+  (ecase (file-dialog-purpose dialog)
+    (:drawing (load-drawing-into-app app path-text))
+    (:dxf (import-dxf-into-app app path-text))))
+
+(defun save-dialog-file (app
+                         dialog
+                         path-text)
+  "Save to the file that the dialog has chosen, as what the dialog is for: the drawing in the format of the
+program, or exported as a DXF file. Returns true on success.
+
+APP: the application.
+DIALOG: the file dialog.
+PATH-TEXT: the file name."
+  (ecase (file-dialog-purpose dialog)
+    (:drawing (save-app-drawing app path-text))
+    (:dxf (export-dxf-from-app app path-text))))
 
 (defun finish-save (app
                     dialog
@@ -267,7 +312,9 @@ why.
 APP: the application.
 DIALOG: the file dialog.
 PATH: the pathname to save to."
-  (cond ((save-app-drawing app (uiop:native-namestring path))
+  (cond ((save-dialog-file app
+                           dialog
+                           (uiop:native-namestring path))
          (let ((continuation (file-dialog-continuation dialog)))
            (close-file-dialog app)
            (when continuation
@@ -291,12 +338,13 @@ TEXT: a name or a path."
         (t
          (handler-case
              (let* ((typed (typed-path dialog text))
-                    (path (persist:drawing-file-path (uiop:native-namestring typed)))
+                    (path (dialog-file-path dialog (uiop:native-namestring typed)))
                     (kind (sbcl:file-kind path)))
                (cond ((eq (sbcl:file-kind typed) :directory)
                       (open-directory dialog typed))
                      ((and (eq kind :file)
-                           (not (same-file-p path (app-file-path app))))
+                           (or (eq :dxf (file-dialog-purpose dialog))
+                               (not (same-file-p path (app-file-path app)))))
                       (open-choice-prompt app
                                           (i18n:tr "Replace file?")
                                           (i18n:trf "~a already exists. Replace it?"
@@ -371,7 +419,8 @@ TEXT: the path typed in the location or search field."
                        (ui:make-edit-state :text (file-namestring path)
                                            :maximum-length +name-field-maximum-length+)))))
           (t
-           (let ((resolved (resolve-open-path (uiop:native-namestring path))))
+           (let ((resolved (resolve-open-path (uiop:native-namestring path)
+                                              (lambda (name) (dialog-file-path dialog name)))))
              (if (and (eq (file-dialog-mode dialog) :open)
                       (eq :file (sbcl:file-kind resolved)))
                  (accept-open app

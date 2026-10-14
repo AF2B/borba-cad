@@ -325,4 +325,59 @@
   ("~a already exists. Replace it?" "~a já existe. Substituir?")
   ("Replace" "Substituir")
   ("Choose a drawing from the list." "Escolha um desenho da lista.")
-  ("That did not work." "Não funcionou.")))
+  ("That did not work." "Não funcionou.")
+
+  ;; DXF
+  ("More" "Mais")
+  ("Import DXF..." "Importar DXF...")
+  ("Export DXF..." "Exportar DXF...")
+  ("Import a DXF file" "Importar um arquivo DXF")
+  ("Export as a DXF file" "Exportar como arquivo DXF")
+  ("Import" "Importar")
+  ("Export" "Exportar")
+  ("Units of the DXF file" "Unidades do arquivo DXF")
+  ("The file does not say what its numbers are. In what unit was it drawn?"
+   "O arquivo não diz em que unidade estão seus números. Em que unidade foi desenhado?")
+  ("Millimeters" "Milímetros")
+  ("Centimeters" "Centímetros")
+  ("Meters" "Metros")
+  ("Imported ~a: ~a" "~a importado: ~a")
+  ("Imported ~a" "~a importado")
+  ("Exported ~a (~a). ~a" "~a exportado (~a). ~a")
+  ("~d ~:*~[entities~;entity~:;entities~] imported."
+   "~d ~:*~[entidades importadas~;entidade importada~:;entidades importadas~].")
+  ("~d ~:*~[entities~;entity~:;entities~] exported."
+   "~d ~:*~[entidades exportadas~;entidade exportada~:;entidades exportadas~].")
+  ("Left out: ~{~a~^, ~}." "Deixados de fora: ~{~a~^, ~}.")
+  ("The import stopped after ~d shapes: the drawing is too large."
+   "A importação parou após ~d formas: o desenho é grande demais.")
+  ("Arc segments of polylines were replaced by short straight segments."
+   "Os trechos em arco das polilinhas foram trocados por trechos retos curtos.")
+  ("Multiline texts were imported as one text for each line."
+   "Os textos de várias linhas foram importados como um texto para cada linha.")
+  ("Elliptical arcs were imported as polylines." "Os arcos elípticos foram importados como polilinhas.")
+  ("Blocks inside blocks were followed only so far." "Blocos dentro de blocos foram seguidos só até certo nível.")
+  ("Circles and arcs in stretched blocks were replaced by polylines."
+   "Círculos e arcos em blocos esticados foram trocados por polilinhas.")
+  ("Dimensions were imported as their lines, arrowheads and text."
+   "As cotas foram importadas como suas linhas, setas e texto.")
+  ("~d ~:*~[entities~;entity~:;entities~] in paper space layouts were left out."
+   "~d ~:*~[entidades dos layouts do espaço papel foram deixadas de fora~;entidade do layout do espaço papel foi deixada de fora~:;entidades dos layouts do espaço papel foram deixadas de fora~].")
+  ("Filled shapes were imported as their outlines." "As formas preenchidas foram importadas como seus contornos.")
+  ("The drawing was far from the origin, so it was moved by ~a mm along x and ~a mm along y."
+   "O desenho estava longe da origem, então foi movido ~a mm em x e ~a mm em y.")
+  ("Dimensions were written as their lines, arrowheads and text."
+   "As cotas foram gravadas como suas linhas, setas e texto.")
+  ("Ellipses were written as polylines." "As elipses foram gravadas como polilinhas.")
+  ("Regular polygons were written as polylines." "Os polígonos regulares foram gravados como polilinhas.")
+  ("Layer colors were approximated by the 256 colors of AutoCAD."
+   "As cores das camadas foram aproximadas pelas 256 cores do AutoCAD.")
+  ("line ~d: ~a" "linha ~d: ~a")
+  ("is a binary DXF file, which is not supported; save it as an ASCII DXF"
+   "é um arquivo DXF binário, que não é aceito; salve-o como DXF ASCII")
+  ("is not a DXF file: it has no header, tables, blocks or entities"
+   "não é um arquivo DXF: não tem cabeçalho, tabelas, blocos nem entidades")
+  ("expected a group code, a whole number, found ~s" "esperava um código de grupo, um número inteiro, mas achou ~s")
+  ("the file ends after a group code, without its value" "o arquivo termina depois de um código de grupo, sem o valor dele")
+  ("the file has more than ~d groups" "o arquivo tem mais de ~d grupos")
+  ("a SECTION must be followed by its name" "uma SECTION deve ser seguida de seu nome")))

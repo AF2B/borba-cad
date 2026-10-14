@@ -198,7 +198,10 @@ step that is forgotten fails loudly at run time or in a test, except the documen
    polygon were left out of the workload on purpose, so that the recorded baselines stay comparable.
 7. **Tests**: entity invariants, a round trip and the corruption cases in the persistence suite, the
    scene output, the tool in the application suite, the inspector rows.
-8. **Docs**: `docs/geometry.md` (entity table), `README.md`, `CHANGELOG.md`, then `make docs`.
+8. **DXF** (`src/dxf/`): a clause in the `etypecase` of `write-entity-as-dxf` in `export.lisp` (a forgotten
+   one is a run-time error, caught by the export tests), and, when DXF has an equivalent, a clause of
+   `import-record` and a kind of shape in `import.lisp`.
+9. **Docs**: `docs/geometry.md` (entity table), `README.md`, `CHANGELOG.md`, then `make docs`.
 
 The dimension, the last type added, appears in 14 source files. Three hold the type's own code
 (`domain/dimension.lisp`, `geometry/dimension.lisp` and the tool in `app/tools.lisp`); four need a

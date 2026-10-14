@@ -23,6 +23,9 @@
 (defparameter *hidden-name-prefix* #\.
   "Names that begin with this character are not listed.")
 
+(defparameter *dxf-extensions* (list "dxf")
+  "Extensions of the files that the dialog lists when it is about DXF files.")
+
 (defparameter *examples-folder-name* "examples"
   "Name of the folder of sample drawings in the project, listed among the places when it exists.")
 
@@ -43,11 +46,13 @@ KEY: the name in lower case without accents, by which entries are sorted and sea
   name kind path size modified key)
 
 (defstruct (file-dialog (:constructor %make-file-dialog (mode
-                                                         continuation)))
+                                                         continuation
+                                                         &optional (purpose :drawing))))
   "The dialog where the user chooses a drawing to open or a place and a name to save to.
 
 MODE: :open or :save.
 CONTINUATION: function of no arguments run after a successful save, or NIL.
+PURPOSE: :drawing for a drawing of the program, or :dxf to import or export a DXF file.
 DIRECTORY: the folder shown, as a directory pathname.
 ENTRIES: every entry of that folder, folders first, each group by name.
 SELECTED: the name of the selected entry, or NIL.
@@ -67,6 +72,7 @@ VISIBLE-CACHE: the entries the list showed last time with what they were compute
 a folder of tens of thousands of files is not filtered again for every widget of every frame."
   mode
   continuation
+  purpose
   (directory nil)
   (entries '())
   (selected nil)
@@ -157,30 +163,44 @@ DIRECTORY: a directory pathname."
                   #'entry-name<)
             problem)))
 
-(defun drawing-name-p (name)
-  "Return true when a file name ends in an extension that the program writes.
+(defun drawing-name-p (name
+                       &optional (extensions persist:*known-drawing-extensions*))
+  "Return true when a file name ends in one of the extensions of the files the dialog is about:
+those the program writes, unless told others.
 
-NAME: a file name."
+NAME: a file name.
+EXTENSIONS: the extensions, without the dot."
   (let ((type (pathname-type (uiop:parse-native-namestring name))))
     (and type
-         (member type persist:*known-drawing-extensions* :test #'string-equal)
+         (member type extensions :test #'string-equal)
          t)))
+
+(defun dialog-extensions (dialog)
+  "Return the extensions of the files that the dialog lists when it is not asked to list all: those of
+a drawing of the program, or of a DXF file.
+
+DIALOG: the file dialog."
+  (ecase (file-dialog-purpose dialog)
+    (:drawing persist:*known-drawing-extensions*)
+    (:dxf *dxf-extensions*)))
 
 (defun compute-visible-entries (entries
                                 show-all
-                                text)
+                                text
+                                &optional (extensions persist:*known-drawing-extensions*))
   "Return the entries of ENTRIES the list shows: folders always, files only when they are drawings
 unless all files were asked for, and only those whose names contain TEXT, ignoring case and
 accents (agua finds the name that begins with A-acute and gua).
 
 ENTRIES: every entry of the folder.
 SHOW-ALL: true to list every file.
-TEXT: the search text, without the blanks around it."
+TEXT: the search text, without the blanks around it.
+EXTENSIONS: the extensions of the files listed when not all are."
   (let ((wanted (sbcl:fold-for-search text)))
     (remove-if-not (lambda (entry)
                      (and (or (eq (file-entry-kind entry) :directory)
                               show-all
-                              (drawing-name-p (file-entry-name entry)))
+                              (drawing-name-p (file-entry-name entry) extensions))
                           (or (zerop (length wanted))
                               (search wanted (file-entry-key entry)))))
                    entries)))
@@ -203,7 +223,8 @@ DIALOG: the file dialog."
           cached-result
           (let ((result (compute-visible-entries entries
                                                  show-all
-                                                 text)))
+                                                 text
+                                                 (dialog-extensions dialog))))
             (setf (file-dialog-visible-cache dialog) (list entries show-all text result))
             result)))))
 
@@ -454,25 +475,38 @@ CONFIG: the application configuration."
 ;;; Creating the dialog
 
 (defun initial-name (app
-                     mode)
+                     mode
+                     &optional (purpose :drawing))
   "Return what the file name field starts with: the name of the file being edited, or a new
 name, when saving; nothing when opening.
 
 APP: the application.
-MODE: :open or :save."
+MODE: :open or :save.
+PURPOSE: :drawing or :dxf; a DXF file is offered the name of the drawing with the extension .dxf."
   (cond ((eq mode :open) "")
+        ((eq purpose :dxf)
+         (concatenate 'string
+                      (if (app-file-path app)
+                          (pathname-name (app-file-path app))
+                          (pathname-name *untitled-file-name*))
+                      "."
+                      (first *dxf-extensions*)))
         ((app-file-path app) (file-namestring (app-file-path app)))
         (t *untitled-file-name*)))
 
 (defun make-file-dialog (app
                          mode
-                         continuation)
+                         continuation
+                         &optional (purpose :drawing))
   "Create the file dialog, showing the folder of the file being edited, or the documents folder.
 
 APP: the application.
 MODE: :open or :save.
-CONTINUATION: function of no arguments run after a successful save, or NIL."
-  (let* ((dialog (%make-file-dialog mode continuation))
+CONTINUATION: function of no arguments run after a successful save, or NIL.
+PURPOSE: :drawing or :dxf."
+  (let* ((dialog (%make-file-dialog mode
+                                    continuation
+                                    purpose))
          (state (base:config-state-directory (app-config app))))
     (setf (file-dialog-places dialog) (default-places (app-config app))
           (file-dialog-recent dialog) (remove-if-not (lambda (path)
@@ -481,7 +515,9 @@ CONTINUATION: function of no arguments run after a successful save, or NIL."
           (file-dialog-focus dialog) (default-focus mode)
           (file-dialog-name-edit dialog)
           (ui:edit-select-all-replace
-           (ui:make-edit-state :text (initial-name app mode)
+           (ui:make-edit-state :text (initial-name app
+                                                   mode
+                                                   purpose)
                                :maximum-length +name-field-maximum-length+)))
     (unless (open-directory dialog (drawings-directory app))
       (open-directory dialog (user-homedir-pathname)))

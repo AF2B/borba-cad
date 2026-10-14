@@ -485,15 +485,17 @@ PATH: the drawing's pathname."
                      :result :failed
                      :path (uiop:native-namestring path)))))
 
-(defun resolve-open-path (text)
+(defun resolve-open-path (text
+                          &optional (extension-path #'persist:drawing-file-path))
   "Return the pathname that an Open request names. A name without an extension that matches no
-file but matches a file with the drawing extension names that file.
+file but matches a file with the extension of the files being opened names that file.
 
-TEXT: file name as typed by the user."
+TEXT: file name as typed by the user.
+EXTENSION-PATH: function from the text to the pathname with the extension added."
   (let ((path (persist:native-path text)))
     (if (and (null (sbcl:file-kind path))
              (member (pathname-type path) '(nil "") :test #'equal))
-        (let ((with-extension (persist:drawing-file-path text)))
+        (let ((with-extension (funcall extension-path text)))
           (if (sbcl:file-kind with-extension)
               with-extension
               path))

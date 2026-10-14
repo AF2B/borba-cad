@@ -353,6 +353,8 @@ MODIFIERS: modifier keys held."
       (:v (operation-paste app :in-place shift) t)
       (:s (if shift (operation-save-as app) (operation-save app)) t)
       (:o (operation-open app) t)
+      (:i (when shift (operation-import-dxf app)) t)
+      (:e (when shift (operation-export-dxf app)) t)
       (:n (operation-new app) t)
       (:q (operation-quit app) t)
       (t nil))))

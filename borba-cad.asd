@@ -78,6 +78,14 @@
                              (:file "recent")
                              (:file "settings")
                              (:file "files")))
+               (:module "dxf"
+                :serial t
+                :components ((:file "package")
+                             (:file "colors")
+                             (:file "reader")
+                             (:file "import")
+                             (:file "export")
+                             (:file "files")))
                (:module "observability"
                 :serial t
                 :components ((:file "package")
@@ -112,6 +120,7 @@
                              (:file "clipboard")
                              (:file "prompts")
                              (:file "operations")
+                             (:file "dxf-operations")
                              (:file "grips")
                              (:file "file-browser")
                              (:file "tools")
@@ -227,6 +236,8 @@
                (:file "text-angle-tests")
                (:file "curve-entities-tests")
                (:file "grips-tests")
+               (:file "dxf-tests")
+               (:file "dxf-app-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

@@ -2,6 +2,7 @@
   (:use #:cl)
   (:local-nicknames (#:base #:borba-cad/base)
                     (#:i18n #:borba-cad/i18n)
+                    (#:dxf #:borba-cad/dxf)
                     (#:sbcl #:borba-cad/sbcl-support)
                     (#:geo #:borba-cad/geometry)
                     (#:dom #:borba-cad/domain)
@@ -127,6 +128,10 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-set-current-layer
    #:operation-assign-selection-layer
    #:operation-edit-property
+   #:operation-import-dxf
+   #:operation-export-dxf
+   #:import-dxf-into-app
+   #:export-dxf-from-app
    #:operation-copy
    #:operation-cut
    #:operation-paste

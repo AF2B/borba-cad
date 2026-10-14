@@ -43,11 +43,15 @@ MODIFIERS: modifier keys held."
   snap-kind
   (modifiers nil :type list :read-only t))
 
+(defconstant +report-message-lines+ 8
+  "Lines of the message of a prompt that carries a report to read, which is longer than a question.")
+
 (defstruct (prompt (:constructor make-prompt (kind
                                               title
                                               message
                                               edit
-                                              choices)))
+                                              choices
+                                              &optional message-lines)))
   "A modal question.
 
 KIND: :text (a text field with OK and Cancel) or :choice (a row of buttons).
@@ -55,15 +59,16 @@ TITLE: heading.
 MESSAGE: explanation shown under the heading.
 EDIT: the EDIT-STATE of the text field, for :text prompts.
 CHOICES: for :text, a list of (label . function) with the accept function first; for :choice, the buttons.
-The accept function of a :text prompt receives the typed string."
-  kind title message edit choices)
+The accept function of a :text prompt receives the typed string.
+MESSAGE-LINES: how many lines the message may take before it is cut, or NIL for the usual three."
+  kind title message edit choices message-lines)
 
 (defstruct (menu (:constructor make-menu (kind
                                           anchor
                                           highlight)))
   "An open drop-down menu.
 
-KIND: :draw or :language.
+KIND: :draw, :language or :more.
 ANCHOR: id of the button the menu hangs from.
 HIGHLIGHT: position, among the choices, of the one the keyboard is on."
   kind

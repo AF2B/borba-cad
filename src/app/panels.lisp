@@ -299,7 +299,7 @@ RIGHT: x where it ends."
 (defun toolbar-widgets (app
                         blocked)
   "Build the title bar: brand mark, file and history buttons, the document name, and the
-language and performance buttons.
+buttons for the other file formats, the language and the performance overlay.
 
 APP: the application.
 BLOCKED: true while a modal covers the title bar."
@@ -366,7 +366,20 @@ BLOCKED: true while a modal covers the title bar."
                   widgets)
             (incf x (+ ui:+icon-button-size+ +title-button-gap+)))))
     (let* ((perf-x (- width +title-margin+ ui:+icon-button-size+))
-           (language-x (- perf-x +title-button-gap+ ui:+icon-button-size+)))
+           (language-x (- perf-x +title-button-gap+ ui:+icon-button-size+))
+           (more-x (- language-x +title-button-gap+ ui:+icon-button-size+)))
+      (push (make-icon-button :more
+                              :more
+                              more-x
+                              button-y
+                              :action (lambda ()
+                                        (toggle-menu app
+                                                     :more
+                                                     :more))
+                              :active (and (app-menu app) (eq :more (menu-kind (app-menu app))))
+                              :blocked blocked
+                              :hint (i18n:tr "More"))
+            widgets)
       (push (make-icon-button :language
                               :globe
                               language-x
@@ -391,7 +404,7 @@ BLOCKED: true while a modal covers the title bar."
             widgets)
       (push (document-widget app
                              (+ (- x +title-button-gap+) +title-group-gap+)
-                             (- language-x +title-group-gap+))
+                             (- more-x +title-group-gap+))
             widgets))
     (nreverse widgets)))
 

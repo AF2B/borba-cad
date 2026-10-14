@@ -6,6 +6,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **DXF import and export.** The More button of the title bar (the three dots) lists Import DXF
+  (`Ctrl+Shift+I`) and Export DXF (`Ctrl+Shift+E`), which use the file dialog. *Import* reads an ASCII
+  DXF of any version (UTF-8, or the Windows Western code page that files from Brazil are often in) as a
+  new drawing, not saved yet: the layers (name, color, switched off, locked), lines, circles, arcs,
+  polylines (old and lightweight, their arc segments cut into short straight ones), texts, multiline
+  texts (one text for each line), ellipses (a part of one becomes a polyline), filled triangles and
+  quadrilaterals (as outlines), blocks (`INSERT` is expanded, with scale, rotation, mirroring, arrays and
+  blocks inside blocks) and dimensions (as the lines, arrowheads and text their block draws). A file that
+  does not say its unit is followed by the question of what it is; a drawing far from the origin
+  (survey coordinates) is moved to it, and a note says so. Entities in paper space are left out, and so is
+  what the program cannot draw (splines, hatches, points, leaders, images, 3D), each counted by type in a
+  report that stays on the screen until read and goes to the log. *Export* writes a DXF of version R12
+  (AC1009), which everything reads: lines, circles, arcs, texts and polylines as themselves; rectangles,
+  regular polygons and ellipses as closed polylines; dimensions as their lines, arrowheads and text;
+  layers with their state and the nearest of the 256 colors of AutoCAD; text in ASCII, with the other
+  characters as `\U+hhhh`. The writing says what changed shape. Neither changes the file of the drawing.
 - **Grips.** Select one entity and handles appear on it: drag the end of a line, a corner of a
   rectangle, a point on a circle (the radius), the vertices of a polyline, the start, the end or the
   middle of an arc, the ends of the axes of an ellipse, a vertex of a polygon, the end of a text (its

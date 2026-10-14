@@ -18,6 +18,7 @@ numbers round-trip exactly, strict validation, and atomic saving.")
    #:clean-path-text
    #:native-path
    #:drawing-file-path
+   #:file-path-with-extension
    #:directory-of
    #:default-drawings-directory
    #:user-directories-entry
@@ -30,5 +31,8 @@ numbers round-trip exactly, strict validation, and atomic saving.")
    #:*drawing-extension*
    #:*known-drawing-extensions*
    #:save-drawing
+   #:save-text-file
+   #:read-file-octets
+   #:check-open-source
    #:load-drawing
    #:format-double))

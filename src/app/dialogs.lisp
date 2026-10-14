@@ -83,7 +83,7 @@ APP: the application."
          (inner (- +prompt-width+ (* 2 +dialog-padding+)))
          (lines (ui:wrap-text (prompt-message prompt)
                               inner
-                              +dialog-message-lines+))
+                              (or (prompt-message-lines prompt) +dialog-message-lines+)))
          (height (prompt-height (length lines) text-p))
          (x (/ (- window-width +prompt-width+) 2))
          (y (/ (- window-height height) 3))
