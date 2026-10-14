@@ -76,6 +76,7 @@ SAVED-REVISION: drawing revision at the last save or load.
 FOCUS: id of the field that has the keyboard focus, or NIL.
 EDIT: edit state of that field.
 PROMPT: the open modal prompt, or NIL.
+DIALOG: the open file dialog, or NIL.
 MESSAGE: (text . severity) shown in the status bar, or NIL.
 OVERLAY-VISIBLE: whether the performance overlay is shown.
 LAYER-SCROLL: first visible layer row.
@@ -105,6 +106,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   focus
   edit
   prompt
+  dialog
   message
   overlay-visible
   (layer-scroll 0 :type fixnum)
@@ -162,7 +164,7 @@ APP: the application."
   "Return true when typed characters should be delivered as text events.
 
 APP: the application."
-  (and (or (app-focus app) (app-prompt app)) t))
+  (and (or (app-focus app) (app-prompt app) (app-dialog app)) t))
 
 (defun set-message (app
                     text

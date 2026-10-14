@@ -61,8 +61,9 @@ the window, dragging a selection moves it. `Delete` removes the selection, `Ctrl
 Pan with the middle button or Space + left drag, zoom with the wheel (the point under the cursor
 stays put), `Home` fits the drawing. `G` toggles the grid, `S` grid snap, `O` object snap
 (endpoints and centers), `U` cycles the display unit. `Ctrl+Z` undoes, `Ctrl+Y` or
-`Ctrl+Shift+Z` redoes. `Ctrl+N`, `Ctrl+O`, `Ctrl+S` and `Ctrl+Shift+S` manage files through an
-in-app path prompt. `F3` (the **Perf** button) shows the live performance overlay.
+`Ctrl+Shift+Z` redoes. `Ctrl+N`, `Ctrl+O`, `Ctrl+S` and `Ctrl+Shift+S` manage files; Open and Save
+As show the file dialog (below), and a drawing dropped on the window opens. `F3` (the **Perf**
+button) shows the live performance overlay.
 
 The side panel holds two cards: the layers (add, rename, delete, recolor, show/hide, lock, set
 current) and the properties, where every property of the selection is editable numerically; invalid
@@ -75,6 +76,19 @@ that round-trip exactly. Loading never evaluates code; a malformed file is refus
 and column, and a failed open leaves the current drawing untouched. Saving is atomic (temporary
 file, flush, rename). Canonical length unit: the millimetre. A sample is in
 `examples/floor-plan.bcad`.
+
+**The file dialog** is one screen for choosing where a drawing is saved and which one is opened. It
+lists the folder (folders first, then drawings with their size and date), with the places on the
+left (home, documents, desktop and downloads in your language, the sample drawings) and your
+recent drawings under them. Click a step of the path above the list to go there, the pencil (or
+`Ctrl+L`) to type a path, the arrow (or `Alt+Up`, or `Backspace` in an empty search) to go up one
+folder. Typing finds files by name as you type; `Up`, `Down`, `Page Up` and `Page Down` move the
+selection, `Enter` opens or saves, a double click opens a drawing or enters a folder, `Esc`
+closes. Saving takes a name (`.bcad` is added), can create a folder (`Ctrl+Shift+N`) and asks
+before replacing a different file. **All files** also lists files that are not drawings. When a
+file cannot be opened or saved the dialog stays open and says why. The recent list is kept in
+`var/state/recent-files.txt` (`--state-dir`); the dialog starts in the folder of the open drawing,
+or in your documents folder (`--drawings-dir`).
 
 ## Observability
 

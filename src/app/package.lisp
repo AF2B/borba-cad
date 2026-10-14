@@ -39,6 +39,9 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:resize-event-width
    #:resize-event-height
    #:resize-event-scale
+   #:file-drop-event
+   #:make-file-drop-event
+   #:file-drop-event-path
    #:quit-event
    #:make-quit-event
    ;; Constants
@@ -133,6 +136,46 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:tool-prompt
    #:tool-preview-entities
    #:tool-in-progress-p
+   ;; File dialog
+   #:app-dialog
+   #:file-dialog
+   #:file-dialog-mode
+   #:file-dialog-directory
+   #:file-dialog-entries
+   #:file-dialog-selected
+   #:file-dialog-scroll
+   #:file-dialog-capacity
+   #:file-dialog-show-all
+   #:file-dialog-filter-edit
+   #:file-dialog-name-edit
+   #:file-dialog-location-edit
+   #:file-dialog-focus
+   #:file-dialog-message
+   #:file-dialog-message-severity
+   #:file-dialog-places
+   #:file-dialog-recent
+   #:file-dialog-continuation
+   #:file-entry
+   #:file-entry-name
+   #:file-entry-kind
+   #:file-entry-path
+   #:file-entry-size
+   #:file-entry-modified
+   #:open-file-dialog
+   #:close-file-dialog
+   #:visible-entries
+   #:selected-entry
+   #:list-entries
+   #:breadcrumbs
+   #:default-places
+   #:typed-path
+   #:create-folder
+   #:open-directory
+   #:open-parent-directory
+   #:select-entry
+   #:move-selection
+   #:format-modified-time
+   #:format-entry-size
    ;; Prompts
    #:prompt
    #:prompt-kind

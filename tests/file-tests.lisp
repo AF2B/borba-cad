@@ -78,7 +78,7 @@
 
 (defun file-test-app (directory)
   "Return an application with a small drawing, whose configuration lives in DIRECTORY."
-  (app:make-app (base:default-config :project-root directory)
+  (app:make-app (quiet-config directory)
                 :drawing (rng:generate-drawing :seed 3 :entity-count 5)))
 
 (defun directory-listing (directory)
@@ -189,9 +189,9 @@
                                                 application))))
       (is (null (directory-listing directory))))))
 
-(defun prompt-text (application)
-  "Return the text in the field of the open prompt."
-  (ui:edit-state-text (app:prompt-edit (app:app-prompt application))))
+(defun dialog-name (application)
+  "Return the text in the file name field of the open file dialog."
+  (ui:edit-state-text (app:file-dialog-name-edit (app:app-dialog application))))
 
 (defun choose (application label)
   "Run the function behind the button LABEL of the open choice prompt."
@@ -215,11 +215,11 @@
         (choose application "Cancel")
         (is (string= original (file-text existing)) "cancel leaves the file alone")
         (is (null (app:app-file-path application)))
-        (app:operation-save-as application)
-        (type-text application (uiop:native-namestring existing))
+        (is (app:app-dialog application) "the dialog stays, so another name can be tried")
         (press application :enter)
         (choose application "Replace")
         (is (string/= original (file-text existing)) "replace saves")
+        (is (null (app:app-dialog application)))
         (is (string= "other.bcad" (file-namestring (app:app-file-path application))))))))
 
 (test save-as-onto-the-file-being-edited-does-not-ask
@@ -228,18 +228,20 @@
           (path (merge-pathnames "mine.bcad" directory)))
       (app:save-app-drawing application (uiop:native-namestring path))
       (app:operation-save-as application)
-      (is (search "mine.bcad" (prompt-text application)) "the prompt offers the current file")
+      (is (search "mine.bcad" (dialog-name application)) "the dialog offers the current file")
+      (is (equal (truename directory) (truename (app:file-dialog-directory (app:app-dialog application))))
+          "and starts in its folder")
       (press application :enter)
-      (is (null (app:app-prompt application)) "no question: it is the same file"))))
+      (is (null (app:app-prompt application)) "no question: it is the same file")
+      (is (null (app:app-dialog application))))))
 
-(test the-save-prompt-starts-in-a-real-folder-with-a-new-name
+(test the-save-dialog-starts-in-a-real-folder-with-a-new-name
   (with-temporary-directory (directory)
     (let ((application (file-test-app directory)))
       (app:operation-save-as application)
-      (let ((suggestion (prompt-text application)))
-        (is (uiop:absolute-pathname-p (uiop:parse-native-namestring suggestion)))
-        (is (string= "untitled.bcad" (file-namestring (uiop:parse-native-namestring suggestion))))
-        (is (eq :directory (sbcl:file-kind (persist:directory-of (uiop:parse-native-namestring suggestion)))))))))
+      (is (string= "untitled.bcad" (dialog-name application)))
+      (is (eq :directory (sbcl:file-kind (app:file-dialog-directory (app:app-dialog application)))))
+      (is (eq :save (app:file-dialog-mode (app:app-dialog application)))))))
 
 (test opening-finds-a-drawing-whose-extension-was-left-out
   (with-temporary-directory (directory)

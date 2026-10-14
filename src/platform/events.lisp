@@ -22,6 +22,11 @@
 (defconstant +windowevent-size-changed+ 6
   "SDL window event id: the window size changed.")
 
+(defconstant +sdl-drop-file-offset+ 8
+  "Byte offset of the file name in an SDL drop event: the type and the time stamp, four bytes each,
+come before it. The binding reads the name as a string and keeps the pointer to itself, but the
+receiver of the event must free that pointer.")
+
 (defconstant +sdl-key-escape+ 27 "SDL keycode of the escape key.")
 (defconstant +sdl-key-return+ 13 "SDL keycode of the return key.")
 (defconstant +sdl-key-backspace+ 8 "SDL keycode of the backspace key.")
@@ -31,7 +36,9 @@
 (defconstant +sdl-scancode-mask+ #x40000000 "Bit set in the SDL keycode of non-character keys.")
 
 (defconstant +sdl-scancode-home+ 74 "SDL scancode of the home key.")
+(defconstant +sdl-scancode-page-up+ 75 "SDL scancode of the page up key.")
 (defconstant +sdl-scancode-end+ 77 "SDL scancode of the end key.")
+(defconstant +sdl-scancode-page-down+ 78 "SDL scancode of the page down key.")
 (defconstant +sdl-scancode-right+ 79 "SDL scancode of the right arrow.")
 (defconstant +sdl-scancode-left+ 80 "SDL scancode of the left arrow.")
 (defconstant +sdl-scancode-down+ 81 "SDL scancode of the down arrow.")
@@ -55,6 +62,8 @@ KEYCODE: an SDL keycode (layout-aware, so shortcuts follow the printed letters).
          (let ((scancode (logxor keycode +sdl-scancode-mask+)))
            (cond ((= scancode +sdl-scancode-home+) :home)
                  ((= scancode +sdl-scancode-end+) :end)
+                 ((= scancode +sdl-scancode-page-up+) :page-up)
+                 ((= scancode +sdl-scancode-page-down+) :page-down)
                  ((= scancode +sdl-scancode-left+) :left)
                  ((= scancode +sdl-scancode-right+) :right)
                  ((= scancode +sdl-scancode-up+) :up)
@@ -148,6 +157,14 @@ WINDOW: the window, used to read the size on resize events."
      (let ((text (plus-c:c-ref event sdl2-ffi:sdl-event :text :text string)))
        (and (plusp (length text))
             (list (app:make-text-event text)))))
+    (:dropfile
+     (let ((pointer (cffi:mem-ref (autowrap:ptr event) :pointer +sdl-drop-file-offset+)))
+       (unless (cffi:null-pointer-p pointer)
+         (let ((path (cffi:foreign-string-to-lisp pointer :encoding :utf-8)))
+           ;; SDL hands the path over: the receiver frees it.
+           (sdl2-ffi.functions:sdl-free pointer)
+           (and (plusp (length path))
+                (list (app:make-file-drop-event path)))))))
     (:windowevent
      (let ((kind (plus-c:c-ref event sdl2-ffi:sdl-event :window :event)))
        (cond ((member kind (list +windowevent-resized+ +windowevent-size-changed+))

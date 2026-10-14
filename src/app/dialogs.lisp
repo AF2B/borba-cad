@@ -140,12 +140,14 @@ APP: the application."
 (defun build-widgets (app)
   "Build every widget of the window, in drawing order, from the application state: the side
 panel, the title bar, the tool palette, the status bar, the tooltip of the widget under the
-pointer, and the modal prompt when one is open.
+pointer, the file dialog when one is open, and the modal prompt when one is.
 
 APP: the application."
   (let* ((layout (ui:compute-layout (app-window-width app) (app-window-height app)))
          (side (ui:layout-side-panel layout))
-         (blocked (and (app-prompt app) t))
+         (blocked (and (or (app-prompt app) (app-dialog app)) t))
+         (dialog-widgets (and (app-dialog app)
+                              (file-dialog-widgets app (and (app-prompt app) t))))
          (base-widgets (append (list (ui:make-widget :panel
                                                      :side-panel
                                                      (ui:rect-x side)
@@ -163,15 +165,18 @@ APP: the application."
                                                 (ui:layout-tool-palette layout)
                                                 blocked)
                                (toolbar-widgets app blocked)))
-         (hovered (ui:widget-at (append base-widgets (status-widgets app
-                                                                     nil
-                                                                     blocked))
+         (hovered (ui:widget-at (append base-widgets
+                                        dialog-widgets
+                                        (status-widgets app
+                                                        nil
+                                                        blocked))
                                 (app-pointer-x app)
                                 (app-pointer-y app)))
          (all (append base-widgets
                       (status-widgets app
                                       (and hovered (hint-with-shortcut hovered))
                                       blocked)
+                      dialog-widgets
                       (let ((tooltip (tooltip-widget app hovered)))
                         (and tooltip (list tooltip))))))
     (if (app-prompt app)

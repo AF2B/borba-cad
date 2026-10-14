@@ -266,7 +266,7 @@ Resolution (2026-10-13): the human approved the specification, accepted every re
 | D4 | Test framework | FiveAM as a test-only dependency (present in the dist), instead of a hand-rolled harness like the lab template. |
 | D5 | Dependency acquisition | Quicklisp with the dist version pinned and verified by `make check-env`. Alternative: vendored sources (more reproducible, heavier). |
 | D6 | Scope trims | Dimension = aligned linear only; Text single-line, no rotation; Rectangle axis-aligned; window selection only. |
-| D7 | File chooser | In-app path prompt vs. native dialog; decided after S3. |
+| D7 | File chooser | In-app path prompt vs. native dialog; decided after S3. Superseded after 1.0.0: an in-app dialog (folder browser, places, recent files, search) replaced the path prompt; see architecture A19. |
 | D8 | Git | `git init` plus `.gitignore` in the first implementation increment; no commits unless asked. |
 | D9 | License | Undecided; no `LICENSE` file until chosen. |
 | D10 | Spikes S1–S4 | Approve: they download candidate libraries through Quicklisp into `~/quicklisp`; throwaway code lives under `spikes/`. |

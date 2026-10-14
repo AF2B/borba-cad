@@ -106,12 +106,14 @@ THEME: the theme."
 
 (defun widget-padding (widget)
   "Return the space between the edge of WIDGET and its text. Labels are placed exactly where
-they are wanted, chips are snug, and a button too narrow for two paddings keeps a small one.
+they are wanted, chips and ghost buttons are snug, and a button too narrow for two paddings keeps a
+small one.
 
 WIDGET: a widget."
   (case (widget-kind widget)
     (:label 0f0)
     (:button (cond ((eq (widget-variant widget) :chip) +chip-padding+)
+                   ((eq (widget-variant widget) :ghost) +gap+)
                    ((< (widget-width widget) (* 2 +icon-button-size+)) +gap+)
                    (t +padding+)))
     (t +padding+)))
@@ -543,6 +545,15 @@ THEME: the theme."
 
 ;;; Fields
 
+(defun field-inset (widget)
+  "Return how far the text of a field keeps from its left padding: the room of the icon that
+stands before it, if it has one.
+
+WIDGET: a field."
+  (if (widget-icon widget)
+      +row-icon-inset+
+      0f0))
+
 (defun draw-edited-text (list
                          widget
                          theme)
@@ -556,8 +567,8 @@ THEME: the theme."
          (text (edit-state-text edit))
          (size (widget-size widget))
          (font (widget-font widget))
-         (text-x (+ (widget-x widget) +padding+))
-         (available (max 0f0 (- (widget-width widget) (* 2 +padding+)))))
+         (text-x (+ (widget-x widget) +padding+ (field-inset widget)))
+         (available (max 0f0 (- (widget-width widget) (* 2 +padding+) (field-inset widget)))))
     (multiple-value-bind (start end)
         (visible-text-window text
                              (edit-state-caret edit)
@@ -617,6 +628,13 @@ HOVER: true when the pointer is over it."
                     (cond (editing (scene:theme-accent theme))
                           (hover (scene:theme-text-faint theme))
                           (t (scene:theme-panel-border theme))))
+    (when (widget-icon widget)
+      (draw-icon list
+                 (widget-icon widget)
+                 (+ (widget-x widget) +padding+)
+                 (+ (widget-y widget) (/ (- (widget-height widget) +small-icon-size+) 2))
+                 +small-icon-size+
+                 (scene:theme-text-faint theme)))
     (if editing
         (draw-edited-text list
                           widget
@@ -626,7 +644,8 @@ HOVER: true when the pointer is over it."
                           (widget-label widget)
                           (if (and hover (widget-enabled widget))
                               (scene:theme-text theme)
-                              (widget-text-color widget theme))))))
+                              (widget-text-color widget theme))
+                          :left-inset (field-inset widget)))))
 
 ;;; Tooltips
 

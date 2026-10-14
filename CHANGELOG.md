@@ -4,6 +4,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ## [Unreleased]
 
+### Added
+
+- **File dialog.** Open and Save As are one friendly screen: folders and drawings with size and
+  date, places (home, documents, desktop, downloads, sample drawings), recent drawings, a clickable
+  folder trail with a path field, live search, an All files switch, new folder, overwrite
+  confirmation, keyboard navigation, and errors shown in the dialog with the dialog kept open.
+- Drag a drawing onto the window to open it (after the usual question about unsaved changes).
+- Page Up and Page Down keys; options `--state-dir` and `--drawings-dir`.
+
 ### Changed
 
 - **New interface.** A dark theme with a teal accent, a title bar (brand mark, file and history
@@ -25,7 +34,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
   creates folders; saving over a different existing file asks first.
 - Opening: a name without an extension finds the `.bcad` file; a folder, a missing file, a device or
   a blank name get a plain explanation instead of a Lisp stream error.
-- The Save As and Open prompts start in the documents folder of the desktop (`Documentos` on a
+- The Save As and Open dialogs start in the documents folder of the desktop (`Documentos` on a
   Portuguese desktop) instead of a path relative to wherever the program was started.
 - Messages report sizes in KB and MB.
 - The outline of a rounded rectangle with a small corner radius was stitched with the wrong

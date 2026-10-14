@@ -49,6 +49,7 @@ The whole application state.
 - `FOCUS`: id of the field that has the keyboard focus, or NIL.
 - `EDIT`: edit state of that field.
 - `PROMPT`: the open modal prompt, or NIL.
+- `DIALOG`: the open file dialog, or NIL.
 - `MESSAGE`: (text . severity) shown in the status bar, or NIL.
 - `OVERLAY-VISIBLE`: whether the performance overlay is shown.
 - `LAYER-SCROLL`: first visible layer row.
@@ -75,6 +76,14 @@ The whole application state.
 
 ```lisp
 (app-cursor instance)
+```
+
+(undocumented)
+
+### `app-dialog` (function)
+
+```lisp
+(app-dialog instance)
 ```
 
 (undocumented)
@@ -371,6 +380,16 @@ uses this same interaction so that their frame costs are comparable.
 - `APP`: the application.
 - `FRAME`: frame number, which selects the zoom direction.
 
+### `breadcrumbs` (function)
+
+```lisp
+(breadcrumbs directory)
+```
+
+Return the trail from the root to DIRECTORY as (label . directory) pairs, the root first.
+
+- `DIRECTORY`: a directory pathname.
+
 ### `build-widgets` (function)
 
 ```lisp
@@ -379,13 +398,23 @@ uses this same interaction so that their frame costs are comparable.
 
 Build every widget of the window, in drawing order, from the application state: the side
 panel, the title bar, the tool palette, the status bar, the tooltip of the widget under the
-pointer, and the modal prompt when one is open.
+pointer, the file dialog when one is open, and the modal prompt when one is.
 
 - `APP`: the application.
 
 ### `circle-tool` (type)
 
 Creates a circle from its center and a point on its outline.
+
+### `close-file-dialog` (function)
+
+```lisp
+(close-file-dialog app)
+```
+
+Close the file dialog without doing anything.
+
+- `APP`: the application.
 
 ### `close-prompt` (function)
 
@@ -410,6 +439,18 @@ the user and nothing changes. Returns true when changes were committed.
 - `CHANGES`: list of change records; an empty list commits nothing and returns NIL.
 - `EVENT`: dotted event name such as entity.create.
 - `CONTEXT`: short name used in the error message log.
+
+### `create-folder` (function)
+
+```lisp
+(create-folder dialog name)
+```
+
+Create a folder in the folder shown and select it. Says why when it cannot be done.
+Returns true when the folder was created.
+
+- `DIALOG`: the file dialog.
+- `NAME`: the new folder's name.
 
 ### `cursor` (type)
 
@@ -462,6 +503,18 @@ The pointer position in world coordinates.
 
 (undocumented)
 
+### `default-places` (function)
+
+```lisp
+(default-places config)
+```
+
+Return the shortcuts that the dialog offers on its side, as (label icon pathname): the home
+folder, the documents, desktop and downloads folders in the language of the desktop, and the
+sample drawings of the project, each only when it exists.
+
+- `CONFIG`: the application configuration.
+
 ### `demo-save-path` (function)
 
 ```lisp
@@ -487,6 +540,230 @@ plan drawn with every tool, a selection and a move, undo, zoom, pan, the overlay
 
 Creates an aligned dimension from two clicks and a third that places its line.
 
+### `file-dialog` (type)
+
+The dialog where the user chooses a drawing to open or a place and a name to save to.
+
+- `MODE`: :open or :save.
+- `CONTINUATION`: function of no arguments run after a successful save, or NIL.
+- `DIRECTORY`: the folder shown, as a directory pathname.
+- `ENTRIES`: every entry of that folder, folders first, each group by name.
+- `SELECTED`: the name of the selected entry, or NIL.
+- `SCROLL`: how many visible entries are scrolled past.
+- `CAPACITY`: how many rows of the list fit, known once the dialog has been drawn.
+- `SHOW-ALL`: true to list every file, false to list only drawings.
+- `FILTER-EDIT`: edit state of the search field.
+- `NAME-EDIT`: edit state of the file name field.
+- `LOCATION-EDIT`: edit state while the path is being typed, or NIL when it is shown as a trail.
+- `FOCUS`: which field has the keyboard: :name, :filter or :location.
+- `MESSAGE`: a sentence under the list, or NIL.
+- `MESSAGE-SEVERITY`: :info or :error.
+- `PLACES`: the shortcuts on the side, as (label icon pathname).
+- `RECENT`: the recently used drawings, as pathnames, latest first.
+- `LAST-CLICK`: the row last clicked and when, to recognize a double click.
+
+### `file-dialog-capacity` (function)
+
+```lisp
+(file-dialog-capacity instance)
+```
+
+(undocumented)
+
+### `file-dialog-continuation` (function)
+
+```lisp
+(file-dialog-continuation instance)
+```
+
+(undocumented)
+
+### `file-dialog-directory` (function)
+
+```lisp
+(file-dialog-directory instance)
+```
+
+(undocumented)
+
+### `file-dialog-entries` (function)
+
+```lisp
+(file-dialog-entries instance)
+```
+
+(undocumented)
+
+### `file-dialog-filter-edit` (function)
+
+```lisp
+(file-dialog-filter-edit instance)
+```
+
+(undocumented)
+
+### `file-dialog-focus` (function)
+
+```lisp
+(file-dialog-focus instance)
+```
+
+(undocumented)
+
+### `file-dialog-location-edit` (function)
+
+```lisp
+(file-dialog-location-edit instance)
+```
+
+(undocumented)
+
+### `file-dialog-message` (function)
+
+```lisp
+(file-dialog-message instance)
+```
+
+(undocumented)
+
+### `file-dialog-message-severity` (function)
+
+```lisp
+(file-dialog-message-severity instance)
+```
+
+(undocumented)
+
+### `file-dialog-mode` (function)
+
+```lisp
+(file-dialog-mode instance)
+```
+
+(undocumented)
+
+### `file-dialog-name-edit` (function)
+
+```lisp
+(file-dialog-name-edit instance)
+```
+
+(undocumented)
+
+### `file-dialog-places` (function)
+
+```lisp
+(file-dialog-places instance)
+```
+
+(undocumented)
+
+### `file-dialog-recent` (function)
+
+```lisp
+(file-dialog-recent instance)
+```
+
+(undocumented)
+
+### `file-dialog-scroll` (function)
+
+```lisp
+(file-dialog-scroll instance)
+```
+
+(undocumented)
+
+### `file-dialog-selected` (function)
+
+```lisp
+(file-dialog-selected instance)
+```
+
+(undocumented)
+
+### `file-dialog-show-all` (function)
+
+```lisp
+(file-dialog-show-all instance)
+```
+
+(undocumented)
+
+### `file-drop-event` (type)
+
+A file was dropped on the window.
+
+- `PATH`: the file's path as the window system gives it.
+
+### `file-drop-event-path` (function)
+
+```lisp
+(file-drop-event-path instance)
+```
+
+(undocumented)
+
+### `file-entry` (type)
+
+One line of a folder listing.
+
+- `NAME`: the file or folder name.
+- `KIND`: :directory or :file.
+- `PATH`: its absolute pathname; a folder's ends in a slash.
+- `SIZE`: the byte count of a file, NIL for a folder.
+- `MODIFIED`: universal time of the last change.
+
+### `file-entry-kind` (function)
+
+```lisp
+(file-entry-kind instance)
+```
+
+(undocumented)
+
+### `file-entry-modified` (function)
+
+```lisp
+(file-entry-modified instance)
+```
+
+(undocumented)
+
+### `file-entry-name` (function)
+
+```lisp
+(file-entry-name instance)
+```
+
+(undocumented)
+
+### `file-entry-path` (function)
+
+```lisp
+(file-entry-path instance)
+```
+
+(undocumented)
+
+### `file-entry-size` (function)
+
+```lisp
+(file-entry-size instance)
+```
+
+(undocumented)
+
+### `format-entry-size` (function)
+
+```lisp
+(format-entry-size entry)
+```
+
+Return the size column of an entry: the size of a file, nothing for a folder.
+
+- `ENTRY`: a file entry.
+
 ### `format-model-number` (function)
 
 ```lisp
@@ -498,6 +775,16 @@ trailing zeros, so that editing a shown value does not change it.
 
 - `APP`: the application.
 - `MILLIMETERS`: the length in millimetres.
+
+### `format-modified-time` (function)
+
+```lisp
+(format-modified-time universal-time)
+```
+
+Return a time of day as the dialog shows it, in the local time zone: 2026-10-14 03:22.
+
+- `UNIVERSAL-TIME`: a universal time, or NIL.
 
 ### `format-property-value` (function)
 
@@ -546,6 +833,18 @@ A key press or release.
 
 Creates a line segment from two clicks.
 
+### `list-entries` (function)
+
+```lisp
+(list-entries directory)
+```
+
+Return the entries of the folder DIRECTORY, folders first and each group by name, and a second
+value that is NIL or a sentence that says why the folder cannot be read. Devices, sockets and
+hidden entries are left out.
+
+- `DIRECTORY`: a directory pathname.
+
 ### `load-drawing-into-app` (function)
 
 ```lisp
@@ -573,6 +872,14 @@ Create the application around a drawing (a new empty one by default).
 - `WIDTH`: initial logical window width.
 - `HEIGHT`: initial logical window height.
 - `THEME`: the color theme.
+
+### `make-file-drop-event` (function)
+
+```lisp
+(make-file-drop-event path)
+```
+
+(undocumented)
 
 ### `make-key-event` (function)
 
@@ -632,6 +939,18 @@ Create the tool named by KIND.
 
 (undocumented)
 
+### `move-selection` (function)
+
+```lisp
+(move-selection dialog delta)
+```
+
+Move the selection up or down the list, stopping at its ends. With nothing selected, going
+down selects the first entry and going up the last.
+
+- `DIALOG`: the file dialog.
+- `DELTA`: how many rows to move; negative goes up.
+
 ### `open-choice-prompt` (function)
 
 ```lisp
@@ -644,6 +963,41 @@ Open a modal prompt with a row of buttons. Each function runs after the prompt c
 - `TITLE`: heading.
 - `MESSAGE`: explanation under the heading.
 - `CHOICES`: list of (label . function-or-nil); the first is chosen by Enter, the last by Escape.
+
+### `open-directory` (function)
+
+```lisp
+(open-directory dialog directory)
+```
+
+Show the folder DIRECTORY. When it cannot be read, say why and stay where the dialog was.
+Returns true when the folder was shown.
+
+- `DIALOG`: the file dialog.
+- `DIRECTORY`: a directory pathname.
+
+### `open-file-dialog` (function)
+
+```lisp
+(open-file-dialog app mode &optional continuation)
+```
+
+Open the file dialog to choose a drawing to open or a place and a name to save to.
+
+- `APP`: the application.
+- `MODE`: :open or :save.
+- `CONTINUATION`: function of no arguments run after a successful save, or NIL.
+
+### `open-parent-directory` (function)
+
+```lisp
+(open-parent-directory dialog)
+```
+
+Show the folder that holds the one shown, and select the folder just left so that going back
+down is one key press. Returns true when there was a parent.
+
+- `DIALOG`: the file dialog.
 
 ### `open-text-prompt` (function)
 
@@ -752,7 +1106,7 @@ Start a new empty drawing, after offering to save the current one.
 (operation-open app)
 ```
 
-Ask for a file name and open that drawing, after offering to save the current one.
+Open the dialog where the user finds a drawing to open, after offering to save the current one.
 
 - `APP`: the application.
 
@@ -805,7 +1159,8 @@ Save the drawing to its file, asking for a name first when it has none.
 (operation-save-as app &optional continuation)
 ```
 
-Ask for a file name and save the drawing there, then run CONTINUATION.
+Open the dialog where the user picks a folder and a name, and save the drawing there, then run
+CONTINUATION.
 
 - `APP`: the application.
 - `CONTINUATION`: optional function of no arguments run after a successful save.
@@ -1159,6 +1514,18 @@ Turn the mouse wheel with the pointer over a world position.
 - `WORLD-Y`: world y under the pointer.
 - `NOTCHES`: positive to zoom in.
 
+### `select-entry` (function)
+
+```lisp
+(select-entry dialog entry)
+```
+
+Select an entry. Selecting a file puts its name in the file name field; selecting a folder
+leaves the field alone.
+
+- `DIALOG`: the file dialog.
+- `ENTRY`: a file entry.
+
 ### `select-tool` (type)
 
 Selects by click or window and moves the selection by dragging.
@@ -1172,6 +1539,16 @@ Selects by click or window and moves the selection by dragging.
 Return the selected entities in stacking order.
 
 - `APP`: the application.
+
+### `selected-entry` (function)
+
+```lisp
+(selected-entry dialog)
+```
+
+Return the selected entry, or NIL when none is selected or it is not in the list.
+
+- `DIALOG`: the file dialog.
 
 ### `selection-ids` (function)
 
@@ -1258,6 +1635,29 @@ Return the hint shown in the status bar while TOOL is active.
 
 - `TOOL`: a tool.
 - `APP`: the application.
+
+### `typed-path` (function)
+
+```lisp
+(typed-path dialog text)
+```
+
+Return the absolute pathname that TEXT, typed in the dialog, names: relative to the folder
+shown, unless it is absolute or starts with ~.
+
+- `DIALOG`: the file dialog.
+- `TEXT`: what the user typed or pasted.
+
+### `visible-entries` (function)
+
+```lisp
+(visible-entries dialog)
+```
+
+Return the entries the list shows: folders always, files only when they are drawings unless
+all files were asked for, and only those whose names contain the search text, ignoring case.
+
+- `DIALOG`: the file dialog.
 
 ### `wheel-event` (type)
 
@@ -1378,6 +1778,10 @@ Central application configuration; every default lives here.
 
 - `PROJECT-ROOT`: directory containing the project (logs and examples are relative to it).
 - `LOG-DIRECTORY`: directory receiving the rotating log file.
+- `STATE-DIRECTORY`: directory for what the program remembers between runs (the recent files), or NIL
+to remember nothing.
+- `DRAWINGS-DIRECTORY`: folder where the file dialogs start when no drawing is being edited, or NIL for
+the user's documents folder.
 - `LOG-LEVEL`: least severe level that is written.
 - `LOG-MAX-BYTES`: size at which the log file is rotated.
 - `LOG-MAX-FILES`: number of log files kept, including the current one.
@@ -1389,6 +1793,14 @@ Central application configuration; every default lives here.
 - `WINDOW-WIDTH`: initial window width in logical pixels.
 - `WINDOW-HEIGHT`: initial window height in logical pixels.
 - `INITIAL-FILE`: drawing file to open at startup, or NIL.
+
+### `config-drawings-directory` (function)
+
+```lisp
+(config-drawings-directory instance)
+```
+
+(undocumented)
 
 ### `config-font-path` (function)
 
@@ -1478,6 +1890,14 @@ Central application configuration; every default lives here.
 
 (undocumented)
 
+### `config-state-directory` (function)
+
+```lisp
+(config-state-directory instance)
+```
+
+(undocumented)
+
 ### `config-window-height` (function)
 
 ```lisp
@@ -1502,8 +1922,8 @@ Central application configuration; every default lives here.
 
 Apply core command-line options to a copy of CONFIG.
 Returns two values: the new configuration and the arguments that were not recognized, in order.
-Recognized: --log-dir DIR, --log-level LEVEL, --log-stderr, --log-sample EVENT=N, --font PATH,
---file PATH, --width N, --height N.
+Recognized: --log-dir DIR, --state-dir DIR, --drawings-dir DIR, --log-level LEVEL, --log-stderr,
+--log-sample EVENT=N, --font PATH, --file PATH, --width N, --height N.
 
 - `CONFIG`: the configuration to start from.
 - `ARGUMENTS`: list of argument strings.
@@ -1558,7 +1978,8 @@ Return true when VALUE is a finite double-float within the allowed coordinate ra
 
 Return the default configuration.
 
-- `PROJECT-ROOT`: the project directory; logs default to var/log/ below it.
+- `PROJECT-ROOT`: the project directory; logs default to var/log/ and remembered state to var/state/
+below it.
 
 ### `default-display-precision` (function)
 
@@ -1770,7 +2191,7 @@ Return the list of log level keywords, from most to least severe.
 ### `make-config` (function)
 
 ```lisp
-(make-config &key ((project-root project-root) nil) ((log-directory log-directory) nil) ((log-level log-level) info) ((log-max-bytes log-max-bytes) +default-log-max-bytes+) ((log-max-files log-max-files) +default-log-max-files+) ((log-to-stderr log-to-stderr) nil) ((log-sampling log-sampling) nil) ((frame-summary-interval-seconds frame-summary-interval-seconds)
+(make-config &key ((project-root project-root) nil) ((log-directory log-directory) nil) ((state-directory state-directory) nil) ((drawings-directory drawings-directory) nil) ((log-level log-level) info) ((log-max-bytes log-max-bytes) +default-log-max-bytes+) ((log-max-files log-max-files) +default-log-max-files+) ((log-to-stderr log-to-stderr) nil) ((log-sampling log-sampling) nil) ((frame-summary-interval-seconds frame-summary-interval-seconds)
  +default-frame-summary-interval-seconds+) ((memory-sample-interval-seconds memory-sample-interval-seconds)
  +default-memory-sample-interval-seconds+) ((font-path font-path) nil) ((window-width window-width) +default-window-width+) ((window-height window-height) +default-window-height+) ((initial-file initial-file) nil))
 ```
@@ -5318,6 +5739,12 @@ numbers round-trip exactly, strict validation, and atomic saving.
 Extension that a drawing file name gets when it does not already end in one that the program
 writes.
 
+### `*known-drawing-extensions*` (variable)
+
+Extensions of the file formats that the program writes. A name that ends in one of them is
+saved as typed; any other name, including one with a different extension such as plan.txt or
+v1.2 final, gets .bcad after it.
+
 ### `+maximum-file-bytes+` (constant)
 
 Largest drawing file that will be read. A 100,000-entity drawing is about 12 MB; the limit
@@ -5330,6 +5757,10 @@ Deepest list nesting accepted. The format needs 4; the limit protects the stack.
 ### `+maximum-token-length+` (constant)
 
 Longest word or number accepted, in characters. Doubles print in at most 24.
+
+### `+recent-file-limit+` (constant)
+
+Most drawings the recent list remembers.
 
 ### `+supported-format-version+` (constant)
 
@@ -5413,6 +5844,17 @@ building). Signals a DRAWING-FILE-ERROR subclass on any problem; no partial resu
 
 - `PATH`: pathname of the drawing file.
 
+### `load-recent-files` (function)
+
+```lisp
+(load-recent-files state-directory)
+```
+
+Return the recently used drawings as pathnames, the latest first. The list is empty when
+there is none, when it cannot be read, or when STATE-DIRECTORY is NIL.
+
+- `STATE-DIRECTORY`: the folder where the program keeps what it remembers, or NIL.
+
 ### `native-path` (function)
 
 ```lisp
@@ -5438,6 +5880,19 @@ subclass naming the line and column of the first problem. Nothing is evaluated.
 - `TEXT`: the file contents.
 - `PATH`: file name used in error messages, or NIL.
 
+### `remember-recent-file` (function)
+
+```lisp
+(remember-recent-file state-directory path)
+```
+
+Put the drawing PATH at the head of the recent list, dropping its older mention and the
+entries beyond the limit. Returns true when the list was written, and NIL when it could not be
+(or STATE-DIRECTORY is NIL).
+
+- `STATE-DIRECTORY`: the folder where the program keeps what it remembers, or NIL.
+- `PATH`: the drawing's pathname.
+
 ### `save-drawing` (function)
 
 ```lisp
@@ -5455,6 +5910,17 @@ property list with :bytes, :serialize-nanoseconds (including the disk flush) and
 - `PATH`: destination pathname.
 - `BEFORE-COMMIT`: optional function called with the temporary pathname just before the rename;
 a test seam for injecting failures.
+
+### `user-directories-entry` (function)
+
+```lisp
+(user-directories-entry key)
+```
+
+Return the folder that the user's XDG directories file assigns to KEY, or NIL. It is how a
+Brazilian Portuguese desktop learns that the documents folder is called Documentos.
+
+- `KEY`: the variable name, for example "XDG_DOCUMENTS_DIR".
 
 ### `write-drawing` (function)
 
@@ -5752,6 +6218,19 @@ it carries no error number.
 
 - `CONDITION`: an error condition.
 
+### `directory-listing` (function)
+
+```lisp
+(directory-listing directory)
+```
+
+Return the entries of the folder DIRECTORY, in no particular order, as a list of
+(name kind size modified), and a second value: NIL, or a sentence that says why the folder
+cannot be read. KIND is :directory, :file or :other (devices, sockets); SIZE is the byte count of
+a file and NIL otherwise; MODIFIED is a universal time.
+
+- `DIRECTORY`: a pathname.
+
 ### `drain-gc-events` (function)
 
 ```lisp
@@ -5890,6 +6369,17 @@ Return the kernel release (for example "7.2.9-arch1-1"), or "unknown".
 ```
 
 Return the Lisp implementation name and version, for example "SBCL 2.6.9".
+
+### `make-directory` (function)
+
+```lisp
+(make-directory path)
+```
+
+Create the folder PATH, which must not exist yet and whose parent must. Returns NIL on
+success, and otherwise a sentence that says why it could not be made.
+
+- `PATH`: a pathname.
 
 ### `monotonic-nanoseconds` (function)
 

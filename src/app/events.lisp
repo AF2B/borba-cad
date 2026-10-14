@@ -66,6 +66,12 @@ SCALE: display scale (framebuffer pixels per logical pixel)."
   (height 1d0 :type double-float :read-only t)
   (scale 1d0 :type double-float :read-only t))
 
+(defstruct (file-drop-event (:constructor make-file-drop-event (path)))
+  "A file was dropped on the window.
+
+PATH: the file's path as the window system gives it."
+  (path "" :type string :read-only t))
+
 (defstruct (quit-event (:constructor make-quit-event ()))
   "The user asked to close the window.")
 

@@ -11,7 +11,7 @@
 (defun make-test-app (&key telemetry drawing (width 1440d0) (height 900d0))
   "Create an application with a known view: 0.2 px/mm centered on the origin, which shows
 about 2.7 m to the left and right of the origin and 2 m above and below it."
-  (let ((application (app:make-app (base:default-config :project-root #p"/tmp/")
+  (let ((application (app:make-app (quiet-config)
                                    :telemetry telemetry :drawing drawing :width width :height height)))
     (set-test-view application)
     application))
@@ -674,10 +674,10 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
           (path (namestring (merge-pathnames "plan.bcad" directory))))
       (is (app:app-dirty-p application))
       (press application :s :control)
-      (is (app:app-prompt application))
+      (is (app:app-dialog application))
       (type-text application path)
       (press application :enter)
-      (is (null (app:app-prompt application)))
+      (is (null (app:app-dialog application)))
       (is (not (app:app-dirty-p application)))
       (is (probe-file path))
       (is (string= "plan.bcad - Borba CAD" (app:app-title application)))
@@ -689,6 +689,7 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
       (is (app:app-dirty-p application))
       (is (search "*" (app:app-title application)))
       (press application :s :control)
+      (is (null (app:app-dialog application)))
       (is (null (app:app-prompt application)))
       (is (not (app:app-dirty-p application)))
       (is (= 3 (dom:drawing-entity-count (persist:load-drawing path)))))))
@@ -700,7 +701,10 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
     (press application :enter)
     (is (eq :error (cdr (app:app-message application))))
     (is (app:app-dirty-p application))
-    (is (null (app:app-file-path application)))))
+    (is (null (app:app-file-path application)))
+    (is (app:app-dialog application) "the dialog stays open")
+    (is (eq :error (app:file-dialog-message-severity (app:app-dialog application))))
+    (is (plusp (length (app:file-dialog-message (app:app-dialog application)))) "and says what went wrong")))
 
 (test opening-replaces-the-drawing-and-bad-files-leave-it-intact
   (with-temporary-directory (directory)
@@ -711,25 +715,30 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
       (with-open-file (out broken :direction :output) (write-string "(drawing (format-version 9))" out))
       (let ((application (make-test-app)))
         (press application :o :control)
-        (is (eq :text (app:prompt-kind (app:app-prompt application))))
+        (is (eq :open (app:file-dialog-mode (app:app-dialog application))))
         (type-text application path)
         (press application :enter)
+        (is (null (app:app-dialog application)))
         (is (= 2 (dom:drawing-entity-count (app:app-drawing application))))
         (is (not (app:app-dirty-p application)))
         (is (= 0 (dom:history-undo-depth (app:app-history application))))
         (is (null (app:selection-ids application)))
-        ;; A broken file: error shown, drawing intact.
+        ;; A broken file: error shown in the dialog, drawing intact.
         (press application :o :control)
         (type-text application broken)
         (press application :enter)
         (is (eq :error (cdr (app:app-message application))))
         (is (search "newer" (message-text application)))
+        (is (search "newer" (app:file-dialog-message (app:app-dialog application))))
         (is (= 2 (dom:drawing-entity-count (app:app-drawing application))))
         ;; A missing file.
+        (press application :escape)
+        (is (null (app:app-dialog application)))
         (press application :o :control)
         (type-text application (namestring (merge-pathnames "missing.bcad" directory)))
         (press application :enter)
-        (is (search "does not exist" (message-text application)))))))
+        (is (search "does not exist" (app:file-dialog-message (app:app-dialog application))))
+        (is (= 2 (dom:drawing-entity-count (app:app-drawing application))))))))
 
 (test new-and-open-offer-to-save-unsaved-changes
   (with-temporary-directory (directory)
@@ -752,7 +761,7 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
       (click application 1000 0)
       (press application :n :control)
       (click-widget application '(:prompt-button 0))
-      (is (eq :text (app:prompt-kind (app:app-prompt application))))
+      (is (eq :save (app:file-dialog-mode (app:app-dialog application))))
       (type-text application path)
       (press application :enter)
       (is (probe-file path))
@@ -963,9 +972,16 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
             (handler-case (app:app-handle-event application event)
               (error (condition)
                 (fail "event ~d (~a) escaped as an error: ~a" i (type-of event) condition)))
-            ;; Never let a random "Save" write outside the sandbox: close file prompts.
+            ;; Never let a random "Save" write outside the sandbox: close file prompts, and close a
+            ;; file dialog the moment a random click on a place or on the folder trail takes it
+            ;; anywhere but the folder made for tests.
             (when (and (app:app-prompt application) (zerop (mod i 7)))
               (press application :escape))
+            (let ((dialog (app:app-dialog application)))
+              (when (and dialog
+                         (not (equal (truename (scratch-drawings-directory))
+                                     (truename (app:file-dialog-directory dialog)))))
+                (app:close-file-dialog application)))
             (when (zerop (mod i 50))
               (app:app-render application))))
         ;; Invariants.

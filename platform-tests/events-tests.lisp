@@ -121,3 +121,28 @@ BODY: forms to run."
       (is (typep (first translated) 'app:quit-event))))
   (with-sdl-event (event :joyaxismotion)
     (is (null (platform:translate-sdl-event event nil)))))
+
+(test a-dropped-file-becomes-a-file-drop-event-and-its-path-is-freed
+  (with-sdl-event (event :dropfile)
+    (let* ((text (format nil "/home/me/obras/Planta T~crrea.bcad" (code-char 233)))
+           (octets (sb-ext:string-to-octets text :external-format :utf-8))
+           (buffer (sdl2-ffi.functions:sdl-malloc (1+ (length octets)))))
+      (dotimes (index (length octets))
+        (setf (cffi:mem-aref buffer :unsigned-char index) (aref octets index)))
+      (setf (cffi:mem-aref buffer :unsigned-char (length octets)) 0)
+      (setf (plus-c:c-ref event sdl2-ffi:sdl-event :drop :file) buffer)
+      (let ((translated (platform:translate-sdl-event event nil)))
+        (is (= 1 (length translated)))
+        (is (typep (first translated) 'app:file-drop-event))
+        (is (string= text (app:file-drop-event-path (first translated))))))))
+
+(test a-drop-without-a-path-is-ignored
+  (with-sdl-event (event :dropfile)
+    (setf (cffi:mem-ref (autowrap:ptr event) :pointer platform::+sdl-drop-file-offset+) (cffi:null-pointer))
+    (is (null (platform:translate-sdl-event event nil)))))
+
+(test page-up-and-page-down-are-keys
+  (flet ((scancode (number) (logior #x40000000 number)))
+    (is (eq :page-up (platform:keycode->key (scancode 75))))
+    (is (eq :page-down (platform:keycode->key (scancode 78))))))
+

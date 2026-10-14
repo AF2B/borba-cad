@@ -88,7 +88,7 @@ EVENT: a pointer event."
               (app-interaction app) (list :pan x y))
         (when (app-telemetry app)
           (obs:telemetry-record-viewport-update (app-telemetry app) (- (sbcl:monotonic-nanoseconds) started)))))
-    (cond ((app-prompt app) nil)
+    (cond ((or (app-prompt app) (app-dialog app)) nil)
           ((or (canvas-contains-p app
                                   x
                                   y) (eq interaction :tool))
@@ -116,7 +116,7 @@ EVENT: a pointer event."
          (hit (ui:widget-at widgets
                             x
                             y)))
-    (when (and (app-focus app) (not (eq (app-focus app) :prompt))
+    (when (and (app-focus app) (not (member (app-focus app) '(:prompt :dialog)))
                (not (and hit (equal (ui:widget-id hit) (app-focus app)))))
       (commit-field-edit app)
       (setf widgets (build-widgets app)
@@ -125,7 +125,7 @@ EVENT: a pointer event."
                               y)))
     (cond ((and hit (eq button :left))
            (handle-widget-click app hit))
-          ((app-prompt app) nil)
+          ((or (app-prompt app) (app-dialog app)) nil)
           ((and (canvas-contains-p app
                                    x
                                    y)
@@ -219,6 +219,8 @@ EVENT: a wheel event."
     (setf (app-pointer-x app) x
           (app-pointer-y app) y)
     (cond ((app-prompt app) nil)
+          ((app-dialog app)
+           (handle-dialog-wheel app delta))
           ((scroll-panel app
                          (ui:layout-layers-panel layout)
                          delta
@@ -347,6 +349,9 @@ EVENT: a key event."
            (when (eq key :space)
              (setf (app-space-down app) nil)))
           ((app-prompt app) (handle-prompt-key app key))
+          ((app-dialog app) (handle-dialog-key app
+                                               key
+                                               modifiers))
           ((app-focus app) (handle-field-key app key))
           ((eq key :space) (setf (app-space-down app) t))
           ((modifier-p modifiers :control) (handle-control-shortcut app
@@ -368,6 +373,9 @@ EVENT: a text event."
   (let ((prompt (app-prompt app)))
     (cond ((and prompt (eq (prompt-kind prompt) :text))
            (setf (prompt-edit prompt) (ui:edit-insert (prompt-edit prompt) (text-event-text event))))
+          (prompt nil)
+          ((app-dialog app)
+           (handle-dialog-text app (text-event-text event)))
           ((and (app-focus app) (app-edit app))
            (setf (app-edit app) (ui:edit-insert (app-edit app) (text-event-text event)))))
     (app-request-redraw app)))
@@ -389,6 +397,20 @@ SCALE: display scale."
   (refresh-cursor app)
   (app-request-redraw app))
 
+(defun handle-file-drop (app
+                         event)
+  "Open a drawing dropped on the window, after offering to save the current one. A dropped file
+is ignored while a prompt is asking something; it closes the file dialog, which it replaces.
+
+APP: the application.
+EVENT: a file drop event."
+  (unless (app-prompt app)
+    (when (app-dialog app)
+      (close-file-dialog app))
+    (let ((path (file-drop-event-path event)))
+      (confirm-discard app (lambda () (load-drawing-into-app app path)))))
+  (app-request-redraw app))
+
 (defun event-type-name (event)
   "Return the name under which an event's handling time is aggregated.
 
@@ -398,6 +420,7 @@ EVENT: an input event."
     (wheel-event "wheel")
     (key-event "key")
     (text-event "text")
+    (file-drop-event "file-drop")
     (resize-event "resize")
     (quit-event "quit")))
 
@@ -414,6 +437,7 @@ EVENT: a pointer, wheel, key, text, resize or quit event."
           (wheel-event (handle-wheel app event))
           (key-event (handle-key app event))
           (text-event (handle-text app event))
+          (file-drop-event (handle-file-drop app event))
           (resize-event (app-resize app
                                     (resize-event-width event)
                                     (resize-event-height event)

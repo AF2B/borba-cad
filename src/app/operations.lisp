@@ -394,29 +394,14 @@ LAYER-ID: layer id."
 ;;; Files
 
 (defun drawings-directory (app)
-  "Return the folder that the file prompts start in: the folder of the file being edited, or the
-user's documents folder.
+  "Return the folder that the file dialogs start in: the folder of the file being edited, or the
+configured drawings folder, or the user's documents folder.
 
 APP: the application."
-  (if (app-file-path app)
-      (persist:directory-of (app-file-path app))
-      (persist:default-drawings-directory)))
-
-(defun default-save-path (app)
-  "Return the path suggested in the Save As prompt: the file being edited, or a new name in the
-folder that prompts start in.
-
-APP: the application."
-  (uiop:native-namestring (or (app-file-path app)
-                              (merge-pathnames *untitled-file-name* (drawings-directory app)))))
-
-(defun default-open-path (app)
-  "Return the path suggested in the Open prompt: the file being edited, or the folder that
-prompts start in.
-
-APP: the application."
-  (uiop:native-namestring (or (app-file-path app)
-                              (drawings-directory app))))
+  (cond ((app-file-path app)
+         (persist:directory-of (app-file-path app)))
+        ((base:config-drawings-directory (app-config app)))
+        (t (persist:default-drawings-directory))))
 
 (defun reset-document (app
                        drawing
@@ -479,6 +464,23 @@ CONDITION: the condition signaled."
                :error)
   nil)
 
+(defun note-recent-file (app
+                         path)
+  "Put the drawing PATH at the head of the list of recent files. A list that cannot be written is
+logged, not shown: it is a convenience.
+
+APP: the application.
+PATH: the drawing's pathname."
+  (let ((state (base:config-state-directory (app-config app))))
+    (when (and state
+               (not (persist:remember-recent-file state path))
+               (app-telemetry app))
+      (obs:log-event (obs:telemetry-logger (app-telemetry app))
+                     :warn
+                     "recent.write"
+                     :result :failed
+                     :path (uiop:native-namestring path)))))
+
 (defun resolve-open-path (text)
   "Return the pathname that an Open request names. A name without an extension that matches no
 file but matches a file with the drawing extension names that file.
@@ -519,6 +521,7 @@ PATH-TEXT: file name as typed by the user."
             (reset-document app
                             drawing
                             path)
+            (note-recent-file app path)
             (set-message app
                          (format nil "Opened ~a: ~d ~:*~[entities~;entity~:;entities~] (~a)."
                                  (file-namestring path)
@@ -557,6 +560,7 @@ PATH-TEXT: file name as typed by the user."
                                          :result :success)
             (setf (app-file-path app) path
                   (app-saved-revision app) (dom:drawing-revision (app-drawing app)))
+            (note-recent-file app path)
             (set-message app
                          (format nil "Saved ~a (~a)."
                                  (file-namestring path)
@@ -581,51 +585,16 @@ SECOND: a pathname, or NIL."
          (and first-true
               (equal first-true second-true)))))
 
-(defun request-save-to (app
-                        text
-                        continuation)
-  "Save to the file that TEXT names, after asking whether to replace it when it is a different
-file that already exists. Then run CONTINUATION.
-
-APP: the application.
-TEXT: file name as typed by the user.
-CONTINUATION: function of no arguments run after a successful save, or NIL."
-  (let ((started (sbcl:monotonic-nanoseconds)))
-    (handler-case
-        (let ((path (persist:drawing-file-path text)))
-          (flet ((save ()
-                   (when (and (save-app-drawing app (uiop:native-namestring path))
-                              continuation)
-                     (funcall continuation))))
-            (if (and (eq :file (sbcl:file-kind path))
-                     (not (same-file-p path (app-file-path app))))
-                (open-choice-prompt app
-                                    "Replace file?"
-                                    (format nil "~a already exists. Replace it?"
-                                            (file-namestring path))
-                                    (list (cons "Replace" #'save)
-                                          (cons "Cancel" nil)))
-                (save))))
-      (base:invalid-input (condition)
-        (fail-file-operation app
-                             "file.save"
-                             started
-                             condition)))))
-
 (defun operation-save-as (app
                           &optional continuation)
-  "Ask for a file name and save the drawing there, then run CONTINUATION.
+  "Open the dialog where the user picks a folder and a name, and save the drawing there, then run
+CONTINUATION.
 
 APP: the application.
 CONTINUATION: optional function of no arguments run after a successful save."
-  (open-text-prompt app
-                    "Save drawing as"
-                    "File name (a name without an extension gets .bcad):"
-                    (default-save-path app)
-                    (lambda (text)
-                      (request-save-to app
-                                       text
-                                       continuation))))
+  (open-file-dialog app
+                    :save
+                    continuation))
 
 (defun operation-save (app
                        &optional continuation)
@@ -664,15 +633,10 @@ APP: the application."
                          (set-message app "New drawing."))))
 
 (defun operation-open (app)
-  "Ask for a file name and open that drawing, after offering to save the current one.
+  "Open the dialog where the user finds a drawing to open, after offering to save the current one.
 
 APP: the application."
-  (confirm-discard app (lambda ()
-                         (open-text-prompt app
-                                           "Open drawing"
-                                           "File name:"
-                                           (default-open-path app)
-                                           (lambda (text) (load-drawing-into-app app text))))))
+  (confirm-discard app (lambda () (open-file-dialog app :open))))
 
 (defun operation-quit (app)
   "Close the application, after offering to save unsaved changes.

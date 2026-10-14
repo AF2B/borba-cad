@@ -57,6 +57,8 @@ All compiled output goes to `build/fasl/`, logs to `var/log/`, benchmark reports
 | `--log-stderr` | `BORBA_CAD_LOG_STDERR` | Also print log lines on standard error |
 | `--log-sample EVENT=N` | `BORBA_CAD_LOG_SAMPLING` | Write only one in N entries of an event |
 | | `BORBA_CAD_LOG_MAX_BYTES`, `BORBA_CAD_LOG_MAX_FILES` | Rotation: 5 MiB and 5 files by default (at most 25 MiB on disk) |
+| `--state-dir DIR` | `BORBA_CAD_STATE_DIR` | Where the program remembers things between runs: the recent files (default `var/state` in the project) |
+| `--drawings-dir DIR` | `BORBA_CAD_DRAWINGS_DIR` | Folder where the file dialogs start when no drawing is open (default: the user's documents folder) |
 | `--font FILE` | `BORBA_CAD_FONT` | Monospace TrueType font |
 | `--width N`, `--height N` | | Initial window size in logical pixels (1440 × 900) |
 | `--demo`, `--exit-after-demo`, `--screenshot FILE` | | Run the scripted demonstration, close when done, save the last frame as a PNG |
