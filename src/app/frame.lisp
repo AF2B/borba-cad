@@ -43,6 +43,7 @@ APP: the application."
          (cursor (app-cursor app))
          (theme (app-theme app))
          (tool (app-tool app)))
+    (expire-message app)
     (scene:draw-list-reset list)
     (let* ((state (scene:make-scene-state
                    :selected-ids (and (plusp (hash-table-count selection)) selection)

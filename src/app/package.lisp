@@ -122,6 +122,7 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:commit-changes
    #:report-error
    #:set-message
+   #:expire-message
    ;; Tools
    #:tool
    #:select-tool

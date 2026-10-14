@@ -13,6 +13,12 @@ enough for a steady hand and small enough not to grab distant entities.")
 (defconstant +drag-threshold-pixels+ 4d0
   "Pointer travel, in pixels, before a press becomes a drag; below it a release is a click.")
 
+(defconstant +info-message-nanoseconds+ (* 6 sbcl:+nanoseconds-per-second+)
+  "How long a message of the status bar stays before the hint or the tool's prompt shows again.")
+
+(defconstant +error-message-nanoseconds+ (* 12 sbcl:+nanoseconds-per-second+)
+  "How long an error stays in the status bar: longer, so that it can be read.")
+
 (defconstant +maximum-message-length+ 400
   "Longest status message kept, in characters.")
 
@@ -81,8 +87,11 @@ CLIPBOARD-READER: function of no arguments that returns the text on the system c
 CLIPBOARD-WRITER: function of one string that puts it on the system clipboard, or NIL.
 CLIPBOARD-FALLBACK: the clipboard text kept here while there is no system clipboard.
 MESSAGE: (text . severity) shown in the status bar, or NIL.
+MESSAGE-TIME: monotonic time when the message was set, in nanoseconds.
 OVERLAY-VISIBLE: whether the performance overlay is shown.
 LAYER-SCROLL: first visible layer row.
+SEEN-CURRENT-LAYER: the current layer when the layers card was last built, to scroll the card to a
+new one.
 INSPECTOR-SCROLL: first visible inspector row.
 FIELD-COMMIT: function of the typed string run when the focused field is committed.
 FIELD-ORIGINAL: the text the focused field started with; an unchanged field commits nothing.
@@ -114,8 +123,10 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   clipboard-writer
   clipboard-fallback
   message
+  message-time
   overlay-visible
   (layer-scroll 0 :type fixnum)
+  (seen-current-layer nil)
   (inspector-scroll 0 :type fixnum)
   field-commit
   (field-original "" :type string)
@@ -184,8 +195,28 @@ SEVERITY: :info or :error."
         (cons (if (> (length text) +maximum-message-length+)
                   (subseq text 0 +maximum-message-length+)
                   text)
-              severity))
+              severity)
+        (app-message-time app) (sbcl:monotonic-nanoseconds))
   (app-request-redraw app))
+
+(defun expire-message (app
+                       &optional (now (sbcl:monotonic-nanoseconds)))
+  "Take the message out of the status bar once it has been there long enough, so that the hint
+under the pointer and the prompt of the tool show again. Returns true when it was removed.
+
+APP: the application.
+NOW: the monotonic time to judge by, in nanoseconds."
+  (let ((message (app-message app)))
+    (when (and message
+               (app-message-time app)
+               (> (- now (app-message-time app))
+                  (if (eq (cdr message) :error)
+                      +error-message-nanoseconds+
+                      +info-message-nanoseconds+)))
+      (setf (app-message app) nil
+            (app-message-time app) nil)
+      (app-request-redraw app)
+      t)))
 
 (defun report-error (app
                      condition

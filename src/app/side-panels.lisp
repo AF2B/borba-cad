@@ -239,6 +239,27 @@ APP: the application."
                 (lambda () (operation-cycle-layer-color app current))
                 "Change the color of the current layer"))))
 
+(defun reveal-current-layer (app
+                             layers
+                             current
+                             capacity)
+  "Scroll the layers list just enough to show the current layer when it is not the one the list was
+last built for: a layer just added, chosen elsewhere, or arrived with a drawing that was opened.
+Scrolling by hand afterwards is left alone.
+
+APP: the application.
+LAYERS: the layers in display order.
+CURRENT: the id of the current layer.
+CAPACITY: how many rows the card shows."
+  (unless (eql current (app-seen-current-layer app))
+    (setf (app-seen-current-layer app) current)
+    (let ((index (position current layers :key #'dom:layer-id)))
+      (when index
+        (cond ((< index (app-layer-scroll app))
+               (setf (app-layer-scroll app) index))
+              ((>= index (+ (app-layer-scroll app) capacity))
+               (setf (app-layer-scroll app) (1+ (- index capacity)))))))))
+
 (defun layers-panel-widgets (app
                              rect
                              blocked)
@@ -279,6 +300,10 @@ BLOCKED: true while a modal covers the card."
                                (+ x width)
                                y
                                blocked))
+        (reveal-current-layer app
+                              layers
+                              current
+                              capacity)
         (setf (app-layer-scroll app) (max 0 (min (app-layer-scroll app) (max 0 (- (length layers) capacity)))))
         (loop for layer in (nthcdr (app-layer-scroll app) layers)
               for row from 0 below capacity

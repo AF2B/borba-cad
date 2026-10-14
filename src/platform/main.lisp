@@ -465,6 +465,7 @@ SESSION: the session.
 DRAW: function of the session that draws and presents a frame (DRAW-FRAME in the program)."
   (setf (session-cpu-start session) (sbcl:monotonic-nanoseconds))
   (run-due-demo-step session)
+  (app:expire-message (session-app session))
   (sync-text-input session)
   (sync-window-title session)
   (when (frame-due-p session)

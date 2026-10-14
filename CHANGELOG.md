@@ -21,6 +21,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
   itself, and the window announces its application id so desktops show the icon.
 - Drag a drawing onto the window to open it (after the usual question about unsaved changes).
 - Page Up and Page Down keys; options `--state-dir` and `--drawings-dir`.
+- A drawing with nothing in it says how to begin: a card over the canvas with the first tools and keys.
 - Text fields take `Ctrl+A` (select all), `Ctrl+C`, `Ctrl+X` and `Ctrl+V` through the system clipboard,
   in the file dialog, the prompts and the inspector; pasted lines become one line.
 - Typed lengths accept thousands separators in both conventions: `1.250,5` and `1,250.5` are 1250.5,
@@ -39,6 +40,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
   instead of running out of the field, and long dialog messages wrap.
 
 ### Fixed
+
+- Messages in the status bar (Saved..., Layer created...) stayed there until another one replaced
+  them, which hid the hint under the pointer and the tool's prompt; they now go after six seconds
+  (errors after twelve).
+- A layer added or chosen out of sight in a long list is scrolled into view.
+- A folder with tens of thousands of files no longer makes the file dialog filter it again for
+  every widget of every frame (20,000 files: 11 ms per frame, now 1 ms).
 
 - Saving: a name without an extension is saved as `name.bcad`; blanks, one pair of quotes and
   `file://` addresses around a pasted path are understood instead of creating folders named `"`,

@@ -67,6 +67,26 @@
 (defconstant +tooltip-lift+ 4f0
   "How far a tooltip under a title bar button tucks up toward the button, in pixels.")
 
+(defconstant +empty-hint-title-size+ 22f0
+  "Em size of the heading of the hint shown over an empty drawing, in pixels.")
+
+(defconstant +empty-hint-line-height+ 24f0
+  "Height of a line of the hint shown over an empty drawing, in pixels.")
+
+(defconstant +empty-hint-gap+ 10f0
+  "Space between the heading of the empty-drawing hint and its lines, in pixels.")
+
+(defconstant +empty-hint-padding-x+ 36f0
+  "Space between the edge of the empty-drawing hint's card and its text, left and right, in pixels.")
+
+(defconstant +empty-hint-padding-y+ 26f0
+  "Space between the edge of the empty-drawing hint's card and its text, above and below, in pixels.")
+
+(defparameter *empty-hint-lines*
+  '("Pick a tool on the left, or press L for a line, R for a rectangle, C for a circle."
+    "Ctrl+O opens a drawing, and a .bcad file dropped on the window opens too.")
+  "The lines of the hint shown over an empty drawing, under its heading.")
+
 (defparameter *palette-tools*
   '((:select :select "Select and move" "Esc")
     nil
@@ -369,6 +389,59 @@ BLOCKED: true while a modal covers the title bar."
     (nreverse widgets)))
 
 ;;; Tool palette
+
+(defun empty-hint-widgets (app
+                           canvas)
+  "Build the hint that tells a new user how to begin, centered over an empty drawing. It is
+gone as soon as there is something drawn, a tool is at work, or a dialog or a question is open.
+
+APP: the application.
+CANVAS: the canvas rectangle."
+  (when (and (zerop (dom:drawing-entity-count (app-drawing app)))
+             (not (tool-in-progress-p (app-tool app)))
+             (null (app-prompt app))
+             (null (app-dialog app)))
+    (let* ((theme (app-theme app))
+           (x (ui:rect-x canvas))
+           (width (ui:rect-width canvas))
+           (lines *empty-hint-lines*)
+           (block-height (+ +empty-hint-title-size+
+                            +empty-hint-gap+
+                            (* (length lines) +empty-hint-line-height+)))
+           (block-width (reduce #'max
+                                (cons (ui:text-width-pixels "Start drawing"
+                                                            +empty-hint-title-size+
+                                                            :ui-strong)
+                                      (mapcar #'ui:text-width-pixels lines))))
+           (card-width (min (ui:rect-width canvas) (+ block-width (* 2 +empty-hint-padding-x+))))
+           (top (+ (ui:rect-y canvas) (/ (- (ui:rect-height canvas) block-height) 2))))
+      (list* (ui:make-widget :card
+                             :empty-hint-card
+                             (+ x (/ (- width card-width) 2))
+                             (- top +empty-hint-padding-y+)
+                             card-width
+                             (+ block-height (* 2 +empty-hint-padding-y+)))
+             (make-label :empty-hint-title
+                        "Start drawing"
+                        x
+                        top
+                        width
+                        +empty-hint-title-size+
+                        :align :center
+                        :font :ui-strong
+                        :size +empty-hint-title-size+
+                        :color (scene:theme-text-dim theme))
+            (loop for line in lines
+                  for index from 0
+                  collect (make-label (list :empty-hint-line index)
+                                      line
+                                      x
+                                      (+ top +empty-hint-title-size+ +empty-hint-gap+
+                                         (* index +empty-hint-line-height+))
+                                      width
+                                      +empty-hint-line-height+
+                                      :align :center
+                                      :color (scene:theme-text-faint theme)))))))
 
 (defun palette-widgets (app
                         rect

@@ -148,7 +148,8 @@ APP: the application."
          (blocked (and (or (app-prompt app) (app-dialog app)) t))
          (dialog-widgets (and (app-dialog app)
                               (file-dialog-widgets app (and (app-prompt app) t))))
-         (base-widgets (append (list (ui:make-widget :panel
+         (base-widgets (append (empty-hint-widgets app (ui:layout-canvas layout))
+                               (list (ui:make-widget :panel
                                                      :side-panel
                                                      (ui:rect-x side)
                                                      (ui:rect-y side)

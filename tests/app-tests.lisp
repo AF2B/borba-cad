@@ -851,6 +851,33 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
         (app:app-render fresh)
         (is (some (lambda (text) (search "Line (L)" text)) (all-text fresh)))))))
 
+(test a-message-leaves-the-status-bar-after-a-while-and-an-error-after-longer
+  (let ((application (make-test-app))
+        (start (sbcl:monotonic-nanoseconds)))
+    (app:set-message application "Saved plan.bcad.")
+    (is (not (app:expire-message application start)) "a fresh message stays")
+    (is (app:app-message application))
+    (app:app-render application)
+    (is (app:app-message application) "drawing a frame does not remove it either")
+    (is (app:expire-message application (+ start (* 7 sbcl:+nanoseconds-per-second+))))
+    (is (null (app:app-message application)))
+    (is (not (app:expire-message application (+ start (* 99 sbcl:+nanoseconds-per-second+)))) "nothing to remove")
+    (app:set-message application "The file is damaged." :error)
+    (let ((set-at (sbcl:monotonic-nanoseconds)))
+      (is (not (app:expire-message application (+ set-at (* 7 sbcl:+nanoseconds-per-second+)))) "an error stays longer")
+      (is (app:expire-message application (+ set-at (* 13 sbcl:+nanoseconds-per-second+)))))))
+
+(test once-the-message-is-gone-the-tool-prompt-and-the-hints-show-again
+  (let ((application (make-test-app)))
+    (app:set-message application "Layer created.")
+    (multiple-value-bind (left) (app:app-status-texts application nil)
+      (is (string= "Layer created." left)))
+    (app:expire-message application (+ (sbcl:monotonic-nanoseconds) (* 60 sbcl:+nanoseconds-per-second+)))
+    (multiple-value-bind (left) (app:app-status-texts application nil)
+      (is (search "Select:" left)))
+    (multiple-value-bind (left) (app:app-status-texts application "Line (L)")
+      (is (string= "Line (L)" left)))))
+
 (test the-creation-preview-follows-the-pointer
   (let ((application (make-test-app)))
     (press application :l)

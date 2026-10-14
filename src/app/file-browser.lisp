@@ -60,7 +60,9 @@ MESSAGE: a sentence under the list, or NIL.
 MESSAGE-SEVERITY: :info or :error.
 PLACES: the shortcuts on the side, as (label icon pathname).
 RECENT: the recently used drawings, as pathnames, latest first.
-LAST-CLICK: the row last clicked and when, to recognize a double click."
+LAST-CLICK: the row last clicked and when, to recognize a double click.
+VISIBLE-CACHE: the entries the list showed last time with what they were computed from, so that
+a folder of tens of thousands of files is not filtered again for every widget of every frame."
   mode
   continuation
   (directory nil)
@@ -77,7 +79,8 @@ LAST-CLICK: the row last clicked and when, to recognize a double click."
   (message-severity :info)
   (places '())
   (recent '())
-  (last-click nil))
+  (last-click nil)
+  (visible-cache nil))
 
 ;;; Formatting
 
@@ -158,19 +161,44 @@ NAME: a file name."
          (member type persist:*known-drawing-extensions* :test #'string-equal)
          t)))
 
+(defun compute-visible-entries (entries
+                                show-all
+                                text)
+  "Return the entries of ENTRIES the list shows: folders always, files only when they are drawings
+unless all files were asked for, and only those whose names contain TEXT, ignoring case.
+
+ENTRIES: every entry of the folder.
+SHOW-ALL: true to list every file.
+TEXT: the search text, without the blanks around it."
+  (remove-if-not (lambda (entry)
+                   (and (or (eq (file-entry-kind entry) :directory)
+                            show-all
+                            (drawing-name-p (file-entry-name entry)))
+                        (or (zerop (length text))
+                            (search text (file-entry-name entry) :test #'char-equal))))
+                 entries))
+
 (defun visible-entries (dialog)
-  "Return the entries the list shows: folders always, files only when they are drawings unless
-all files were asked for, and only those whose names contain the search text, ignoring case.
+  "Return the entries the list shows (see COMPUTE-VISIBLE-ENTRIES). The answer is kept until the
+folder, the search text or the All files switch changes.
 
 DIALOG: the file dialog."
-  (let ((text (string-trim " " (ui:edit-state-text (file-dialog-filter-edit dialog)))))
-    (remove-if-not (lambda (entry)
-                     (and (or (eq (file-entry-kind entry) :directory)
-                              (file-dialog-show-all dialog)
-                              (drawing-name-p (file-entry-name entry)))
-                          (or (zerop (length text))
-                              (search text (file-entry-name entry) :test #'char-equal))))
-                   (file-dialog-entries dialog))))
+  (let ((entries (file-dialog-entries dialog))
+        (show-all (file-dialog-show-all dialog))
+        (text (string-trim " " (ui:edit-state-text (file-dialog-filter-edit dialog))))
+        (cache (file-dialog-visible-cache dialog)))
+    (destructuring-bind (&optional cached-entries cached-show-all cached-text cached-result)
+        cache
+      (if (and cache
+               (eq entries cached-entries)
+               (eq show-all cached-show-all)
+               (string= text cached-text))
+          cached-result
+          (let ((result (compute-visible-entries entries
+                                                 show-all
+                                                 text)))
+            (setf (file-dialog-visible-cache dialog) (list entries show-all text result))
+            result)))))
 
 (defun find-entry (dialog
                    name)

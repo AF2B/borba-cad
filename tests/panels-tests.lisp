@@ -259,12 +259,93 @@
       (dolist (row rows)
         (is (<= (+ (ui:widget-y row) (ui:widget-height row))
                 (+ (ui:rect-y panel) (ui:rect-height panel)))))
-      (let ((first-before (ui:widget-id (first rows))))
-        (send application (app:make-wheel-event -3d0
+      (let ((first-before (ui:widget-id (first rows)))
+            (scroll-before (app:app-layer-scroll application)))
+        ;; The new layer, the last, is in view, so the list starts at the bottom; the wheel goes up.
+        (send application (app:make-wheel-event 3d0
                                                 (float (+ (ui:rect-x panel) 100) 1d0)
                                                 (float (+ (ui:rect-y panel) 100) 1d0)))
-        (is (plusp (app:app-layer-scroll application)))
-        (is (not (equal first-before (ui:widget-id (first (layer-row-widgets application))))))))))
+        (is (= (- scroll-before 3) (app:app-layer-scroll application)))
+        (is (not (equal first-before (ui:widget-id (first (layer-row-widgets application))))))
+        (send application (app:make-wheel-event -10d0
+                                                (float (+ (ui:rect-x panel) 100) 1d0)
+                                                (float (+ (ui:rect-y panel) 100) 1d0)))
+        (layer-row-widgets application)                         ; building the card clamps the scroll
+        (is (= scroll-before (app:app-layer-scroll application)) "and stops at the bottom")))))
+
+(test a-layer-added-or-chosen-out-of-sight-is-scrolled-into-view-and-hand-scrolling-is-left-alone
+  (let ((application (make-test-app :height 700d0)))
+    (dotimes (index 30)
+      (app:operation-add-layer application (format nil "layer ~d" index)))
+    (let ((rows (layer-row-widgets application)))
+      (is (find-if #'ui:widget-active rows) "the layer just added, the last one, is in view and current")
+      (is (plusp (app:app-layer-scroll application))))
+    ;; Scrolling to the top by hand is respected as long as the current layer does not change.
+    (send application (app:make-wheel-event 40d0 1300d0 150d0))
+    (is (= 0 (app:app-layer-scroll application)))
+    (is (null (find-if #'ui:widget-active (layer-row-widgets application))) "the current layer is out of view")
+    (app:app-render application)
+    (is (= 0 (app:app-layer-scroll application)) "rebuilding does not undo the scroll")
+    ;; Choosing another layer out of sight brings it into view.
+    (app:operation-set-current-layer application 29)
+    (is (find-if #'ui:widget-active (layer-row-widgets application)))
+    (app:operation-set-current-layer application 0)
+    (is (find-if #'ui:widget-active (layer-row-widgets application)))
+    (is (= 0 (app:app-layer-scroll application)))))
+
+(test an-empty-drawing-tells-a-new-user-how-to-begin
+  (let ((application (make-test-app)))
+    (let ((title (find-widget application :empty-hint-title)))
+      (is-true title)
+      (is (string= "Start drawing" (ui:widget-label title)))
+      (let* ((canvas (canvas-of application))
+             (middle (+ (ui:widget-x title) (/ (ui:widget-width title) 2))))
+        (is (< (abs (- middle (+ (ui:rect-x canvas) (/ (ui:rect-width canvas) 2)))) 1f0) "centered on the canvas")
+        (is (< (abs (- (+ (ui:widget-y title) (ui:widget-height title))
+                       (+ (ui:rect-y canvas) (/ (ui:rect-height canvas) 2))))
+               (ui:rect-height canvas)))))
+    (is-true (find-widget application '(:empty-hint-line 0)))
+    (app:app-render application)
+    (is (some (lambda (text) (search "press L for a line" text)) (all-text application)))))
+
+(test the-hint-goes-away-with-the-first-entity-while-a-tool-works-and-under-a-dialog
+  (let ((application (make-test-app)))
+    (is (find-widget application :empty-hint-title))
+    (press application :l)
+    (click application 0 0)                                       ; a line has begun, nothing is drawn yet
+    (is (null (find-widget application :empty-hint-title)))
+    (click application 1000 0)
+    (press application :escape)
+    (is (null (find-widget application :empty-hint-title)) "there is a line now")
+    (app:operation-undo application)
+    (is (find-widget application :empty-hint-title) "undone, the drawing is empty again")
+    (app:operation-open application)
+    (is (null (find-widget application :empty-hint-title)) "a dialog covers the canvas")
+    (app:close-file-dialog application)
+    (app:open-text-prompt application "Title" "Message" "" #'identity)
+    (is (null (find-widget application :empty-hint-title)))))
+
+(defun widget-kind-name (widget)
+  "Return the first part of the id of WIDGET: the id itself, or the head of a list id."
+  (let ((id (ui:widget-id widget)))
+    (if (consp id) (first id) id)))
+
+(test the-hint-never-leaves-the-canvas
+  (let* ((application (make-test-app :width (float +minimum-window-width+ 1d0)
+                                     :height (float +minimum-window-height+ 1d0)))
+         (canvas (canvas-of application))
+         (left (ui:rect-x canvas))
+         (top (ui:rect-y canvas))
+         (right (+ left (ui:rect-width canvas) 0.01f0))
+         (bottom (+ top (ui:rect-height canvas) 0.01f0)))
+    (dolist (widget (remove-if-not (lambda (widget)
+                                     (member (widget-kind-name widget)
+                                             '(:empty-hint-card :empty-hint-title :empty-hint-line)))
+                                   (app:build-widgets application)))
+      (is (>= (ui:widget-x widget) left))
+      (is (<= (+ (ui:widget-x widget) (ui:widget-width widget)) right))
+      (is (>= (ui:widget-y widget) top))
+      (is (<= (+ (ui:widget-y widget) (ui:widget-height widget)) bottom)))))
 
 (test a-very-long-layer-name-is-cut-to-the-row
   (let ((application (make-test-app)))

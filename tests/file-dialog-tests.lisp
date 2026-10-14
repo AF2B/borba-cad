@@ -182,6 +182,27 @@ true, recent files are remembered in a folder inside DIRECTORY."
       (app:app-render application)
       (is (some (lambda (text) (search "Nothing here matches" text)) (all-text application))))))
 
+(test the-visible-entries-are-kept-until-something-they-depend-on-changes
+  (with-temporary-directory (directory)
+    (make-tree directory)
+    (let* ((application (dialog-app directory))
+           (dialog (progn (app:operation-open application) (dialog-of application))))
+      (let ((first-answer (app:visible-entries dialog)))
+        (is (eq first-answer (app:visible-entries dialog)) "asked again, the same list comes back")
+        (type-text application "plan")
+        (is (not (eq first-answer (app:visible-entries dialog))) "a new search text computes again")
+        (is (equal '("Plan-a.bcad" "plan-b.bcad") (visible-names application)))
+        (let ((filtered (app:visible-entries dialog)))
+          (is (eq filtered (app:visible-entries dialog)))
+          (click-widget application :dialog-all-files)
+          (is (not (eq filtered (app:visible-entries dialog))) "so does the All files switch")
+          (click-widget application :dialog-all-files)
+          (is (equal '("Plan-a.bcad" "plan-b.bcad") (visible-names application))))
+        (app:create-folder dialog "plan-folder")
+        (is (member "plan-folder" (visible-names application) :test #'string=) "and so does a new folder")
+        (is (app:open-directory dialog (merge-pathnames "beta/" directory)))
+        (is (equal '("inner.bcad") (visible-names application)) "and so does going to another folder")))))
+
 ;;; Navigation
 
 (test the-folder-trail-runs-from-the-root-to-the-folder
