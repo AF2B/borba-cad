@@ -6,9 +6,12 @@ that stays maintainable? The program draws lines, rectangles, circles, polylines
 aligned dimensions on layers, with pan, zoom, grid, snap, undo/redo, a numeric property inspector
 and a versioned, human-readable file format. Everything it does is measured and logged.
 
-**Status:** version 1.0.0 of the MVP. Strict build with zero warnings, lint, 110,000+ headless
-checks and 131 window checks pass; the benchmark baseline and the experiment report are recorded.
-Pending: the author's review of the acceptance criteria and a license. Linux x86_64 with SBCL only.
+**Status:** version 1.0.0 of the MVP plus the work recorded under "Unreleased" in the changelog (a
+new interface, a file dialog, a Linux double-click distribution). Strict build with zero warnings,
+lint, 128,000+ headless checks and 200+ window checks pass; the benchmark baseline and the
+experiment report of 1.0.0 are recorded. Pending: the author's review of the acceptance criteria
+and a license. Linux x86_64 with SBCL is the only platform that has been built and tried; the
+Windows packaging is written and has never run.
 
 ## Requirements
 
@@ -128,6 +131,7 @@ unavailable, never estimated.
 
 ## Known limits
 
-Linux x86_64 and SBCL only; single-line unrotated text, axis-aligned rectangles and aligned linear
-dimensions only; window selection only; no command line, DXF or printing. No `LICENSE` file yet:
-the author has not chosen one.
+Tried on Linux x86_64 with SBCL only (the Windows folder and CI workflow are written and have never
+run); single-line unrotated text, axis-aligned rectangles and aligned linear dimensions only; window
+selection only (no crossing selection); no copy and paste of entities, grips, DXF, scripting console
+or printing. No `LICENSE` file yet: the author has not chosen one.

@@ -114,8 +114,7 @@ First complete version of the MVP: a native 2D CAD in Common Lisp (SBCL) with me
 
 ### Known limits
 
-- Linux x86_64 and SBCL only; no commit history yet; no `LICENSE` file (the author has not chosen
-  one).
+- Tried on Linux x86_64 and SBCL only; no `LICENSE` file (the author has not chosen one).
 - Hitches caused by garbage collection in long sessions with large drawings are not characterized
   (`docs/performance.md` §9).
 - A drawing of 100,000 entities with everything in view draws at about 32 frames per second.
