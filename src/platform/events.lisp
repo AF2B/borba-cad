@@ -16,6 +16,12 @@
 (defconstant +windowevent-exposed+ 3
   "SDL window event id: part of the window needs redrawing.")
 
+(defconstant +windowevent-leave+ 11
+  "SDL window event id: the pointer left the window.")
+
+(defconstant +windowevent-focus-lost+ 13
+  "SDL window event id: the window lost the keyboard focus.")
+
 (defconstant +windowevent-resized+ 5
   "SDL window event id: the user resized the window.")
 
@@ -170,6 +176,8 @@ WINDOW: the window, used to read the size on resize events."
        (cond ((member kind (list +windowevent-resized+ +windowevent-size-changed+))
               (list (resize-event-for window)))
              ((= kind +windowevent-exposed+) (list :redraw))
+             ((= kind +windowevent-focus-lost+) (list (app:make-window-state-event :focus-lost)))
+             ((= kind +windowevent-leave+) (list (app:make-window-state-event :pointer-left)))
              (t nil))))
     (:quit (list (app:make-quit-event)))
     (t nil)))

@@ -415,6 +415,31 @@ SCALE: display scale."
   (refresh-cursor app)
   (app-request-redraw app))
 
+(defun handle-window-state (app
+                            event)
+  "Settle what the window's own changes leave hanging. When the keyboard goes elsewhere the
+release of a held Space or of a mouse button never arrives, so a pan or a drag is ended here and
+the pan modifier let go (a line or a polyline half drawn is kept: the user may come back to it).
+When the pointer leaves the window its hover and its position in the status bar go, unless a drag
+holds it.
+
+APP: the application.
+EVENT: a window state event."
+  (ecase (window-state-event-kind event)
+    (:focus-lost
+     (setf (app-space-down app) nil)
+     (when (app-interaction app)
+       (when (eq (app-interaction app) :tool)
+         (when (eq (tool-kind (app-tool app)) :select)
+           (tool-cancel (app-tool app) app)))
+       (setf (app-interaction app) nil)))
+    (:pointer-left
+     (unless (app-interaction app)
+       (setf (app-cursor app) nil
+             (app-pointer-x app) -1d0
+             (app-pointer-y app) -1d0))))
+  (app-request-redraw app))
+
 (defun handle-file-drop (app
                          event)
   "Open a drawing dropped on the window, after offering to save the current one. A dropped file
@@ -439,6 +464,7 @@ EVENT: an input event."
     (key-event "key")
     (text-event "text")
     (file-drop-event "file-drop")
+    (window-state-event "window-state")
     (resize-event "resize")
     (quit-event "quit")))
 
@@ -456,6 +482,7 @@ EVENT: a pointer, wheel, key, text, resize or quit event."
           (key-event (handle-key app event))
           (text-event (handle-text app event))
           (file-drop-event (handle-file-drop app event))
+          (window-state-event (handle-window-state app event))
           (resize-event (app-resize app
                                     (resize-event-width event)
                                     (resize-event-height event)

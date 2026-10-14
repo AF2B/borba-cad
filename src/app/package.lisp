@@ -42,6 +42,9 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:file-drop-event
    #:make-file-drop-event
    #:file-drop-event-path
+   #:window-state-event
+   #:make-window-state-event
+   #:window-state-event-kind
    #:quit-event
    #:make-quit-event
    ;; Constants

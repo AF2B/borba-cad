@@ -72,6 +72,13 @@ SCALE: display scale (framebuffer pixels per logical pixel)."
 PATH: the file's path as the window system gives it."
   (path "" :type string :read-only t))
 
+(defstruct (window-state-event (:constructor make-window-state-event (kind)))
+  "The window changed in a way that matters to input.
+
+KIND: :focus-lost (another window took the keyboard; releases of keys and buttons that happen
+elsewhere never arrive) or :pointer-left (the pointer left the window)."
+  (kind :focus-lost :type keyword :read-only t))
+
 (defstruct (quit-event (:constructor make-quit-event ()))
   "The user asked to close the window.")
 

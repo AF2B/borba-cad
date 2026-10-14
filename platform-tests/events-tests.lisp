@@ -146,3 +146,18 @@ BODY: forms to run."
     (is (eq :page-up (platform:keycode->key (scancode 75))))
     (is (eq :page-down (platform:keycode->key (scancode 78))))))
 
+(test losing-focus-and-the-pointer-leaving-become-window-state-events
+  (flet ((translate (kind)
+           (with-sdl-event (event :windowevent)
+             (setf (plus-c:c-ref event sdl2-ffi:sdl-event :window :event) kind)
+             (platform:translate-sdl-event event nil))))
+    (let ((lost (translate 13))
+          (left (translate 11)))
+      (is (= 1 (length lost)))
+      (is (typep (first lost) 'app:window-state-event))
+      (is (eq :focus-lost (app:window-state-event-kind (first lost))))
+      (is (eq :pointer-left (app:window-state-event-kind (first (translate 11)))))
+      (is (= 1 (length left)))
+      (is (null (translate 12)) "gaining focus needs nothing")
+      (is (null (translate 10)) "nor does the pointer entering"))))
+

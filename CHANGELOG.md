@@ -45,6 +45,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
   them, which hid the hint under the pointer and the tool's prompt; they now go after six seconds
   (errors after twelve).
 - A layer added or chosen out of sight in a long list is scrolled into view.
+- Switching to another window while Space was held, or in the middle of a pan or a drag, left the
+  program thinking Space was still down and the drag still going (the release arrives in the other
+  window); losing the keyboard now lets go of both, and the pointer leaving the window clears its
+  position from the status bar.
 - A folder with tens of thousands of files no longer makes the file dialog filter it again for
   every widget of every frame (20,000 files: 11 ms per frame, now 1 ms).
 

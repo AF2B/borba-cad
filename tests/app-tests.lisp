@@ -892,6 +892,57 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
     (multiple-value-bind (left) (app:app-status-texts application "Line (L)")
       (is (string= "Line (L)" left)))))
 
+(test losing-the-keyboard-lets-go-of-space-and-ends-a-drag-whose-release-will-never-come
+  (let ((application (two-lines-app)))
+    ;; Space held, window switched away: the release never arrives. Afterwards a drag must select, not pan.
+    (send application (app:make-key-event :space nil :down))
+    (send application (app:make-window-state-event :focus-lost))
+    (let ((before (view:viewport-center-x (app:app-viewport application))))
+      (drag application 2000 1000 2200 1100)
+      (is (= before (view:viewport-center-x (app:app-viewport application))) "space is not held any more"))
+    ;; A move in progress is abandoned: nothing moves when the button comes back up elsewhere.
+    (click application 500 0)
+    (is (equal '(1) (app:selection-ids application)))
+    (let ((line-before (dom:line-y1 (first (entities-of application)))))
+      (send application
+            (pointer application :down :left 500 0)
+            (pointer application :move nil 500 100))
+      (is (app:app-translation application) "the move is previewed")
+      (send application (app:make-window-state-event :focus-lost))
+      (is (null (app:app-translation application)) "and abandoned")
+      (send application (pointer application :up :left 500 200))
+      (is (= line-before (dom:line-y1 (first (entities-of application)))) "nothing moved"))
+    ;; A pan is ended too.
+    (send application
+          (pointer application :down :middle 0 0)
+          (app:make-window-state-event :focus-lost)
+          (pointer application :move nil 100 100))
+    (let ((center (view:viewport-center-x (app:app-viewport application))))
+      (send application (pointer application :move nil 300 300))
+      (is (= center (view:viewport-center-x (app:app-viewport application))) "moving no longer pans"))))
+
+(test a-line-half-drawn-survives-losing-the-keyboard
+  (let ((application (make-test-app)))
+    (press application :l)
+    (click application 0 0)
+    (send application (app:make-window-state-event :focus-lost))
+    (click application 1000 0)
+    (is (= 1 (dom:drawing-entity-count (app:app-drawing application))) "the line was finished after coming back")))
+
+(test the-pointer-leaving-the-window-clears-its-position-unless-a-drag-holds-it
+  (let ((application (make-test-app)))
+    (send application (pointer application :move nil 100 100))
+    (is (app:app-cursor application))
+    (send application (app:make-window-state-event :pointer-left))
+    (is (null (app:app-cursor application)) "no coordinates in the status bar")
+    ;; While a pan holds the pointer, leaving the window changes nothing.
+    (send application (pointer application :down :middle 0 0))
+    (send application (pointer application :move nil 50 50))
+    (send application (app:make-window-state-event :pointer-left))
+    (let ((center (view:viewport-center-x (app:app-viewport application))))
+      (send application (pointer application :move nil 120 120))
+      (is (/= center (view:viewport-center-x (app:app-viewport application))) "the pan goes on"))))
+
 (test the-creation-preview-follows-the-pointer
   (let ((application (make-test-app)))
     (press application :l)
