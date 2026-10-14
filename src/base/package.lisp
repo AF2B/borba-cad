@@ -10,6 +10,7 @@
    #:+maximum-length+
    #:+drawing-resolution+
    #:+length-tolerance+
+   #:+angle-tolerance+
    #:coordinate-p
    #:positive-length-p
    ;; Units

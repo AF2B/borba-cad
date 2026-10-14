@@ -6,7 +6,10 @@
         (cons :circle (i18n:mark "circle"))
         (cons :polyline (i18n:mark "polyline"))
         (cons :text (i18n:mark "text"))
-        (cons :dimension (i18n:mark "dimension")))
+        (cons :dimension (i18n:mark "dimension"))
+        (cons :arc (i18n:mark "arc"))
+        (cons :ellipse (i18n:mark "ellipse"))
+        (cons :polygon (i18n:mark "polygon")))
   "The name of each kind of entity, in English, as an error message says it. It is translated where
 it is shown.")
 

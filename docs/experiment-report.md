@@ -105,9 +105,17 @@ What exists: entity behavior is a set of generic functions plus a table-driven f
 scene dispatches with `etypecase` so a forgotten clause fails at run time, and a checklist for a new
 entity type is in [development.md](development.md) §7. The dimension, the last type added, appears
 in 14 source files: 3 hold its own code, 4 need a block of a few lines and 7 need a line or a mention.
-What is missing for a verdict: the checklist was written from the finished code, not before it,
-and no type has been added by following it. The test that would settle it is to add a seventh type
-(an arc, say) by the checklist and count the surprises. Other maintainability facts: lint enforces
+The test that was missing has since been made: three types (arc, ellipse, regular polygon) were added
+by following the checklist, after version 1.0.0. Each type needed three files of its own code (its
+domain file, plus the shared `geometry/curves.lisp` for all three), a block in the format table, a clause
+in the scene's `etypecase`, a tool, a row of the draw menu with its icon and a key, and entries in the
+catalog; nothing else had to change, and the places that were forgotten failed loudly (the scene test,
+the lint of the translation catalog, the export of a symbol). Two surprises: every kind of entity now
+also answers `entity-touches-bounds-p` (crossing selection) and `entity-with-identity` (paste), generic
+functions added for features that came after the checklist, so the checklist grew by two methods per
+type; and an entity that is described by a parameter and not by its points (the polygon) keeps its
+vertices in a slot. The verdict moves from inconclusive to supported, with that cost. Other
+maintainability facts: lint enforces
 documentation of every exported symbol, a layout rule and the core's dependency rule; the strict
 build has zero warnings; the largest source files are `src/app/panels.lisp` (856 lines), `src/platform/main.lisp` (735) and
 `src/scene/scene.lisp` (658).

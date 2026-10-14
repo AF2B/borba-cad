@@ -6,7 +6,7 @@
 
 (in-suite menus)
 
-(defparameter *draw-menu-order* '(:line :polyline :rectangle :circle :text :dimension)
+(defparameter *draw-menu-order* '(:line :polyline :rectangle :polygon :circle :arc :ellipse :text :dimension)
   "The tools of the draw menu, top to bottom.")
 
 (defun menu-rows (application)
@@ -34,7 +34,7 @@
         (is (ui:widget-icon row))
         (is (ui:widget-label row))
         (is (ui:widget-shortcut row)))
-      (is (equal '("L" "P" "R" "C" "T" "D") (mapcar #'ui:widget-shortcut rows)) "the letters are the same"))
+      (is (equal '("L" "P" "R" "N" "C" "A" "E" "T" "D") (mapcar #'ui:widget-shortcut rows)) "the letters"))
     (is-true (find-widget application :menu))))
 
 (test the-list-hangs-from-the-draw-button-and-stays-inside-the-window

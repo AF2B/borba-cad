@@ -258,7 +258,7 @@ APP: the application."
   "Activate a tool, cancelling whatever the previous one was doing.
 
 APP: the application.
-KIND: :select, :line, :rectangle, :circle, :polyline, :text or :dimension."
+KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse or :polygon."
   (when (app-tool app)
     (tool-cancel (app-tool app) app))
   (setf (app-tool app) (make-tool kind)

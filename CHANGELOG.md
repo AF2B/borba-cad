@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **New drawing types: arc, ellipse and regular polygon.** The arc takes its center, its start and
+  a direction for its end (counter-clockwise); the ellipse takes its center, the end of its first axis
+  and the other half-axis; the polygon takes its center and a vertex, and Up and Down set the number of
+  sides (3 to 1000, kept for the next one). Keys `A`, `E` and `N`, listed in the draw menu. Each is
+  edited in the inspector (angles in degrees), snaps to its center, its ends or its vertices, is picked
+  by its outline, taken by crossing selection, copied and pasted, and stored in `.bcad` version 2.
 - **Text at an angle.** A text can be turned to any angle: drag from the insertion point with the
   text tool (the angle snaps to multiples of 15 degrees when it is within 3 of one, and the text is
   previewed while dragging), or edit the Angle field of the inspector, in degrees. The text is

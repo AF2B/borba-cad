@@ -53,6 +53,7 @@ NIL when it selects only what it holds (dragged from left to right).
 - `PROMPT`: the open modal prompt, or NIL.
 - `DIALOG`: the open file dialog, or NIL.
 - `MENU`: the open drop-down menu, or NIL.
+- `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
 - `CLIPBOARD-READER`: function of no arguments that returns the text on the system clipboard, or NIL.
 - `CLIPBOARD-WRITER`: function of one string that puts it on the system clipboard, or NIL.
 - `CLIPBOARD-FALLBACK`: the clipboard text kept here while there is no system clipboard.
@@ -246,6 +247,14 @@ Handle one input event and record its handling time for the aggregated input sta
 
 (undocumented)
 
+### `app-polygon-sides` (function)
+
+```lisp
+(app-polygon-sides instance)
+```
+
+(undocumented)
+
 ### `app-prompt` (function)
 
 ```lisp
@@ -420,6 +429,11 @@ uses this same interaction so that their frame costs are comparable.
 
 - `APP`: the application.
 - `FRAME`: frame number, which selects the zoom direction.
+
+### `arc-tool` (type)
+
+Creates an arc from its center, the point where it starts (which gives the radius) and
+a point in the direction where it ends, counter-clockwise.
 
 ### `breadcrumbs` (function)
 
@@ -637,6 +651,11 @@ new edit state, or NIL when the key does nothing to a field.
 - `EDIT`: the field's edit state.
 - `KEY`: key keyword.
 - `MODIFIERS`: modifier keys held.
+
+### `ellipse-tool` (type)
+
+Creates an ellipse from its center, the end of its first axis, and a point whose distance
+from that axis is the other half-axis.
 
 ### `expire-message` (function)
 
@@ -1042,7 +1061,7 @@ Create the application around a drawing (a new empty one by default).
 
 Create the tool named by KIND.
 
-- `KIND`: :select, :line, :rectangle, :circle, :polyline, :text or :dimension.
+- `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse or :polygon.
 
 ### `make-wheel-event` (function)
 
@@ -1389,7 +1408,7 @@ Make the interface speak LANGUAGE now and keep the choice for the next run.
 Activate a tool, cancelling whatever the previous one was doing.
 
 - `APP`: the application.
-- `KIND`: :select, :line, :rectangle, :circle, :polyline, :text or :dimension.
+- `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse or :polygon.
 
 ### `operation-toggle-grid` (function)
 
@@ -1522,6 +1541,11 @@ A pointer movement or button transition.
 ```
 
 (undocumented)
+
+### `polygon-tool` (type)
+
+Creates a regular polygon from its center and one of its vertices; Up and Down change
+the number of sides, which the application keeps for the next polygon.
 
 ### `polyline-tool` (type)
 
@@ -1734,6 +1758,18 @@ leaves the field alone.
 
 - `DIALOG`: the file dialog.
 - `ENTRY`: a file entry.
+
+### `select-ids` (function)
+
+```lisp
+(select-ids app ids &key add)
+```
+
+Select the entities with IDS, replacing the selection unless ADD is true.
+
+- `APP`: the application.
+- `IDS`: list of entity ids.
+- `ADD`: when true, keep the current selection.
 
 ### `select-tool` (type)
 
@@ -1976,6 +2012,12 @@ draws.
 ## BORBA-CAD/BASE
 
 Units, tolerances, conditions and configuration shared by every module.
+
+### `+angle-tolerance+` (constant)
+
+Angles that differ by no more than this, in radians, count as equal. An arc must sweep more than
+this and less than a whole turn by more than this; at the largest radius an arc of this sweep is
+0.01 mm long, so no arc a drafter means is ever read as degenerate.
 
 ### `+default-frame-summary-interval-seconds+` (constant)
 
@@ -2939,6 +2981,10 @@ Number of polyline vertices that the inspector lists for numeric editing.
 
 Largest number of decimals shown in a dimension text.
 
+### `+maximum-polygon-sides+` (constant)
+
+Largest number of sides of a regular polygon.
+
 ### `+maximum-polyline-vertices+` (constant)
 
 Largest vertex count of a polyline. Bounds memory use when loading untrusted files.
@@ -2976,6 +3022,65 @@ failure leaves DRAWING untouched. Bumps the revision.
 
 - `DRAWING`: the drawing.
 - `CHANGES`: list of CHANGE records, each entity appearing at most once.
+
+### `arc-center-x` (function)
+
+```lisp
+(arc-center-x instance)
+```
+
+(undocumented)
+
+### `arc-center-y` (function)
+
+```lisp
+(arc-center-y instance)
+```
+
+(undocumented)
+
+### `arc-end-angle` (function)
+
+```lisp
+(arc-end-angle instance)
+```
+
+(undocumented)
+
+### `arc-entity` (type)
+
+An arc: the part of a circle that is swept counter-clockwise from a start angle to an end angle.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: radius, above the length tolerance.
+- `START-ANGLE`: direction of the start, in radians counter-clockwise from +x, in [0, 2 pi).
+- `END-ANGLE`: direction of the end, in [0, 2 pi).
+- `SWEEP`: how far the arc turns from its start to its end, in (0, 2 pi); computed from the angles.
+
+### `arc-radius` (function)
+
+```lisp
+(arc-radius instance)
+```
+
+(undocumented)
+
+### `arc-start-angle` (function)
+
+```lisp
+(arc-start-angle instance)
+```
+
+(undocumented)
+
+### `arc-sweep` (function)
+
+```lisp
+(arc-sweep instance)
+```
+
+(undocumented)
 
 ### `assign-layer-changes` (function)
 
@@ -3401,6 +3506,57 @@ Return true when ENTITY may be changed: its layer exists and is not locked.
 - `DRAWING`: the drawing.
 - `ENTITY`: an entity.
 
+### `ellipse-center-x` (function)
+
+```lisp
+(ellipse-center-x instance)
+```
+
+(undocumented)
+
+### `ellipse-center-y` (function)
+
+```lisp
+(ellipse-center-y instance)
+```
+
+(undocumented)
+
+### `ellipse-entity` (type)
+
+An ellipse, given by its center, its two semi-axes and the direction of the first.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS-X`: the semi-axis in the direction ROTATION, above the length tolerance.
+- `RADIUS-Y`: the semi-axis across it, above the length tolerance.
+- `ROTATION`: direction of the first axis, in radians counter-clockwise from +x, in [0, pi): an ellipse
+is the same after half a turn.
+
+### `ellipse-radius-x` (function)
+
+```lisp
+(ellipse-radius-x instance)
+```
+
+(undocumented)
+
+### `ellipse-radius-y` (function)
+
+```lisp
+(ellipse-radius-y instance)
+```
+
+(undocumented)
+
+### `ellipse-rotation` (function)
+
+```lisp
+(ellipse-rotation instance)
+```
+
+(undocumented)
+
 ### `entities-bounds` (function)
 
 ```lisp
@@ -3475,7 +3631,7 @@ Return the read-only derived quantities of ENTITY as DERIVED-VALUE values.
 ```
 
 Return the entity's kind keyword (:line, :rectangle, :circle, :polyline,
-:text or :dimension).
+:text, :dimension, :arc, :ellipse or :polygon).
 
 - `ENTITY`: an entity.
 
@@ -3871,6 +4027,23 @@ A straight segment between two points.
 
 (undocumented)
 
+### `make-arc` (function)
+
+```lisp
+(make-arc &key id layer-id center-x center-y radius start-angle end-angle)
+```
+
+Create a validated arc. Signals INVALID-ENTITY when an invariant is violated.
+
+- `ID`: positive entity id.
+- `LAYER-ID`: id of the layer.
+- `CENTER-X`: x of the center, in millimetres.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: radius.
+- `START-ANGLE`: direction of the start in radians; any finite angle, kept reduced to [0, 2 pi).
+- `END-ANGLE`: direction of the end; the arc turns counter-clockwise from the start to it, and the
+two must differ.
+
 ### `make-change` (function)
 
 ```lisp
@@ -3928,6 +4101,22 @@ Create a validated aligned dimension. Signals INVALID-ENTITY when an invariant i
 
 Create an empty drawing with the default layer, millimetre units and default settings.
 
+### `make-ellipse` (function)
+
+```lisp
+(make-ellipse &key id layer-id center-x center-y radius-x radius-y (rotation 0.0d0))
+```
+
+Create a validated ellipse. Signals INVALID-ENTITY when an invariant is violated.
+
+- `ID`: positive entity id.
+- `LAYER-ID`: id of the layer.
+- `CENTER-X`: x of the center, in millimetres.
+- `CENTER-Y`: y of the center.
+- `RADIUS-X`: semi-axis in the direction ROTATION.
+- `RADIUS-Y`: semi-axis across it.
+- `ROTATION`: direction of the first axis in radians; any finite angle, kept reduced to [0, pi).
+
 ### `make-entity-store` (function)
 
 ```lisp
@@ -3958,6 +4147,22 @@ Create a validated line. Signals INVALID-ENTITY when an invariant is violated.
 - `Y1`: y of the start point.
 - `X2`: x of the end point.
 - `Y2`: y of the end point.
+
+### `make-polygon` (function)
+
+```lisp
+(make-polygon &key id layer-id center-x center-y radius sides (rotation 0.0d0))
+```
+
+Create a validated regular polygon. Signals INVALID-ENTITY when an invariant is violated.
+
+- `ID`: positive entity id.
+- `LAYER-ID`: id of the layer.
+- `CENTER-X`: x of the center, in millimetres.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: radius of the circle through the vertices.
+- `SIDES`: number of sides, an integer from 3 to +MAXIMUM-POLYGON-SIDES+.
+- `ROTATION`: direction of the first vertex in radians; any finite angle, kept reduced to [0, 2 pi).
 
 ### `make-polyline` (function)
 
@@ -4097,6 +4302,66 @@ Return true when ENTITY may be selected: its layer exists, is visible and is not
 
 - `DRAWING`: the drawing.
 - `ENTITY`: an entity.
+
+### `polygon-center-x` (function)
+
+```lisp
+(polygon-center-x instance)
+```
+
+(undocumented)
+
+### `polygon-center-y` (function)
+
+```lisp
+(polygon-center-y instance)
+```
+
+(undocumented)
+
+### `polygon-entity` (type)
+
+A regular polygon, given by the circle through its vertices, its number of sides and the
+direction of its first vertex.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: radius of the circle through the vertices, above the length tolerance.
+- `SIDES`: number of sides, from 3 to +MAXIMUM-POLYGON-SIDES+.
+- `ROTATION`: direction of the first vertex, in radians counter-clockwise from +x, in [0, 2 pi).
+- `VERTICES`: the vertices as alternating x and y values; computed once at construction.
+
+### `polygon-radius` (function)
+
+```lisp
+(polygon-radius instance)
+```
+
+(undocumented)
+
+### `polygon-rotation` (function)
+
+```lisp
+(polygon-rotation instance)
+```
+
+(undocumented)
+
+### `polygon-sides` (function)
+
+```lisp
+(polygon-sides instance)
+```
+
+(undocumented)
+
+### `polygon-vertices` (function)
+
+```lisp
+(polygon-vertices instance)
+```
+
+(undocumented)
 
 ### `polyline-closed` (function)
 
@@ -4595,6 +4860,23 @@ Signals INVALID-ENTITY when a moved entity would leave the drawing limits.
 - `DX`: displacement along x in millimetres.
 - `DY`: displacement along y in millimetres.
 
+### `update-arc` (function)
+
+```lisp
+(update-arc arc &key (id (entity-id arc)) (layer-id (entity-layer-id arc)) (center-x (arc-center-x arc)) (center-y (arc-center-y arc)) (radius (arc-radius arc)) (start-angle (arc-start-angle arc)) (end-angle (arc-end-angle arc)))
+```
+
+Return a validated copy of ARC with the given fields replaced.
+
+- `ARC`: the arc to copy.
+- `ID`: replacement id.
+- `LAYER-ID`: replacement layer id.
+- `CENTER-X`: replacement center x.
+- `CENTER-Y`: replacement center y.
+- `RADIUS`: replacement radius.
+- `START-ANGLE`: replacement start angle.
+- `END-ANGLE`: replacement end angle.
+
 ### `update-circle` (function)
 
 ```lisp
@@ -4630,6 +4912,23 @@ Return a validated copy of DIMENSION with the given fields replaced.
 - `UNIT`: replacement display unit.
 - `PRECISION`: replacement decimals.
 
+### `update-ellipse` (function)
+
+```lisp
+(update-ellipse ellipse &key (id (entity-id ellipse)) (layer-id (entity-layer-id ellipse)) (center-x (ellipse-center-x ellipse)) (center-y (ellipse-center-y ellipse)) (radius-x (ellipse-radius-x ellipse)) (radius-y (ellipse-radius-y ellipse)) (rotation (ellipse-rotation ellipse)))
+```
+
+Return a validated copy of ELLIPSE with the given fields replaced.
+
+- `ELLIPSE`: the ellipse to copy.
+- `ID`: replacement id.
+- `LAYER-ID`: replacement layer id.
+- `CENTER-X`: replacement center x.
+- `CENTER-Y`: replacement center y.
+- `RADIUS-X`: replacement first semi-axis.
+- `RADIUS-Y`: replacement second semi-axis.
+- `ROTATION`: replacement direction of the first axis.
+
 ### `update-line` (function)
 
 ```lisp
@@ -4645,6 +4944,23 @@ Return a validated copy of LINE with the given fields replaced.
 - `Y1`: replacement start y.
 - `X2`: replacement end x.
 - `Y2`: replacement end y.
+
+### `update-polygon` (function)
+
+```lisp
+(update-polygon polygon &key (id (entity-id polygon)) (layer-id (entity-layer-id polygon)) (center-x (polygon-center-x polygon)) (center-y (polygon-center-y polygon)) (radius (polygon-radius polygon)) (sides (polygon-sides polygon)) (rotation (polygon-rotation polygon)))
+```
+
+Return a validated copy of POLYGON with the given fields replaced.
+
+- `POLYGON`: the polygon to copy.
+- `ID`: replacement id.
+- `LAYER-ID`: replacement layer id.
+- `CENTER-X`: replacement center x.
+- `CENTER-Y`: replacement center y.
+- `RADIUS`: replacement radius.
+- `SIDES`: replacement number of sides.
+- `ROTATION`: replacement direction of the first vertex.
 
 ### `update-polyline` (function)
 
@@ -4741,6 +5057,89 @@ Tall enough for accented capital letters.
 ### `+text-descent-ratio+` (constant)
 
 Depth of the nominal text box below the baseline, as a fraction of the text height.
+
+### `+two-pi+` (constant)
+
+A full turn in radians.
+
+### `angle-within-sweep-p` (function)
+
+```lisp
+(angle-within-sweep-p angle start-angle sweep)
+```
+
+Return true when ANGLE lies on the arc that starts at START-ANGLE and turns SWEEP counter-clockwise,
+its ends included, to the angle tolerance.
+
+- `ANGLE`: a direction in radians.
+- `START-ANGLE`: the angle at which the arc starts.
+- `SWEEP`: how far it turns, in (0, 2 pi).
+
+### `arc-bounds` (function)
+
+```lisp
+(arc-bounds center-x center-y radius start-angle sweep)
+```
+
+Return the bounds of an arc: its two ends and the points of the circle farthest along an axis
+that the arc passes through.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: the radius.
+- `START-ANGLE`: the angle at which the arc starts.
+- `SWEEP`: how far it turns counter-clockwise, in (0, 2 pi).
+
+### `arc-end-point` (function)
+
+```lisp
+(arc-end-point center-x center-y radius angle)
+```
+
+Return, as two values, the point of the circle at ANGLE.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: the radius.
+- `ANGLE`: direction from the center, in radians.
+
+### `arc-length` (function)
+
+```lisp
+(arc-length radius sweep)
+```
+
+Return the length of an arc.
+
+- `RADIUS`: the radius.
+- `SWEEP`: how far it turns, in radians.
+
+### `arc-sweep` (function)
+
+```lisp
+(arc-sweep start-angle end-angle)
+```
+
+Return how far the arc from START-ANGLE counter-clockwise to END-ANGLE turns, in [0, 2 pi).
+
+- `START-ANGLE`: the angle at which the arc starts, in radians.
+- `END-ANGLE`: the angle at which it ends, in radians.
+
+### `arc-touches-bounds-p` (function)
+
+```lisp
+(arc-touches-bounds-p center-x center-y radius start-angle sweep bounds)
+```
+
+Return true when an arc has a point inside BOUNDS or on its edge. The arc is one piece, so if
+a part of it is in the window either an end is, or the arc crosses an edge of the window on its way.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: the radius.
+- `START-ANGLE`: the angle at which the arc starts.
+- `SWEEP`: how far it turns counter-clockwise.
+- `BOUNDS`: the window.
 
 ### `bounds` (type)
 
@@ -5092,6 +5491,75 @@ Return the Euclidean distance between two points.
 - `X2`: x of the second point.
 - `Y2`: y of the second point.
 
+### `ellipse-area` (function)
+
+```lisp
+(ellipse-area radius-x radius-y)
+```
+
+Return the area of an ellipse.
+
+- `RADIUS-X`: one semi-axis.
+- `RADIUS-Y`: the other.
+
+### `ellipse-bounds` (function)
+
+```lisp
+(ellipse-bounds center-x center-y radius-x radius-y rotation)
+```
+
+Return the bounds of an ellipse.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS-X`: the semi-axis in the direction ROTATION.
+- `RADIUS-Y`: the semi-axis across it.
+- `ROTATION`: direction of the first axis, in radians.
+
+### `ellipse-perimeter` (function)
+
+```lisp
+(ellipse-perimeter radius-x radius-y)
+```
+
+Return the perimeter of an ellipse, by Ramanujan's second approximation, which is within a
+few parts per billion for the ellipses of a drawing.
+
+- `RADIUS-X`: one semi-axis.
+- `RADIUS-Y`: the other.
+
+### `ellipse-points` (function)
+
+```lisp
+(ellipse-points center-x center-y radius-x radius-y rotation count)
+```
+
+Return the vertices of the polygon of COUNT sides inscribed in an ellipse, starting at the end
+of the first axis, as a vector of alternating x and y values.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS-X`: the semi-axis in the direction ROTATION.
+- `RADIUS-Y`: the semi-axis across it.
+- `ROTATION`: direction of the first axis, in radians.
+- `COUNT`: number of vertices.
+
+### `ellipse-touches-bounds-p` (function)
+
+```lisp
+(ellipse-touches-bounds-p center-x center-y radius-x radius-y rotation bounds)
+```
+
+Return true when the outline of an ellipse has a point inside BOUNDS or on its edge, judged on
+the polygon of +ELLIPSE-OUTLINE-POINTS+ sides inscribed in it.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS-X`: the semi-axis in the direction ROTATION.
+- `RADIUS-Y`: the semi-axis across it.
+- `ROTATION`: direction of the first axis, in radians.
+- `BOUNDS`: the window.
+
 ### `expand-bounds` (function)
 
 ```lisp
@@ -5156,6 +5624,23 @@ ORIENTED-BOX-BOUNDS describes.
 - `ANGLE`: direction in radians, counter-clockwise from +x.
 - `BOUNDS`: the window.
 
+### `point-arc-distance` (function)
+
+```lisp
+(point-arc-distance px py center-x center-y radius start-angle sweep)
+```
+
+Return the distance from a point to an arc: to the circle where the point lies in the direction of
+the arc, and to the nearer end otherwise. From the center it is the radius.
+
+- `PX`: point x.
+- `PY`: point y.
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: the radius.
+- `START-ANGLE`: the angle at which the arc starts.
+- `SWEEP`: how far it turns counter-clockwise.
+
 ### `point-bounds-distance` (function)
 
 ```lisp
@@ -5182,6 +5667,22 @@ equal to the radius at the center).
 - `CENTER-X`: circle center x.
 - `CENTER-Y`: circle center y.
 - `RADIUS`: circle radius.
+
+### `point-ellipse-distance` (function)
+
+```lisp
+(point-ellipse-distance px py center-x center-y radius-x radius-y rotation)
+```
+
+Return the distance from a point to the outline of an ellipse (zero on it).
+
+- `PX`: point x.
+- `PY`: point y.
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS-X`: the semi-axis in the direction ROTATION.
+- `RADIUS-Y`: the semi-axis across it.
+- `ROTATION`: direction of the first axis, in radians.
 
 ### `point-oriented-box-distance` (function)
 
@@ -5308,6 +5809,43 @@ Return the perimeter of a rectangle.
 
 - `WIDTH`: extent along x.
 - `HEIGHT`: extent along y.
+
+### `regular-polygon-area` (function)
+
+```lisp
+(regular-polygon-area radius sides)
+```
+
+Return the area of a regular polygon.
+
+- `RADIUS`: the radius of the circle through the vertices.
+- `SIDES`: number of sides.
+
+### `regular-polygon-side-length` (function)
+
+```lisp
+(regular-polygon-side-length radius sides)
+```
+
+Return the length of a side of a regular polygon.
+
+- `RADIUS`: the radius of the circle through the vertices.
+- `SIDES`: number of sides.
+
+### `regular-polygon-vertices` (function)
+
+```lisp
+(regular-polygon-vertices center-x center-y radius sides rotation)
+```
+
+Return the vertices of a regular polygon, the first at the angle ROTATION, as a vector of
+alternating x and y values.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: the radius of the circle through the vertices.
+- `SIDES`: number of sides, at least 3.
+- `ROTATION`: direction of the first vertex, in radians.
 
 ### `segment-angle` (function)
 

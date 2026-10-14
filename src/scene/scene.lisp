@@ -237,6 +237,67 @@ COLOR: an RGBA."
                   previous-x next-x
                   previous-y next-y)))))))
 
+(defun emit-arc (frame
+                 center-x
+                 center-y
+                 radius
+                 start-angle
+                 sweep
+                 color)
+  "Emit an arc as a run of segments chosen from its on-screen radius and its sweep.
+
+FRAME: the build context.
+CENTER-X: world x of the center.
+CENTER-Y: world y of the center.
+RADIUS: world radius in millimetres.
+START-ANGLE: direction of the start in radians.
+SWEEP: how far it turns counter-clockwise, in radians.
+COLOR: an RGBA."
+  (declare (type double-float center-x center-y radius start-angle sweep))
+  (let* ((radius-pixels (view:world-length->pixels (frame-viewport frame) radius))
+         (full-circle (circle-segment-count radius-pixels))
+         (segments (max 1 (ceiling (* full-circle sweep) (* 2d0 (float pi 1d0)))))
+         (step (/ sweep segments))
+         (previous-x (+ center-x (* radius (cos start-angle))))
+         (previous-y (+ center-y (* radius (sin start-angle)))))
+    (declare (type double-float radius-pixels step previous-x previous-y) (type fixnum full-circle segments))
+    (loop for index from 1 to segments
+          do (let* ((angle (+ start-angle (* step index)))
+                    (x (+ center-x (* radius (cos angle))))
+                    (y (+ center-y (* radius (sin angle)))))
+               (declare (type double-float angle x y))
+               (emit-world-segment frame
+                                   previous-x
+                                   previous-y
+                                   x
+                                   y
+                                   color)
+               (setf previous-x x
+                     previous-y y)))))
+
+(defun emit-ellipse (frame
+                     ellipse
+                     color)
+  "Emit an ellipse as a closed run of segments chosen from the on-screen size of its longer axis.
+
+FRAME: the build context.
+ELLIPSE: an ellipse entity.
+COLOR: an RGBA."
+  (let* ((radius-x (dom:ellipse-radius-x ellipse))
+         (radius-y (dom:ellipse-radius-y ellipse))
+         (segments (circle-segment-count (view:world-length->pixels (frame-viewport frame)
+                                                                    (max radius-x radius-y))))
+         (points (geo:ellipse-points (dom:ellipse-center-x ellipse)
+                                     (dom:ellipse-center-y ellipse)
+                                     radius-x
+                                     radius-y
+                                     (dom:ellipse-rotation ellipse)
+                                     (max 3 segments))))
+    (emit-polyline-path frame
+                        points
+                        t
+                        color)))
+
 (defun emit-text-run (frame
                       string
                       x
@@ -401,7 +462,24 @@ COLOR: an RGBA."
     (dom:dimension-entity
      (emit-dimension frame
                      entity
-                     color))))
+                     color))
+    (dom:arc-entity
+     (emit-arc frame
+               (dom:arc-center-x entity)
+               (dom:arc-center-y entity)
+               (dom:arc-radius entity)
+               (dom:arc-start-angle entity)
+               (dom:arc-sweep entity)
+               color))
+    (dom:ellipse-entity
+     (emit-ellipse frame
+                   entity
+                   color))
+    (dom:polygon-entity
+     (emit-polyline-path frame
+                         (dom:polygon-vertices entity)
+                         t
+                         color))))
 
 (defun tiny-on-screen-p (viewport
                          bounds)

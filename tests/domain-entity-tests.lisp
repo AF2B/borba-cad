@@ -216,7 +216,11 @@
 
 (defun every-entity-kind ()
   "Return one valid entity of every kind, all with id 1 on layer 0."
-  (list (a-line) (a-rectangle) (a-circle) (a-polyline) (a-text) (a-dimension)))
+  (list (a-line) (a-rectangle) (a-circle) (a-polyline) (a-text) (a-dimension)
+        (dom:make-arc :id 1 :layer-id 0 :center-x 0d0 :center-y 0d0 :radius 100d0 :start-angle 0d0
+                      :end-angle 1d0)
+        (dom:make-ellipse :id 1 :layer-id 0 :center-x 0d0 :center-y 0d0 :radius-x 200d0 :radius-y 100d0)
+        (dom:make-polygon :id 1 :layer-id 0 :center-x 0d0 :center-y 0d0 :radius 100d0 :sides 6)))
 
 (test every-kind-reports-a-distinct-kind-keyword-and-bounds
   (let ((entities (every-entity-kind)))

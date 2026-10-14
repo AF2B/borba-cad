@@ -53,6 +53,12 @@ SHAPES: the shape list of an icon made only of lines, polylines, loops and fills
                      (:disc 9 7 2)
                      (:disc 14 15 2)
                      (:disc 20 6 2)))
+   (cons :arc '((:arc 12 17 8.5 190 350)
+                (:disc 3.6 15.5 1.9)
+                (:disc 20.4 15.5 1.9)))
+   (cons :ellipse '((:loop 12 5.5 16.6 6.4 19.6 9 20.5 12 19.6 15 16.6 17.6
+                           12 18.5 7.4 17.6 4.4 15 3.5 12 4.4 9 7.4 6.4)))
+   (cons :polygon '((:loop 12 3.8 19.1 8 19.1 16 12 20.2 4.9 16 4.9 8)))
    (cons :text '((:polyline 5 20 12 4 19 20)
                  (:line 8 14.5 16 14.5)))
    (cons :dimension '((:line 4 12 20 12)

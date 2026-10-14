@@ -71,7 +71,9 @@ The title bar holds the file and history buttons, the document name (a dot marks
 the language menu (English (US), the default, or Portuguese (Brazil), kept for the next run) and
 the performance overlay; the status bar holds the hints, the pointer position and the chips
 that switch the grid, grid snap, object snap, display unit and zoom to fit. Keys: `L` line, `R` rectangle, `C` circle, `P` polyline
-(Enter finishes, clicking the first vertex closes), `T` text, `D` dimension, `Esc` back to select.
+(Enter finishes, clicking the first vertex closes), `A` arc (center, start, direction of the end),
+`E` ellipse (center, end of an axis, the other half-axis), `N` regular polygon (center, a vertex; Up and
+Down set the number of sides), `T` text (drag to turn it), `D` dimension, `Esc` back to select.
 Click picks an entity (Shift+click toggles), dragging on empty space from left to right selects
 what lies fully inside the rectangle and from right to left (dashed) what it touches, dragging a
 selection moves it. `Delete` removes the selection, `Ctrl+A` selects all.

@@ -93,6 +93,7 @@ All functions take raw doubles and return doubles; none allocates in its hot pat
 | `point-polyline-distance` | Minimum over the segments; the closing segment counts only when `closed` and the polyline has at least 3 vertices. |
 | `bounds-near-point-p` | Cheap pre-filter used by picking: true when the point is within the radius of the bounds along both axes. Every shape inside the bounds that is closer than the radius passes it. |
 | `clip-segment-to-bounds` | Liang–Barsky. Returns the clipped endpoints, or NIL when no part of the segment lies inside. It runs in double precision before any coordinate becomes a single-float vertex, so a segment with a far-away endpoint keeps its precision on screen. |
+| Arcs, ellipses, regular polygons (`curves.lisp`) | `arc-bounds` (the ends and the axis extremes the arc passes through), `point-arc-distance` (to the circle where the point lies in the arc's direction, to the nearer end otherwise), `arc-touches-bounds-p` (an end inside the window, or the circle crossing a window edge within the sweep), `ellipse-bounds` (half-extents `sqrt(a²cos²θ + b²sin²θ)`), `point-ellipse-distance` (D. Eberly's bisection for the nearest point, exact to the precision of a double), `ellipse-perimeter` (Ramanujan's second approximation), `ellipse-touches-bounds-p` (on the inscribed 128-gon), `regular-polygon-vertices`. Tested against dense sampling of random arcs and ellipses. |
 | `segment-touches-bounds-p`, `polyline-touches-bounds-p`, `circle-outline-touches-bounds-p`, `oriented-box-touches-bounds-p` | Whether the outline of a shape has a point inside a window or on its edge (a filled rotated box is filled, so a window inside it counts). The circle test compares the radius with the nearest and the farthest point of the window. Tested against dense sampling of random segments and circles. |
 | Measures | Circle circumference `2πr` and area `πr²`; rectangle area and perimeter; polyline length (the closing segment included when closed) and bounds. |
 
@@ -145,8 +146,11 @@ layer. Stacking order is id order.
 | Line | length > tolerance | length, angle |
 | Rectangle (axis-aligned) | width and height > tolerance; corners given in any order are normalized | area, perimeter |
 | Circle | radius > tolerance | diameter, circumference, area |
+| Arc | radius > tolerance; start and end angles differ by more than the angle tolerance and by less than a whole turn (an arc turns counter-clockwise from the start to the end, and the angles are kept in [0, 2π)) | length, sweep |
+| Ellipse | both semi-axes > tolerance; rotation of the first axis kept in [0, π) | perimeter (Ramanujan), area |
+| Regular polygon | 3 to 1000 sides; radius (of the circle through the vertices) > tolerance; rotation of the first vertex kept in [0, 2π) | side length, perimeter, area |
 | Polyline | at least 2 vertices (3 when closed), at most 100,000; no two consecutive vertices coincide | length, vertex count |
-| Text | non-empty single line, at most 256 characters; height > tolerance; no rotation | width |
+| Text | non-empty single line, at most 256 characters; height > tolerance; any angle, kept in [0, 2π) | width |
 | Dimension | definition points farther apart than the tolerance; text height > tolerance; precision 0 to 6 | measured length |
 
 Layers hold a unique non-empty name (at most 64 characters), an RGB color, and the flags visible

@@ -28,6 +28,9 @@
   ("Circle" "Círculo")
   ("Text" "Texto")
   ("Dimension" "Cota")
+  ("Polygon" "Polígono")
+  ("Arc" "Arco")
+  ("Ellipse" "Elipse")
 
   ;; Names of the kinds of entity, in messages
   ("line" "linha")
@@ -36,6 +39,9 @@
   ("polyline" "polilinha")
   ("text" "texto")
   ("dimension" "cota")
+  ("arc" "arco")
+  ("ellipse" "elipse")
+  ("polygon" "polígono")
 
   ;; Empty drawing
   ("Start drawing" "Comece a desenhar")
@@ -56,6 +62,17 @@
   ("Polyline: click the first vertex" "Polilinha: clique no primeiro vértice")
   ("Polyline: click vertices; Enter finishes; click the first vertex to close; Backspace removes the last"
    "Polilinha: clique nos vértices; Enter conclui; clique no primeiro vértice para fechar; Backspace remove o último")
+  ("Arc: click the center" "Arco: clique no centro")
+  ("Arc: click where the arc starts (Esc cancels)" "Arco: clique onde o arco começa (Esc cancela)")
+  ("Arc: click in the direction where it ends, counter-clockwise (Esc cancels)"
+   "Arco: clique na direção em que termina, no sentido anti-horário (Esc cancela)")
+  ("Ellipse: click the center" "Elipse: clique no centro")
+  ("Ellipse: click the end of the first axis (Esc cancels)" "Elipse: clique na ponta do primeiro eixo (Esc cancela)")
+  ("Ellipse: click to set the other half-axis (Esc cancels)"
+   "Elipse: clique para definir o outro semieixo (Esc cancela)")
+  ("Polygon, ~d sides (Up and Down change it): click the center"
+   "Polígono de ~d lados (Cima e Baixo mudam): clique no centro")
+  ("Polygon, ~d sides: click a vertex (Esc cancels)" "Polígono de ~d lados: clique em um vértice (Esc cancela)")
   ("Text: click where the text starts, or drag to set its angle"
    "Texto: clique onde o texto começa, ou arraste para definir o ângulo")
   ("Text to place at the clicked point:" "Texto a colocar no ponto clicado:")
@@ -148,6 +165,14 @@
   ("Bottom" "Inferior")
   ("Width" "Largura")
   ("Height" "Altura")
+  ("Start angle" "Ângulo inicial")
+  ("End angle" "Ângulo final")
+  ("Sweep" "Abertura")
+  ("Radius X" "Raio X")
+  ("Radius Y" "Raio Y")
+  ("Rotation" "Rotação")
+  ("Sides" "Lados")
+  ("Side length" "Comprimento do lado")
   ("Start X" "Início X")
   ("Start Y" "Início Y")
   ("End X" "Fim X")
@@ -225,6 +250,9 @@
   ("~a must be a number between -~f and ~f mm, got ~a" "~a deve ser um número entre -~f e ~f mm, mas é ~a")
   ("~a must be a number above ~f mm, got ~a" "~a deve ser um número acima de ~f mm, mas é ~a")
   ("~a must be an angle in radians, got ~a" "~a deve ser um ângulo em radianos, mas é ~a")
+  ("its start and end angles must differ" "seus ângulos inicial e final devem ser diferentes")
+  ("the number of sides must be a whole number from 3 to ~d, got ~a"
+   "o número de lados deve ser um inteiro de 3 a ~d, mas é ~a")
   ("it extends beyond the drawing limit of ~f mm" "ultrapassa o limite do desenho de ~f mm")
   ("its length is ~f mm; a line needs a length above ~f mm"
    "seu comprimento é ~f mm; uma linha precisa de comprimento acima de ~f mm")

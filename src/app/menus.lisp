@@ -33,7 +33,10 @@
   (list (list :line :line (i18n:mark "Line") "L")
         (list :polyline :polyline (i18n:mark "Polyline") "P")
         (list :rectangle :rectangle (i18n:mark "Rectangle") "R")
+        (list :polygon :polygon (i18n:mark "Polygon") "N")
         (list :circle :circle (i18n:mark "Circle") "C")
+        (list :arc :arc (i18n:mark "Arc") "A")
+        (list :ellipse :ellipse (i18n:mark "Ellipse") "E")
         nil
         (list :text :text (i18n:mark "Text") "T")
         (list :dimension :dimension (i18n:mark "Dimension") "D"))

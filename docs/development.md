@@ -176,20 +176,26 @@ step that is forgotten fails loudly at run time or in a test, except the documen
    tests and an independent reference.
 2. **Domain** (`src/domain/<kind>.lisp`, added to `borba-cad.asd` and exported from `domain`): a
    structure that includes `entity`; a validating constructor that signals `invalid-entity` with a
-   reason; an `update-<kind>`; and the methods `entity-kind`, `entity-bounds` (computed once at
-   construction), `entity-pick-distance`, `entity-translated`, `entity-snap-points`,
-   `entity-properties` (what the inspector edits), `entity-derived-values`, `entity-with-property`.
+   reason; an `update-<kind>` that takes every field and the `:id` and `:layer-id`; and the methods
+   `entity-kind`, `entity-bounds` (computed once at construction), `entity-pick-distance`,
+   `entity-translated`, `entity-snap-points`, `entity-properties` (what the inspector edits),
+   `entity-derived-values`, `entity-with-property`, `entity-with-layer`, `entity-with-identity` (paste)
+   and `entity-touches-bounds-p` (crossing selection; the default, bounds overlap, is right for filled
+   boxes only).
    Add the keyword to `*entity-kinds*` in `domain/entity.lisp`.
 3. **Persistence** (`src/persistence/format.lisp`): one `make-entity-format` row describes the
    fields; the reader and writer are table-driven. A new entity type changes the file format: see
    "Changing the file format" below.
 4. **Scene** (`src/scene/scene.lisp`): a clause in the `etypecase` of `emit-entity` (an entity of an
    unknown type is a run-time error, so a forgotten clause is caught by the scene tests).
-5. **Application** (`src/app/`): a tool class and its clause in `make-tool` (`tools.lisp`), the
+5. **Application** (`src/app/`): a tool class and its clause in `make-tool` (`tools.lisp`; a tool that
+   takes a fixed number of clicks is a subclass of `point-sequence-tool`), the
    shortcut in the key table (`*tool-shortcuts*` in `tools.lisp`), the draw menu entry (`*draw-menu-tools*` in `menus.lisp`) and
-   its icon (`ui/icons.lisp`).
+   its icon (`ui/icons.lisp`), the kind's name in `*entity-kind-labels*` (`base/conditions.lisp`)
+   and the translations of the new texts (`src/i18n/pt-br.catalog`; the lint lists them).
 6. **Workload** (`test-support/workload.lisp`): a generator for the kind and its weight. This changes
-   the checksums of W1 to W3, so the baseline must be recorded again.
+   the checksums of W1 to W3, so the baseline must be recorded again. The arc, the ellipse and the
+   polygon were left out of the workload on purpose, so that the recorded baselines stay comparable.
 7. **Tests**: entity invariants, a round trip and the corruption cases in the persistence suite, the
    scene output, the tool in the application suite, the inspector rows.
 8. **Docs**: `docs/geometry.md` (entity table), `README.md`, `CHANGELOG.md`, then `make docs`.

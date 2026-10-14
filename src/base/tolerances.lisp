@@ -24,6 +24,11 @@ It is 500 times larger than the worst-case representation error at the maximum m
 (1.9e-9 mm), so rounding noise never makes a valid segment degenerate, and 1000 times smaller
 than +DRAWING-RESOLUTION+, so no intentional feature is ever treated as degenerate.")
 
+(defconstant +angle-tolerance+ 1d-9
+  "Angles that differ by no more than this, in radians, count as equal. An arc must sweep more than
+this and less than a whole turn by more than this; at the largest radius an arc of this sweep is
+0.01 mm long, so no arc a drafter means is ever read as degenerate.")
+
 (defconstant +maximum-length+ 3d7
   "Largest length accepted for any single length value, in millimetres. The diagonal of the
 square of valid coordinates is 2.83e7 mm, so every distance between two valid points fits;

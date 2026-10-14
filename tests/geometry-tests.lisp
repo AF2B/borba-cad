@@ -463,3 +463,183 @@
              "a box at 45 degrees that runs across the corner")
     (is (not (geo:oriented-box-touches-bounds-p -5d0 5d0 4d0 1d0 0.25d0 (/ pi 2) window))
         "turned upward, it misses the window")))
+
+;;; Arcs, ellipses and regular polygons
+
+(def-suite curves-geometry
+  :description "Arcs, ellipses and regular polygons: bounds, distances, measures and window tests."
+  :in all)
+
+(in-suite curves-geometry)
+
+(defun arc-sample-points (center-x center-y radius start sweep count)
+  "Return COUNT+1 points along an arc, ends included, as a list of (x . y)."
+  (loop for index from 0 to count
+        collect (let ((angle (+ start (* sweep (/ index (float count 1d0))))))
+                  (cons (+ center-x (* radius (cos angle))) (+ center-y (* radius (sin angle)))))))
+
+(defun ellipse-sample-points (center-x center-y radius-x radius-y rotation count)
+  "Return COUNT points along an ellipse as a list of (x . y)."
+  (loop for index from 0 below count
+        collect (let* ((parameter (* 2 pi (/ index (float count 1d0))))
+                       (u (* radius-x (cos parameter)))
+                       (v (* radius-y (sin parameter))))
+                  (cons (+ center-x (* u (cos rotation)) (- (* v (sin rotation))))
+                        (+ center-y (* u (sin rotation)) (* v (cos rotation)))))))
+
+(test an-arc-turns-counter-clockwise-from-its-start-to-its-end
+  (is (< (abs (- (/ pi 2) (geo:arc-sweep 0d0 (/ pi 2)))) 1d-12))
+  (is (< (abs (- (* 1.5d0 pi) (geo:arc-sweep (/ pi 2) 0d0))) 1d-12) "the long way round")
+  (is (= 0d0 (geo:arc-sweep 1d0 1d0)) "no turn at all")
+  (is (< (abs (- (/ pi 2) (geo:arc-sweep (* 1.75d0 pi) (* 0.25d0 pi)))) 1d-12) "across the zero direction"))
+
+(test an-angle-is-within-a-sweep-across-the-zero-direction-and-with-the-ends-included
+  (is-true (geo:angle-within-sweep-p 0.5d0 0d0 1d0))
+  (is-true (geo:angle-within-sweep-p 0d0 0d0 1d0) "the start")
+  (is-true (geo:angle-within-sweep-p 1d0 0d0 1d0) "the end")
+  (is (not (geo:angle-within-sweep-p 1.5d0 0d0 1d0)))
+  (is-true (geo:angle-within-sweep-p 0.1d0 (* 1.9d0 pi) 1d0) "across zero")
+  (is-true (geo:angle-within-sweep-p (- (* 2 pi) 0.1d0) (* 1.9d0 pi) 1d0))
+  (is (not (geo:angle-within-sweep-p 2d0 (* 1.9d0 pi) 1d0))))
+
+(test the-bounds-of-an-arc-include-the-axis-extremes-it-passes-through
+  (let ((quarter (geo:arc-bounds 0d0 0d0 10d0 0d0 (/ pi 2))))
+    (is (< (abs (- 0d0 (geo:bounds-min-x quarter))) 1d-9))
+    (is (< (abs (- 10d0 (geo:bounds-max-x quarter))) 1d-9))
+    (is (< (abs (- 10d0 (geo:bounds-max-y quarter))) 1d-9)))
+  (let ((three-quarters (geo:arc-bounds 5d0 -5d0 10d0 (/ pi 2) (* 1.5d0 pi))))
+    (is (< (abs (- -5d0 (geo:bounds-min-x three-quarters))) 1d-9) "reaches the left")
+    (is (< (abs (- 5d0 (geo:bounds-max-y three-quarters))) 1d-9) "reaches the top, where it starts")
+    (is (< (abs (- -15d0 (geo:bounds-min-y three-quarters))) 1d-9) "reaches the bottom")
+    (is (< (abs (- 15d0 (geo:bounds-max-x three-quarters))) 1d-9) "it ends at the right, level with the center")))
+
+(test the-bounds-of-an-arc-agree-with-sampling-its-points
+  (let ((prng (rng:make-prng 81)))
+    (dotimes (case 150)
+      (let* ((cx (rng:prng-next-double prng -50d0 50d0))
+             (cy (rng:prng-next-double prng -50d0 50d0))
+             (radius (rng:prng-next-double prng 1d0 40d0))
+             (start (rng:prng-next-double prng 0d0 (* 2 pi)))
+             (sweep (rng:prng-next-double prng 0.05d0 (* 1.95d0 pi)))
+             (bounds (geo:arc-bounds cx cy radius start sweep))
+             (points (arc-sample-points cx cy radius start sweep 3000)))
+        (is (<= (geo:bounds-min-x bounds) (+ (reduce #'min points :key #'car) 1d-9)))
+        (is (>= (geo:bounds-max-x bounds) (- (reduce #'max points :key #'car) 1d-9)))
+        (is (<= (geo:bounds-min-y bounds) (+ (reduce #'min points :key #'cdr) 1d-9)))
+        (is (>= (geo:bounds-max-y bounds) (- (reduce #'max points :key #'cdr) 1d-9)))
+        (is (< (- (reduce #'min points :key #'car) (geo:bounds-min-x bounds)) (* radius 1d-5)) "and no looser")
+        (is (< (- (geo:bounds-max-y bounds) (reduce #'max points :key #'cdr)) (* radius 1d-5)))))))
+
+(test the-distance-from-a-point-to-an-arc-agrees-with-sampling-it
+  (let ((prng (rng:make-prng 82)))
+    (dotimes (case 200)
+      (let* ((cx (rng:prng-next-double prng -20d0 20d0))
+             (cy (rng:prng-next-double prng -20d0 20d0))
+             (radius (rng:prng-next-double prng 2d0 30d0))
+             (start (rng:prng-next-double prng 0d0 (* 2 pi)))
+             (sweep (rng:prng-next-double prng 0.2d0 (* 1.9d0 pi)))
+             (px (rng:prng-next-double prng -60d0 60d0))
+             (py (rng:prng-next-double prng -60d0 60d0))
+             (nearest (loop for point in (arc-sample-points cx cy radius start sweep 6000)
+                            minimize (geo:distance px py (car point) (cdr point))))
+             (distance (geo:point-arc-distance px py cx cy radius start sweep)))
+        (is (< (abs (- nearest distance)) 0.02d0) "~a against sampled ~a" distance nearest)
+        (is (<= distance (+ nearest 1d-9)) "never farther than the sampled nearest")))))
+
+(test the-distance-from-the-center-to-an-arc-is-its-radius
+  (is (= 7d0 (geo:point-arc-distance 1d0 2d0 1d0 2d0 7d0 0d0 1d0))))
+
+(test an-arc-touches-a-window-exactly-when-a-point-of-it-is-in-the-window
+  (let ((prng (rng:make-prng 83))
+        (window (window -10d0 -5d0 12d0 8d0)))
+    (dotimes (case 300)
+      (let* ((cx (rng:prng-next-double prng -30d0 30d0))
+             (cy (rng:prng-next-double prng -30d0 30d0))
+             (radius (rng:prng-next-double prng 1d0 30d0))
+             (start (rng:prng-next-double prng 0d0 (* 2 pi)))
+             (sweep (rng:prng-next-double prng 0.1d0 (* 1.9d0 pi)))
+             (nearest (loop for point in (arc-sample-points cx cy radius start sweep 5000)
+                            minimize (geo:point-bounds-distance (car point) (cdr point) window)))
+             (touches (geo:arc-touches-bounds-p cx cy radius start sweep window)))
+        (if touches
+            (is (< nearest 0.1d0) "~a ~a ~a ~a ~a: said to touch, nearest sample ~a" cx cy radius start sweep nearest)
+            (is (> nearest 0d0) "~a ~a ~a ~a ~a: said not to touch, but a sample is inside"
+                cx cy radius start sweep))))))
+
+(test an-ellipse-has-the-area-and-the-perimeter-of-its-axes
+  (is (< (abs (- (* pi 6d0) (geo:ellipse-area 3d0 2d0))) 1d-12))
+  (is (< (abs (- (* 2 pi 5d0) (geo:ellipse-perimeter 5d0 5d0))) 1d-9) "a circle")
+  (is (< (abs (- 9.688448220547672d0 (geo:ellipse-perimeter 2d0 1d0))) 1d-6) "the textbook value for 2 and 1")
+  (is (< (abs (- (geo:ellipse-perimeter 3d0 2d0) (geo:ellipse-perimeter 2d0 3d0))) 1d-12)
+      "the order of the axes does not matter"))
+
+(test the-bounds-of-an-ellipse-agree-with-sampling-its-points
+  (let ((prng (rng:make-prng 84)))
+    (dotimes (case 100)
+      (let* ((cx (rng:prng-next-double prng -50d0 50d0))
+             (cy (rng:prng-next-double prng -50d0 50d0))
+             (a (rng:prng-next-double prng 1d0 40d0))
+             (b (rng:prng-next-double prng 1d0 40d0))
+             (rotation (rng:prng-next-double prng 0d0 (* 2 pi)))
+             (bounds (geo:ellipse-bounds cx cy a b rotation))
+             (points (ellipse-sample-points cx cy a b rotation 4000)))
+        (is (<= (geo:bounds-min-x bounds) (+ (reduce #'min points :key #'car) 1d-9)))
+        (is (>= (geo:bounds-max-x bounds) (- (reduce #'max points :key #'car) 1d-9)))
+        (is (<= (geo:bounds-min-y bounds) (+ (reduce #'min points :key #'cdr) 1d-9)))
+        (is (>= (geo:bounds-max-y bounds) (- (reduce #'max points :key #'cdr) 1d-9)))
+        (is (< (- (reduce #'min points :key #'car) (geo:bounds-min-x bounds)) (* (max a b) 1d-5)) "and no looser")))))
+
+(test the-distance-from-a-point-to-an-ellipse-is-known-on-the-axes-and-at-the-center
+  (is (< (geo:point-ellipse-distance 5d0 0d0 0d0 0d0 3d0 2d0 0d0) 2.0000001d0))
+  (is (< (abs (- 2d0 (geo:point-ellipse-distance 5d0 0d0 0d0 0d0 3d0 2d0 0d0))) 1d-12) "on the long axis, outside")
+  (is (< (abs (- 1d0 (geo:point-ellipse-distance 2d0 0d0 0d0 0d0 3d0 2d0 0d0))) 1d-12) "on the long axis, inside")
+  (is (< (abs (- 1d0 (geo:point-ellipse-distance 0d0 3d0 0d0 0d0 3d0 2d0 0d0))) 1d-12) "on the short axis, outside")
+  (is (< (abs (- 2d0 (geo:point-ellipse-distance 0d0 0d0 0d0 0d0 3d0 2d0 0d0))) 1d-12) "at the center: the short axis")
+  (is (< (abs (- 2d0 (geo:point-ellipse-distance 0d0 0d0 0d0 0d0 2d0 3d0 0d0))) 1d-12) "the axes in either order")
+  (is (< (geo:point-ellipse-distance 3d0 0d0 0d0 0d0 3d0 2d0 0d0) 1d-12) "on the outline")
+  (is (< (abs (- 1d0 (geo:point-ellipse-distance 0d0 7d0 0d0 3d0 3d0 2d0 (/ pi 2)))) 1d-12) "turned a quarter, moved")
+  (is (< (geo:point-ellipse-distance 0d0 6d0 0d0 3d0 3d0 2d0 (/ pi 2)) 1d-12) "its long end"))
+
+(test the-distance-from-a-point-to-an-ellipse-agrees-with-sampling-the-outline
+  (let ((prng (rng:make-prng 85)))
+    (dotimes (case 300)
+      (let* ((cx (rng:prng-next-double prng -20d0 20d0))
+             (cy (rng:prng-next-double prng -20d0 20d0))
+             (a (rng:prng-next-double prng 1d0 30d0))
+             (b (rng:prng-next-double prng 1d0 30d0))
+             (rotation (rng:prng-next-double prng 0d0 (* 2 pi)))
+             (px (rng:prng-next-double prng -60d0 60d0))
+             (py (rng:prng-next-double prng -60d0 60d0))
+             (nearest (loop for point in (ellipse-sample-points cx cy a b rotation 20000)
+                            minimize (geo:distance px py (car point) (cdr point))))
+             (distance (geo:point-ellipse-distance px py cx cy a b rotation)))
+        (is (< (abs (- nearest distance)) 5d-3) "~a against sampled ~a (a ~a b ~a)" distance nearest a b)
+        (is (<= distance (+ nearest 1d-9)))))))
+
+(test an-ellipse-touches-a-window-when-its-outline-does
+  (let ((window (window 0d0 0d0 10d0 10d0)))
+    (is (not (geo:ellipse-touches-bounds-p 5d0 5d0 30d0 20d0 0.3d0 window)) "the window is inside the ellipse")
+    (is-true (geo:ellipse-touches-bounds-p 5d0 5d0 3d0 2d0 0.3d0 window) "the ellipse is inside the window")
+    (is-true (geo:ellipse-touches-bounds-p 12d0 5d0 4d0 2d0 0d0 window) "the outline reaches in")
+    (is (not (geo:ellipse-touches-bounds-p 30d0 5d0 4d0 2d0 0d0 window)) "far away")))
+
+(test a-regular-polygon-has-its-vertices-on-a-circle-and-the-measures-of-its-sides
+  (let ((vertices (geo:regular-polygon-vertices 10d0 20d0 5d0 6 0d0)))
+    (is (= 12 (length vertices)))
+    (is (< (abs (- 15d0 (aref vertices 0))) 1d-12) "the first vertex is at the rotation")
+    (is (< (abs (- 20d0 (aref vertices 1))) 1d-12))
+    (loop for index from 0 below 6
+          do (is (< (abs (- 5d0 (geo:distance 10d0 20d0 (aref vertices (* 2 index)) (aref vertices (1+ (* 2 index))))))
+                    1d-12)))
+    (is (< (abs (- 5d0 (geo:regular-polygon-side-length 5d0 6))) 1d-12) "the side of a hexagon is its radius")
+    (is (< (abs (- (* 1.5d0 (sqrt 3d0) 25d0) (geo:regular-polygon-area 5d0 6))) 1d-9))
+    (is (< (abs (- 50d0 (geo:regular-polygon-area 5d0 4))) 1d-9) "a square of diagonal 10")))
+
+(test the-area-of-a-regular-polygon-agrees-with-the-shoelace-formula
+  (dolist (sides '(3 4 5 7 12 60))
+    (let* ((vertices (geo:regular-polygon-vertices 0d0 0d0 3d0 sides 0.7d0))
+           (twice-area (loop for index from 0 below sides
+                             sum (let ((next (mod (1+ index) sides)))
+                                   (- (* (aref vertices (* 2 index)) (aref vertices (1+ (* 2 next))))
+                                      (* (aref vertices (* 2 next)) (aref vertices (1+ (* 2 index)))))))))
+      (is (< (abs (- (/ twice-area 2) (geo:regular-polygon-area 3d0 sides))) 1d-9) "~d sides" sides))))

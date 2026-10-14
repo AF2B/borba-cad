@@ -340,8 +340,8 @@ fragment."
 (test entity-structure-errors
   (signals-file-error (base:drawing-file-content-error :message "expected an entity")
                       (replace-once *golden-text* "  (circle (id 3)" "  42 (circle (id 3)"))
-  (signals-file-error (base:drawing-file-content-error :message "unknown entity type \"arc\"")
-                      (replace-once *golden-text* "(circle (id 3)" "(arc (id 3)"))
+  (signals-file-error (base:drawing-file-content-error :message "unknown entity type \"spline\"")
+                      (replace-once *golden-text* "(circle (id 3)" "(spline (id 3)"))
   (signals-file-error (base:drawing-file-content-error :line 16 :message "entity id 1 appears twice")
                       (replace-once *golden-text* "(rectangle (id 2)" "(rectangle (id 1)"))
   (signals-file-error (base:drawing-file-content-error :line 17 :message "missing layer 9")

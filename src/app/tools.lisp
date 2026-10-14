@@ -394,6 +394,212 @@ TOOL: the tool."))
                                          x2
                                          y2)))
 
+;;; Arc, ellipse and regular polygon: a fixed number of clicks
+
+(defclass point-sequence-tool (tool)
+  ((points :initform nil :accessor sequence-points))
+  (:documentation "A tool that creates its entity from a fixed number of clicks. The points clicked so far
+are kept, newest first, until the last click, which builds the entity."))
+
+(defgeneric points-needed (tool)
+  (:documentation "Return how many clicks the entity of TOOL takes.
+
+TOOL: the tool."))
+
+(defgeneric sequence-prompts (tool app)
+  (:documentation "Return the status hints, one for each click, as a list.
+
+TOOL: the tool.
+APP: the application."))
+
+(defgeneric build-from-points (tool app points x y)
+  (:documentation "Build the entity from the clicks made before the last one and the last point.
+
+TOOL: the tool.
+APP: the application.
+POINTS: the earlier clicks as (x . y) conses, oldest first.
+X: world x of the last point.
+Y: world y of the last point."))
+
+(defgeneric point-problem (tool points x y)
+  (:documentation "Return a message when the point (X, Y) is not acceptable as the next click, or NIL.
+
+TOOL: the tool.
+POINTS: the earlier clicks, oldest first.
+X: world x of the point.
+Y: world y of the point.")
+  (:method ((tool point-sequence-tool) points x y)
+    (let ((previous (car (last points))))
+      (when (and previous
+                 (not (base:positive-length-p (geo:distance (car previous)
+                                                            (cdr previous)
+                                                            x
+                                                            y))))
+        (i18n:tr "The two points must be apart.")))))
+
+(defmethod tool-prompt ((tool point-sequence-tool) app)
+  (nth (length (sequence-points tool)) (sequence-prompts tool app)))
+
+(defmethod tool-pointer-down ((tool point-sequence-tool) app cursor)
+  (let* ((x (cursor-x cursor))
+         (y (cursor-y cursor))
+         (earlier (reverse (sequence-points tool)))
+         (problem (point-problem tool
+                                 earlier
+                                 x
+                                 y)))
+    (cond (problem
+           (set-message app
+                        problem
+                        :error))
+          ((< (length earlier) (1- (points-needed tool)))
+           (push (point-key x y) (sequence-points tool)))
+          ((create-entity app (lambda () (build-from-points tool
+                                                            app
+                                                            earlier
+                                                            x
+                                                            y)))
+           (setf (sequence-points tool) nil)))
+    (app-request-redraw app)))
+
+(defmethod tool-pointer-move ((tool point-sequence-tool) app cursor)
+  (declare (ignore cursor))
+  (when (sequence-points tool)
+    (app-request-redraw app)))
+
+(defmethod tool-preview-entities ((tool point-sequence-tool) app)
+  (let ((cursor (app-cursor app))
+        (earlier (reverse (sequence-points tool))))
+    (when (and earlier cursor)
+      (let ((entity (try-entity
+                     (lambda ()
+                       (if (= (length earlier) (1- (points-needed tool)))
+                           (build-from-points tool
+                                              app
+                                              earlier
+                                              (cursor-x cursor)
+                                              (cursor-y cursor))
+                           (dom:make-line :id (creation-id app)
+                                          :layer-id (creation-layer-id app)
+                                          :x1 (car (first earlier))
+                                          :y1 (cdr (first earlier))
+                                          :x2 (cursor-x cursor)
+                                          :y2 (cursor-y cursor)))))))
+        (and entity (list entity))))))
+
+(defmethod tool-cancel ((tool point-sequence-tool) app)
+  (setf (sequence-points tool) nil)
+  (app-request-redraw app))
+
+(defmethod tool-in-progress-p ((tool point-sequence-tool))
+  (and (sequence-points tool) t))
+
+(defun direction-from (center
+                       x
+                       y)
+  "Return the direction in radians from the point CENTER, a cons, to (X, Y).
+
+CENTER: an (x . y) cons.
+X: world x.
+Y: world y."
+  (atan (- y (cdr center)) (- x (car center))))
+
+(defclass arc-tool (point-sequence-tool) ()
+  (:documentation "Creates an arc from its center, the point where it starts (which gives the radius) and
+a point in the direction where it ends, counter-clockwise."))
+(defmethod tool-kind ((tool arc-tool)) :arc)
+(defmethod points-needed ((tool arc-tool)) 3)
+(defmethod sequence-prompts ((tool arc-tool) app)
+  (declare (ignore app))
+  (list (i18n:tr "Arc: click the center")
+        (i18n:tr "Arc: click where the arc starts (Esc cancels)")
+        (i18n:tr "Arc: click in the direction where it ends, counter-clockwise (Esc cancels)")))
+(defmethod build-from-points ((tool arc-tool) app points x y)
+  (destructuring-bind (center start) points
+    (dom:make-arc :id (creation-id app)
+                  :layer-id (creation-layer-id app)
+                  :center-x (car center)
+                  :center-y (cdr center)
+                  :radius (geo:distance (car center)
+                                        (cdr center)
+                                        (car start)
+                                        (cdr start))
+                  :start-angle (direction-from center
+                                               (car start)
+                                               (cdr start))
+                  :end-angle (direction-from center
+                                             x
+                                             y))))
+
+(defclass ellipse-tool (point-sequence-tool) ()
+  (:documentation "Creates an ellipse from its center, the end of its first axis, and a point whose distance
+from that axis is the other half-axis."))
+(defmethod tool-kind ((tool ellipse-tool)) :ellipse)
+(defmethod points-needed ((tool ellipse-tool)) 3)
+(defmethod sequence-prompts ((tool ellipse-tool) app)
+  (declare (ignore app))
+  (list (i18n:tr "Ellipse: click the center")
+        (i18n:tr "Ellipse: click the end of the first axis (Esc cancels)")
+        (i18n:tr "Ellipse: click to set the other half-axis (Esc cancels)")))
+(defmethod point-problem ((tool ellipse-tool) points x y)
+  (if (= (length points) 2)
+      nil
+      (call-next-method)))
+(defmethod build-from-points ((tool ellipse-tool) app points x y)
+  (destructuring-bind (center axis-end) points
+    (let* ((rotation (direction-from center
+                                     (car axis-end)
+                                     (cdr axis-end)))
+           (radius-x (geo:distance (car center)
+                                   (cdr center)
+                                   (car axis-end)
+                                   (cdr axis-end)))
+           (across (abs (- (* (- (car center) x) (sin rotation)) (* (- y (cdr center)) (- (cos rotation)))))))
+      (dom:make-ellipse :id (creation-id app)
+                        :layer-id (creation-layer-id app)
+                        :center-x (car center)
+                        :center-y (cdr center)
+                        :radius-x radius-x
+                        :radius-y across
+                        :rotation rotation))))
+
+(defconstant +minimum-polygon-sides+ 3
+  "Fewest sides of a regular polygon.")
+
+(defclass polygon-tool (point-sequence-tool) ()
+  (:documentation "Creates a regular polygon from its center and one of its vertices; Up and Down change
+the number of sides, which the application keeps for the next polygon."))
+(defmethod tool-kind ((tool polygon-tool)) :polygon)
+(defmethod points-needed ((tool polygon-tool)) 2)
+(defmethod sequence-prompts ((tool polygon-tool) app)
+  (list (i18n:trf "Polygon, ~d sides (Up and Down change it): click the center" (app-polygon-sides app))
+        (i18n:trf "Polygon, ~d sides: click a vertex (Esc cancels)" (app-polygon-sides app))))
+(defmethod build-from-points ((tool polygon-tool) app points x y)
+  (let ((center (first points)))
+    (dom:make-polygon :id (creation-id app)
+                      :layer-id (creation-layer-id app)
+                      :center-x (car center)
+                      :center-y (cdr center)
+                      :radius (geo:distance (car center)
+                                            (cdr center)
+                                            x
+                                            y)
+                      :sides (app-polygon-sides app)
+                      :rotation (direction-from center
+                                                x
+                                                y))))
+(defmethod tool-key ((tool polygon-tool) app key modifiers)
+  (declare (ignore modifiers))
+  (case key
+    ((:up :down)
+     (setf (app-polygon-sides app)
+           (max +minimum-polygon-sides+
+                (min dom:+maximum-polygon-sides+
+                     (+ (app-polygon-sides app) (if (eq key :up) 1 -1)))))
+     (app-request-redraw app)
+     t)
+    (t nil)))
+
 ;;; Polyline
 
 (defclass polyline-tool (tool)
@@ -709,7 +915,7 @@ Y: world y of the line."
 (defun make-tool (kind)
   "Create the tool named by KIND.
 
-KIND: :select, :line, :rectangle, :circle, :polyline, :text or :dimension."
+KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse or :polygon."
   (ecase kind
     (:select (make-instance 'select-tool))
     (:line (make-instance 'line-tool))
@@ -717,8 +923,12 @@ KIND: :select, :line, :rectangle, :circle, :polyline, :text or :dimension."
     (:circle (make-instance 'circle-tool))
     (:polyline (make-instance 'polyline-tool))
     (:text (make-instance 'text-tool))
-    (:dimension (make-instance 'dimension-tool))))
+    (:dimension (make-instance 'dimension-tool))
+    (:arc (make-instance 'arc-tool))
+    (:ellipse (make-instance 'ellipse-tool))
+    (:polygon (make-instance 'polygon-tool))))
 
 (defparameter *tool-shortcuts*
-  '((:l . :line) (:r . :rectangle) (:c . :circle) (:p . :polyline) (:t . :text) (:d . :dimension))
+  '((:l . :line) (:r . :rectangle) (:c . :circle) (:p . :polyline) (:t . :text) (:d . :dimension)
+    (:a . :arc) (:e . :ellipse) (:n . :polygon))
   "Letter keys that activate tools.")

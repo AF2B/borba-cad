@@ -3,7 +3,8 @@
   (:documentation "Computational geometry on world coordinates (double-float millimetres).
 No screen, pixel or rendering concepts appear here.")
   (:import-from #:borba-cad/base
-                #:+length-tolerance+)
+                #:+length-tolerance+
+                #:+angle-tolerance+)
   (:export
    ;; Bounds
    #:bounds
@@ -39,6 +40,24 @@ No screen, pixel or rendering concepts appear here.")
    #:bounds-near-point-p
    ;; Clipping
    #:clip-segment-to-bounds
+   ;; Arcs, ellipses, regular polygons
+   #:+two-pi+
+   #:arc-sweep
+   #:angle-within-sweep-p
+   #:arc-end-point
+   #:arc-bounds
+   #:arc-length
+   #:point-arc-distance
+   #:arc-touches-bounds-p
+   #:ellipse-bounds
+   #:ellipse-area
+   #:ellipse-perimeter
+   #:ellipse-points
+   #:point-ellipse-distance
+   #:ellipse-touches-bounds-p
+   #:regular-polygon-vertices
+   #:regular-polygon-side-length
+   #:regular-polygon-area
    ;; Crossing
    #:segment-touches-bounds-p
    #:polyline-touches-bounds-p

@@ -78,6 +78,33 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:circle-center-x
    #:circle-center-y
    #:circle-radius
+   #:arc-entity
+   #:make-arc
+   #:update-arc
+   #:arc-center-x
+   #:arc-center-y
+   #:arc-radius
+   #:arc-start-angle
+   #:arc-end-angle
+   #:arc-sweep
+   #:ellipse-entity
+   #:make-ellipse
+   #:update-ellipse
+   #:ellipse-center-x
+   #:ellipse-center-y
+   #:ellipse-radius-x
+   #:ellipse-radius-y
+   #:ellipse-rotation
+   #:polygon-entity
+   #:make-polygon
+   #:update-polygon
+   #:polygon-center-x
+   #:polygon-center-y
+   #:polygon-radius
+   #:polygon-sides
+   #:polygon-rotation
+   #:polygon-vertices
+   #:+maximum-polygon-sides+
    #:polyline-entity
    #:make-polyline
    #:update-polyline

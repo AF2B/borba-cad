@@ -15,13 +15,16 @@ small enough that reducing it to a turn loses no precision that matters.")
 (defconstant +maximum-text-length+ 256
   "Largest number of characters in a text annotation.")
 
+(defconstant +maximum-polygon-sides+ 1000
+  "Largest number of sides of a regular polygon.")
+
 (defconstant +maximum-dimension-precision+ 6
   "Largest number of decimals shown in a dimension text.")
 
 (defconstant +inspector-maximum-vertex-rows+ 6
   "Number of polyline vertices that the inspector lists for numeric editing.")
 
-(defparameter *entity-kinds* '(:line :rectangle :circle :polyline :text :dimension)
+(defparameter *entity-kinds* '(:line :rectangle :circle :polyline :text :dimension :arc :ellipse :polygon)
   "Every entity kind keyword, in toolbar order.")
 
 (defun entity-kinds ()
@@ -71,7 +74,7 @@ VALUE: the number."
 
 (defgeneric entity-kind (entity)
   (:documentation "Return the entity's kind keyword (:line, :rectangle, :circle, :polyline,
-:text or :dimension).
+:text, :dimension, :arc, :ellipse or :polygon).
 
 ENTITY: an entity."))
 

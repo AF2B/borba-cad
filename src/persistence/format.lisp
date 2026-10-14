@@ -148,7 +148,51 @@ NAMES-AND-ACCESSORS: alternating field names and accessor symbols."
                                           (make-field-spec :precision
                                                            "precision"
                                                            :integer
-                                                           'dom:dimension-precision)))))
+                                                           'dom:dimension-precision))))
+        (make-entity-format :arc
+                            "arc"
+                            'dom:make-arc
+                            (real-fields "center-x"
+                                         'dom:arc-center-x
+                                         "center-y"
+                                         'dom:arc-center-y
+                                         "radius"
+                                         'dom:arc-radius
+                                         "start-angle"
+                                         'dom:arc-start-angle
+                                         "end-angle"
+                                         'dom:arc-end-angle)
+                            :since 2)
+        (make-entity-format :ellipse
+                            "ellipse"
+                            'dom:make-ellipse
+                            (real-fields "center-x"
+                                         'dom:ellipse-center-x
+                                         "center-y"
+                                         'dom:ellipse-center-y
+                                         "radius-x"
+                                         'dom:ellipse-radius-x
+                                         "radius-y"
+                                         'dom:ellipse-radius-y
+                                         "rotation"
+                                         'dom:ellipse-rotation)
+                            :since 2)
+        (make-entity-format :polygon
+                            "polygon"
+                            'dom:make-polygon
+                            (append (real-fields "center-x"
+                                                 'dom:polygon-center-x
+                                                 "center-y"
+                                                 'dom:polygon-center-y
+                                                 "radius"
+                                                 'dom:polygon-radius)
+                                    (list (make-field-spec :sides
+                                                           "sides"
+                                                           :integer
+                                                           'dom:polygon-sides))
+                                    (real-fields "rotation"
+                                                 'dom:polygon-rotation))
+                            :since 2))
   "The storage format of every entity kind.")
 
 (defun find-format-by-kind (kind)
