@@ -22,7 +22,7 @@ marker; when started as a saved executable they are everything after the program
 
 (defun process-id ()
   "Return the operating-system process id."
-  (sb-posix:getpid))
+  (sb-unix:unix-getpid))
 
 (defun lisp-version-string ()
   "Return the Lisp implementation name and version, for example \"SBCL 2.6.9\"."
@@ -59,17 +59,23 @@ PATH: file to read."
 
 STREAM: an open file output stream backed by a file descriptor."
   (finish-output stream)
+  #-win32
   (sb-posix:fsync (sb-sys:fd-stream-fd stream))
   t)
 
 (defun rename-over (from
                     to)
-  "Atomically rename FROM to TO, replacing TO if it exists (same file system).
+  "Rename FROM to TO, replacing TO if it exists (same file system). The rename is atomic where the
+system offers one (POSIX); on Windows the old file is removed first, so a crash between the two
+steps can leave only the temporary file.
 
 FROM: pathname of an existing file.
 TO: destination pathname."
+  #-win32
   (sb-posix:rename (sb-ext:native-namestring from)
-                   (sb-ext:native-namestring to)))
+                   (sb-ext:native-namestring to))
+  #+win32
+  (uiop:rename-file-overwriting-target from to))
 
 (defun delete-file-if-exists (path)
   "Delete the file at PATH if it exists; return true when a file was deleted.

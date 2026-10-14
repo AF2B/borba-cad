@@ -8,7 +8,7 @@
   :description "Borba CAD core: headless 2D CAD engine (domain, geometry, persistence, observability, scene, UI and application logic)."
   :version "1.0.0"
   :depends-on ("uiop"
-               (:require "sb-posix"))
+               #-win32 (:require "sb-posix"))
   :pathname "src/"
   :serial t
   :components ((:module "sbcl-support"
@@ -17,6 +17,7 @@
                              (:file "clock")
                              (:file "memory")
                              (:file "system")
+                             (:file "portable-filesystem")
                              (:file "filesystem")))
                (:module "base"
                 :serial t
@@ -168,6 +169,7 @@
   :components ((:file "package")
                (:file "png-tests")
                (:file "events-tests")
+               (:file "options-tests")
                (:file "font-tests")
                (:file "session-tests")
                (:file "renderer-tests"))

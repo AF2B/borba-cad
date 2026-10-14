@@ -143,6 +143,49 @@ below it."
                :log-directory (merge-pathnames "var/log/" project-root)
                :state-directory (merge-pathnames "var/state/" project-root)))
 
+(defparameter *windows-state-folder-name* "BorbaCAD"
+  "Name of the folder, in the user's local application data, where the installed program keeps its
+log and what it remembers on Windows.")
+
+(defparameter *unix-state-folder-name* "borba-cad"
+  "Name of the folder, in the user's state directory, where the installed program keeps its log and
+what it remembers on Linux.")
+
+(defun user-state-directory (&optional (reader #'environment-variable))
+  "Return the folder where an installed program keeps its log and what it remembers between
+runs: %LOCALAPPDATA%\\BorbaCAD on Windows, $XDG_STATE_HOME/borba-cad (by default
+~/.local/state/borba-cad) elsewhere, and a folder in the home directory when the system does not
+say where.
+
+READER: function from variable name to string or NIL; defaults to the process environment."
+  (flet ((value-of (name)
+           (let ((value (funcall reader name)))
+             (and value (plusp (length value)) value))))
+    (if (uiop:os-windows-p)
+        (merge-pathnames (concatenate 'string *windows-state-folder-name* "/")
+                         (let ((local (value-of "LOCALAPPDATA")))
+                           (if local
+                               (directory-pathname local)
+                               (user-homedir-pathname))))
+        (merge-pathnames (concatenate 'string *unix-state-folder-name* "/")
+                         (let ((state (value-of "XDG_STATE_HOME")))
+                           (if state
+                               (directory-pathname state)
+                               (merge-pathnames ".local/state/" (user-homedir-pathname))))))))
+
+(defun installed-config (application-directory
+                         &optional (reader #'environment-variable))
+  "Return the configuration of the program running from an installed folder: the folder holds the
+program, its examples and its fonts, and the log and what the program remembers go to the user's
+own state directory, because the installed folder may not be writable.
+
+APPLICATION-DIRECTORY: the folder that holds the executable.
+READER: function from variable name to string or NIL; defaults to the process environment."
+  (let ((state (user-state-directory reader)))
+    (make-config :project-root application-directory
+                 :log-directory (merge-pathnames "log/" state)
+                 :state-directory state)))
+
 (defun config-with-environment (config
                                 &optional (reader #'environment-variable))
   "Return a copy of CONFIG with BORBA_CAD_* environment overrides applied.

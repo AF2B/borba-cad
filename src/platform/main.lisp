@@ -29,9 +29,15 @@
 (defconstant +no-vsync-sleep-seconds+ 0.004
   "Pause per frame when vertical sync is unavailable, to avoid spinning the CPU.")
 
+(defparameter *sdl-app-id-hint* "SDL_APP_ID"
+  "Name of the SDL hint that sets the application id a desktop uses to find the program's icon.")
+
+(defparameter *application-id* "borba-cad"
+  "The application id: the name of the desktop entry (borba-cad.desktop) without its extension.")
+
 (defparameter *usage*
-  "Usage: borba-cad [options]
-  --file PATH            open a drawing at startup
+  "Usage: borba-cad [options] [drawing.bcad]
+  --file PATH            open a drawing at startup (a bare path does the same)
   --log-dir DIR          directory of the rotating log (default: var/log in the project)
   --state-dir DIR        directory of what is remembered between runs (default: var/state)
   --drawings-dir DIR     folder where the file dialogs start (default: your documents folder)
@@ -53,14 +59,16 @@ BORBA_CAD_DEBUG (1: do not catch unexpected errors, for use with a debugger)."
 (defstruct (platform-options (:constructor make-platform-options (&key demo
                                                                        exit-after-demo
                                                                        screenshot
-                                                                       help)))
+                                                                       help
+                                                                       file)))
   "Options that only the window program understands.
 
 DEMO: run the scripted demonstration.
 EXIT-AFTER-DEMO: close the window when it ends.
 SCREENSHOT: file to save the last frame to, or NIL.
-HELP: print the usage text and exit."
-  demo exit-after-demo screenshot help)
+HELP: print the usage text and exit.
+FILE: the drawing named by a bare argument, as in borba-cad plan.bcad, or NIL."
+  demo exit-after-demo screenshot help file)
 
 (defun parse-platform-options (arguments)
   "Interpret the arguments left over by the core option parser. Signals CONFIGURATION-ERROR for
@@ -83,6 +91,10 @@ ARGUMENTS: list of argument strings."
                             (platform-options-exit-after-demo options) t))
                      ((member argument '("--help" "-h") :test #'string=)
                       (setf (platform-options-help options) t))
+                     ((and (plusp (length argument))
+                           (char/= #\- (char argument 0))
+                           (null (platform-options-file options)))
+                      (setf (platform-options-file options) argument))
                      (t (error 'base:configuration-error
                                :reason (format nil "unknown option ~s" argument))))))
     options))
@@ -129,6 +141,8 @@ SWAP-INTERVAL: 1 to wait for the display refresh at each buffer swap, 0 to swap 
     (sdl2:with-init (:video)
       (handler-case
           (progn
+            ;; The name the desktop matches against borba-cad.desktop to show the program's icon.
+            (sdl2-ffi.functions:sdl-set-hint *sdl-app-id-hint* *application-id*)
             (sdl2:gl-set-attr :context-major-version +gl-major-version+)
             (sdl2:gl-set-attr :context-minor-version +gl-minor-version+)
             (sdl2:gl-set-attr :context-profile-mask sdl2-ffi:+sdl-gl-context-profile-core+)
@@ -505,12 +519,18 @@ SCREENSHOT: file name to save the last demonstration frame to, or NIL."
          (logger (obs:telemetry-logger telemetry))
          (width (base:config-window-width config))
          (height (base:config-window-height config)))
-    (obs:log-event logger
-                   :info
-                   "app.start"
-                   :lisp (sbcl:lisp-version-string)
-                   :heap-capacity-mib (/ (sbcl:heap-capacity-bytes) +bytes-per-mebibyte+)
-                   :demo demo)
+    (let ((fonts (handler-case (find-font-paths config)
+                   (base:configuration-error ()
+                     nil))))
+      (obs:log-event logger
+                     :info
+                     "app.start"
+                     :lisp (sbcl:lisp-version-string)
+                     :heap-capacity-mib (/ (sbcl:heap-capacity-bytes) +bytes-per-mebibyte+)
+                     :demo demo
+                     :font-mono (getf fonts :mono)
+                     :font-ui (getf fonts :ui)
+                     :font-ui-strong (getf fonts :ui-strong)))
     (unwind-protect
          (handler-case
              (call-with-gl-window config
@@ -696,14 +716,32 @@ SWAP-INTERVAL: 1 to wait for the display refresh at each swap, 0 to swap at once
   "Return true when BORBA_CAD_DEBUG is set to 1, so unexpected errors reach the debugger."
   (equal "1" (sbcl:environment-variable "BORBA_CAD_DEBUG")))
 
-(defun main ()
+(defun starting-configuration (installed)
+  "Return the configuration the program starts from, before the environment and the command line
+change it: the one of the project when it runs from its source, and the one of an installed folder
+when it runs as the saved executable.
+
+INSTALLED: true when running as the saved executable."
+  (let ((directory (and installed (executable-directory))))
+    (if directory
+        (base:installed-config directory)
+        (base:default-config))))
+
+(defun main (&key installed)
   "Program entry point: parse the command line and environment, then run the application.
-Exit status: 0 on a normal exit, 2 for a configuration problem, 1 for an unexpected error."
+Exit status: 0 on a normal exit, 2 for a configuration problem, 1 for an unexpected error.
+
+INSTALLED: true when running as the saved executable, whose folder holds its examples and fonts
+and whose log goes to the user's state directory."
   (let ((arguments (sbcl:command-line-arguments)))
     (flet ((run ()
              (multiple-value-bind (config remaining)
-                 (base:config-with-arguments (base:config-with-environment (base:default-config)) arguments)
+                 (base:config-with-arguments (base:config-with-environment (starting-configuration installed))
+                                             arguments)
                (let ((options (parse-platform-options remaining)))
+                 (when (and (platform-options-file options)
+                            (null (base:config-initial-file config)))
+                   (setf (base:config-initial-file config) (platform-options-file options)))
                  (cond ((platform-options-help options)
                         (write-string *usage*)
                         (terpri))
@@ -740,4 +778,4 @@ BORBA_CAD_DEBUG=1, so that an unexpected condition ends the process instead of w
 terminal that may not exist."
   (unless (debug-mode-p)
     (sb-ext:disable-debugger))
-  (main))
+  (main :installed t))

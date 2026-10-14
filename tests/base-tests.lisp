@@ -167,6 +167,25 @@
     (is (equal #p"/proj/var/state/" (borba-cad/base:config-state-directory config)))
     (is (null (borba-cad/base:config-drawings-directory config)))))
 
+(test the-installed-program-keeps-its-state-in-the-users-state-directory
+  (unless (uiop:os-windows-p)
+    (flet ((state (&rest bindings)
+             (borba-cad/base:user-state-directory (environment-from bindings))))
+      (is (equal #p"/data/state/borba-cad/" (state '("XDG_STATE_HOME" . "/data/state"))))
+      (is (equal #p"/data/state/borba-cad/" (state '("XDG_STATE_HOME" . "/data/state/"))))
+      (is (equal (merge-pathnames ".local/state/borba-cad/" (user-homedir-pathname)) (state))
+          "without XDG_STATE_HOME it is under the home directory")
+      (is (equal (state) (state '("XDG_STATE_HOME" . ""))) "an empty variable counts as unset"))))
+
+(test an-installed-configuration-points-at-its-folder-and-the-state-directory
+  (unless (uiop:os-windows-p)
+    (let ((config (borba-cad/base:installed-config #p"/opt/borba-cad/"
+                                                   (environment-from '(("XDG_STATE_HOME" . "/s"))))))
+      (is (equal #p"/opt/borba-cad/" (borba-cad/base:config-project-root config)))
+      (is (equal #p"/s/borba-cad/log/" (borba-cad/base:config-log-directory config)))
+      (is (equal #p"/s/borba-cad/" (borba-cad/base:config-state-directory config)))
+      (is (null (borba-cad/base:config-drawings-directory config))))))
+
 (test environment-overrides-reject-bad-values
   (let ((base (borba-cad/base:default-config :project-root #p"/proj/")))
     (dolist (binding '(("BORBA_CAD_LOG_LEVEL" . "loud")

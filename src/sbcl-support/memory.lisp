@@ -60,8 +60,11 @@ PAUSE-MICROSECONDS: CPU time SBCL spent in this collection (delta of *GC-RUN-TIM
 
 (defun page-size-bytes ()
   "Return the operating-system memory page size in bytes."
+  #-win32
   (sb-alien:alien-funcall
-   (sb-alien:extern-alien "getpagesize" (function sb-alien:int))))
+   (sb-alien:extern-alien "getpagesize" (function sb-alien:int)))
+  #+win32
+  4096)
 
 (defun resident-set-bytes ()
   "Return the resident set size of the process in bytes, or NIL when /proc is unavailable."

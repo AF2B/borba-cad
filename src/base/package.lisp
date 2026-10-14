@@ -81,5 +81,7 @@
    #:detect-project-root
    #:default-config
    #:config-with-environment
+   #:user-state-directory
+   #:installed-config
    #:config-with-arguments
    #:parse-log-level))

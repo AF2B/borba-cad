@@ -24,10 +24,16 @@
 
 The origin is arbitrary (system boot), so only differences are meaningful.
 CL:GET-INTERNAL-REAL-TIME is not used: it advances in ~1 ms ticks on SBCL 2.6.9."
+  #-win32
   (multiple-value-bind (seconds nanoseconds)
       (sb-unix:clock-gettime sb-unix:clock-monotonic)
     (+ (* seconds +nanoseconds-per-second+)
-       nanoseconds)))
+       nanoseconds))
+  ;; Where the monotonic clock is not reachable the ticks of the real-time clock serve, with the
+  ;; coarser resolution that implies.
+  #+win32
+  (* (get-internal-real-time)
+     (floor +nanoseconds-per-second+ internal-time-units-per-second)))
 
 (defun format-utc-timestamp (unix-seconds
                              microseconds)

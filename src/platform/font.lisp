@@ -39,14 +39,18 @@ interface text and the interface's emphasized text.")
      "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
      "/usr/share/fonts/liberation/LiberationMono-Regular.ttf"
      "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf"
-     "/usr/share/fonts/gnu-free/FreeMono.otf")
+     "/usr/share/fonts/gnu-free/FreeMono.otf"
+     "C:/Windows/Fonts/consola.ttf"
+     "C:/Windows/Fonts/cour.ttf")
     (:ui "/usr/share/fonts/noto/NotoSans-Regular.ttf"
      "/usr/share/fonts/TTF/DejaVuSans.ttf"
      "/usr/share/fonts/dejavu/DejaVuSans.ttf"
      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
      "/usr/share/fonts/liberation/LiberationSans-Regular.ttf"
      "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"
-     "/usr/share/fonts/gnu-free/FreeSans.otf")
+     "/usr/share/fonts/gnu-free/FreeSans.otf"
+     "C:/Windows/Fonts/segoeui.ttf"
+     "C:/Windows/Fonts/arial.ttf")
     (:ui-strong "/usr/share/fonts/noto/NotoSans-Medium.ttf"
      "/usr/share/fonts/noto/NotoSans-SemiBold.ttf"
      "/usr/share/fonts/noto/NotoSans-Bold.ttf"
@@ -54,7 +58,10 @@ interface text and the interface's emphasized text.")
      "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf"
      "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
      "/usr/share/fonts/liberation/LiberationSans-Bold.ttf"
-     "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"))
+     "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+     "C:/Windows/Fonts/seguisb.ttf"
+     "C:/Windows/Fonts/segoeuib.ttf"
+     "C:/Windows/Fonts/arialbd.ttf"))
   "Font files searched, in order, for each font role, after the fonts bundled beside the
 executable. The interface fonts fall back to the monospace font when none is installed.")
 
@@ -67,8 +74,11 @@ executable. The interface fonts fall back to the monospace font when none is ins
 (defun executable-directory ()
   "Return the directory that holds the running executable, or NIL when it is not known."
   (let ((runtime sb-ext:*runtime-pathname*))
+    ;; SBCL gives a pathname, older versions a native name.
     (and runtime
-         (uiop:pathname-directory-pathname (uiop:ensure-pathname runtime)))))
+         (uiop:pathname-directory-pathname (if (stringp runtime)
+                                               (uiop:parse-native-namestring runtime)
+                                               runtime)))))
 
 (defun bundled-font-path (role)
   "Return the font file of ROLE shipped in the fonts directory beside the executable, or NIL.

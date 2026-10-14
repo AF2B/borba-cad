@@ -17,6 +17,11 @@ glyph atlas, the OpenGL renderer of the draw list, event translation and the ent
    #:executable-main
    #:run-application
    #:parse-platform-options
+   #:platform-options-file
+   #:platform-options-demo
+   #:platform-options-exit-after-demo
+   #:platform-options-screenshot
+   #:platform-options-help
    #:find-font-path
    #:find-font-paths
    #:translate-sdl-event

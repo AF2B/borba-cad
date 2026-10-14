@@ -126,3 +126,57 @@
     (is (search "File exists" (sbcl:make-directory (merge-pathnames "new/" directory))))
     (is (search "No such file" (sbcl:make-directory (merge-pathnames "a/b/" directory))))))
 
+;;; The portable fallbacks, which Windows relies on, must answer like the POSIX calls where both exist.
+
+(defun sorted-by-name (entries)
+  "Return ENTRIES ordered by name."
+  (sort (copy-list entries) #'string< :key #'first))
+
+(defun a-small-tree (directory)
+  "Fill DIRECTORY with the files a.txt (5 bytes) and b b.bcad, and the folders inside and z."
+  (with-open-file (out (merge-pathnames "a.txt" directory) :direction :output)
+    (write-string "12345" out))
+  (with-open-file (out (merge-pathnames (make-pathname :name "b b" :type "bcad") directory) :direction :output)
+    (write-string "x" out))
+  (ensure-directories-exist (merge-pathnames "inside/" directory))
+  (ensure-directories-exist (merge-pathnames "z/" directory)))
+
+(test the-portable-listing-agrees-with-the-posix-one
+  (with-scratch-directory (directory)
+    (a-small-tree directory)
+    (let ((posix (sorted-by-name (sbcl:directory-listing directory)))
+          (portable (sorted-by-name (sbcl::portable-directory-listing directory))))
+      (is (equal (mapcar #'first posix) (mapcar #'first portable)))
+      (is (equal (mapcar #'second posix) (mapcar #'second portable)))
+      (is (equal (mapcar #'third posix) (mapcar #'third portable)))
+      (is (every (lambda (one other) (< (abs (- (fourth one) (fourth other))) 2)) posix portable)
+          "the times agree to the second"))))
+
+(test the-portable-kind-agrees-with-the-posix-one-for-files-folders-and-nothing
+  (with-scratch-directory (directory)
+    (a-small-tree directory)
+    (dolist (path (list (merge-pathnames "a.txt" directory)
+                        (merge-pathnames "inside/" directory)
+                        (merge-pathnames "missing" directory)
+                        directory))
+      (is (eq (sbcl:file-kind path) (sbcl::portable-file-kind path)) "~a" path))))
+
+(test the-portable-listing-says-why-it-cannot-list
+  (with-scratch-directory (directory)
+    (multiple-value-bind (entries problem)
+        (sbcl::portable-directory-listing (merge-pathnames "nowhere/" directory))
+      (is (null entries))
+      (is (search "cannot be read" problem)))))
+
+(test the-portable-folder-creation-agrees-with-the-posix-one
+  (with-scratch-directory (directory)
+    (is (null (sbcl::portable-make-directory (merge-pathnames "made/" directory))))
+    (is (eq :directory (sbcl:file-kind (merge-pathnames "made/" directory))))
+    (is (search "File exists" (sbcl::portable-make-directory (merge-pathnames "made/" directory))))
+    (is (search "No such file" (sbcl::portable-make-directory (merge-pathnames "a/b/" directory))))
+    (is (null (sbcl:file-kind (merge-pathnames "a/" directory))) "no parent was invented")))
+
+(test the-process-id-is-the-operating-systems
+  (is (plusp (sbcl:process-id)))
+  (is (= (sbcl:process-id) (sb-posix:getpid))))
+
