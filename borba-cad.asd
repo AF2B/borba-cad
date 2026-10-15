@@ -6,7 +6,7 @@
 
 (asdf:defsystem "borba-cad"
   :description "Borba CAD core: headless 2D CAD engine (domain, geometry, persistence, observability, scene, UI and application logic)."
-  :version "1.1.0"
+  :version "1.2.0"
   :depends-on ("uiop"
                #-win32 (:require "sb-posix"))
   :pathname "src/"

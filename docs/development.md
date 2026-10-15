@@ -333,7 +333,9 @@ license file until the author chooses one, so the folder carries only the licens
 | Fonts | The bundled Noto fonts, else Segoe UI and Consolas from `C:\Windows\Fonts` |
 | Not looked at | Whether `cl-sdl2` and `cl-freetype2` build under MSYS2's SBCL (`cl-freetype2` needs a C compiler and the FreeType headers when first loaded), whether `sdl2:with-init` and OpenGL 3.3 context creation behave the same, DPI scaling, the file dialog on drive letters and backslashes (`typed-path` handles `C:\...`, the tests only exercise Unix paths), and the console-less program's standard streams |
 
-To try it on a Windows machine: install MSYS2, open its MINGW64 shell, `pacman -S make git zip curl
+The Windows job of the workflow ends by publishing the `.zip` as a release (`build-N` when the run was
+started by hand, the tag when it was started by a tag), whose file can be downloaded by anyone with the link,
+without a GitHub account; the artifact of the run needs a login. To try it on a Windows machine: install MSYS2, open its MINGW64 shell, `pacman -S make git zip curl
 mingw-w64-x86_64-gcc mingw-w64-x86_64-sbcl mingw-w64-x86_64-SDL2 mingw-w64-x86_64-freetype`, install
 Quicklisp, then `make dist-windows` in the repository. `dist/borba-cad-VERSION-windows-x86_64/`
 holds `borba-cad.exe` (no console window) and `borba-cad-console.exe` (with one, to see what the

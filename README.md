@@ -8,12 +8,12 @@ snap, undo/redo, grips, copy and paste, a numeric property inspector, DXF import
 versioned, human-readable file format, and a Lisp console that draws and edits with commands.
 Everything it does is measured and logged.
 
-**Status:** version 1.1.0 (see the [changelog](CHANGELOG.md)): the MVP of 1.0.0 plus a new
+**Status:** version 1.2.0 (see the [changelog](CHANGELOG.md)): the MVP of 1.0.0 plus a new
 interface, a file dialog, a Linux double-click distribution, English, Brazilian Portuguese and Russian,
 copy and paste, crossing selection, grips, arcs, ellipses, polygons, rotated text, DXF import and
 export, and the console with its scripts. Strict build with zero warnings, lint, 134,000+ headless
 checks and 200+ window checks pass; the benchmark baseline and the experiment report are those of
-1.0.0 and were not redone for 1.1.0. Pending: the author's review of the acceptance criteria and a
+1.0.0 and were not redone since. Pending: the author's review of the acceptance criteria and a
 license. Linux x86_64 with SBCL is the only platform that has been built and tried; the Windows
 packaging is written and has never run, and the DXF import has been checked on files made for the
 tests, not on a collection of real ones.
