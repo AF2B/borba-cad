@@ -377,6 +377,56 @@ RADIANS: an angle in radians."
   (let ((result (run-script (script-env) "(read)" :timeout 2d0)))
     (is (eq :error (script:script-result-status result)))))
 
+;;; Lisp itself
+
+(test the-console-runs-ordinary-common-lisp-format-let-defun-loop-and-all
+  (let ((context (script-env)))
+    (let ((result (run-script context "(format t \"~a has ~d sides~%\" \"hexagon\" 6)
+                                        (format nil \"~r\" 12)
+                                        (let ((side 100)) (* side side))
+                                        (defun twice (x) (* 2 x))
+                                        (mapcar #'twice '(1 2 3))
+                                        (loop for i from 1 to 5 collect (* i i))
+                                        (reduce #'+ (list 1 2 3 4))
+                                        (string-upcase \"kitchen\")
+                                        (sqrt 2)
+                                        (list pi 1/3 (/ 1 3.0))")))
+      (is (eq :ok (script:script-result-status result)) "~a" (script:script-result-message result))
+      (is (string= (format nil "hexagon has 6 sides~%") (script:script-result-output result))
+          "what format writes to the standard output is what the console prints")
+      (is (equal '("NIL" "\"twelve\"" "10000" "TWICE" "(2 4 6)" "(1 4 9 16 25)" "10" "\"KITCHEN\""
+                   "1.4142135623730951" "(3.141592653589793 1/3 0.3333333333333333)")
+                 (script:script-result-values result))
+          "and what an expression returns is printed after it, numbers as double-floats"))
+    (is (equal '("(2 4 6)") (ran-ok context "(mapcar #'twice '(1 2 3))")) "a function defined stays defined")))
+
+(test the-functions-that-would-answer-in-single-precision-answer-in-double
+  (let ((context (script-env)))
+    (is (equal '("1.4142135623730951" "0.8414709848078965" "0.5403023058681398" "1.5574077246549023"
+                 "0.7853981633974483" "0.0" "2.302585092994046" "0.3333333333333333" "2.718281828459045"
+                 "1.0986122886681098" "1.5707963267948966" "0.0")
+               (ran-ok context "(sqrt 2) (sin 1) (cos 1) (tan 1) (atan 1) (log 1) (log 10) (float 1/3) (exp 1)
+                                (log 3) (asin 1) (acos 1)")))
+    (is (equal '("0.7853981633974483" "3.0" "0.5")
+               (ran-ok context "(atan 1 1) (float 3) (float 1/2)"))
+        "also with two arguments")
+    (is (equal '("SINGLE-FLOAT" "DOUBLE-FLOAT")
+               (ran-ok context "(type-of (cl:sqrt 2)) (type-of (sqrt 2))"))
+        "Common Lisp's own is still there with its package")
+    (signals error (borba-cad/doubles:sqrt "two"))))
+
+(test lisp-and-the-commands-work-together
+  (let* ((drawing (dom:make-drawing))
+         (context (script-env drawing)))
+    (ran-ok context "(defun tower (x floors)
+                       (dotimes (floor floors)
+                         (rect-size x (* floor 3000) 4000 3000)))
+                     (tower 0 4)
+                     (format t \"~d entities~%\" (entity-count))")
+    (is (= 4 (dom:drawing-entity-count drawing)))
+    (is (string= (format nil "4 entities~%")
+                 (script:script-result-output (run-script context "(format t \"~d entities~%\" (entity-count))"))))))
+
 ;;; Comments and counting forms
 
 (test comments-are-taken-out-but-not-from-strings-or-characters

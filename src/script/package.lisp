@@ -1,6 +1,23 @@
+(defpackage #:borba-cad/doubles
+  (:use)
+  (:documentation "The functions of Common Lisp that give a single-float when they are given a whole number (SQRT 2
+is 1.4142135), made to give a double-float, as the program counts. The user package takes these in place of those
+of Common Lisp, so that what is typed in the console is as exact as the drawing.")
+  (:export #:sqrt
+           #:sin
+           #:cos
+           #:tan
+           #:asin
+           #:acos
+           #:atan
+           #:exp
+           #:log
+           #:float))
+
 (defpackage #:borba-cad/script
   (:use #:cl)
   (:local-nicknames (#:base #:borba-cad/base)
+                    (#:doubles #:borba-cad/doubles)
                     (#:i18n #:borba-cad/i18n)
                     (#:geo #:borba-cad/geometry)
                     (#:dom #:borba-cad/domain)
@@ -85,5 +102,16 @@ commands that draw it.")
 
 (defpackage #:borba-cad/user
   (:use #:cl #:borba-cad/script)
+  (:shadowing-import-from #:borba-cad/doubles
+                          #:sqrt
+                          #:sin
+                          #:cos
+                          #:tan
+                          #:asin
+                          #:acos
+                          #:atan
+                          #:exp
+                          #:log
+                          #:float)
   (:documentation "The package that what the user types in the console is read in: all of Common Lisp and the
 commands of the program, and nothing else."))

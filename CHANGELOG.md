@@ -31,6 +31,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **The console is native Common Lisp, and exact.** What is typed runs in SBCL itself, so `format` (what
+  `format t` writes appears in the console), `let`, `defun`, `loop`, `mapcar` and the rest of the language
+  work, and a test says so. In the console `sqrt`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `exp`, `log` and
+  `float` answer in double-floats even for a whole number, where Common Lisp answers in single-floats with
+  seven digits (`(sqrt 2)` was 1.4142135, now 1.4142135623730951): on a drawing 10 km across, seven digits
+  are a millimetre. The originals remain as `cl:sqrt` and the rest.
 - **Russian (ru-RU).** The language menu lists Русский (Россия) beside English (US) and Português (Brasil);
   `--language ru-RU` and `BORBA_CAD_LANGUAGE=ru-RU` choose it. The catalog has every text of the program, in
   the terms Russian CAD programs use (чертёж, слой, отрезок, привязка, размер); the plurals, which in Russian

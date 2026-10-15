@@ -95,6 +95,7 @@
                (:module "script"
                 :serial t
                 :components ((:file "package")
+                             (:file "doubles")
                              (:file "context")
                              (:file "dsl")
                              (:file "evaluator")

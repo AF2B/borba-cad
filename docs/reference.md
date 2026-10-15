@@ -5480,6 +5480,115 @@ Return true when VALUE is an acceptable grid spacing in millimetres.
 
 - `VALUE`: any object.
 
+## BORBA-CAD/DOUBLES
+
+The functions of Common Lisp that give a single-float when they are given a whole number (SQRT 2
+is 1.4142135), made to give a double-float, as the program counts. The user package takes these in place of those
+of Common Lisp, so that what is typed in the console is as exact as the drawing.
+
+### `acos` (function)
+
+```lisp
+(acos number)
+```
+
+Return the arc cosine of NUMBER, in radians and double-float.
+
+- `NUMBER`: a number.
+
+### `asin` (function)
+
+```lisp
+(asin number)
+```
+
+Return the arc sine of NUMBER, in radians and double-float.
+
+- `NUMBER`: a number.
+
+### `atan` (function)
+
+```lisp
+(atan number &optional (other nil other-p))
+```
+
+Return the arc tangent of NUMBER, or of NUMBER over OTHER when it is given, in radians and double-float.
+
+- `NUMBER`: a number, or the y of a direction.
+- `OTHER`: the x of a direction.
+
+### `cos` (function)
+
+```lisp
+(cos radians)
+```
+
+Return the cosine of an angle given in radians, in double-float.
+
+- `RADIANS`: a number.
+
+### `exp` (function)
+
+```lisp
+(exp number)
+```
+
+Return e to the power NUMBER, in double-float.
+
+- `NUMBER`: a number.
+
+### `float` (function)
+
+```lisp
+(float number &optional (prototype 1.0d0))
+```
+
+Return NUMBER as a floating point number: a double-float unless PROTOTYPE is a float of another format.
+
+- `NUMBER`: a real number.
+- `PROTOTYPE`: a float whose format the result has; double-float when it is left out.
+
+### `log` (function)
+
+```lisp
+(log number &optional (base nil base-p))
+```
+
+Return the logarithm of NUMBER, natural or to BASE when it is given, in double-float.
+
+- `NUMBER`: a number.
+- `BASE`: the base of the logarithm.
+
+### `sin` (function)
+
+```lisp
+(sin radians)
+```
+
+Return the sine of an angle given in radians, in double-float.
+
+- `RADIANS`: a number.
+
+### `sqrt` (function)
+
+```lisp
+(sqrt number)
+```
+
+Return the square root of NUMBER, in double-float for a real number.
+
+- `NUMBER`: a number.
+
+### `tan` (function)
+
+```lisp
+(tan radians)
+```
+
+Return the tangent of an angle given in radians, in double-float.
+
+- `RADIANS`: a number.
+
 ## BORBA-CAD/DXF
 
 Import and export of drawings in the ASCII DXF format: a reader of the groups of a DXF

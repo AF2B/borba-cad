@@ -173,6 +173,18 @@ is Common Lisp, so loops, functions and arithmetic work. Up and Down recall the 
 Up and Page Down scroll the output, a command whose parentheses are not closed waits for its next
 lines, a paste is made one line without its comments, `Ctrl+L` clears the output.
 
+**It is native Lisp, not a calculator or a dialect.** What is typed is read and evaluated by SBCL itself, in
+a package that has all of Common Lisp and the commands above, so `format`, `let`, `defun`, `loop`, `mapcar`,
+`string-upcase`, `(format nil "~r" 12)` and the rest work as anywhere else, and what `format t` writes
+appears in the console (`(format t "~d entities~%" (entity-count))`); a function defined stays defined for
+the session, and a script can use them as much as a command does. Numbers written with a point or an
+exponent are read as double-floats, and `sqrt`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `exp`, `log`
+and `float` answer in double-floats even for a whole number (`(sqrt 2)` is 1.4142135623730951, where plain
+Common Lisp gives 1.4142135; `cl:sqrt` is still there for that). The
+internals of the program are not in that package, but they are not hidden either: `borba-cad/domain:...`
+reaches them, and so does anything else SBCL has (including what touches files and runs programs), which is
+why the rules below are about what runs and when, not about what the language can say.
+
 What makes it safe to use:
 
 - **A command is one step of undo.** It acts on the drawing as it goes, so the next step sees the
