@@ -71,7 +71,7 @@ cp "$executable" "$bundle/borba-cad-console.exe"
 cp "$executable" "$bundle/borba-cad.exe"
 set_gui_subsystem "$bundle/borba-cad.exe"
 cp "$root/packaging/windows/README.txt" "$bundle/"
-cp "$root"/examples/*.bcad "$bundle/examples/"
+cp "$root"/examples/*.bcad "$root"/examples/*.lisp "$bundle/examples/"
 
 # DLLs: the ones opened by name, and everything they and the program need, recursively.
 declare -A copied=()

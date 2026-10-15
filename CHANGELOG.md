@@ -2,7 +2,7 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/). The project follows semantic versioning.
 
-## [Unreleased]
+## [1.1.0] - 2026-10-14
 
 ### Added
 

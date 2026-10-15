@@ -11,7 +11,7 @@ What is in this folder
   borba-cad.bin    the program
   lib/             the libraries it needs that most systems do not have (SDL2, FreeType, ...)
   fonts/           Noto Sans and Noto Sans Mono (SIL Open Font License, see LICENSES/)
-  examples/        a sample drawing
+  examples/        a sample drawing and two scripts
 
 What it needs from your system
   Linux x86_64 with a graphical session (Wayland or X11), OpenGL 3.3, and a C library (glibc) at

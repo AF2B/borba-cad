@@ -11,7 +11,7 @@ What is in this folder
   *.dll                  the libraries it needs (SDL2, FreeType and what they need)
   fonts\                 Noto Sans and Noto Sans Mono, when this folder has them; otherwise the
                          program uses Segoe UI and Consolas from Windows
-  examples\              a sample drawing
+  examples\              a sample drawing and two scripts
   LICENSES\              licenses of the parts that are not Borba CAD
 
 What it needs from your system

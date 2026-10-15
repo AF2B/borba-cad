@@ -52,7 +52,7 @@ cp "$root/packaging/linux/borba-cad" "$root/packaging/linux/install.sh" "$root/p
    "$root/packaging/linux/README.txt" "$bundle/"
 cp "$root/packaging/linux/Borba CAD.desktop" "$bundle/"
 cp "$root/packaging/borba-cad.svg" "$bundle/"
-cp "$root"/examples/*.bcad "$bundle/examples/"
+cp "$root"/examples/*.bcad "$root"/examples/*.lisp "$bundle/examples/"
 chmod +x "$bundle/borba-cad" "$bundle/borba-cad.bin" "$bundle/install.sh" "$bundle/uninstall.sh" \
          "$bundle/Borba CAD.desktop"
 
