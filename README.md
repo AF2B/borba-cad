@@ -14,9 +14,10 @@ copy and paste, crossing selection, grips, arcs, ellipses, polygons, rotated tex
 export, and the console with its scripts. Strict build with zero warnings, lint, 134,000+ headless
 checks and 200+ window checks pass; the benchmark baseline and the experiment report are those of
 1.0.0 and were not redone since. Pending: the author's review of the acceptance criteria and a
-license. Linux x86_64 with SBCL is the only platform that has been built and tried; the Windows
-packaging is written and has never run, and the DXF import has been checked on files made for the
-tests, not on a collection of real ones.
+license. Linux x86_64 with SBCL is the only platform where the program has been run; the Windows build
+is made by GitHub (see "Running it by double-click") and has been built, but nobody has opened it on a
+Windows machine yet, and the DXF import has been checked on files made for the tests and two small ones
+from the internet, not on a collection of real ones.
 
 ## Requirements
 
@@ -53,7 +54,7 @@ with `LOG_LEVEL=debug`, pass any program option with `ARGS="..."`.
 | `run`, `demo`, `debug`, `repl` | Run the program, a scripted demo with a screenshot, run under the Lisp debugger, an interactive session |
 | `exe` / `run-exe` | Standalone executable `build/borba-cad` |
 | `dist` / `dist-check` | Linux folder to double-click and its `.tar.gz` in `dist/` / start it in a clean environment and check it uses its own libraries and fonts |
-| `dist-windows` | Windows folder and `.zip` (in an MSYS2 shell; written but never run on Windows) |
+| `dist-windows` | Windows folder and `.zip` (in an MSYS2 shell; GitHub runs it for the workflow, see below) |
 | `bench`, `bench-gui`, `bench-quick` | Benchmarks, written to `bench/reports/` |
 | `logs-tail`, `logs-summary` | Follow the log, aggregate it per event (no GUI needed) |
 | `example`, `docs` | Regenerate `examples/floor-plan.bcad`, regenerate `docs/reference.md` (the scripts in `examples/` are written by hand) |
@@ -65,8 +66,11 @@ with `LOG_LEVEL=debug`, pass any program option with `ARGS="..."`.
 double-click `Borba CAD.desktop` (or `borba-cad`): the folder carries the libraries and the fonts
 it needs, so nothing has to be installed. `./install.sh` adds it to the applications menu and makes
 a double click on a `.bcad` file open it. The Windows folder (`make dist-windows`, in an MSYS2
-shell, or the workflow in `.github/workflows/dist.yml`) has the same idea with `borba-cad.exe`, but
-has never been built on Windows: see docs/development.md, "Windows". The program also takes the
+shell, or the workflow in `.github/workflows/dist.yml`) has the same idea with `borba-cad.exe`. The
+workflow builds it on a Windows machine of GitHub's (Actions > Distribution > Run workflow) and publishes the
+`.zip` in the [releases](https://github.com/AF2B/borba-cad/releases), where anyone can download it without an
+account; it has been built there, and not yet run on a real Windows machine: see docs/development.md,
+"Windows". The program also takes the
 drawing as an argument: `borba-cad plan.bcad`.
 
 ## Using the program
@@ -236,8 +240,8 @@ unavailable, never estimated.
 
 ## Known limits
 
-Tried on Linux x86_64 with SBCL only (the Windows folder and CI workflow are written and have never
-run); single-line text, axis-aligned rectangles and aligned linear dimensions only; DXF import leaves out
+Run on Linux x86_64 with SBCL only (the Windows folder is built by the workflow, and has not been opened
+on Windows); single-line text, axis-aligned rectangles and aligned linear dimensions only; DXF import leaves out
 hatches, points, images and paper space, and export writes R12 (an ellipse, a polygon and a
 dimension leave as polylines, lines and text), and the import was tried on files made for the tests;
 Brazilian Portuguese and Russian keep the decimal point in numbers and leave in English the messages about the

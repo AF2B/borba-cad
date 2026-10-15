@@ -323,12 +323,17 @@ license file until the author chooses one, so the folder carries only the licens
 
 ### Windows
 
-**Nothing here has been built or run on Windows.** What exists, and how far it was tried:
+**The Windows build has been made by GitHub's Windows machine (the fourth run of the workflow, 2026-10-15),
+but nothing has been run on Windows.** The first three runs found what was missing: the C compiler that
+cl-freetype2 calls is a Windows program, so the include folders are given to it in Windows form (`CPATH`,
+with the `freetype2` folder and its `freetype` subfolder), and a Windows checkout turned the line ends into
+CRLF, which broke a format control and would break every shell script (`.gitattributes` asks for LF). What
+exists, and how far it was tried:
 
 | Piece | State |
 |---|---|
 | `scripts/dist-windows.sh`, `make dist-windows` | Written for an MSYS2 MINGW64 shell. Its one delicate step, turning the console program into a graphical one by writing 2 over the Subsystem field of the PE header, is tested on a fabricated header (`tests/packaging-tests.lisp`). The DLL collection and the zip are unproven |
-| `.github/workflows/dist.yml` | A Linux job (Arch container, the whole `make check`, then `dist` and `dist-check` under `xvfb`) and a Windows job (MSYS2 with SBCL, SDL2, FreeType and gcc). Neither has run; the first run will show what is missing |
+| `.github/workflows/dist.yml` | A Linux job (Arch container, the whole `make check`, then `dist` and `dist-check` under `xvfb`: it passes), a Windows job (MSYS2 with SBCL, SDL2, FreeType and gcc: it builds and packages, and does not run the program) and a job that publishes the Windows zip as a release |
 | `src/sbcl-support/` | The POSIX calls (`sb-posix`: stat, access, chmod, folder listing, rename, fsync) are written for Linux and guarded with `#-win32`; on Windows `portable-filesystem.lisp` (standard Common Lisp and UIOP) answers instead. The tests hold the portable versions to the same answers as the POSIX ones on Linux, but the Windows branches were never compiled. The monotonic clock falls back to the coarser `get-internal-real-time`, the memory figure that reads `/proc` is reported as unavailable, and the atomic rename becomes delete-then-rename |
 | Fonts | The bundled Noto fonts, else Segoe UI and Consolas from `C:\Windows\Fonts` |
 | Not looked at | Whether `cl-sdl2` and `cl-freetype2` build under MSYS2's SBCL (`cl-freetype2` needs a C compiler and the FreeType headers when first loaded), whether `sdl2:with-init` and OpenGL 3.3 context creation behave the same, DPI scaling, the file dialog on drive letters and backslashes (`typed-path` handles `C:\...`, the tests only exercise Unix paths), and the console-less program's standard streams |
