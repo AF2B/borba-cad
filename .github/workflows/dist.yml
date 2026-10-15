@@ -78,7 +78,11 @@ jobs:
           curl -fsSL -o "$RUNNER_TEMP/fonts/NotoSans-Medium.ttf" "$base/NotoSans/hinted/ttf/NotoSans-Medium.ttf"
           curl -fsSL -o "$RUNNER_TEMP/fonts/NotoSansMono-Regular.ttf" "$base/NotoSansMono/hinted/ttf/NotoSansMono-Regular.ttf"
       - name: Build and package
-        run: FONT_DIRECTORY="$RUNNER_TEMP/fonts" make dist-windows
+        run: |
+          # The C compiler that Lisp calls is a Windows program: it does not know /mingw64, so it is told
+          # where the FreeType headers are in the form it understands.
+          export CPATH="$(cygpath -m /mingw64/include/freetype2)"
+          FONT_DIRECTORY="$RUNNER_TEMP/fonts" make dist-windows
       - uses: actions/upload-artifact@v4
         with:
           name: borba-cad-windows
