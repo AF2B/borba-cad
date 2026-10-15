@@ -15,6 +15,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
   closed polyline) was left out of the import as a segment of no length; it is now read as the closed
   polyline it is.
 
+### Changed
+
+- **Running a script asks where it draws, in plain words.** The question no longer explains what a script
+  is: it says "It can draw on a new layer of this drawing, or in a new drawing. Run only files you
+  trust." with the buttons **New layer**, **New drawing** and Cancel. *New layer* makes a layer named for
+  the file (with a number after it when that name is taken) and the script draws on it, unless it chooses
+  its own layers; the layer is taken away again when nothing is left on it, so a script that fails
+  leaves nothing behind. *New drawing* offers to save unsaved work first, and runs the script in an
+  empty drawing, leaving the one that was open as it was. Both are one step of undo.
+- **Exports end with a message in the middle of the window.** Exporting a DXF file or a script shows a
+  window that says the file was saved (with its size, and for DXF what changed shape) or why it could not
+  be, instead of a line in the status bar that is easy to miss; a script that stops halfway says so in
+  the same way.
+
 ### Added
 
 - DXF import reads more of what real files have: **splines** (B-splines and rational ones, from their

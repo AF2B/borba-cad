@@ -442,6 +442,27 @@ CONDITION: the condition signaled."
                :error)
   nil)
 
+(defun fail-export-operation (app
+                              event
+                              started
+                              condition)
+  "Record an export that failed, as FAIL-FILE-OPERATION does, and also tell the user in a modal, which is
+where the answer to an export is looked for. Returns NIL.
+
+APP: the application.
+EVENT: dotted event name, such as file.export-dxf.
+STARTED: monotonic time when the operation began.
+CONDITION: the condition signaled."
+  (fail-file-operation app
+                       event
+                       started
+                       condition)
+  (show-notice app
+               (i18n:tr "Could not export")
+               (remove #\Newline (princ-to-string condition))
+               +report-message-lines+)
+  nil)
+
 (defun note-recent-file (app
                          path)
   "Put the drawing PATH at the head of the list of recent files. A list that cannot be written is

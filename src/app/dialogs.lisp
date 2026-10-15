@@ -20,7 +20,7 @@
 (defconstant +dialog-control-height+ 32f0
   "Height of the field and the buttons of a dialog, in pixels.")
 
-(defconstant +dialog-button-width+ 96f0
+(defconstant +dialog-button-width+ 124f0
   "Width of a dialog button, in pixels.")
 
 (defconstant +dialog-section-gap+ 14f0

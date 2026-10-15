@@ -160,8 +160,9 @@ script or export one."
   "Close the file dialog without doing anything.
 
 APP: the application."
-  (setf (app-dialog app) nil
-        (app-focus app) nil)
+  (setf (app-dialog app) nil)
+  (when (eq (app-focus app) :dialog)
+    (setf (app-focus app) nil))
   (app-request-redraw app))
 
 ;;; Focus and text

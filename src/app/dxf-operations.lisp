@@ -172,17 +172,20 @@ PATH-TEXT: file name as typed by the user."
           (log-dxf-report app
                           "dxf.export"
                           report)
-          (set-message app
-                       (i18n:trf "Exported ~a (~a). ~a"
-                                 (file-namestring saved)
-                                 (base:format-byte-size (getf stats :bytes))
-                                 (dxf:export-summary report)))
+          (show-notice app
+                       (i18n:tr "DXF exported")
+                       (format nil "~a ~a"
+                               (i18n:trf "~a was saved (~a)."
+                                         (file-namestring saved)
+                                         (base:format-byte-size (getf stats :bytes)))
+                               (dxf:export-summary report))
+                       +report-message-lines+)
           t)
       ((or base:drawing-file-error base:invalid-input) (condition)
-        (fail-file-operation app
-                             "file.export-dxf"
-                             started
-                             condition)))))
+        (fail-export-operation app
+                               "file.export-dxf"
+                               started
+                               condition)))))
 
 (defun operation-import-dxf (app)
   "Open the dialog where the user finds a DXF file to import as a new drawing, after offering to save the

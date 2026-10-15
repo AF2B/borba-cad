@@ -48,6 +48,23 @@ MESSAGE-LINES: how many lines the message may take, or NIL for the usual three."
         (app-focus app) :prompt)
   (app-request-redraw app))
 
+(defun show-notice (app
+                    title
+                    message
+                    &optional message-lines)
+  "Tell the user something in a modal in the middle of the window, with an OK button: what a long operation
+came to, which a line of the status bar is too easy to miss.
+
+APP: the application.
+TITLE: heading.
+MESSAGE: what happened.
+MESSAGE-LINES: how many lines the message may take, or NIL for the usual three."
+  (open-choice-prompt app
+                      title
+                      message
+                      (list (cons (i18n:tr "OK") nil))
+                      message-lines))
+
 (defun close-prompt (app)
   "Close the modal prompt without running anything.
 

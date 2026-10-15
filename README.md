@@ -175,16 +175,18 @@ What makes it safe to use:
   the text of a command is read with the reader's evaluation off (`#.` is an error), as numbers
   that are double-floats.
 - **Scripts run only when you say so.** More > Run script... opens a file dialog for `.lisp` files;
-  the file is read, counted and shown (its name, how many expressions, how it begins), and a
-  question says that a script is a program that can do anything the program can and should be
-  trusted before it runs. Only then does it run, as one command with its own limit.
+  the file is read and checked, and a question asks where it draws: on **a new layer** of the
+  drawing you are editing (named for the file, and taken away again if the script left nothing on it),
+  or in **a new drawing** that leaves yours alone (after the usual offer to save unsaved work), with a
+  line that says to run only files you trust. Only then does it run, as one command with its own limit.
 - **What you type in the console is full Lisp,** with the permissions of whoever runs the program:
   that is what makes it useful, and it is why a restricted dialect was not offered in its place.
   Do not paste what you do not understand.
 
 More > Export as script... writes the drawing as the commands that draw it again, bit for bit (layers
 with their colors, visibility and locks, each entity on its layer, in order), a file that Run script
-reads. `examples/house-plan.lisp` and `examples/rosette.lisp` are scripts to read and run.
+reads. Exporting a script, like exporting a DXF file, ends with a message in the middle of the
+window that says it worked or why it did not. `examples/house-plan.lisp` and `examples/rosette.lisp` are scripts to read and run.
 
 ## Observability
 

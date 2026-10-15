@@ -343,7 +343,6 @@
   ("Meters" "Metros")
   ("Imported ~a: ~a" "~a importado: ~a")
   ("Imported ~a" "~a importado")
-  ("Exported ~a (~a). ~a" "~a exportado (~a). ~a")
   ("~d ~:*~[entities~;entity~:;entities~] imported."
    "~d ~:*~[entidades importadas~;entidade importada~:;entidades importadas~].")
   ("~d ~:*~[entities~;entity~:;entities~] exported."
@@ -413,16 +412,15 @@
    "não é um script: deve ter expressões Lisp com os parênteses fechados")
   ("is empty: it has no expression to run" "está vazio: não tem expressão para executar")
   ("Run ~a?" "Executar ~a?")
-  ("~a holds ~d ~:*~[expressions~;expression~:;expressions~] and begins: ~a."
-   "~a tem ~d ~:*~[expressões~;expressão~:;expressões~] e começa assim: ~a.")
-  ("A script is a program: it can do anything the program can, and it changes the drawing."
-   "Um script é um programa: pode fazer tudo o que o programa faz e altera o desenho.")
-  ("Run only scripts you trust. It runs as one step you can undo, and stops after ~d seconds."
-   "Execute só scripts em que você confia. Roda como um único passo que você pode desfazer e para depois de ~d segundos.")
   ("Splines were imported as polylines of short straight segments."
    "As splines foram importadas como polilinhas de segmentos retos curtos.")
   ("Leaders were imported as lines, without their arrowheads."
    "As linhas de chamada foram importadas como linhas, sem as pontas de seta.")
   ("3D faces were imported flat, as their outlines." "As faces 3D foram importadas planas, como seus contornos.")
-  ("Run script" "Executar script")
-  ("Exported ~a (~a) as a script." "~a exportado (~a) como script.")))
+  ("It can draw on a new layer of this drawing, or in a new drawing. Run only files you trust."
+   "Ele pode desenhar em uma nova camada deste desenho ou em um desenho novo. Execute só arquivos em que você confia.")
+  ("~a did not finish" "~a não terminou")
+  ("Script exported" "Script exportado")
+  ("DXF exported" "DXF exportado")
+  ("Could not export" "Não foi possível exportar")
+  ("~a was saved (~a)." "~a foi salvo (~a).")))

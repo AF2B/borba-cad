@@ -242,9 +242,13 @@
         (press application :enter)
         (is (null (app:app-dialog application)))
         (is (probe-file (merge-pathnames "current.dxf" directory)))
-        (is (search "Exported current.dxf" (message-text application)))
-        (is (search "5 entities exported" (message-text application)))
-        (is (search "Ellipses were written as polylines" (message-text application)))
+        (is (string= "DXF exported" (prompt-title-of application)) "a modal says it worked")
+        (is (search "current.dxf was saved" (app:prompt-message (app:app-prompt application))))
+        (is (search "5 entities exported" (app:prompt-message (app:app-prompt application))))
+        (is (search "Ellipses were written as polylines" (app:prompt-message (app:app-prompt application))))
+        (is (equal '("OK") (prompt-labels application)))
+        (press application :enter)
+        (is (null (app:app-prompt application)) "OK closes it")
         (is (= revision (dom:drawing-revision (app:app-drawing application))))
         (is (eq dirty (app:app-dirty-p application)) "an export does not save the drawing")
         (is (equal path (app:app-file-path application)) "and does not rename it")
@@ -265,10 +269,25 @@
       (type-text application "fresh")
       (press application :enter)
       (is (probe-file (merge-pathnames "fresh.dxf" directory)))
+      (press application :enter)
       (app:operation-export-dxf application)
       (type-text application "v1.2 final")
       (press application :enter)
       (is (probe-file (merge-pathnames "v1.2 final.dxf" directory)) "a name with a dot that is not an extension"))))
+
+(test a-failed-export-is-told-in-a-modal-and-the-dialog-stays
+  (with-temporary-directory (directory)
+    (let ((application (dxf-app directory)))
+      (app:operation-export-dxf application)
+      (is (null (app:export-dxf-from-app application
+                                         (uiop:native-namestring (merge-pathnames "no-such-folder/out.dxf"
+                                                                                  directory)))))
+      (is (string= "Could not export" (prompt-title-of application)))
+      (is (search "out.dxf" (app:prompt-message (app:app-prompt application))))
+      (is (equal '("OK") (prompt-labels application)))
+      (press application :enter)
+      (is (null (app:app-prompt application)))
+      (is-true (app:app-dialog application) "the dialog is still there, to try another name"))))
 
 (test an-export-into-a-folder-that-cannot-be-written-says-why-and-keeps-the-dialog
   (with-temporary-directory (directory)
