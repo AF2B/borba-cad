@@ -81,7 +81,7 @@ jobs:
         run: |
           # The C compiler that Lisp calls is a Windows program: it does not know /mingw64, so it is told
           # where the FreeType headers are in the form it understands.
-          export CPATH="$(cygpath -m /mingw64/include/freetype2)"
+          export CPATH="$(cygpath -m /mingw64/include/freetype2);$(cygpath -m /mingw64/include/freetype2/freetype)"
           FONT_DIRECTORY="$RUNNER_TEMP/fonts" make dist-windows
       - uses: actions/upload-artifact@v4
         with:
