@@ -143,7 +143,7 @@ panel, the title bar, the tool palette, the status bar, the tooltip of the widge
 pointer, the open menu, the file dialog when one is open, and the modal prompt when one is.
 
 APP: the application."
-  (let* ((layout (ui:compute-layout (app-window-width app) (app-window-height app)))
+  (let* ((layout (app-layout app))
          (side (ui:layout-side-panel layout))
          (blocked (and (or (app-prompt app) (app-dialog app) (app-menu app)) t))
          (dialog-widgets (and (app-dialog app)
@@ -165,6 +165,7 @@ APP: the application."
                                (palette-widgets app
                                                 (ui:layout-tool-palette layout)
                                                 blocked)
+                               (console-widgets app blocked)
                                (toolbar-widgets app blocked)))
          (hovered (ui:widget-at (append base-widgets
                                         dialog-widgets

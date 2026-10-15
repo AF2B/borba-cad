@@ -75,6 +75,34 @@ HIGHLIGHT: position, among the choices, of the one the keyboard is on."
   anchor
   highlight)
 
+(defconstant +console-line-limit+ 500
+  "Most lines the console keeps of what was typed and printed; the oldest are dropped.")
+
+(defconstant +console-history-limit+ 200
+  "Most commands the console remembers for the up and down arrows.")
+
+(defconstant +console-input-limit+ 20000
+  "Most characters one command typed or pasted in the console may have.")
+
+(defstruct (console (:constructor make-console ()))
+  "The console, where commands are typed to draw and edit with the language of the program.
+
+OPEN: true while the console is shown under the canvas.
+LINES: what was typed and printed, newest first, each as (kind . text) with the kind :input, :output,
+:value, :error or :note.
+HISTORY: the commands that were run, newest first.
+HISTORY-POSITION: where the up and down arrows are in the history, or NIL when a new command is being typed.
+DRAFT: what was typed before the arrows started to walk through the history.
+PENDING: the lines of a command whose parentheses are not closed yet, joined by newlines, or the empty string.
+SCROLL: how many lines the output is scrolled up from its end."
+  (open nil)
+  (lines '() :type list)
+  (history '() :type list)
+  (history-position nil)
+  (draft "" :type string)
+  (pending "" :type string)
+  (scroll 0 :type fixnum))
+
 (defstruct (app (:constructor %make-app))
   "The whole application state.
 
@@ -105,6 +133,7 @@ DIALOG: the open file dialog, or NIL.
 MENU: the open drop-down menu, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
 GRIP-DRAG: the grip being dragged, or NIL.
+CONSOLE: the console.
 CLIPBOARD-READER: function of no arguments that returns the text on the system clipboard, or NIL.
 CLIPBOARD-WRITER: function of one string that puts it on the system clipboard, or NIL.
 CLIPBOARD-FALLBACK: the clipboard text kept here while there is no system clipboard.
@@ -145,6 +174,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   menu
   (polygon-sides 6 :type (integer 3))
   grip-drag
+  (console (make-console))
   clipboard-reader
   clipboard-writer
   clipboard-fallback
@@ -164,11 +194,19 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   last-scene-result
   last-error)
 
+(defun app-layout (app)
+  "Return the regions of the window as they are now: the console takes its strip from the canvas when open.
+
+APP: the application."
+  (ui:compute-layout (app-window-width app)
+                     (app-window-height app)
+                     :console (console-open (app-console app))))
+
 (defun canvas-rect (app)
   "Return the canvas rectangle of the current window size.
 
 APP: the application."
-  (ui:layout-canvas (ui:compute-layout (app-window-width app) (app-window-height app))))
+  (ui:layout-canvas (app-layout app)))
 
 (defun fit-viewport-to-window (app
                                viewport)

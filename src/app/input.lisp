@@ -143,7 +143,12 @@ EVENT: a pointer event."
                             y)))
     (clear-message app)
     (when (and (app-focus app) (not (member (app-focus app) '(:prompt :dialog)))
-               (not (and hit (equal (ui:widget-id hit) (app-focus app)))))
+               (not (and hit (equal (ui:widget-id hit) (app-focus app))))
+               (not (and (console-focused-p app)
+                         (ui:rect-contains-p (console-rect app)
+                                             x
+                                             y)
+                         (null hit))))
       (commit-field-edit app)
       (setf widgets (build-widgets app)
             hit (ui:widget-at widgets
@@ -243,13 +248,18 @@ EVENT: a wheel event."
   (let* ((x (wheel-event-x event))
          (y (wheel-event-y event))
          (delta (wheel-event-delta event))
-         (layout (ui:compute-layout (app-window-width app) (app-window-height app))))
+         (layout (app-layout app)))
     (setf (app-pointer-x app) x
           (app-pointer-y app) y)
     (cond ((app-prompt app) nil)
           ((app-menu app) nil)
           ((app-dialog app)
            (handle-dialog-wheel app delta))
+          ((and (console-open-p app)
+                (ui:rect-contains-p (ui:layout-console layout)
+                                    x
+                                    y))
+           (console-scroll-by app (round (* +console-wheel-lines+ delta))))
           ((scroll-panel app
                          (ui:layout-layers-panel layout)
                          delta
@@ -375,6 +385,7 @@ KEY: key keyword."
                (:o (operation-toggle-object-snap app) t)
                (:u (operation-cycle-display-unit app) t)
                (:home (operation-zoom-extents app) t)
+               (:f2 (operation-toggle-console app) t)
                (:f3 (operation-toggle-overlay app) t)
                (t nil))))))
 
@@ -400,6 +411,9 @@ EVENT: a key event."
                                                key
                                                modifiers))
           ((app-menu app) (handle-menu-key app key))
+          ((console-focused-p app) (handle-console-key app
+                                                       key
+                                                       modifiers))
           ((app-focus app) (handle-field-key app
                                              key
                                              modifiers))

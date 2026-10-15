@@ -126,7 +126,11 @@ APP: the application."
                              (funcall function app))
                            nil)))
     (list (choice :import-dxf (i18n:tr "Import DXF...") :import "Ctrl+Shift+I" #'operation-import-dxf)
-          (choice :export-dxf (i18n:tr "Export DXF...") :export "Ctrl+Shift+E" #'operation-export-dxf))))
+          (choice :export-dxf (i18n:tr "Export DXF...") :export "Ctrl+Shift+E" #'operation-export-dxf)
+          nil
+          (choice :console (i18n:tr "Console") :console "F2" #'operation-toggle-console)
+          (choice :run-script (i18n:tr "Run script...") :open nil #'operation-run-script)
+          (choice :export-script (i18n:tr "Export as script...") :export nil #'operation-export-script))))
 
 (defun menu-items (app
                    kind)

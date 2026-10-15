@@ -52,7 +52,8 @@ KEY: the name in lower case without accents, by which entries are sorted and sea
 
 MODE: :open or :save.
 CONTINUATION: function of no arguments run after a successful save, or NIL.
-PURPOSE: :drawing for a drawing of the program, or :dxf to import or export a DXF file.
+PURPOSE: :drawing for a drawing of the program, :dxf to import or export a DXF file, or :script to run a
+script or export one.
 DIRECTORY: the folder shown, as a directory pathname.
 ENTRIES: every entry of that folder, folders first, each group by name.
 SELECTED: the name of the selected entry, or NIL.
@@ -177,12 +178,13 @@ EXTENSIONS: the extensions, without the dot."
 
 (defun dialog-extensions (dialog)
   "Return the extensions of the files that the dialog lists when it is not asked to list all: those of
-a drawing of the program, or of a DXF file.
+a drawing of the program, of a DXF file, or of a script.
 
 DIALOG: the file dialog."
   (ecase (file-dialog-purpose dialog)
     (:drawing persist:*known-drawing-extensions*)
-    (:dxf *dxf-extensions*)))
+    (:dxf *dxf-extensions*)
+    (:script *script-extensions*)))
 
 (defun compute-visible-entries (entries
                                 show-all
@@ -482,15 +484,16 @@ name, when saving; nothing when opening.
 
 APP: the application.
 MODE: :open or :save.
-PURPOSE: :drawing or :dxf; a DXF file is offered the name of the drawing with the extension .dxf."
+PURPOSE: :drawing, :dxf or :script; a DXF file or a script is offered the name of the drawing with its own
+extension."
   (cond ((eq mode :open) "")
-        ((eq purpose :dxf)
+        ((member purpose '(:dxf :script))
          (concatenate 'string
                       (if (app-file-path app)
                           (pathname-name (app-file-path app))
                           (pathname-name *untitled-file-name*))
                       "."
-                      (first *dxf-extensions*)))
+                      (first (if (eq purpose :dxf) *dxf-extensions* *script-extensions*))))
         ((app-file-path app) (file-namestring (app-file-path app)))
         (t *untitled-file-name*)))
 
@@ -503,7 +506,7 @@ PURPOSE: :drawing or :dxf; a DXF file is offered the name of the drawing with th
 APP: the application.
 MODE: :open or :save.
 CONTINUATION: function of no arguments run after a successful save, or NIL.
-PURPOSE: :drawing or :dxf."
+PURPOSE: :drawing, :dxf or :script."
   (let* ((dialog (%make-file-dialog mode
                                     continuation
                                     purpose))

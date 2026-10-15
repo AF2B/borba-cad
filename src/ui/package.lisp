@@ -53,6 +53,8 @@ editing, and the performance overlay. No input device and no renderer appear her
    #:layout-layers-panel
    #:layout-inspector-panel
    #:layout-status-bar
+   #:layout-console
+   #:+console-height+
    ;; Icons
    #:icon-names
    #:icon-shapes

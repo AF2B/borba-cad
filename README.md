@@ -2,16 +2,21 @@
 
 A native 2D CAD in Common Lisp (SBCL). It is an engineering experiment: can Common Lisp carry a
 professional drafting application, with tested geometry, measured performance and a codebase
-that stays maintainable? The program draws lines, rectangles, circles, polylines, text and
-aligned dimensions on layers, with pan, zoom, grid, snap, undo/redo, a numeric property inspector
-and a versioned, human-readable file format. Everything it does is measured and logged.
+that stays maintainable? The program draws lines, rectangles, circles, arcs, ellipses, regular
+polygons, polylines, text (at any angle) and aligned dimensions on layers, with pan, zoom, grid,
+snap, undo/redo, grips, copy and paste, a numeric property inspector, DXF import and export, a
+versioned, human-readable file format, and a Lisp console that draws and edits with commands.
+Everything it does is measured and logged.
 
-**Status:** version 1.0.0 of the MVP plus the work recorded under "Unreleased" in the changelog (a
-new interface, a file dialog, a Linux double-click distribution). Strict build with zero warnings,
-lint, 128,000+ headless checks and 200+ window checks pass; the benchmark baseline and the
-experiment report of 1.0.0 are recorded. Pending: the author's review of the acceptance criteria
-and a license. Linux x86_64 with SBCL is the only platform that has been built and tried; the
-Windows packaging is written and has never run.
+**Status:** version 1.1.0 (see the [changelog](CHANGELOG.md)): the MVP of 1.0.0 plus a new
+interface, a file dialog, a Linux double-click distribution, English and Brazilian Portuguese,
+copy and paste, crossing selection, grips, arcs, ellipses, polygons, rotated text, DXF import and
+export, and the console with its scripts. Strict build with zero warnings, lint, 134,000+ headless
+checks and 200+ window checks pass; the benchmark baseline and the experiment report are those of
+1.0.0 and were not redone for 1.1.0. Pending: the author's review of the acceptance criteria and a
+license. Linux x86_64 with SBCL is the only platform that has been built and tried; the Windows
+packaging is written and has never run, and the DXF import has been checked on files made for the
+tests, not on a collection of real ones.
 
 ## Requirements
 
@@ -51,7 +56,7 @@ with `LOG_LEVEL=debug`, pass any program option with `ARGS="..."`.
 | `dist-windows` | Windows folder and `.zip` (in an MSYS2 shell; written but never run on Windows) |
 | `bench`, `bench-gui`, `bench-quick` | Benchmarks, written to `bench/reports/` |
 | `logs-tail`, `logs-summary` | Follow the log, aggregate it per event (no GUI needed) |
-| `example`, `docs` | Regenerate `examples/floor-plan.bcad`, regenerate `docs/reference.md` |
+| `example`, `docs` | Regenerate `examples/floor-plan.bcad`, regenerate `docs/reference.md` (the scripts in `examples/` are written by hand) |
 | `clean`, `distclean` | Remove build output / also logs, screenshots and non-baseline reports |
 
 ## Running it by double-click
@@ -68,8 +73,8 @@ drawing as an argument: `borba-cad plan.bcad`.
 
 The Select tool and the Draw button, which opens the list of drawing tools, are in the palette on the left; every tool also has a key, shown in the list.
 The title bar holds the file and history buttons, the document name (a dot marks unsaved changes),
-the language menu (English (US), the default, or Portuguese (Brazil), kept for the next run) and
-the performance overlay; the status bar holds the hints, the pointer position and the chips
+the More menu (DXF, the console and the scripts), the language menu (English (US), the default, or
+Portuguese (Brazil), kept for the next run) and the performance overlay; the status bar holds the hints, the pointer position and the chips
 that switch the grid, grid snap, object snap, display unit and zoom to fit. Keys: `L` line, `R` rectangle, `C` circle, `P` polyline
 (Enter finishes, clicking the first vertex closes), `A` arc (center, start, direction of the end),
 `E` ellipse (center, end of an axis, the other half-axis), `N` regular polygon (center, a vertex; Up and
@@ -133,6 +138,53 @@ The More button of the title bar (three dots) has **Import DXF** (`Ctrl+Shift+I`
 The `.bcad` file stays the program's own format: it keeps rectangles, polygons, ellipses and dimensions as
 what they are.
 
+## The console and scripts
+
+`F2` (or More > Console) opens the console under the canvas; `F2` or the cross closes it. Type a Lisp
+expression and press Enter. Numbers are millimetres and angles are degrees, unless a number is
+written `(rad x)`; `(mm 3)`, `(cm 20)`, `(m 5)`, `(inch 1)` and `(foot 2)` give millimetres.
+
+```lisp
+(layer "walls" :color :orange)            ; makes the layer and draws on it from now on
+(rect-size 0 0 (m 9) (m 6))               ; => 1   (every command that draws returns its id)
+(dotimes (i 3) (circle (* i (m 2)) 0 300))
+(text 100 100 "Living room" :height 250 :angle 15)
+(move (entities :kind :circle) 0 (m 1))   ; ids, or lists of ids
+(edit 2 :radius 500)                      ; the properties the inspector lists
+(select-all) (fit) (help)
+```
+
+The commands: `line rect rect-size circle arc ellipse polygon pline text dimension` draw; `move copy
+erase edit move-to-layer` change; `layer with-layer layers entities entity-count extents info`
+look and arrange; `select select-all deselect selected fit` act on the window; `display-unit
+grid-spacing` set the drawing; `say` and `help` talk. `(help 'line)` explains one; everything else
+is Common Lisp, so loops, functions and arithmetic work. Up and Down recall the commands run, Page
+Up and Page Down scroll the output, a command whose parentheses are not closed waits for its next
+lines, a paste is made one line without its comments, `Ctrl+L` clears the output.
+
+What makes it safe to use:
+
+- **A command is one step of undo.** It acts on the drawing as it goes, so the next step sees the
+  last, but `Ctrl+Z` takes the whole command back, and if a step fails, or the command takes more
+  than 10 seconds (60 for a script file), or it makes more than two million changes, everything it
+  did to the entities is put back and nothing is left half done. Layers and the settings of the
+  drawing a command changes are not part of that step, as in the layers panel. What a command
+  prints is cut after 200,000 characters.
+- **Reading never evaluates anything.** A drawing file (`.bcad`) and the clipboard are never run;
+  the text of a command is read with the reader's evaluation off (`#.` is an error), as numbers
+  that are double-floats.
+- **Scripts run only when you say so.** More > Run script... opens a file dialog for `.lisp` files;
+  the file is read, counted and shown (its name, how many expressions, how it begins), and a
+  question says that a script is a program that can do anything the program can and should be
+  trusted before it runs. Only then does it run, as one command with its own limit.
+- **What you type in the console is full Lisp,** with the permissions of whoever runs the program:
+  that is what makes it useful, and it is why a restricted dialect was not offered in its place.
+  Do not paste what you do not understand.
+
+More > Export as script... writes the drawing as the commands that draw it again, bit for bit (layers
+with their colors, visibility and locks, each entity on its layer, in order), a file that Run script
+reads. `examples/house-plan.lisp` and `examples/rosette.lisp` are scripts to read and run.
+
 ## Observability
 
 Every run writes `var/log/borba-cad.log` (rotated, 5 files of 5 MiB by default), one line per event:
@@ -150,17 +202,21 @@ unavailable, never estimated.
 
 | Path | Contents |
 |---|---|
-| `src/` | The core (`borba-cad`, no window or foreign-library dependency): geometry, domain, viewport, persistence, observability, scene, UI and application logic; and `src/platform/` (`borba-cad/platform`): SDL window, OpenGL renderer, FreeType atlas, event loop |
+| `src/` | The core (`borba-cad`, no window or foreign-library dependency): geometry, domain, viewport, persistence, DXF, the script language, observability, scene, UI and application logic; and `src/platform/` (`borba-cad/platform`): SDL window, OpenGL renderer, FreeType atlas, event loop |
 | `tests/`, `platform-tests/` | FiveAM suites (headless / window program) |
 | `test-support/`, `bench/` | Seeded workload generator; benchmarks (headless and windowed) |
 | `scripts/` | Bootstrap, environment check, lint, build tools |
 | `docs/` | [Specification](docs/specification.md), [architecture](docs/architecture.md), [geometry](docs/geometry.md), [performance](docs/performance.md), [development guide](docs/development.md), [experiment report](docs/experiment-report.md), generated [API reference](docs/reference.md), `evidence/` (a real session log) |
-| `examples/` | A sample drawing |
+| `examples/` | A sample drawing and two scripts |
 
 ## Known limits
 
 Tried on Linux x86_64 with SBCL only (the Windows folder and CI workflow are written and have never
 run); single-line text, axis-aligned rectangles and aligned linear dimensions only; DXF import leaves out
 splines, hatches, points, leaders and paper space, and export writes R12 (an ellipse, a polygon and a
-dimension leave as polylines, lines and text); no scripting console or printing yet. No `LICENSE` file
-yet: the author has not chosen one.
+dimension leave as polylines, lines and text), and the import was tried on files made for the tests;
+Brazilian Portuguese keeps the decimal point in numbers and leaves in English the messages about the
+structure of a damaged file, the errors the console prints (Lisp's own are English) and the text the
+`help` command prints; a command or a script that fails halfway leaves the layers it made; a command
+runs on the window's thread, so the window waits for it (up to its limit); no printing. No `LICENSE`
+file yet: the author has not chosen one.

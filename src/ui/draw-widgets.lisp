@@ -194,7 +194,8 @@ THEME: the theme."
           (:title-bar (values x (+ y (- height +hairline+)) width +hairline+))
           (:status-bar (values x y width +hairline+))
           (:palette (values (+ x (- width +hairline+)) y +hairline+ height))
-          (:side (values x y +hairline+ height)))
+          (:side (values x y +hairline+ height))
+          (:console (values x y width +hairline+)))
       (when line-x
         (scene:add-filled-rectangle list
                                     line-x

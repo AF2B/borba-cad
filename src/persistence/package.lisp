@@ -32,6 +32,7 @@ numbers round-trip exactly, strict validation, and atomic saving.")
    #:*known-drawing-extensions*
    #:save-drawing
    #:save-text-file
+   #:read-file-text
    #:read-file-octets
    #:check-open-source
    #:load-drawing

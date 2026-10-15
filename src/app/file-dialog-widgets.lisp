@@ -545,9 +545,11 @@ BLOCKED: true while a prompt covers the dialog."
   "Return the heading of the dialog: what it asks the user to do.
 
 DIALOG: the file dialog."
-  (if (eq :dxf (file-dialog-purpose dialog))
-      (if (eq (file-dialog-mode dialog) :open) (i18n:tr "Import a DXF file") (i18n:tr "Export as a DXF file"))
-      (if (eq (file-dialog-mode dialog) :open) (i18n:tr "Open a drawing") (i18n:tr "Save drawing as"))))
+  (let ((opening (eq (file-dialog-mode dialog) :open)))
+    (ecase (file-dialog-purpose dialog)
+      (:dxf (if opening (i18n:tr "Import a DXF file") (i18n:tr "Export as a DXF file")))
+      (:script (if opening (i18n:tr "Run a script") (i18n:tr "Export the drawing as a script")))
+      (:drawing (if opening (i18n:tr "Open a drawing") (i18n:tr "Save drawing as"))))))
 
 (defun dialog-accept-label (dialog)
   "Return the text of the button that does what the dialog is for.
@@ -555,6 +557,8 @@ DIALOG: the file dialog."
 DIALOG: the file dialog."
   (cond ((eq :dxf (file-dialog-purpose dialog))
          (if (eq (file-dialog-mode dialog) :open) (i18n:tr "Import") (i18n:tr "Export")))
+        ((eq :script (file-dialog-purpose dialog))
+         (if (eq (file-dialog-mode dialog) :open) (i18n:tr "Choose") (i18n:tr "Export")))
         ((eq (file-dialog-mode dialog) :open) (i18n:tr "Open"))
         (t (i18n:tr "Save"))))
 

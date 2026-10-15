@@ -18,7 +18,7 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
 
 (defun canvas-of (application)
   "Return the canvas rectangle of APPLICATION's window."
-  (ui:layout-canvas (ui:compute-layout (app:app-window-width application) (app:app-window-height application))))
+  (ui:layout-canvas (app:app-layout application)))
 
 (defun set-test-view (application &key (scale 0.2d0) (center-x 0d0) (center-y 0d0))
   "Give APPLICATION a view with the given scale and center."

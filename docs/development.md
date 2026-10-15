@@ -210,6 +210,21 @@ clause); seven need one line or a mention in a docstring (the entity kind list, 
 palette entry, `app` exports, and docstrings in `operations.lisp` and `drawing.lisp`; a comment in the
 demo script).
 
+### Adding a command to the script language
+
+A function in `src/script/dsl.lisp` with a docstring that says what it does, what it returns and one line
+for each parameter (the console's `help` prints it); export it from `src/script/package.lisp`
+and add it to `*help-topics*`, which the tests check names only commands that exist and are
+documented. Numbers arrive in millimetres and angles in degrees (`angle-radians`); make or change an
+entity only through `emit-change` (`add-entity` for a new one), which is what keeps the command one step
+of undo and lets a failure take it back, and never call `dom:apply-changes` or a history function
+from a command. Anything that touches the window (the selection, the view) goes through the hooks of
+the context, so the language stays in the headless core. If the command makes an entity of a new kind,
+`drawing-script` in `src/script/export.lisp` needs a clause for it too, and the
+round trip test (`random-drawings-survive-a-trip-through-a-script-exactly`) will say when it does.
+The messages of a command are Lisp errors in English and are not translated: what the console prints
+for a failed command is the message of the condition.
+
 ### Translating text
 
 Every text the user reads is written in English and passed through `i18n:tr` (a plain text),

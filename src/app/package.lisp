@@ -3,6 +3,7 @@
   (:local-nicknames (#:base #:borba-cad/base)
                     (#:i18n #:borba-cad/i18n)
                     (#:dxf #:borba-cad/dxf)
+                    (#:script #:borba-cad/script)
                     (#:sbcl #:borba-cad/sbcl-support)
                     (#:geo #:borba-cad/geometry)
                     (#:dom #:borba-cad/domain)
@@ -130,6 +131,21 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-edit-property
    #:operation-import-dxf
    #:operation-export-dxf
+   #:operation-toggle-console
+   #:operation-run-script
+   #:operation-export-script
+   #:run-script-file-in-app
+   #:export-script-from-app
+   #:console-open-p
+   #:console-say
+   #:console-submit
+   #:app-console
+   #:console-lines
+   #:console-scroll
+   #:console-focused-p
+   #:console-history
+   #:console-pending
+   #:app-layout
    #:import-dxf-into-app
    #:export-dxf-from-app
    #:operation-copy

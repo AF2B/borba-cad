@@ -66,6 +66,12 @@
 (defconstant +tooltip-height+ 28f0
   "Height of a tooltip, in logical pixels.")
 
+(defconstant +console-height+ 260f0
+  "Height of the console when it is open, in pixels, unless the window is too low for it.")
+
+(defconstant +console-maximum-fraction+ 0.5f0
+  "Largest part of the height between the title bar and the status bar that the console may take.")
+
 (defconstant +fit-tolerance-pixels+ 0.01f0
   "Slack added to the available width when fitting text, so a label sized exactly to its text
 is never truncated by floating-point rounding.")
@@ -297,7 +303,8 @@ FONT: :ui, :ui-strong or :mono."
                                               side-panel
                                               layers-panel
                                               inspector-panel
-                                              status-bar)))
+                                              status-bar
+                                              console)))
   "The regions of the window. They tile it without gaps.
 
 TOOLBAR: the title bar along the top.
@@ -306,20 +313,27 @@ CANVAS: the drawing area.
 SIDE-PANEL: right-hand column.
 LAYERS-PANEL: upper part of the side panel.
 INSPECTOR-PANEL: lower part of the side panel.
-STATUS-BAR: strip along the bottom."
-  toolbar tool-palette canvas side-panel layers-panel inspector-panel status-bar)
+STATUS-BAR: strip along the bottom.
+CONSOLE: the strip under the canvas where commands are typed; it has no height when the console is closed."
+  toolbar tool-palette canvas side-panel layers-panel inspector-panel status-bar console)
 
 (defun compute-layout (width
-                       height)
+                       height
+                       &key console)
   "Divide a window of WIDTH x HEIGHT logical pixels into regions.
 
 WIDTH: window width in pixels.
-HEIGHT: window height in pixels."
+HEIGHT: window height in pixels.
+CONSOLE: true when the console is open, which takes its strip from the bottom of the canvas."
   (let* ((width (float width 1f0))
          (height (float height 1f0))
          (middle-height (max 0f0 (- height +toolbar-height+ +status-height+)))
+         (console-height (if console
+                             (min +console-height+ (* +console-maximum-fraction+ middle-height))
+                             0f0))
          (side-x (max +tool-palette-width+ (- width +side-panel-width+)))
          (side-width (max 0f0 (- width side-x)))
+         (canvas-width (max 0f0 (- side-x +tool-palette-width+)))
          (layers-height (* middle-height +layers-panel-fraction+)))
     (make-layout (make-rect 0f0
                             0f0
@@ -331,8 +345,8 @@ HEIGHT: window height in pixels."
                             middle-height)
                  (make-rect +tool-palette-width+
                             +toolbar-height+
-                            (max 0f0 (- side-x +tool-palette-width+))
-                            middle-height)
+                            canvas-width
+                            (- middle-height console-height))
                  (make-rect side-x
                             +toolbar-height+
                             side-width
@@ -348,4 +362,8 @@ HEIGHT: window height in pixels."
                  (make-rect 0f0
                             (- height +status-height+)
                             width
-                            +status-height+))))
+                            +status-height+)
+                 (make-rect +tool-palette-width+
+                            (- (+ +toolbar-height+ middle-height) console-height)
+                            canvas-width
+                            console-height))))

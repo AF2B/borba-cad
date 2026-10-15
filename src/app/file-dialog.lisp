@@ -146,7 +146,8 @@ APP: the application."
 APP: the application.
 MODE: :open or :save.
 CONTINUATION: function of no arguments run after a successful save, or NIL.
-PURPOSE: :drawing for a drawing of the program, or :dxf to import or export a DXF file."
+PURPOSE: :drawing for a drawing of the program, :dxf to import or export a DXF file, or :script to run a
+script or export one."
   (setf (app-dialog app) (make-file-dialog app
                                            mode
                                            continuation
@@ -275,33 +276,36 @@ TEXT: a name or a path."
     (:drawing (persist:drawing-file-path text))
     (:dxf (persist:file-path-with-extension text
                                             (first *dxf-extensions*)
-                                            *dxf-extensions*))))
+                                            *dxf-extensions*))
+    (:script (script-file-path text))))
 
 (defun open-dialog-file (app
                          dialog
                          path-text)
-  "Open the file that the dialog has chosen, as what the dialog is for: a drawing of the program, or a
-DXF file to import. Returns true when the dialog may close.
+  "Open the file that the dialog has chosen, as what the dialog is for: a drawing of the program, a
+DXF file to import, or a script to run. Returns true when the dialog may close.
 
 APP: the application.
 DIALOG: the file dialog.
 PATH-TEXT: the file name."
   (ecase (file-dialog-purpose dialog)
     (:drawing (load-drawing-into-app app path-text))
-    (:dxf (import-dxf-into-app app path-text))))
+    (:dxf (import-dxf-into-app app path-text))
+    (:script (run-script-file-in-app app path-text))))
 
 (defun save-dialog-file (app
                          dialog
                          path-text)
   "Save to the file that the dialog has chosen, as what the dialog is for: the drawing in the format of the
-program, or exported as a DXF file. Returns true on success.
+program, exported as a DXF file, or exported as a script. Returns true on success.
 
 APP: the application.
 DIALOG: the file dialog.
 PATH-TEXT: the file name."
   (ecase (file-dialog-purpose dialog)
     (:drawing (save-app-drawing app path-text))
-    (:dxf (export-dxf-from-app app path-text))))
+    (:dxf (export-dxf-from-app app path-text))
+    (:script (export-script-from-app app path-text))))
 
 (defun finish-save (app
                     dialog
@@ -343,7 +347,7 @@ TEXT: a name or a path."
                (cond ((eq (sbcl:file-kind typed) :directory)
                       (open-directory dialog typed))
                      ((and (eq kind :file)
-                           (or (eq :dxf (file-dialog-purpose dialog))
+                           (or (not (eq :drawing (file-dialog-purpose dialog)))
                                (not (same-file-p path (app-file-path app)))))
                       (open-choice-prompt app
                                           (i18n:tr "Replace file?")

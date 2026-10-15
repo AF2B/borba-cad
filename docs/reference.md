@@ -55,6 +55,7 @@ NIL when it selects only what it holds (dragged from left to right).
 - `MENU`: the open drop-down menu, or NIL.
 - `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
 - `GRIP-DRAG`: the grip being dragged, or NIL.
+- `CONSOLE`: the console.
 - `CLIPBOARD-READER`: function of no arguments that returns the text on the system clipboard, or NIL.
 - `CLIPBOARD-WRITER`: function of one string that puts it on the system clipboard, or NIL.
 - `CLIPBOARD-FALLBACK`: the clipboard text kept here while there is no system clipboard.
@@ -95,6 +96,14 @@ new one.
 
 ```lisp
 (app-config instance)
+```
+
+(undocumented)
+
+### `app-console` (function)
+
+```lisp
+(app-console instance)
 ```
 
 (undocumented)
@@ -223,6 +232,16 @@ Handle one input event and record its handling time for the aggregated input sta
 ```
 
 (undocumented)
+
+### `app-layout` (function)
+
+```lisp
+(app-layout app)
+```
+
+Return the regions of the window as they are now: the console takes its strip from the canvas when open.
+
+- `APP`: the application.
 
 ### `app-menu` (function)
 
@@ -546,6 +565,81 @@ the user and nothing changes. Returns true when changes were committed.
 - `EVENT`: dotted event name such as entity.create.
 - `CONTEXT`: short name used in the error message log.
 
+### `console-focused-p` (function)
+
+```lisp
+(console-focused-p app)
+```
+
+Return true when the keyboard is on the field where commands are typed.
+
+- `APP`: the application.
+
+### `console-history` (function)
+
+```lisp
+(console-history instance)
+```
+
+(undocumented)
+
+### `console-lines` (function)
+
+```lisp
+(console-lines instance)
+```
+
+(undocumented)
+
+### `console-open-p` (function)
+
+```lisp
+(console-open-p app)
+```
+
+Return true while the console is shown.
+
+- `APP`: the application.
+
+### `console-pending` (function)
+
+```lisp
+(console-pending instance)
+```
+
+(undocumented)
+
+### `console-say` (function)
+
+```lisp
+(console-say app kind text)
+```
+
+Add TEXT to the output of the console, a line for each line of text, and show the end of the output.
+
+- `APP`: the application.
+- `KIND`: :input, :output, :value, :error or :note.
+- `TEXT`: what to say.
+
+### `console-scroll` (function)
+
+```lisp
+(console-scroll instance)
+```
+
+(undocumented)
+
+### `console-submit` (function)
+
+```lisp
+(console-submit app)
+```
+
+Run the line typed in the console, together with the lines before it that left an expression open; if
+the expression is still open afterwards, wait for the next line.
+
+- `APP`: the application.
+
 ### `create-folder` (function)
 
 ```lisp
@@ -691,13 +785,26 @@ true on success.
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
 
+### `export-script-from-app` (function)
+
+```lisp
+(export-script-from-app app path-text)
+```
+
+Save the drawing as a script at PATH-TEXT (.lisp is added to a name without an extension). On failure the
+previous file is untouched and the reason is shown. Returns true on success.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
+
 ### `file-dialog` (type)
 
 The dialog where the user chooses a drawing to open or a place and a name to save to.
 
 - `MODE`: :open or :save.
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
-- `PURPOSE`: :drawing for a drawing of the program, or :dxf to import or export a DXF file.
+- `PURPOSE`: :drawing for a drawing of the program, :dxf to import or export a DXF file, or :script to run a
+script or export one.
 - `DIRECTORY`: the folder shown, as a directory pathname.
 - `ENTRIES`: every entry of that folder, folders first, each group by name.
 - `SELECTED`: the name of the selected entry, or NIL.
@@ -1191,7 +1298,8 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 - `APP`: the application.
 - `MODE`: :open or :save.
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
-- `PURPOSE`: :drawing for a drawing of the program, or :dxf to import or export a DXF file.
+- `PURPOSE`: :drawing for a drawing of the program, :dxf to import or export a DXF file, or :script to run a
+script or export one.
 
 ### `open-menu` (function)
 
@@ -1337,6 +1445,16 @@ Open the dialog where the user picks a folder and a name, and export the drawing
 
 - `APP`: the application.
 
+### `operation-export-script` (function)
+
+```lisp
+(operation-export-script app)
+```
+
+Open the dialog where the user picks a folder and a name, and export the drawing there as a script.
+
+- `APP`: the application.
+
 ### `operation-import-dxf` (function)
 
 ```lisp
@@ -1414,6 +1532,16 @@ Rename a layer.
 - `LAYER-ID`: layer id.
 - `NAME`: the new name.
 
+### `operation-run-script` (function)
+
+```lisp
+(operation-run-script app)
+```
+
+Open the dialog where the user finds a script to run on the drawing.
+
+- `APP`: the application.
+
 ### `operation-save` (function)
 
 ```lisp
@@ -1479,6 +1607,16 @@ Activate a tool, cancelling whatever the previous one was doing.
 
 - `APP`: the application.
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse or :polygon.
+
+### `operation-toggle-console` (function)
+
+```lisp
+(operation-toggle-console app)
+```
+
+Show the console, or hide it when it is shown.
+
+- `APP`: the application.
 
 ### `operation-toggle-grid` (function)
 
@@ -1739,6 +1877,19 @@ The window changed size.
 ```
 
 (undocumented)
+
+### `run-script-file-in-app` (function)
+
+```lisp
+(run-script-file-in-app app path-text)
+```
+
+Read the script file at PATH-TEXT and ask whether to run it, saying what it is and warning that it is a
+program. It runs when the user says so. On failure the reason is shown. Returns true when the question was
+asked.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
 
 ### `save-app-drawing` (function)
 
@@ -3034,6 +3185,10 @@ Render each workload in a real window and write the report. Returns the report p
 The drawing model: entities, layers, the drawing aggregate, change sets,
 history, picking and snapping. Pure data and rules; no rendering, input or file I/O.
 
+### `*layer-palette*` (variable)
+
+The palette as RGB values.
+
 ### `+default-grid-spacing+` (constant)
 
 Default grid spacing in millimetres (10 cm): a convenient step for building plans.
@@ -4035,6 +4190,20 @@ change set is ignored and returns NIL.
 - `DRAWING`: the drawing to change.
 - `CHANGES`: list of CHANGE records.
 
+### `history-record` (function)
+
+```lisp
+(history-record history changes)
+```
+
+Record CHANGES, which have already been applied to the drawing, for undo, discarding the redo
+stack: what a command that made its changes one by one, to see them as it went, leaves as one
+step. An empty change set is ignored and returns NIL.
+
+- `HISTORY`: the history to record into.
+- `CHANGES`: list of CHANGE records, each entity appearing at most once, that take the drawing from
+how it was before the command to how it is now.
+
 ### `history-redo` (function)
 
 ```lisp
@@ -4433,6 +4602,26 @@ FUNCTION must not add or remove entities.
 
 - `FUNCTION`: a function of one argument, the entity.
 - `STORE`: an entity store.
+
+### `palette-color-after` (function)
+
+```lisp
+(palette-color-after color)
+```
+
+Return the palette color that follows COLOR, or the first when COLOR is not in the palette.
+
+- `COLOR`: an RGB color.
+
+### `palette-color-at` (function)
+
+```lisp
+(palette-color-at index)
+```
+
+Return the palette color at INDEX, counting round the palette: the color a new layer is given.
+
+- `INDEX`: a whole number, such as the id the next layer will have.
 
 ### `pasted-entities` (function)
 
@@ -7573,6 +7762,16 @@ Read a whole file into a vector of bytes, enforcing the size limit.
 
 - `FILE`: pathname of an existing file.
 
+### `read-file-text` (function)
+
+```lisp
+(read-file-text file)
+```
+
+Read a whole UTF-8 text file into a string, enforcing the size limit.
+
+- `FILE`: pathname of an existing file.
+
 ### `remember-recent-file` (function)
 
 ```lisp
@@ -7973,6 +8172,19 @@ error.
 
 - `COUNT`: how many calls to show.
 
+### `call-with-timeout` (function)
+
+```lisp
+(call-with-timeout seconds function)
+```
+
+Call FUNCTION, and stop it with a TIMEOUT condition if it runs for more than SECONDS. The condition
+is signaled in the code that runs, so it unwinds through it: what must not be left half done has to be
+in WITH-UNINTERRUPTED. Returns what FUNCTION returns.
+
+- `SECONDS`: the longest time to wait, as a number of seconds.
+- `FUNCTION`: function of no arguments.
+
 ### `command-line-arguments` (function)
 
 ```lisp
@@ -8107,6 +8319,17 @@ Format a wall-clock instant as an ISO-8601 UTC timestamp with millisecond precis
 - `UNIX-SECONDS`: seconds since 1970-01-01T00:00:00Z.
 - `MICROSECONDS`: microseconds within the second, 0 to 999999.
 
+### `function-lambda-list` (function)
+
+```lisp
+(function-lambda-list function)
+```
+
+Return the lambda list of a function, as written when it was defined, for a help that shows how a
+command is used.
+
+- `FUNCTION`: a function or a macro function.
+
 ### `gc-event` (type)
 
 One completed garbage collection.
@@ -8178,6 +8401,16 @@ Start recording GC events; idempotent. Events accumulate until DRAIN-GC-EVENTS i
 
 Return the kernel release (for example "7.2.9-arch1-1"), or "unknown".
 
+### `limited-output-text` (function)
+
+```lisp
+(limited-output-text stream)
+```
+
+Return what a limited stream kept, and true when it dropped some of what was written to it.
+
+- `STREAM`: a limited output stream.
+
 ### `lisp-version-string` (function)
 
 ```lisp
@@ -8196,6 +8429,16 @@ Create the folder PATH, which must not exist yet and whose parent must. Returns 
 success, and otherwise a sentence that says why it could not be made.
 
 - `PATH`: a pathname.
+
+### `make-limited-output-stream` (function)
+
+```lisp
+(make-limited-output-stream limit)
+```
+
+Return an output stream that keeps the first LIMIT characters written to it.
+
+- `LIMIT`: the most characters to keep.
 
 ### `monotonic-nanoseconds` (function)
 
@@ -8289,6 +8532,10 @@ Flush STREAM and force its data to stable storage (fsync).
 
 - `STREAM`: an open file output stream backed by a file descriptor.
 
+### `timeout` (symbol)
+
+(undocumented)
+
 ### `true-path` (function)
 
 ```lisp
@@ -8309,6 +8556,17 @@ when nothing exists there.
 Decode UTF-8 octets into a string. Returns NIL when they are not valid UTF-8.
 
 - `OCTETS`: a vector of integers 0 to 255.
+
+### `with-uninterrupted` (macro)
+
+```lisp
+(with-uninterrupted &body body)
+```
+
+Run BODY so that a timeout cannot unwind it half way: the interruption waits until BODY is done.
+For the steps that must finish to leave a data structure whole.
+
+- `BODY`: the forms to run.
 
 ## BORBA-CAD/SCENE
 
@@ -9311,6 +9569,634 @@ Return COLOR with its opacity multiplied by ALPHA.
 - `COLOR`: an RGBA.
 - `ALPHA`: a factor from 0 to 1.
 
+## BORBA-CAD/SCRIPT
+
+The language the program can be driven with: commands that draw and edit, written in Lisp
+and run against a drawing; the context they run in, with the transaction that makes each command a single step
+of undo; the evaluator, which reads, runs and reports; and the writer that turns a drawing back into the
+commands that draw it.
+
+### `*context*` (variable)
+
+The context of the command that is running.
+
+### `*maximum-changes*` (variable)
+
+Most entities a single command may create, change or erase: well beyond what a drawing is meant to hold,
+and a bound on the memory a runaway loop can ask for.
+
+### `+default-timeout-seconds+` (constant)
+
+Longest time a command typed in the console may run.
+
+### `+script-timeout-seconds+` (constant)
+
+Longest time a script file may run.
+
+### `arc` (function)
+
+```lisp
+(arc x y radius start end)
+```
+
+Draw the arc of the circle centered on (X, Y) that turns counter-clockwise from the angle START to the
+angle END. Returns its id.
+
+- `X`: x of the center.
+- `Y`: y of the center.
+- `RADIUS`: its radius.
+- `START`: the angle it starts at, in degrees.
+- `END`: the angle it ends at, in degrees.
+
+### `circle` (function)
+
+```lisp
+(circle x y radius)
+```
+
+Draw a circle centered on (X, Y). Returns its id.
+
+- `X`: x of the center.
+- `Y`: y of the center.
+- `RADIUS`: its radius.
+
+### `cm` (function)
+
+```lisp
+(cm value)
+```
+
+Return VALUE centimetres as millimetres: (cm 20) is 200.
+
+- `VALUE`: a number.
+
+### `context-change-count` (symbol)
+
+(undocumented)
+
+### `context-changes` (function)
+
+```lisp
+(context-changes context)
+```
+
+Return the net changes of the command as a list of CHANGE records, in id order: what takes the drawing
+from how it was when the command began to how it is. An entity that was created and erased again is not
+in it, and one that was changed back is not either.
+
+- `CONTEXT`: a script context.
+
+### `context-reset` (function)
+
+```lisp
+(context-reset context)
+```
+
+Forget what the command did, which is to say that it is done and recorded: the next command begins
+from the drawing as it is now.
+
+- `CONTEXT`: a script context.
+
+### `context-rollback` (function)
+
+```lisp
+(context-rollback context)
+```
+
+Undo everything the command did, so that the drawing is as it was when the command began.
+
+- `CONTEXT`: a script context.
+
+### `copy` (function)
+
+```lisp
+(copy ids dx dy)
+```
+
+Make copies of entities, moved by (DX, DY) from the originals. Returns the ids of the copies.
+
+- `IDS`: an id or a list of ids.
+- `DX`: how far along x.
+- `DY`: how far along y.
+
+### `count-source-forms` (function)
+
+```lisp
+(count-source-forms text)
+```
+
+Return how many forms TEXT holds, or NIL when it cannot be read.
+
+- `TEXT`: Lisp source.
+
+### `deselect` (function)
+
+```lisp
+(deselect)
+```
+
+Select nothing. Returns 0.
+
+### `dimension` (function)
+
+```lisp
+(dimension x1 y1 x2 y2 offset &key height unit decimals)
+```
+
+Dimension the distance between (X1, Y1) and (X2, Y2) with a line OFFSET away from the line through them,
+to its left when positive. Returns its id.
+
+- `X1`: x of the first point.
+- `Y1`: y of the first point.
+- `X2`: x of the second point.
+- `Y2`: y of the second point.
+- `OFFSET`: how far the dimension line is, to the left of the direction from the first point to the second.
+- `HEIGHT`: the text height, or the one the drawing uses.
+- `UNIT`: :millimeter, :centimeter or :meter, or the one lengths are shown in.
+- `DECIMALS`: how many decimals the text shows, or the usual number for the unit.
+
+### `display-unit` (function)
+
+```lisp
+(display-unit &optional unit)
+```
+
+Return the unit that lengths are shown in, after setting it to UNIT when one is given. The numbers that
+commands take stay millimetres whatever it is.
+
+- `UNIT`: :millimeter, :centimeter or :meter.
+
+### `drawing-script` (function)
+
+```lisp
+(drawing-script drawing)
+```
+
+Return the text of a script that makes DRAWING again when it is run on an empty drawing: its settings, its
+layers, its entities in the order they are drawn, each on the layer it is on, and last the layers that are
+hidden or locked, so that locking a layer does not stop its entities from being drawn.
+
+- `DRAWING`: the drawing.
+
+### `edit` (function)
+
+```lisp
+(edit id &rest changes)
+```
+
+Change properties of an entity. Returns its id.
+
+- `ID`: the id of the entity.
+- `CHANGES`: alternating property keywords and values, such as :radius 500 or :string "Kitchen"; the keywords
+are the ones the inspector lists (:center-x, :center-y, :radius, :x1, :min-x, :height, :angle, :sides, ...),
+lengths are millimetres and angles are degrees.
+
+### `ellipse` (function)
+
+```lisp
+(ellipse x y radius-x radius-y &optional (rotation 0))
+```
+
+Draw an ellipse centered on (X, Y) with the semi-axes RADIUS-X, along the direction ROTATION, and RADIUS-Y,
+across it. Returns its id.
+
+- `X`: x of the center.
+- `Y`: y of the center.
+- `RADIUS-X`: the semi-axis along ROTATION.
+- `RADIUS-Y`: the semi-axis across it.
+- `ROTATION`: the direction of the first axis, in degrees.
+
+### `entities` (function)
+
+```lisp
+(entities &key kind layer)
+```
+
+Return the ids of the entities, in the order they are drawn, bottom first.
+
+- `KIND`: only the entities of this kind: :line, :rectangle, :circle, :polyline, :text, :dimension, :arc,
+:ellipse or :polygon.
+- `LAYER`: only the entities on the layer with this name.
+
+### `entity-count` (function)
+
+```lisp
+(entity-count)
+```
+
+Return how many entities the drawing has.
+
+### `erase` (function)
+
+```lisp
+(erase ids)
+```
+
+Erase entities. Entities on a locked layer are left. Returns how many were erased.
+
+- `IDS`: an id or a list of ids.
+
+### `evaluate-source` (function)
+
+```lisp
+(evaluate-source context text &key (timeout +default-timeout-seconds+))
+```
+
+Read the forms in TEXT and run them one after the other against the drawing of CONTEXT, as a single
+command: if one fails, or the time runs out, the entities it changed are put back as they were; layers and
+settings are not part of that, as in the layers panel. Returns a SCRIPT-RESULT. The context begins by
+forgetting what the command before it did, and ends holding what this one did, as its net changes, for the
+caller to record.
+
+- `CONTEXT`: the script context to run in.
+- `TEXT`: Lisp source, read in the user package.
+- `TIMEOUT`: the longest time to run, in seconds.
+
+### `extents` (function)
+
+```lisp
+(extents)
+```
+
+Return the smallest rectangle that holds the drawing, as the list (min-x min-y max-x max-y), or NIL when
+it is empty.
+
+### `fit` (function)
+
+```lisp
+(fit)
+```
+
+Zoom the window to show the whole drawing.
+
+### `foot` (function)
+
+```lisp
+(foot value)
+```
+
+Return VALUE feet as millimetres: (foot 1) is 304.8.
+
+- `VALUE`: a number.
+
+### `grid-spacing` (function)
+
+```lisp
+(grid-spacing &optional spacing)
+```
+
+Return the spacing of the grid, in millimetres, after setting it to SPACING when one is given.
+
+- `SPACING`: the new spacing.
+
+### `help` (function)
+
+```lisp
+(help &optional command)
+```
+
+List the commands, or say what one of them does when COMMAND, a symbol, is given.
+
+- `COMMAND`: the name of a command, such as 'line.
+
+### `inch` (function)
+
+```lisp
+(inch value)
+```
+
+Return VALUE inches as millimetres: (inch 1) is 25.4.
+
+- `VALUE`: a number.
+
+### `info` (function)
+
+```lisp
+(info id)
+```
+
+Say what an entity is: its kind, its layer, and each of its properties and measures. Returns its id.
+
+- `ID`: the id of the entity.
+
+### `layer` (function)
+
+```lisp
+(layer name &key color (visible nil visible-p) (locked nil locked-p))
+```
+
+Make the layer called NAME the one new entities go on, making the layer first when there is none. Returns
+the name.
+
+- `NAME`: the name of the layer.
+- `COLOR`: a color (see RGB) or a name such as :red, for a layer that is new or whose color is to change.
+- `VISIBLE`: true or false, to show or hide the layer.
+- `LOCKED`: true or false, to lock or unlock it.
+
+### `layers` (function)
+
+```lisp
+(layers)
+```
+
+Return the names of the layers, in the order they are listed.
+
+### `line` (function)
+
+```lisp
+(line x1 y1 x2 y2)
+```
+
+Draw a line from (X1, Y1) to (X2, Y2). Returns its id.
+
+- `X1`: x of the start.
+- `Y1`: y of the start.
+- `X2`: x of the end.
+- `Y2`: y of the end.
+
+### `m` (function)
+
+```lisp
+(m value)
+```
+
+Return VALUE metres as millimetres: (m 5) is 5000.
+
+- `VALUE`: a number.
+
+### `make-script-context` (function)
+
+```lisp
+(make-script-context drawing &key selection-reader selection-writer view-fitter)
+```
+
+(undocumented)
+
+### `mm` (function)
+
+```lisp
+(mm value)
+```
+
+Return VALUE millimetres in millimetres, the unit of every length: (mm 3) is 3.
+
+- `VALUE`: a number.
+
+### `move` (function)
+
+```lisp
+(move ids dx dy)
+```
+
+Move entities by (DX, DY). Entities on a locked layer are left where they are. Returns how many moved.
+
+- `IDS`: an id or a list of ids.
+- `DX`: how far along x.
+- `DY`: how far along y.
+
+### `move-to-layer` (function)
+
+```lisp
+(move-to-layer ids name)
+```
+
+Move entities to the layer called NAME. Returns how many moved.
+
+- `IDS`: an id or a list of ids.
+- `NAME`: the name of the layer.
+
+### `pline` (function)
+
+```lisp
+(pline points &key closed)
+```
+
+Draw a polyline through POINTS. Returns its id.
+
+- `POINTS`: a list of (x y) lists, two or more.
+- `CLOSED`: true to join the last point to the first.
+
+### `polygon` (function)
+
+```lisp
+(polygon x y radius sides &optional (rotation 0))
+```
+
+Draw a regular polygon whose vertices are on the circle centered on (X, Y), the first in the direction
+ROTATION. Returns its id.
+
+- `X`: x of the center.
+- `Y`: y of the center.
+- `RADIUS`: the radius of that circle.
+- `SIDES`: the number of sides, from 3 to 1000.
+- `ROTATION`: the direction of the first vertex, in degrees.
+
+### `rad` (function)
+
+```lisp
+(rad value)
+```
+
+Return an angle of VALUE radians, to be given where a command takes an angle: (rad pi) is half a turn.
+
+- `VALUE`: a number of radians.
+
+### `read-source-forms` (function)
+
+```lisp
+(read-source-forms text)
+```
+
+Return the forms in TEXT, read in the user package. Signals END-OF-FILE when the text ends inside a form,
+and READER-ERROR when it is not Lisp. Nothing is evaluated.
+
+- `TEXT`: Lisp source.
+
+### `rect` (function)
+
+```lisp
+(rect x1 y1 x2 y2)
+```
+
+Draw a rectangle with sides along the axes from one corner, (X1, Y1), to the opposite one, (X2, Y2).
+Returns its id.
+
+- `X1`: x of one corner.
+- `Y1`: y of one corner.
+- `X2`: x of the opposite corner.
+- `Y2`: y of the opposite corner.
+
+### `rect-size` (function)
+
+```lisp
+(rect-size x y width height)
+```
+
+Draw a rectangle with sides along the axes whose lower left corner is (X, Y), WIDTH wide and HEIGHT high.
+Returns its id.
+
+- `X`: x of the lower left corner.
+- `Y`: y of the lower left corner.
+- `WIDTH`: its width.
+- `HEIGHT`: its height.
+
+### `rgb` (function)
+
+```lisp
+(rgb red green blue)
+```
+
+Return a color from its red, green and blue, each from 0 to 255.
+
+- `RED`: the red.
+- `GREEN`: the green.
+- `BLUE`: the blue.
+
+### `say` (function)
+
+```lisp
+(say &rest things)
+```
+
+Write THINGS in the console, separated by spaces. Returns NIL.
+
+- `THINGS`: anything.
+
+### `script-context` (type)
+
+What a command runs against.
+
+- `DRAWING`: the drawing it draws on.
+- `SELECTION-READER`: function of no arguments that returns the ids of the selected entities, or NIL.
+- `SELECTION-WRITER`: function of a list of ids that selects them, or NIL.
+- `VIEW-FITTER`: function of no arguments that zooms to the whole drawing, or NIL.
+- `NET`: hash table from entity id to a cons of how the entity was when the command began (NIL when it did not
+exist) and how it is now (NIL when it is gone).
+- `CHANGE-COUNT`: how many changes the command has made.
+
+### `script-context-drawing` (function)
+
+```lisp
+(script-context-drawing instance)
+```
+
+(undocumented)
+
+### `script-result` (type)
+
+What came of running some text.
+
+- `STATUS`: :ok, :error (the text is wrong or a command failed, and nothing was changed), :timeout (it took too
+long, and nothing was changed) or :incomplete (the text ends inside a form).
+- `FORMS`: how many forms were run.
+- `VALUES`: for each form run, what it returned, printed, in order.
+- `OUTPUT`: what the commands printed.
+- `MESSAGE`: for :error and :timeout, what went wrong.
+
+### `script-result-forms` (function)
+
+```lisp
+(script-result-forms instance)
+```
+
+(undocumented)
+
+### `script-result-message` (function)
+
+```lisp
+(script-result-message instance)
+```
+
+(undocumented)
+
+### `script-result-output` (function)
+
+```lisp
+(script-result-output instance)
+```
+
+(undocumented)
+
+### `script-result-status` (function)
+
+```lisp
+(script-result-status instance)
+```
+
+(undocumented)
+
+### `script-result-values` (function)
+
+```lisp
+(script-result-values instance)
+```
+
+(undocumented)
+
+### `select` (function)
+
+```lisp
+(select ids)
+```
+
+Select entities in the window. Returns how many are selected.
+
+- `IDS`: an id or a list of ids.
+
+### `select-all` (function)
+
+```lisp
+(select-all)
+```
+
+Select every entity that can be selected. Returns how many are selected.
+
+### `selected` (function)
+
+```lisp
+(selected)
+```
+
+Return the ids of the entities selected in the window.
+
+### `strip-comments` (function)
+
+```lisp
+(strip-comments text)
+```
+
+Return TEXT with the Lisp comments taken out, from a semicolon to the end of its line, but not the
+semicolons inside strings or written as the character #;.
+
+- `TEXT`: Lisp source.
+
+### `text` (function)
+
+```lisp
+(text x y string &key height (angle 0))
+```
+
+Write STRING with its baseline starting at (X, Y). Returns its id.
+
+- `X`: x of the start of the baseline.
+- `Y`: y of the start of the baseline.
+- `STRING`: the text.
+- `HEIGHT`: the text height, or the one the drawing uses for new text.
+- `ANGLE`: the direction of the baseline, in degrees.
+
+### `with-layer` (macro)
+
+```lisp
+(with-layer (name &rest options) &body body)
+```
+
+Run BODY with the layer called NAME, made when there is none, as the one new entities go on, and then go
+back to the layer that was in use.
+
+- `NAME`: the name of the layer.
+- `OPTIONS`: the keyword arguments of LAYER.
+- `BODY`: the commands to run.
+
 ## BORBA-CAD/SCRIPTS
 
 ### `*project-root*` (variable)
@@ -9628,6 +10514,10 @@ Height of a pill-shaped toggle, in logical pixels.
 
 Space between a chip's edge and its content, in logical pixels.
 
+### `+console-height+` (constant)
+
+Height of the console when it is open, in pixels, unless the window is too low for it.
+
 ### `+font-pixels+` (constant)
 
 Em size of the user-interface text, in logical pixels.
@@ -9703,13 +10593,14 @@ Height of a tooltip, in logical pixels.
 ### `compute-layout` (function)
 
 ```lisp
-(compute-layout width height)
+(compute-layout width height &key console)
 ```
 
 Divide a window of WIDTH x HEIGHT logical pixels into regions.
 
 - `WIDTH`: window width in pixels.
 - `HEIGHT`: window height in pixels.
+- `CONSOLE`: true when the console is open, which takes its strip from the bottom of the canvas.
 
 ### `draw-icon` (function)
 
@@ -9940,11 +10831,20 @@ The regions of the window. They tile it without gaps.
 - `LAYERS-PANEL`: upper part of the side panel.
 - `INSPECTOR-PANEL`: lower part of the side panel.
 - `STATUS-BAR`: strip along the bottom.
+- `CONSOLE`: the strip under the canvas where commands are typed; it has no height when the console is closed.
 
 ### `layout-canvas` (function)
 
 ```lisp
 (layout-canvas instance)
+```
+
+(undocumented)
+
+### `layout-console` (function)
+
+```lisp
+(layout-console instance)
 ```
 
 (undocumented)
@@ -10138,7 +11038,7 @@ One user-interface element.
 - `SHORTCUT`: the keys that do the same, shown beside the hint, or NIL.
 - `ICON`: the name of the icon drawn in a button, row or on its own.
 - `VARIANT`: for buttons, :default, :primary, :ghost, :tool (palette), :icon (title bar) or :chip
-(a pill that toggles); for panels, :default, :title-bar, :status-bar, :palette or :side.
+(a pill that toggles); for panels, :default, :title-bar, :status-bar, :palette, :side or :console.
 - `FONT`: :ui, :ui-strong or :mono.
 - `SIZE`: em size of the text in pixels.
 - `TRAILING`: pixels at the right edge that the text must stay clear of, where other widgets sit
@@ -10360,6 +11260,11 @@ the last one is truncated with an ellipsis.
 - `MAXIMUM-LINES`: most lines returned, at least 1.
 - `SIZE`: em size in pixels.
 - `FONT`: :ui, :ui-strong or :mono.
+
+## BORBA-CAD/USER
+
+The package that what the user types in the console is read in: all of Common Lisp and the
+commands of the program, and nothing else.
 
 ## BORBA-CAD/VIEWPORT
 

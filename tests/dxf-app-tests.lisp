@@ -281,12 +281,19 @@
 
 ;;; The menu and the keys
 
-(test the-more-button-opens-a-menu-with-the-two-dxf-operations
+(test the-more-button-opens-a-menu-with-the-dxf-and-script-operations
   (let ((application (make-test-app)))
     (click-widget application :more)
-    (is (equal '((:menu-item :import-dxf) (:menu-item :export-dxf)) (mapcar #'ui:widget-id (menu-rows application))))
-    (is (equal '("Import DXF..." "Export DXF...") (mapcar #'ui:widget-label (menu-rows application))))
-    (is (equal '("Ctrl+Shift+I" "Ctrl+Shift+E") (mapcar #'ui:widget-shortcut (menu-rows application))))
+    (is (equal '((:menu-item :import-dxf)
+                 (:menu-item :export-dxf)
+                 (:menu-item :console)
+                 (:menu-item :run-script)
+                 (:menu-item :export-script))
+               (mapcar #'ui:widget-id (menu-rows application))))
+    (is (equal '("Import DXF..." "Export DXF..." "Console" "Run script..." "Export as script...")
+               (mapcar #'ui:widget-label (menu-rows application))))
+    (is (equal '("Ctrl+Shift+I" "Ctrl+Shift+E" "F2" nil nil)
+               (mapcar #'ui:widget-shortcut (menu-rows application))))
     (click-widget application '(:menu-item :export-dxf))
     (is (null (menu-rows application)))
     (is (string= "Export as a DXF file" (dialog-title-text application)))))

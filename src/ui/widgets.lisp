@@ -48,7 +48,7 @@ HINT: what the widget does, shown as a tooltip and in the status bar while hover
 SHORTCUT: the keys that do the same, shown beside the hint, or NIL.
 ICON: the name of the icon drawn in a button, row or on its own.
 VARIANT: for buttons, :default, :primary, :ghost, :tool (palette), :icon (title bar) or :chip
-(a pill that toggles); for panels, :default, :title-bar, :status-bar, :palette or :side.
+(a pill that toggles); for panels, :default, :title-bar, :status-bar, :palette, :side or :console.
 FONT: :ui, :ui-strong or :mono.
 SIZE: em size of the text in pixels.
 TRAILING: pixels at the right edge that the text must stay clear of, where other widgets sit

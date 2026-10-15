@@ -6,6 +6,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **The console and the script language.** `F2` (or More > Console) opens a console under the canvas
+  where a Lisp expression is typed and run against the drawing. The commands are Lisp functions:
+  `line rect rect-size circle arc ellipse polygon pline text dimension` draw, `move copy erase edit
+  move-to-layer` change, `layer with-layer layers entities entity-count extents info` look and
+  arrange, `select select-all deselect selected fit` act on the window, `display-unit grid-spacing`
+  set the drawing, `say` and `help` talk; all of Common Lisp is there too. Numbers are millimetres
+  (`mm cm m inch foot` convert) and angles degrees (`(rad x)` for radians). Up and Down recall the
+  commands run, Page Up, Page Down and the wheel scroll the output, an unfinished expression waits for
+  its next lines, `Ctrl+L` clears. A command is one step of undo and is taken back whole when a step
+  fails, when it takes more than 10 seconds (60 for a script file) or when it makes more than two
+  million changes; what it prints is cut after 200,000 characters while it is written; reading
+  evaluates nothing (`#.` is refused) and numbers are double-floats.
+- **Run script and Export as script** in the More menu. *Run script* chooses a `.lisp` file in the file
+  dialog, reads and counts it, and asks first, saying that a script is a program and showing how it
+  begins; it runs only after the answer, as one command that can be undone. *Export as script* writes
+  the drawing as the commands that draw it again, bit for bit, with layers (colors, hidden, locked) and
+  every entity on its layer. `examples/house-plan.lisp` and `examples/rosette.lisp` are scripts that
+  come with the program and are run by a test.
 - **DXF import and export.** The More button of the title bar (the three dots) lists Import DXF
   (`Ctrl+Shift+I`) and Export DXF (`Ctrl+Shift+E`), which use the file dialog. *Import* reads an ASCII
   DXF of any version (UTF-8, or the Windows Western code page that files from Brazil are often in) as a
@@ -88,6 +106,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Changed
 
+- The colors that new layers are given in turn are one palette in the domain, used by the layers
+  panel and by the `layer` command, so both give a new layer the same color. The lint knows that a
+  function defined by `flet` or `labels` is not the global function of the same name, and that the
+  functions of SBCL's own packages are not the project's.
 - **One button for the drawing tools.** The palette holds the select tool and a Draw button; the
   button opens a list of the drawing tools (line, polyline, rectangle, circle, text, dimension) with
   their keys, and choosing one goes on as before. The letters L, R, C, P, T and D are unchanged. The
