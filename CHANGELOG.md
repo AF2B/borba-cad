@@ -2,6 +2,28 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/). The project follows semantic versioning.
 
+## [Unreleased]
+
+### Fixed
+
+- **DXF files with blank lines after `EOF` were refused** ("expected a group code, a whole number, found
+  nothing"), which is how many files from the internet end. The reader now stops at the group `0 EOF`,
+  skips a blank line where a group code belongs, reads the names of records and sections with spaces
+  after them, and ends a file that has no `EOF` at its last line. Found with two files downloaded by the
+  user (`minimal_r12.dxf`, `block_example.dxf`), which now import.
+- A closed polyline that repeats its first vertex at the end (how many programs write the rectangle of a
+  closed polyline) was left out of the import as a segment of no length; it is now read as the closed
+  polyline it is.
+
+### Added
+
+- DXF import reads more of what real files have: **splines** (B-splines and rational ones, from their
+  knots, control points and weights; or through their fit points) become polylines of short straight
+  segments, **leaders** become lines without their arrowheads, **3D faces** become their outlines
+  flattened onto the plane, and **traces** are read as filled shapes are. A test file written the way
+  AutoCAD 2000 writes one (classes, tables with handles and subclass markers, blocks, paper space,
+  objects) imports whole.
+
 ## [1.1.0] - 2026-10-14
 
 ### Added

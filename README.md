@@ -125,11 +125,12 @@ The More button of the title bar (three dots) has **Import DXF** (`Ctrl+Shift+I`
 
 - **Import** reads an ASCII DXF of any version as a new drawing that is not saved yet: layers (with name,
   color, off, locked), lines, circles, arcs, polylines (arc segments become short straight ones), texts
-  and multiline texts, ellipses, filled shapes (as outlines), blocks (inserts are expanded, scaled,
-  turned, mirrored, repeated, nested) and dimensions (as what their block draws). A file that does not say
-  its unit asks for it; one far from the origin (survey coordinates) is moved to it. What the program
-  cannot draw (splines, hatches, points, leaders, images, 3D) and what is in paper space is left out, and
-  a report says how many of each; it also goes to the log.
+  and multiline texts, ellipses, splines (as polylines of short segments), filled shapes and 3D faces (as
+  outlines), leaders (without arrowheads), blocks (inserts are expanded, scaled, turned, mirrored,
+  repeated, nested) and dimensions (as what their block draws). A file that does not say its unit asks for
+  it; one far from the origin (survey coordinates) is moved to it. What the program cannot draw (hatches,
+  points, images, solids in 3D) and what is in paper space is left out, and a report says how many of each;
+  it also goes to the log.
 - **Export** writes DXF version R12, which every program reads: lines, circles, arcs, texts and polylines
   as themselves; rectangles, polygons and ellipses as closed polylines; dimensions as lines, arrowheads
   and text; layers with their state and the nearest of AutoCAD's 256 colors. The status bar says what
@@ -213,7 +214,7 @@ unavailable, never estimated.
 
 Tried on Linux x86_64 with SBCL only (the Windows folder and CI workflow are written and have never
 run); single-line text, axis-aligned rectangles and aligned linear dimensions only; DXF import leaves out
-splines, hatches, points, leaders and paper space, and export writes R12 (an ellipse, a polygon and a
+hatches, points, images and paper space, and export writes R12 (an ellipse, a polygon and a
 dimension leave as polylines, lines and text), and the import was tried on files made for the tests;
 Brazilian Portuguese keeps the decimal point in numbers and leaves in English the messages about the
 structure of a damaged file, the errors the console prints (Lisp's own are English) and the text the

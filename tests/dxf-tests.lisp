@@ -108,6 +108,177 @@
       (is (search "line 5" (princ-to-string condition)))
       (is (search "group code" (princ-to-string condition))))))
 
+(defun minimal-line-file (&key (ending (format nil "~%~%~%")) (line-end (string #\Newline)))
+  "Return the text of the smallest DXF file that programs write: a header that says the unit is the meter,
+one line from (0,0) to (10,10) and EOF, followed by ENDING, with every line ended by LINE-END."
+  (let ((groups '((0 "SECTION") (2 "HEADER") (9 "$ACADVER") (1 "AC1009") (9 "$INSUNITS") (70 "6")
+                  (9 "$EXTMIN") (10 "0.0") (20 "0.0") (30 "0.0") (9 "$EXTMAX") (10 "10.0") (20 "10.0") (30 "0.0")
+                  (0 "ENDSEC") (0 "SECTION") (2 "ENTITIES") (0 "LINE") (8 "0") (10 "0.0") (20 "0.0") (30 "0.0")
+                  (11 "10.0") (21 "10.0") (31 "0.0") (0 "ENDSEC") (0 "EOF"))))
+    (with-output-to-string (stream)
+      (dolist (group groups)
+        (format stream "~3d~a~a~a" (first group) line-end (second group) line-end))
+      (write-string (substitute-string ending #\Newline line-end) stream))))
+
+(defun substitute-string (text character replacement)
+  "Return TEXT with every CHARACTER replaced by the string REPLACEMENT."
+  (with-output-to-string (stream)
+    (loop for each across text
+          do (if (char= each character)
+                 (write-string replacement stream)
+                 (write-char each stream)))))
+
+(test files-that-end-with-blank-lines-after-eof-are-read
+  "Programs leave blank lines after the EOF; files downloaded from the internet had them and were refused."
+  (dolist (ending (list "" (format nil "~%") (format nil "~%~%") (format nil "~%~%~%~%~%") (format nil "  ~%")
+                        (format nil "~%this is not a group~%at all~%")))
+    (let ((drawing (imported (minimal-line-file :ending ending))))
+      (is (= 1 (dom:drawing-entity-count drawing)) "~s" ending)
+      (is (about 10000d0 (dom:line-x2 (entity-of-kind drawing :line))) "the unit is the meter, so 10 is 10000 mm"))))
+
+(test files-with-other-line-ends-are-read
+  (dolist (line-end (list (string #\Newline) (coerce (list #\Return #\Newline) 'string) (string #\Return)))
+    (let ((drawing (imported (minimal-line-file :line-end line-end))))
+      (is (= 1 (dom:drawing-entity-count drawing)) "~s" line-end))))
+
+(test blank-lines-between-groups-and-spaces-after-names-are-forgiven
+  (let* ((text (minimal-line-file))
+         (spaced (substitute-string text #\Newline (format nil "~%")))
+         (with-blank (with-output-to-string (stream)
+                       (loop for line in (uiop:split-string spaced :separator '(#\Newline))
+                             for index from 0
+                             do (write-line line stream)
+                                (when (member line '("ENDSEC" "HEADER") :test #'string=)
+                                  (terpri stream)))))
+         (trailing (substitute-string with-blank #\Newline (format nil " ~%"))))
+    (is (= 1 (dom:drawing-entity-count (imported with-blank))) "blank lines between sections")
+    (is (= 1 (dom:drawing-entity-count (imported trailing))) "spaces after every line")))
+
+(test a-file-with-no-eof-is-read-to-its-end
+  (let* ((text (minimal-line-file))
+         (without (subseq text 0 (search "  0" text :from-end t))))
+    (is (= 1 (dom:drawing-entity-count (imported without))))))
+
+(test a-byte-order-mark-at-the-start-is-ignored
+  (let* ((octets (concatenate '(vector (unsigned-byte 8))
+                              (vector #xEF #xBB #xBF)
+                              (sb-ext:string-to-octets (minimal-line-file) :external-format :utf-8)))
+         (text (dxf::decode-dxf-octets octets)))
+    (is (= 1 (dom:drawing-entity-count (imported text))))))
+
+(defun numbers-groups (code values)
+  "Return groups, each of CODE and the text of one of VALUES."
+  (mapcar (lambda (value) (list code (format nil "~f" value))) values))
+
+(defun spline-groups (&key (degree 2) knots controls weights fits (flags 8))
+  "Return the groups of a SPLINE record: its flags, degree, knots, weights, control points and fit points."
+  (append (list '(0 "SPLINE") '(8 "0") (list 70 flags) (list 71 degree))
+          (numbers-groups 40 knots)
+          (numbers-groups 41 weights)
+          (loop for (x y) in controls
+                append (list (list 10 (format nil "~f" x)) (list 20 (format nil "~f" y)) '(30 "0")))
+          (loop for (x y) in fits
+                append (list (list 11 (format nil "~f" x)) (list 21 (format nil "~f" y)) '(31 "0")))))
+
+(defun polyline-points (entity)
+  "Return the points of a polyline entity as a list of (x y) lists."
+  (let ((coordinates (dom:polyline-coordinates entity)))
+    (loop for index from 0 below (length coordinates) by 2
+          collect (list (aref coordinates index) (aref coordinates (1+ index))))))
+
+(defun spline-drawing (&rest options)
+  "Import a file with one spline made from OPTIONS, in millimetres."
+  (imported (entities-file (apply #'spline-groups options)) :units :millimeter))
+
+(test a-spline-is-imported-as-a-polyline-along-the-curve
+  (let* ((drawing (spline-drawing :degree 2 :knots '(0 0 0 1 1 1) :controls '((0 0) (5 10) (10 0))))
+         (polyline (entity-of-kind drawing :polyline))
+         (points (polyline-points polyline)))
+    (is (= 1 (dom:drawing-entity-count drawing)))
+    (is (> (length points) 16) "many short segments")
+    (is (about 0d0 (first (first points))))
+    (is (about 10d0 (first (car (last points)))))
+    (is (about 0d0 (second (car (last points)))))
+    (is (every (lambda (point) (<= (second point) 5.0000001d0)) points)
+        "a quadratic Bezier peaks at 5, not at the control point 10")
+    (is (find-if (lambda (point) (and (about 5d0 (first point) 0.01d0) (about 5d0 (second point) 0.01d0))) points)
+        "and passes through (5, 5)")))
+
+(test a-rational-spline-draws-a-circle
+  (let* ((root (/ (sqrt 2d0) 2))
+         (drawing (spline-drawing :degree 2 :knots '(0 0 0 1 1 1) :controls '((1 0) (1 1) (0 1))
+                                  :weights (list 1d0 root 1d0)))
+         (points (polyline-points (entity-of-kind drawing :polyline))))
+    (is (every (lambda (point) (about 1d0 (sqrt (+ (expt (first point) 2) (expt (second point) 2))) 1d-6)) points)
+        "every point is one unit from the origin")))
+
+(test a-spline-of-degree-one-passes-through-its-control-points
+  (let* ((controls '((0 0) (4 0) (4 3)))
+         (drawing (spline-drawing :degree 1 :knots '(0 0 1 2 2) :controls controls))
+         (points (polyline-points (entity-of-kind drawing :polyline))))
+    (dolist (control controls)
+      (is (find-if (lambda (point) (and (about (first control) (first point) 1d-6)
+                                        (about (second control) (second point) 1d-6)))
+                   points)
+          "~s" control))))
+
+(test a-spline-with-bad-knots-is-drawn-through-its-fit-points-or-its-control-points
+  (let ((fitted (spline-drawing :degree 3 :knots '(0 1) :controls '((0 0) (1 1)) :fits '((0 0) (3 3) (6 0))))
+        (controlled (spline-drawing :degree 3 :knots '() :controls '((0 0) (2 2) (4 0)))))
+    (is (equal '((0d0 0d0) (3d0 3d0) (6d0 0d0)) (polyline-points (entity-of-kind fitted :polyline))))
+    (is (equal '((0d0 0d0) (2d0 2d0) (4d0 0d0)) (polyline-points (entity-of-kind controlled :polyline))))))
+
+(test a-closed-spline-is-a-closed-polyline-without-a-repeated-point
+  (let* ((drawing (spline-drawing :flags 11 :degree 1 :knots '(0 0 1 2 3 3)
+                                  :controls '((0 0) (4 0) (4 4) (0 0))))
+         (polyline (entity-of-kind drawing :polyline)))
+    (is-true (dom:polyline-closed polyline))
+    (is (not (about 0d0 (let ((points (polyline-points polyline)))
+                          (+ (abs (- (first (first points)) (first (car (last points)))))
+                             (abs (- (second (first points)) (second (car (last points)))))))
+                    1d-9))
+        "the last point is not the first again")))
+
+(test splines-are-counted-as-imported-and-noted
+  (multiple-value-bind (drawing report)
+      (imported (entities-file (spline-groups :degree 1 :knots '(0 0 1 1) :controls '((0 0) (1 1)))) :units :millimeter)
+    (declare (ignore drawing))
+    (is (equal '((:polyline . 1)) (dxf:report-imported report)))
+    (is (null (dxf:report-ignored report)))
+    (is (member "Splines were imported as polylines of short straight segments." (dxf:report-notes report)
+                :test #'string=))))
+
+(test a-spline-with-no-points-is-left-out
+  (multiple-value-bind (drawing report) (imported (entities-file '((0 "SPLINE") (8 "0"))))
+    (is (= 0 (dom:drawing-entity-count drawing)))
+    (is (equal '(("SPLINE" . 1)) (dxf:report-ignored report)))))
+
+(test leaders-and-three-d-faces-and-traces-are-imported-as-outlines
+  (multiple-value-bind (drawing report)
+      (imported (entities-file '((0 "LEADER") (8 "0") (76 3) (10 "0") (20 "0") (30 "0") (10 "5") (20 "5") (30 "0")
+                                 (10 "9") (20 "5") (30 "0"))
+                               '((0 "3DFACE") (8 "0") (10 "0") (20 "0") (30 "1") (11 "4") (21 "0") (31 "2")
+                                 (12 "4") (22 "4") (32 "3") (13 "4") (23 "4") (33 "3"))
+                               '((0 "TRACE") (8 "0") (10 "0") (20 "0") (11 "2") (21 "0") (12 "0") (22 "2")
+                                 (13 "2") (23 "2")))
+                :units :millimeter)
+    (is (= 3 (length (entities-of-kind drawing :polyline))))
+    (is (null (dxf:report-ignored report)))
+    (destructuring-bind (leader face trace) (entities-of-kind drawing :polyline)
+      (is (equal '((0d0 0d0) (5d0 5d0) (9d0 5d0)) (polyline-points leader)))
+      (is (not (dom:polyline-closed leader)))
+      (is (= 3 (length (polyline-points face))) "a triangle: the fourth corner was the third again")
+      (is-true (dom:polyline-closed face))
+      (is (= 4 (length (polyline-points trace)))))))
+
+(test a-mirrored-spline-is-mirrored
+  (let* ((groups (append (spline-groups :degree 1 :knots '(0 0 1 1) :controls '((1 0) (3 2)))
+                         '((210 "0") (220 "0") (230 "-1"))))
+         (drawing (imported (entities-file groups) :units :millimeter))
+         (points (polyline-points (entity-of-kind drawing :polyline))))
+    (is (about -1d0 (first (first points))))
+    (is (about -3d0 (first (car (last points)))))))
+
 (test the-reader-reads-the-sections-the-import-needs
   (let ((document (dxf:parse-dxf-text (fixture-text "plan-r12.dxf"))))
     (is (= 3 (length (dxf:dxf-document-layers document))))
@@ -789,3 +960,34 @@ section."
          (started (sbcl:monotonic-nanoseconds)))
     (is (= count (dom:drawing-entity-count (imported text))))
     (is (< (/ (- (sbcl:monotonic-nanoseconds) started) 1d9) 10d0) "thirty thousand lines in seconds, not minutes")))
+
+;;; A file as AutoCAD writes it
+
+(test a-closed-polyline-that-repeats-its-first-vertex-keeps-its-shape
+  "Many programs write the rectangle of a closed polyline with the first point at the end, which is a
+segment of no length for the program."
+  (let* ((drawing (imported (entities-file '((0 "LWPOLYLINE") (8 "0") (90 5) (70 1)
+                                             (10 "0") (20 "0") (10 "4") (20 "0") (10 "4") (20 "3") (10 "0") (20 "3")
+                                             (10 "0") (20 "0")))
+                            :units :millimeter))
+         (polyline (entity-of-kind drawing :polyline)))
+    (is (= 1 (dom:drawing-entity-count drawing)))
+    (is (equal '((0d0 0d0) (4d0 0d0) (4d0 3d0) (0d0 3d0)) (polyline-points polyline)))
+    (is-true (dom:polyline-closed polyline))))
+
+(test a-file-as-autocad-2000-writes-it-is-read-whole
+  (multiple-value-bind (drawing report) (dxf:load-dxf (fixture-path "plan-r2000.dxf"))
+    (is (equal '("0" "PAREDES" "MOBILIA" "COTAS") (mapcar #'dom:layer-name (dom:layers-in-order drawing))))
+    (let ((locked (dom:find-layer-by-name drawing "MOBILIA")))
+      (is-true (dom:layer-locked locked) "flag 4 of the layer"))
+    (is (equal '(:polyline :line :circle :text :text :text :line :arc :polyline)
+               (mapcar #'dom:entity-kind (dom:drawing-entities drawing)))
+        "the walls, the partition, the table, the texts, the door (a line and an arc) and the spline")
+    (is (equal '(("HATCH" . 1) ("POINT" . 1)) (dxf:report-ignored report)))
+    (is (= 9 (dxf:report-imported-total report)))
+    (let ((walls (find :polyline (dom:drawing-entities drawing) :key #'dom:entity-kind)))
+      (is-true (dom:polyline-closed walls))
+      (is (< 10000d0 (apply #'max (mapcar #'first (polyline-points walls))) 13000d0)
+          "the east wall bulges outward, an arc cut into segments"))
+    (is (find-if (lambda (text) (search "paper space" text)) (dxf:report-notes report))
+        "the line in paper space is said")))

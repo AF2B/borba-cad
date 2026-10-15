@@ -742,6 +742,134 @@ LAYER: the layer name."
                                                              end)
                                    nil))))))
 
+(defun record-points (record
+                      x-code
+                      y-code)
+  "Return the points that a record lists in repeated groups, as (x y) lists in order: each group with
+X-CODE begins a point and the group with Y-CODE after it completes it.
+
+RECORD: an entity record.
+X-CODE: the group code of the x of a point.
+Y-CODE: the group code of its y."
+  (let ((points '())
+        (mirror (mirrored-extrusion-p record)))
+    (dolist (pair (record-pairs record))
+      (cond ((= (car pair) x-code)
+             (let ((x (parse-real (cdr pair))))
+               (when x
+                 (push (list (if mirror (- x) x) 0d0) points))))
+            ((and (= (car pair) y-code) points)
+             (let ((y (parse-real (cdr pair))))
+               (when y
+                 (setf (second (first points)) y))))))
+    (nreverse points)))
+
+(defun record-numbers (record
+                       code)
+  "Return every number in the groups of a record with a code, in order, as a vector of double-floats.
+
+RECORD: an entity record.
+CODE: the group code."
+  (coerce (remove nil (mapcar #'parse-real (pair-values (record-pairs record) code))) 'simple-vector))
+
+(defun points-as-vertices (points
+                           closed)
+  "Return points as the vertices of a polyline, without a last point that only repeats the first of a closed
+one.
+
+POINTS: a list of (x y) lists.
+CLOSED: true when the polyline is closed."
+  (let ((vertices (mapcar (lambda (point) (list (first point) (second point) 0d0)) points)))
+    (if (and closed
+             (> (length vertices) 2)
+             (< (geo:distance (first (first vertices))
+                              (second (first vertices))
+                              (first (car (last vertices)))
+                              (second (car (last vertices))))
+                1d-9))
+        (butlast vertices)
+        vertices)))
+
+(defun import-spline (importer
+                      record
+                      layer)
+  "Emit a SPLINE record as a polyline through points along the curve: from its control points, degree, knots
+and weights when they describe a curve, and otherwise through its fit points or its control points.
+
+IMPORTER: the importer.
+RECORD: a SPLINE record.
+LAYER: the layer name."
+  (let* ((pairs (record-pairs record))
+         (closed (logtest 1 (pair-integer pairs
+                                          70
+                                          0)))
+         (controls (record-points record
+                                  10
+                                  20))
+         (fits (record-points record
+                              11
+                              21))
+         (weights (record-numbers record 41))
+         (curve (and controls
+                     (spline-samples (pair-integer pairs
+                                                   71
+                                                   3)
+                                     (record-numbers record 40)
+                                     (coerce controls 'simple-vector)
+                                     (and (= (length weights) (length controls)) weights))))
+         (points (or curve
+                     (and (>= (length fits) 2) fits)
+                     (and (>= (length controls) 2) controls))))
+    (cond (points
+           (note (importer-report importer) (i18n:tr "Splines were imported as polylines of short straight segments."))
+           (make-polyline-shape importer
+                                layer
+                                (points-as-vertices points closed)
+                                closed))
+          (t
+           (ignore-record importer record)))))
+
+(defun import-leader (importer
+                      record
+                      layer)
+  "Emit a LEADER record, the line that points from a note to what it is about, as a polyline through its
+vertices; its arrowhead is left out.
+
+IMPORTER: the importer.
+RECORD: a LEADER record.
+LAYER: the layer name."
+  (let ((points (record-points record
+                               10
+                               20)))
+    (cond ((>= (length points) 2)
+           (note (importer-report importer) (i18n:tr "Leaders were imported as lines, without their arrowheads."))
+           (make-polyline-shape importer
+                                layer
+                                (points-as-vertices points nil)
+                                nil))
+          (t
+           (ignore-record importer record)))))
+
+(defun import-face (importer
+                    record
+                    layer)
+  "Emit a 3DFACE record as the closed outline of its corners, flattened onto the plane of the drawing.
+
+IMPORTER: the importer.
+RECORD: a 3DFACE record.
+LAYER: the layer name."
+  (let* ((corners (loop for (x-code y-code) in '((10 20) (11 21) (12 22) (13 23))
+                        collect (list (real-of record x-code) (real-of record y-code))))
+         (distinct (remove-duplicates corners :test #'equal :from-end t)))
+    (cond ((>= (length distinct) 3)
+           (note (importer-report importer) (i18n:tr "3D faces were imported flat, as their outlines."))
+           (make-polyline-shape importer
+                                layer
+                                (points-as-vertices distinct nil)
+                                t))
+          (t
+           (ignore-record importer record)))))
+
 (defun import-record (importer
                       record
                       layer-inherited)
@@ -820,10 +948,22 @@ LAYER-INHERITED: the layer of the INSERT being expanded, or NIL."
            (import-dimension importer
                              record
                              layer))
-          ((string= type "SOLID")
+          ((or (string= type "SOLID") (string= type "TRACE"))
            (import-solid importer
                          record
                          layer))
+          ((string= type "SPLINE")
+           (import-spline importer
+                          record
+                          layer))
+          ((string= type "LEADER")
+           (import-leader importer
+                          record
+                          layer))
+          ((string= type "3DFACE")
+           (import-face importer
+                        record
+                        layer))
           (t
            (ignore-record importer record)))))
 
@@ -1298,7 +1438,7 @@ SHIFT-Y: millimetres to move it along y."
                           (aref coordinates (1+ index)) (y py)))
            (dom:make-polyline :id id
                               :layer-id layer-id
-                              :coordinates (remove-consecutive-duplicates coordinates)
+                              :coordinates (remove-consecutive-duplicates coordinates (second data))
                               :closed (second data))))
         (:text
          (destructuring-bind (tx ty height string angle) data
@@ -1310,11 +1450,14 @@ SHIFT-Y: millimetres to move it along y."
                           :height (scaled height)
                           :angle angle)))))))
 
-(defun remove-consecutive-duplicates (coordinates)
+(defun remove-consecutive-duplicates (coordinates
+                                      &optional closed)
   "Return the coordinates of a polyline without the vertices that repeat the one before them, which the
-program does not accept in a polyline.
+program does not accept in a polyline, and, for a closed one, without a last vertex that repeats the first,
+which is how many programs write the rectangle of a closed polyline.
 
-COORDINATES: a vector of alternating x and y values."
+COORDINATES: a vector of alternating x and y values.
+CLOSED: true when the polyline is closed."
   (let ((kept '()))
     (loop for index from 0 below (length coordinates) by 2
           for x = (aref coordinates index)
@@ -1326,6 +1469,13 @@ COORDINATES: a vector of alternating x and y values."
                                                                      y))))
                (push x kept)
                (push y kept)))
+    (when (and closed
+               (> (length kept) 4)
+               (not (base:positive-length-p (geo:distance (second kept)
+                                                          (first kept)
+                                                          (car (last kept))
+                                                          (car (last kept 2))))))
+      (setf kept (cddr kept)))
     (let ((result (make-array (length kept) :element-type 'double-float)))
       (loop for value in (reverse kept)
             for index from 0

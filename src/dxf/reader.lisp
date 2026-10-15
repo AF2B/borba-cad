@@ -178,7 +178,10 @@ ARGUMENTS: format arguments."
                            (apply #'i18n:trf control arguments))))
 
 (defun read-groups (text)
-  "Return the groups of a DXF file as a list of (code value line) lists, in order.
+  "Return the groups of a DXF file as a list of (code value line) lists, in order. A line that is blank where
+a group code belongs is skipped, which is how the blank lines that many programs leave at the end of the
+file, or between sections, are read; and the group 0 EOF ends the file, so that whatever follows it is never
+looked at.
 
 TEXT: the file text."
   (let ((groups '())
@@ -193,23 +196,30 @@ TEXT: the file text."
                       (code (and (plusp (length code-text))
                                  (every #'digit-char-p (string-left-trim "-" code-text))
                                  (parse-integer code-text))))
-                 (when (and (null code) (zerop (length code-text)) (>= code-next length))
-                   (return))
-                 (unless code
-                   (group-failure line
-                                  "expected a group code, a whole number, found ~s"
-                                  code-text))
-                 (when (>= code-next length)
-                   (group-failure line "the file ends after a group code, without its value"))
-                 (multiple-value-bind (value-end value-next)
-                     (line-bounds text code-next)
-                   (push (list code (subseq text code-next value-end) line) groups)
-                   (when (> (incf count) +maximum-groups+)
-                     (group-failure line
-                                    "the file has more than ~d groups"
-                                    +maximum-groups+))
-                   (setf position value-next
-                         line (+ line 2))))))
+                 (cond ((zerop (length code-text))
+                        (setf position code-next
+                              line (1+ line)))
+                       (t
+                        (unless code
+                          (group-failure line
+                                         "expected a group code, a whole number, found ~s"
+                                         code-text))
+                        (when (>= code-next length)
+                          (group-failure line "the file ends after a group code, without its value"))
+                        (multiple-value-bind (value-end value-next)
+                            (line-bounds text code-next)
+                          (let ((value (subseq text code-next value-end)))
+                            (when (= code 0)
+                              (setf value (string-trim '(#\Space #\Tab) value)))
+                            (push (list code value line) groups)
+                            (when (> (incf count) +maximum-groups+)
+                              (group-failure line
+                                             "the file has more than ~d groups"
+                                             +maximum-groups+))
+                            (when (and (= code 0) (string= value "EOF"))
+                              (return))
+                            (setf position value-next
+                                  line (+ line 2)))))))))
     (nreverse groups)))
 
 (defun group-records (groups)
@@ -245,7 +255,7 @@ GROUPS: the groups, as read by READ-GROUPS."
                           (let ((name-group (pop remaining)))
                             (unless (and name-group (= 2 (first name-group)))
                               (group-failure line "a SECTION must be followed by its name"))
-                            (setf section-name (second name-group))))
+                            (setf section-name (string-trim '(#\Space #\Tab) (second name-group)))))
                          ((and (= code 0) (string= value "ENDSEC"))
                           (close-record)
                           (close-section))

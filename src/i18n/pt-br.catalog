@@ -419,5 +419,10 @@
    "Um script é um programa: pode fazer tudo o que o programa faz e altera o desenho.")
   ("Run only scripts you trust. It runs as one step you can undo, and stops after ~d seconds."
    "Execute só scripts em que você confia. Roda como um único passo que você pode desfazer e para depois de ~d segundos.")
+  ("Splines were imported as polylines of short straight segments."
+   "As splines foram importadas como polilinhas de segmentos retos curtos.")
+  ("Leaders were imported as lines, without their arrowheads."
+   "As linhas de chamada foram importadas como linhas, sem as pontas de seta.")
+  ("3D faces were imported flat, as their outlines." "As faces 3D foram importadas planas, como seus contornos.")
   ("Run script" "Executar script")
   ("Exported ~a (~a) as a script." "~a exportado (~a) como script.")))

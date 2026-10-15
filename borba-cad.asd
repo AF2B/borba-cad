@@ -84,6 +84,7 @@
                 :components ((:file "package")
                              (:file "colors")
                              (:file "reader")
+                             (:file "spline")
                              (:file "import")
                              (:file "export")
                              (:file "files")))
