@@ -1,0 +1,6 @@
+# Source and data files keep Unix line ends on every system: on Windows a checkout would otherwise make
+# them CRLF, which breaks the shell scripts and any format control that ends a line with a tilde.
+* text=auto eol=lf
+
+# Test files that hold particular line ends on purpose are kept byte for byte.
+tests/fixtures/*.dxf -text
