@@ -90,7 +90,7 @@ TEXT: a level name such as \"debug\" (case-insensitive)."
   "Return the language keyword named by TEXT, signaling CONFIGURATION-ERROR when the program does
 not speak it.
 
-TEXT: a language tag such as \"pt-BR\" (any case; a hyphen or an underscore)."
+TEXT: a language tag such as \"pt-BR\" or \"ru-RU\" (any case; a hyphen or an underscore)."
   (or (i18n:parse-language text)
       (configuration-failure "unknown language ~s; use one of ~{~a~^, ~}"
                              text

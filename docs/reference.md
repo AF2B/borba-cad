@@ -2123,6 +2123,20 @@ Show TEXT in the status bar.
 - `TEXT`: the message.
 - `SEVERITY`: :info or :error.
 
+### `show-notice` (function)
+
+```lisp
+(show-notice app title message &optional message-lines)
+```
+
+Tell the user something in a modal in the middle of the window, with an OK button: what a long operation
+came to, which a line of the status bar is too easy to miss.
+
+- `APP`: the application.
+- `TITLE`: heading.
+- `MESSAGE`: what happened.
+- `MESSAGE-LINES`: how many lines the message may take, or NIL for the usual three.
+
 ### `single-line` (function)
 
 ```lisp
@@ -2874,7 +2888,7 @@ Signals INVALID-INPUT when TEXT is not a number.
 Return the language keyword named by TEXT, signaling CONFIGURATION-ERROR when the program does
 not speak it.
 
-- `TEXT`: a language tag such as "pt-BR" (any case; a hyphen or an underscore).
+- `TEXT`: a language tag such as "pt-BR" or "ru-RU" (any case; a hyphen or an underscore).
 
 ### `parse-length` (function)
 

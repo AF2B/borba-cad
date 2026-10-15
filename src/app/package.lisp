@@ -250,6 +250,7 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:prompt-choices
    #:open-text-prompt
    #:open-choice-prompt
+   #:show-notice
    #:close-prompt
    ;; Input, frame, scenario
    #:app-handle-event

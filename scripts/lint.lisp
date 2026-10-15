@@ -625,7 +625,7 @@ SYMBOL: an exported symbol."
     ("invalid-entity-failure" . 1) ("layer-failure" . 0) ("io-failure" . 1) ("path-failure" . 1) ("group-failure" . 1))
   "The functions that take an English text for the user, as (name . position of that argument).")
 
-(defparameter *translated-languages* '(:pt-br)
+(defparameter *translated-languages* '(:pt-br :ru-ru)
   "The languages whose catalogs must hold every text of the program.")
 
 (defun string-literal-value (text)

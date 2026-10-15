@@ -18,7 +18,7 @@
 (defparameter *catalog-directory* (asdf:system-relative-pathname "borba-cad" "src/i18n/")
   "The folder that holds the catalog files.")
 
-(defparameter *catalog-files* '(:pt-br "pt-br.catalog")
+(defparameter *catalog-files* '(:pt-br "pt-br.catalog" :ru-ru "ru-ru.catalog")
   "The catalog file of each language besides the default one, in the order of the language menu.")
 
 (defstruct (catalog (:constructor make-catalog (language

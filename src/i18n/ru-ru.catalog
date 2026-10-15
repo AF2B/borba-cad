@@ -1,0 +1,446 @@
+;;;; Russian translations. Each entry is (ENGLISH TRANSLATION); the English text is the key.
+;;;; A translation asks for the same format directives, in the same order, as its English text.
+;;;; Russian has three forms of a noun after a number (1, 2-4, 5 and more); a format directive can only tell
+;;;; 0, 1 and the others, so where the English text says "~d entities" or "~d entity" the translation names
+;;;; what it counts before the number ("Objects: 3"), which is right for every number, and keeps the
+;;;; directives of the plural so that the translation asks for the same values.
+;;;; The file is UTF-8 data: it is read, never evaluated.
+
+(:language :ru-ru
+ :name "Русский (Россия)"
+ :entries
+ (
+  ;; Title bar and files
+  ("Language" "Язык")
+  ("Language: ~a" "Язык: ~a")
+  ("New drawing" "Новый чертёж")
+  ("Open a drawing" "Открыть чертёж")
+  ("Save" "Сохранить")
+  ("Save as..." "Сохранить как...")
+  ("Undo" "Отменить")
+  ("Redo" "Повторить")
+  ("Performance overlay" "Панель быстродействия")
+  ("Untitled" "Без имени")
+  ("(unnamed)" "(без имени)")
+
+  ;; Palette and menus
+  ("Select and move" "Выбор и перемещение")
+  ("Drawing tools" "Инструменты рисования")
+  ("Line" "Отрезок")
+  ("Polyline" "Полилиния")
+  ("Rectangle" "Прямоугольник")
+  ("Circle" "Окружность")
+  ("Text" "Текст")
+  ("Dimension" "Размер")
+  ("Polygon" "Многоугольник")
+  ("Arc" "Дуга")
+  ("Ellipse" "Эллипс")
+
+  ;; Names of the kinds of entity, in messages
+  ("line" "отрезок")
+  ("rectangle" "прямоугольник")
+  ("circle" "окружность")
+  ("polyline" "полилиния")
+  ("text" "текст")
+  ("dimension" "размер")
+  ("arc" "дуга")
+  ("ellipse" "эллипс")
+  ("polygon" "многоугольник")
+
+  ;; Empty drawing
+  ("Start drawing" "Начните рисовать")
+  ("Pick a tool on the left, or press L for a line, R for a rectangle, C for a circle."
+   "Выберите инструмент слева или нажмите L для отрезка, R для прямоугольника, C для окружности.")
+  ("Ctrl+O opens a drawing, and a .bcad file dropped on the window opens too."
+   "Ctrl+O открывает чертёж; файл .bcad, брошенный на окно, тоже откроется.")
+
+  ;; Prompts of the tools
+  ("Drag a handle to change the shape, or the shape itself to move it; Esc deselects."
+   "Потяните маркер, чтобы изменить форму, или саму фигуру, чтобы переместить её; Esc снимает выбор.")
+  ("Select: click or drag; left to right takes what is inside, right to left what it touches (Shift adds)."
+   "Выбор: щёлкните или протяните; слева направо берёт то, что внутри, справа налево — то, чего рамка касается (Shift добавляет).")
+  ("Line: click the start point" "Отрезок: щёлкните начальную точку")
+  ("Line: click the end point (Esc cancels)" "Отрезок: щёлкните конечную точку (Esc отменяет)")
+  ("Rectangle: click the first corner" "Прямоугольник: щёлкните первый угол")
+  ("Rectangle: click the opposite corner (Esc cancels)" "Прямоугольник: щёлкните противоположный угол (Esc отменяет)")
+  ("Circle: click the center" "Окружность: щёлкните центр")
+  ("Circle: click a point on the circle (Esc cancels)" "Окружность: щёлкните точку на окружности (Esc отменяет)")
+  ("Polyline: click the first vertex" "Полилиния: щёлкните первую вершину")
+  ("Polyline: click vertices; Enter finishes; click the first vertex to close; Backspace removes the last"
+   "Полилиния: щёлкайте вершины; Enter завершает; щёлкните первую вершину, чтобы замкнуть; Backspace удаляет последнюю")
+  ("Arc: click the center" "Дуга: щёлкните центр")
+  ("Arc: click where the arc starts (Esc cancels)" "Дуга: щёлкните, где дуга начинается (Esc отменяет)")
+  ("Arc: click in the direction where it ends, counter-clockwise (Esc cancels)"
+   "Дуга: щёлкните в направлении конца, против часовой стрелки (Esc отменяет)")
+  ("Ellipse: click the center" "Эллипс: щёлкните центр")
+  ("Ellipse: click the end of the first axis (Esc cancels)" "Эллипс: щёлкните конец первой оси (Esc отменяет)")
+  ("Ellipse: click to set the other half-axis (Esc cancels)"
+   "Эллипс: щёлкните, чтобы задать вторую полуось (Esc отменяет)")
+  ("Polygon, ~d sides (Up and Down change it): click the center"
+   "Многоугольник, сторон: ~d (Вверх и Вниз меняют): щёлкните центр")
+  ("Polygon, ~d sides: click a vertex (Esc cancels)" "Многоугольник, сторон: ~d: щёлкните вершину (Esc отменяет)")
+  ("Text: click where the text starts, or drag to set its angle"
+   "Текст: щёлкните, где текст начинается, или протяните, чтобы задать угол")
+  ("Text to place at the clicked point:" "Текст для выбранной точки:")
+  ("Dimension: click the first point" "Размер: щёлкните первую точку")
+  ("Dimension: click the second point (Esc cancels)" "Размер: щёлкните вторую точку (Esc отменяет)")
+  ("Dimension: click to place the dimension line (Esc cancels)"
+   "Размер: щёлкните, чтобы расположить размерную линию (Esc отменяет)")
+  ("That vertex is already placed." "Эта вершина уже поставлена.")
+  ("A polyline needs at least two vertices." "Полилинии нужно не менее двух вершин.")
+  ("The two points must be apart." "Две точки не должны совпадать.")
+  ("Moved ~d.~a" "Перемещено: ~d.~a")
+
+  ;; Status bar
+  ("Grid" "Сетка")
+  ("Snap" "Шаг")
+  ("OSnap" "Привязка")
+  ("Fit" "Вписать")
+  ("Unit: ~a" "Единица: ~a")
+  ("Show the grid" "Показать сетку")
+  ("Snap to the grid" "Привязка к сетке")
+  ("Snap to endpoints and centers" "Привязка к концам и центрам")
+  ("Change the display unit" "Сменить единицу отображения")
+  ("Zoom to fit everything" "Масштаб: показать всё")
+  ("X ~a  Y ~a ~a | ~a~@[ | snap: ~a~]" "X ~a  Y ~a ~a | ~a~@[ | привязка: ~a~]")
+  ("endpoint" "конец")
+  ("center" "центр")
+  ("grid" "сетка")
+
+  ;; Layers
+  ("Layers" "Слои")
+  ("Layer" "Слой")
+  ("Show or hide the layer" "Показать или скрыть слой")
+  ("Lock or unlock the layer" "Заблокировать или разблокировать слой")
+  ("Create a layer" "Создать слой")
+  ("New layer" "Новый слой")
+  ("Layer name:" "Имя слоя:")
+  ("Rename" "Имя")
+  ("Rename layer" "Переименовать слой")
+  ("New name:" "Новое имя:")
+  ("Rename the current layer" "Переименовать текущий слой")
+  ("Delete" "Удалить")
+  ("Delete the current layer if it is empty" "Удалить текущий слой, если он пуст")
+  ("Color" "Цвет")
+  ("Change the color of the current layer" "Сменить цвет текущего слоя")
+  ("Click to make this the current layer" "Щёлкните, чтобы сделать слой текущим")
+  ("Layer renamed." "Слой переименован.")
+  ("Layer ~s created and selected." "Слой ~s создан и выбран.")
+  ("Layer ~s deleted; undo history cleared." "Слой ~s удалён; история отмены очищена.")
+  ("layer ~s is hidden; show it or choose another layer"
+   "слой ~s скрыт; покажите его или выберите другой слой")
+  ("layer ~s is locked; unlock it or choose another layer"
+   "слой ~s заблокирован; разблокируйте его или выберите другой слой")
+  ("layer ~s still holds ~d ~:*~[entities~;entity~:;entities~]; move or delete them first"
+   "в слое ~s ещё есть объекты (~d~:*~[~;~:;~]); сначала переместите или удалите их")
+  ("a layer named ~s already exists" "слой с именем ~s уже есть")
+  ("the default layer cannot be deleted" "слой по умолчанию удалить нельзя")
+  ("the layer name cannot be empty" "имя слоя не может быть пустым")
+  ("the layer name is longer than ~d characters" "имя слоя длиннее ~d символов")
+  ("there is no layer with id ~d" "нет слоя с номером ~d")
+  ("layer id ~d is used twice" "номер слоя ~d используется дважды")
+  ("Layer error: ~a" "Ошибка слоя: ~a")
+
+  ;; Properties
+  ("Properties" "Свойства")
+  ("Drawing" "Чертёж")
+  ("Selection" "Выбор")
+  ("Entity" "Объект")
+  ("~a #~d" "~a №~d")
+  ("~d entities selected" "Выбрано объектов: ~d")
+  ("~d ~:*~[entities~;entity~:;entities~], ~d ~:*~[layers~;layer~:;layers~]"
+   "Объектов: ~d~:*~[~;~:;~], слоёв: ~d~:*~[~;~:;~]")
+  ("Grid spacing" "Шаг сетки")
+  ("Text height" "Высота текста")
+  ("Select an entity to edit it." "Выберите объект, чтобы изменить его.")
+  ("(several)" "(несколько)")
+  ("Click to move the selection to the next layer" "Щёлкните, чтобы переместить выбранное на следующий слой")
+  ("Click to toggle" "Щёлкните, чтобы переключить")
+  ("Click to change the unit" "Щёлкните, чтобы сменить единицу")
+  ("Click to edit; Enter commits, Esc cancels" "Щёлкните для правки; Enter подтверждает, Esc отменяет")
+  ("Yes" "Да")
+  ("No" "Нет")
+  ("Center X" "Центр X")
+  ("Center Y" "Центр Y")
+  ("Radius" "Радиус")
+  ("Diameter" "Диаметр")
+  ("Circumference" "Длина окружности")
+  ("Area" "Площадь")
+  ("Perimeter" "Периметр")
+  ("Left" "Слева")
+  ("Bottom" "Снизу")
+  ("Width" "Ширина")
+  ("Height" "Высота")
+  ("Start angle" "Начальный угол")
+  ("End angle" "Конечный угол")
+  ("Sweep" "Раствор")
+  ("Radius X" "Радиус X")
+  ("Radius Y" "Радиус Y")
+  ("Rotation" "Поворот")
+  ("Sides" "Стороны")
+  ("Side length" "Длина стороны")
+  ("Start X" "Начало X")
+  ("Start Y" "Начало Y")
+  ("End X" "Конец X")
+  ("End Y" "Конец Y")
+  ("Length" "Длина")
+  ("Angle" "Угол")
+  ("Closed" "Замкнута")
+  ("Vertices" "Вершины")
+  ("Vertex ~d X" "Вершина ~d X")
+  ("Vertex ~d Y" "Вершина ~d Y")
+  ("X" "X")
+  ("Y" "Y")
+  ("Point 1 X" "Точка 1 X")
+  ("Point 1 Y" "Точка 1 Y")
+  ("Point 2 X" "Точка 2 X")
+  ("Point 2 Y" "Точка 2 Y")
+  ("Offset" "Смещение")
+  ("Unit" "Единица")
+  ("Decimals" "Знаков после запятой")
+  ("Measured length" "Измеренная длина")
+
+  ;; Operations
+  ("Nothing is selected." "Ничего не выбрано.")
+  ("The selected entities are on locked layers." "Выбранные объекты находятся на заблокированных слоях.")
+  ("Deleted ~d ~:*~[entities~;entity~:;entities~].~a"
+   "Удалено объектов: ~d~:*~[~;~:;~].~a")
+  (" (~d on locked layers were left unchanged)" " (на заблокированных слоях не тронуто: ~d)")
+  ("Undone." "Отменено.")
+  ("Nothing to undo." "Нечего отменять.")
+  ("Redone." "Повторено.")
+  ("Nothing to redo." "Нечего повторять.")
+  ("~d selected." "Выбрано: ~d.")
+  ("Moved ~d to layer ~s.~a" "Перемещено объектов: ~d, на слой ~s.~a")
+  ("Property changed." "Свойство изменено.")
+  ("Copied ~d ~:*~[entities~;entity~:;entities~]."
+   "Скопировано объектов: ~d~:*~[~;~:;~].")
+  ("Cut ~d ~:*~[entities~;entity~:;entities~]."
+   "Вырезано объектов: ~d~:*~[~;~:;~].")
+  ("Pasted ~d ~:*~[entities~;entity~:;entities~]."
+   "Вставлено объектов: ~d~:*~[~;~:;~].")
+  ("Nothing to paste: the clipboard has no drawing entities."
+   "Нечего вставлять: в буфере обмена нет объектов чертежа.")
+  ("Lengths are now shown in ~a." "Длины теперь показаны в единицах: ~a.")
+  ("expected a whole number" "ожидалось целое число")
+  ("unknown unit; use mm, cm or m" "неизвестная единица; используйте mm, cm или m")
+  ("unknown unit ~s; use mm, cm or m" "неизвестная единица ~s; используйте mm, cm или m")
+  ("not a number; enter digits with an optional sign and decimal point"
+   "это не число; введите цифры, при желании со знаком и десятичной точкой")
+  ("New drawing." "Новый чертёж.")
+  ("Unsaved changes" "Несохранённые изменения")
+  ("The drawing has changes that are not saved." "В чертеже есть несохранённые изменения.")
+  ("Discard" "Не сохранять")
+  ("Cancel" "Отмена")
+  ("OK" "OK")
+  ("Opened ~a: ~d ~:*~[entities~;entity~:;entities~] (~a)."
+   "Открыт файл ~a: объектов ~d~:*~[~;~:;~] (~a).")
+  ("Saved ~a (~a)." "Сохранён файл ~a (~a).")
+
+  ;; Errors
+  ("Invalid ~a: ~a" "Недопустимый объект (~a): ~a")
+  ("Invalid input ~s: ~a" "Недопустимый ввод ~s: ~a")
+  ("Internal error while ~a: ~a. ~a" "Внутренняя ошибка (~a): ~a. ~a")
+  ("handling input" "обработка ввода")
+  ("drawing the window" "рисование окна")
+  ("Save your work and restart if things look wrong; the log has the details."
+   "Сохраните работу и перезапустите программу, если что-то выглядит неправильно; подробности в журнале.")
+  ("Drawing file ~a: ~a" "Файл чертежа ~a: ~a")
+  ("Drawing file ~a, line ~d, column ~d: ~a" "Файл чертежа ~a, строка ~d, столбец ~d: ~a")
+  ("entity ~d does not exist" "объекта ~d не существует")
+  ("entity ~d is on a locked layer" "объект ~d находится на заблокированном слое")
+  ("the grid spacing must be between ~f and ~f mm" "шаг сетки должен быть от ~f до ~f мм")
+  ("the text height must be a positive length" "высота текста должна быть положительной длиной")
+  ("the id must be a positive integer, got ~s" "номер должен быть положительным целым числом, получено ~s")
+  ("the layer id must be a non-negative integer, got ~s"
+   "номер слоя должен быть неотрицательным целым числом, получено ~s")
+  ("~a must be a number between -~f and ~f mm, got ~a" "~a должно быть числом от -~f до ~f мм, получено ~a")
+  ("~a must be a number above ~f mm, got ~a" "~a должно быть числом больше ~f мм, получено ~a")
+  ("~a must be an angle in radians, got ~a" "~a должно быть углом в радианах, получено ~a")
+  ("its start and end angles must differ" "начальный и конечный углы должны различаться")
+  ("the number of sides must be a whole number from 3 to ~d, got ~a"
+   "число сторон должно быть целым от 3 до ~d, получено ~a")
+  ("it extends beyond the drawing limit of ~f mm" "выходит за предел чертежа в ~f мм")
+  ("its length is ~f mm; a line needs a length above ~f mm"
+   "его длина ~f мм; длина отрезка должна быть больше ~f мм")
+  ("its definition points are ~f mm apart; they must be more than ~f mm apart"
+   "его определяющие точки находятся на расстоянии ~f мм; оно должно быть больше ~f мм")
+  ("its unit must be one of ~{~(~a~)~^, ~}, got ~s" "единица должна быть одной из: ~{~(~a~)~^, ~}, получено ~s")
+  ("its precision must be between 0 and ~d decimals, got ~s"
+   "точность должна быть от 0 до ~d знаков после запятой, получено ~s")
+  ("its coordinates must be a sequence, got ~s" "координаты должны быть последовательностью, получено ~s")
+  ("its coordinates must come in x/y pairs" "координаты должны идти парами x/y")
+  ("coordinate ~d" "координата ~d")
+  ("it has ~d vertices; a ~:[open~;closed~] polyline needs at least ~d"
+   "вершин: ~d; ~:[открытой~;замкнутой~] полилинии нужно не менее ~d")
+  ("it has ~d vertices; the limit is ~d" "вершин: ~d; предел — ~d")
+  ("vertices ~d and ~d coincide; consecutive vertices must be at least ~f mm apart"
+   "вершины ~d и ~d совпадают; соседние вершины должны отстоять не менее чем на ~f мм")
+  ("the text must be 1 to ~d characters without control characters"
+   "текст должен содержать от 1 до ~d символов, без управляющих символов")
+
+  ;; Files
+  ("is a folder; type a file name" "это папка; введите имя файла")
+  ("is a folder, not a file" "это папка, а не файл")
+  ("cannot be saved: the folder ~a does not exist" "нельзя сохранить: папки ~a не существует")
+  ("cannot be saved: the folder is not writable (permission denied)"
+   "нельзя сохранить: в папку нельзя записывать (доступ запрещён)")
+  ("cannot be saved: the file is read-only" "нельзя сохранить: файл только для чтения")
+  ("cannot be written: ~a" "нельзя записать: ~a")
+  ("does not exist" "не существует")
+  ("is a folder, not a drawing file" "это папка, а не файл чертежа")
+  ("is not a regular file" "это не обычный файл")
+  ("cannot be opened: permission denied" "нельзя открыть: доступ запрещён")
+  ("is larger than the ~d MiB limit" "больше предела в ~d МиБ")
+  ("cannot be opened: ~a" "нельзя открыть: ~a")
+  ("is not a text file that Borba CAD can read (it must be UTF-8 text): ~a"
+   "это не текстовый файл, который может прочитать Borba CAD (нужен текст UTF-8): ~a")
+  ("type the name of a file" "введите имя файла")
+
+  ;; File dialog
+  ("Save drawing as" "Сохранить чертёж как")
+  ("Open" "Открыть")
+  ("Close" "Закрыть")
+  ("PLACES" "МЕСТА")
+  ("RECENT" "НЕДАВНИЕ")
+  ("Home" "Домашняя папка")
+  ("Examples" "Примеры")
+  ("Type a path" "Ввести путь")
+  ("Up one folder" "На уровень вверх")
+  ("Search" "Поиск")
+  ("Type to find a file or a folder" "Введите, чтобы найти файл или папку")
+  ("Nothing here matches ~s." "Здесь нет ничего, что соответствует ~s.")
+  ("This folder is empty." "Эта папка пуста.")
+  ("No drawings in this folder." "В этой папке нет чертежей.")
+  ("Name" "Имя")
+  ("Size" "Размер")
+  ("Modified" "Изменён")
+  ("File name" "Имя файла")
+  ("All files" "Все файлы")
+  ("List every file, not only drawings" "Показывать все файлы, а не только чертежи")
+  ("New folder" "Новая папка")
+  ("Create a folder here" "Создать папку здесь")
+  ("Name of the new folder:" "Имя новой папки:")
+  ("Type a name for the folder." "Введите имя папки.")
+  ("Type a name for the file." "Введите имя файла.")
+  ("A folder name cannot contain a slash." "Имя папки не может содержать косую черту.")
+  ("~a already exists." "~a уже существует.")
+  ("~a does not exist." "~a не существует.")
+  ("Created the folder ~a." "Создана папка ~a.")
+  ("Replace file?" "Заменить файл?")
+  ("~a already exists. Replace it?" "~a уже существует. Заменить?")
+  ("Replace" "Заменить")
+  ("Choose a drawing from the list." "Выберите чертёж из списка.")
+  ("That did not work." "Не получилось.")
+
+  ;; DXF
+  ("More" "Ещё")
+  ("Import DXF..." "Импорт DXF...")
+  ("Export DXF..." "Экспорт DXF...")
+  ("Import a DXF file" "Импорт файла DXF")
+  ("Export as a DXF file" "Экспорт в файл DXF")
+  ("Import" "Импорт")
+  ("Export" "Экспорт")
+  ("Units of the DXF file" "Единицы файла DXF")
+  ("The file does not say what its numbers are. In what unit was it drawn?"
+   "Файл не сообщает, в каких единицах его числа. В каких единицах он начерчен?")
+  ("Millimeters" "Миллиметры")
+  ("Centimeters" "Сантиметры")
+  ("Meters" "Метры")
+  ("Imported ~a: ~a" "Импортирован ~a: ~a")
+  ("Imported ~a" "Импортирован ~a")
+  ("~d ~:*~[entities~;entity~:;entities~] imported."
+   "Импортировано объектов: ~d~:*~[~;~:;~].")
+  ("~d ~:*~[entities~;entity~:;entities~] exported."
+   "Экспортировано объектов: ~d~:*~[~;~:;~].")
+  ("Left out: ~{~a~^, ~}." "Пропущено: ~{~a~^, ~}.")
+  ("The import stopped after ~d shapes: the drawing is too large."
+   "Импорт остановлен после ~d фигур: чертёж слишком велик.")
+  ("Arc segments of polylines were replaced by short straight segments."
+   "Дуговые сегменты полилиний заменены короткими прямыми отрезками.")
+  ("Multiline texts were imported as one text for each line."
+   "Многострочные тексты импортированы отдельным текстом для каждой строки.")
+  ("Elliptical arcs were imported as polylines." "Эллиптические дуги импортированы как полилинии.")
+  ("Blocks inside blocks were followed only so far." "Блоки внутри блоков прослежены лишь до определённой глубины.")
+  ("Circles and arcs in stretched blocks were replaced by polylines."
+   "Окружности и дуги в растянутых блоках заменены полилиниями.")
+  ("Dimensions were imported as their lines, arrowheads and text."
+   "Размеры импортированы как их линии, стрелки и текст.")
+  ("~d ~:*~[entities~;entity~:;entities~] in paper space layouts were left out."
+   "Пропущено объектов в листах (пространство листа): ~d~:*~[~;~:;~].")
+  ("Filled shapes were imported as their outlines." "Заливки импортированы как их контуры.")
+  ("The drawing was far from the origin, so it was moved by ~a mm along x and ~a mm along y."
+   "Чертёж был далеко от начала координат, поэтому его сдвинули на ~a мм по x и на ~a мм по y.")
+  ("Dimensions were written as their lines, arrowheads and text."
+   "Размеры записаны как их линии, стрелки и текст.")
+  ("Ellipses were written as polylines." "Эллипсы записаны как полилинии.")
+  ("Regular polygons were written as polylines." "Правильные многоугольники записаны как полилинии.")
+  ("Layer colors were approximated by the 256 colors of AutoCAD."
+   "Цвета слоёв приближены к 256 цветам AutoCAD.")
+  ("line ~d: ~a" "строка ~d: ~a")
+  ("is a binary DXF file, which is not supported; save it as an ASCII DXF"
+   "это двоичный файл DXF, он не поддерживается; сохраните его как текстовый DXF (ASCII)")
+  ("is not a DXF file: it has no header, tables, blocks or entities"
+   "это не файл DXF: в нём нет ни заголовка, ни таблиц, ни блоков, ни объектов")
+  ("expected a group code, a whole number, found ~s" "ожидался код группы, целое число, найдено ~s")
+  ("the file ends after a group code, without its value" "файл заканчивается после кода группы, без его значения")
+  ("the file has more than ~d groups" "в файле больше ~d групп")
+  ("a SECTION must be followed by its name" "после SECTION должно идти её имя")
+  ("The expression is not finished: a parenthesis is open."
+   "Выражение не закончено: открыта скобка.")
+  ("It took more than ~d seconds, so it was stopped and nothing was changed."
+   "Это заняло больше ~d с, поэтому выполнение остановлено и ничего не изменено.")
+  ("It ran out of memory, so it was stopped and nothing was changed."
+   "Не хватило памяти, поэтому выполнение остановлено и ничего не изменено.")
+  ("Type a command and press Enter, for instance (line 0 0 1000 0). (help) lists them."
+   "Введите команду и нажмите Enter, например (line 0 0 1000 0). (help) показывает команды.")
+  ("~d ~:*~[changes~;change~:;changes~] made; Ctrl+Z takes them all back."
+   "Изменений: ~d~:*~[~;~:;~]; Ctrl+Z отменяет их все сразу.")
+  ("The unfinished command was dropped." "Незаконченная команда отброшена.")
+  ("Console" "Консоль")
+  ("Lengths are in millimeters and angles in degrees; Up and Down recall commands."
+   "Длины в миллиметрах, углы в градусах; стрелки вверх и вниз возвращают прежние команды.")
+  ("Close the console" "Закрыть консоль")
+  ("Type a command and press Enter" "Введите команду и нажмите Enter")
+  ("Run a script" "Запуск скрипта")
+  ("Export the drawing as a script" "Экспорт чертежа в скрипт")
+  ("Choose" "Выбрать")
+  ("Run script..." "Запустить скрипт...")
+  ("Export as script..." "Экспорт в скрипт...")
+  ("Script ~a" "Скрипт ~a")
+  ("Done: ~d ~:*~[expressions~;expression~:;expressions~] ran."
+   "Готово, выражений выполнено: ~d~:*~[~;~:;~].")
+  ("The script stopped, and the entities are as they were."
+   "Скрипт остановился, объекты остались такими, как были.")
+  ("Script ~a ran." "Скрипт ~a выполнен.")
+  ("is larger than the ~d MiB limit for a script" "больше предела в ~d МиБ для скрипта")
+  ("is not a script: it must be Lisp expressions with their parentheses closed"
+   "это не скрипт: в нём должны быть выражения Lisp с закрытыми скобками")
+  ("is empty: it has no expression to run" "пуст: в нём нет выражений для выполнения")
+  ("Run ~a?" "Запустить ~a?")
+  ("Splines were imported as polylines of short straight segments."
+   "Сплайны импортированы как полилинии из коротких прямых сегментов.")
+  ("Leaders were imported as lines, without their arrowheads."
+   "Выноски импортированы как линии, без стрелок.")
+  ("3D faces were imported flat, as their outlines." "3D-грани импортированы плоскими, как их контуры.")
+  ("It can draw on a new layer of this drawing, or in a new drawing. Run only files you trust."
+   "Он может рисовать на новом слое этого чертежа или в новом чертеже. Запускайте только файлы, которым доверяете.")
+  ("~a did not finish" "~a не завершился")
+  ("Script exported" "Скрипт экспортирован")
+  ("DXF exported" "DXF экспортирован")
+  ("Could not export" "Не удалось экспортировать")
+  ("~a was saved (~a)." "Файл ~a сохранён (~a).")
+  ("Open a drawing..." "Открыть чертёж...")
+  ("Run a script..." "Запустить скрипт...")
+  ("Quit" "Выход")
+  ("What would you like to do?" "Что вы хотите сделать?")
+  ("Recent drawings" "Недавние чертежи")
+  ("Drawings you open or save will be listed here." "Чертежи, которые вы откроете или сохраните, появятся здесь.")
+  ("Export as JPEG..." "Экспорт в JPEG...")
+  ("Export as a JPEG image" "Экспорт в изображение JPEG")
+  ("Image exported" "Изображение экспортировано")
+  ("~a was saved (~a). It shows what is on the canvas, ~d x ~d pixels."
+   "Файл ~a сохранён (~a). На нём то, что видно в области чертежа, ~d x ~d пикселей.")
+  ("cannot be made: this window cannot make pictures" "нельзя создать: это окно не умеет делать изображения")
+  ("cannot be made: there is nothing on the canvas to take a picture of"
+   "нельзя создать: в области чертежа нечего снимать")))

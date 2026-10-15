@@ -60,7 +60,7 @@ All compiled output goes to `build/fasl/`, logs to `var/log/`, benchmark reports
 | `--state-dir DIR` | `BORBA_CAD_STATE_DIR` | Where the program remembers things between runs: the recent files (default `var/state` in the project) |
 | `--drawings-dir DIR` | `BORBA_CAD_DRAWINGS_DIR` | Folder where the file dialogs start when no drawing is open (default: the user's documents folder) |
 | `--font FILE` | `BORBA_CAD_FONT` | Monospace TrueType font |
-| `--language TAG` | `BORBA_CAD_LANGUAGE` | Interface language: `en-US` (the default, always) or `pt-BR`. The language chosen with the globe button in the title bar is kept in `settings.txt` in the state directory and used next time unless an option or the variable says otherwise |
+| `--language TAG` | `BORBA_CAD_LANGUAGE` | Interface language: `en-US` (the default, always), `pt-BR` or `ru-RU`. The language chosen with the globe button in the title bar is kept in `settings.txt` in the state directory and used next time unless an option or the variable says otherwise |
 | `--width N`, `--height N` | | Initial window size in logical pixels (1440 × 900) |
 | `--demo`, `--exit-after-demo`, `--screenshot FILE` | | Run the scripted demonstration, close when done, save the last frame as a PNG |
 | | `BORBA_CAD_ROOT` | Project root: where `var/log` and `examples` are looked for; defaults to the directory of `borba-cad.asd` |
@@ -234,10 +234,17 @@ must keep in order and kind) or `i18n:mark` (a text in a table, translated with 
 for you. After adding one, run `make lint`: it lists every text with no entry in
 `src/i18n/pt-br.catalog` and every entry nothing uses; add the entry, `(ENGLISH TRANSLATION)`, in
 UTF-8. `make test SUITE=i18n` checks that each translation asks for the same values as its English
-text, and that no English text reaches the screen in Portuguese through any of the windows it
+text, that every language translates the same texts, and that no English text reaches the screen in any
+language through any of the windows it
 walks. Texts that are not for the user (log events, option names, the structure of a damaged
 `.bcad`) are not translated. A new language is a catalog file, an entry in `*catalog-files*`
-(`src/i18n/i18n.lisp`) and its name in `*translated-languages*` in `scripts/lint.lisp`.
+(`src/i18n/i18n.lisp`) and its name in `*translated-languages*` in `scripts/lint.lisp` and in
+`*translated-languages-under-test*` in `tests/i18n-tests.lisp`; a catalog with every key of the Portuguese one
+is what the lint and the tests ask for. A language whose nouns have more than the two forms that `~[` tells
+apart (0 and 1 against the rest) cannot write the plural after the number: Russian, which has three, names
+what it counts before the number ("Objects: 3"), which is right for every number, and keeps the directives
+of the plural (`~:*~[~;~:;~]`, empty) so that the translation asks for the same values as the English text.
+The fonts the program looks for (Noto Sans, DejaVu, Liberation) all have Cyrillic.
 
 ### Adding a tool
 

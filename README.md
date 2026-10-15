@@ -9,7 +9,7 @@ versioned, human-readable file format, and a Lisp console that draws and edits w
 Everything it does is measured and logged.
 
 **Status:** version 1.1.0 (see the [changelog](CHANGELOG.md)): the MVP of 1.0.0 plus a new
-interface, a file dialog, a Linux double-click distribution, English and Brazilian Portuguese,
+interface, a file dialog, a Linux double-click distribution, English, Brazilian Portuguese and Russian,
 copy and paste, crossing selection, grips, arcs, ellipses, polygons, rotated text, DXF import and
 export, and the console with its scripts. Strict build with zero warnings, lint, 134,000+ headless
 checks and 200+ window checks pass; the benchmark baseline and the experiment report are those of
@@ -79,7 +79,7 @@ with the empty drawing. Starting with a file (`borba-cad plan.bcad`) skips it.
 The Select tool and the Draw button, which opens the list of drawing tools, are in the palette on the left; every tool also has a key, shown in the list.
 The title bar holds the file and history buttons, the document name (a dot marks unsaved changes),
 the More menu (DXF, a JPEG of the canvas, the console and the scripts), the language menu (English (US), the default, or
-Portuguese (Brazil), kept for the next run) and the performance overlay; the status bar holds the hints, the pointer position and the chips
+Portuguese (Brazil) or Russian, kept for the next run) and the performance overlay; the status bar holds the hints, the pointer position and the chips
 that switch the grid, grid snap, object snap, display unit and zoom to fit. Keys: `L` line, `R` rectangle, `C` circle, `P` polyline
 (Enter finishes, clicking the first vertex closes), `A` arc (center, start, direction of the end),
 `E` ellipse (center, end of an axis, the other half-axis), `N` regular polygon (center, a vertex; Up and
@@ -228,7 +228,7 @@ Tried on Linux x86_64 with SBCL only (the Windows folder and CI workflow are wri
 run); single-line text, axis-aligned rectangles and aligned linear dimensions only; DXF import leaves out
 hatches, points, images and paper space, and export writes R12 (an ellipse, a polygon and a
 dimension leave as polylines, lines and text), and the import was tried on files made for the tests;
-Brazilian Portuguese keeps the decimal point in numbers and leaves in English the messages about the
+Brazilian Portuguese and Russian keep the decimal point in numbers and leave in English the messages about the
 structure of a damaged file, the errors the console prints (Lisp's own are English) and the text the
 `help` command prints; a command or a script that fails halfway leaves the layers it made; a command
 runs on the window's thread, so the window waits for it (up to its limit); no printing; the only picture format is JPEG. No `LICENSE`

@@ -6,23 +6,35 @@
 
 (in-suite i18n)
 
-(defun catalog-file-form ()
-  "Return the form read from the Portuguese catalog file."
-  (with-open-file (stream (asdf:system-relative-pathname "borba-cad" "src/i18n/pt-br.catalog")
+(defparameter *translated-languages-under-test* '(:pt-br :ru-ru)
+  "The languages besides English whose catalogs the tests walk through.")
+
+(defun catalog-file-form (&optional (language :pt-br))
+  "Return the form read from the catalog file of LANGUAGE.
+
+LANGUAGE: a language keyword."
+  (with-open-file (stream (asdf:system-relative-pathname
+                           "borba-cad"
+                           (format nil "src/i18n/~(~a~).catalog" language))
                           :external-format :utf-8)
     (let ((*read-eval* nil)
           (*package* (find-package :keyword)))
       (read stream))))
 
-(defun portuguese-entries ()
-  "Return the (english translation) lists of the Portuguese catalog."
-  (i18n:catalog-translations :pt-br))
+(defun portuguese-entries (&optional (language :pt-br))
+  "Return the (english translation) lists of the catalog of LANGUAGE, the Portuguese one unless another is asked.
 
-(defun untranslated-texts (strings)
-  "Return the members of STRINGS that are an English text the Portuguese catalog translates into
-something else, which is to say text that reached the screen without going through the catalog."
+LANGUAGE: a language keyword."
+  (i18n:catalog-translations language))
+
+(defun untranslated-texts (strings &optional (language :pt-br))
+  "Return the members of STRINGS that are an English text the catalog of LANGUAGE translates into
+something else, which is to say text that reached the screen without going through the catalog.
+
+STRINGS: the texts on the screen.
+LANGUAGE: a language keyword."
   (remove-if-not (lambda (string)
-                   (let ((entry (find string (portuguese-entries) :key #'first :test #'string=)))
+                   (let ((entry (find string (portuguese-entries language) :key #'first :test #'string=)))
                      (and entry (string/= (first entry) (second entry)))))
                  strings))
 
@@ -60,51 +72,81 @@ something else, which is to say text that reached the screen without going throu
 ;;; Names of languages
 
 (test the-program-knows-which-languages-it-speaks-and-names-each-in-its-own
-  (is (equal '(:en-us :pt-br) (i18n:supported-languages)))
+  (is (equal '(:en-us :pt-br :ru-ru) (i18n:supported-languages)))
   (is (string= "en-US" (i18n:language-tag :en-us)))
   (is (string= "pt-BR" (i18n:language-tag :pt-br)))
+  (is (string= "ru-RU" (i18n:language-tag :ru-ru)))
   (is (string= "English (US)" (i18n:language-name :en-us)))
-  (is (string= (format nil "Portugu~as (Brasil)" (code-char 234)) (i18n:language-name :pt-br))))
+  (is (string= (format nil "Portugu~as (Brasil)" (code-char 234)) (i18n:language-name :pt-br)))
+  (let ((name (i18n:language-name :ru-ru)))
+    (is (char= (code-char #x420) (char name 0)) "it begins with a capital Er, of Russkiy")
+    (is (search "(" name))
+    (is (every (lambda (character) (or (char= #\Space character) (find character "()")
+                                       (<= #x400 (char-code character) #x4FF)))
+               name)
+        "and is written in Cyrillic")))
 
 (test language-tags-are-understood-in-the-usual-spellings
   (dolist (text '("pt-BR" "pt-br" "pt_BR" "PT_br" " pt-br " "pt"))
     (is (eq :pt-br (i18n:parse-language text)) "~s" text))
   (dolist (text '("en-US" "en-us" "en_US" "en"))
     (is (eq :en-us (i18n:parse-language text)) "~s" text))
-  (dolist (text '("" "fr" "pt-PT" "klingon"))
+  (dolist (text '("ru-RU" "ru-ru" "ru_RU" "RU" "ru"))
+    (is (eq :ru-ru (i18n:parse-language text)) "~s" text))
+  (dolist (text '("" "fr" "pt-PT" "ru-UA" "klingon"))
     (is (null (i18n:parse-language text)) "~s" text)))
 
 ;;; The catalog
 
 (test the-catalog-file-names-its-language-and-has-no-duplicate-keys
-  (let ((form (catalog-file-form)))
-    (is (eq :pt-br (getf form :language)))
-    (is (plusp (length (getf form :entries))))
-    (is (= (length (getf form :entries)) (length (portuguese-entries))) "no English text is translated twice")))
+  (dolist (language *translated-languages-under-test*)
+    (let ((form (catalog-file-form language)))
+      (is (eq language (getf form :language)))
+      (is (plusp (length (getf form :entries))))
+      (is (= (length (getf form :entries)) (length (portuguese-entries language)))
+          "no English text is translated twice in ~a" language))))
+
+(test every-language-translates-the-same-texts
+  (let ((reference (mapcar #'first (portuguese-entries :pt-br))))
+    (dolist (language (rest *translated-languages-under-test*))
+      (is (null (set-difference reference (mapcar #'first (portuguese-entries language)) :test #'string=))
+          "~a lacks texts the Portuguese catalog has" language)
+      (is (null (set-difference (mapcar #'first (portuguese-entries language)) reference :test #'string=))
+          "~a has texts the Portuguese catalog has not" language))))
 
 (test every-translation-asks-for-the-same-values-as-its-english-text
-  (dolist (entry (portuguese-entries))
-    (destructuring-bind (english translation) entry
-      (is (equal (i18n:format-directives english) (i18n:format-directives translation))
-          "~s: ~s asks for other values" english translation)
-      (is (plusp (length translation)) "~s has an empty translation" english)
-      (is (every (lambda (character) (or (graphic-char-p character) (char= #\Space character))) translation)
-          "~s has a control character" english))))
+  (dolist (language *translated-languages-under-test*)
+    (dolist (entry (portuguese-entries language))
+      (destructuring-bind (english translation) entry
+        (is (equal (i18n:format-directives english) (i18n:format-directives translation))
+            "~a: ~s: ~s asks for other values" language english translation)
+        (is (plusp (length translation)) "~s has an empty translation" english)
+        (is (every (lambda (character) (or (graphic-char-p character) (char= #\Space character))) translation)
+            "~s has a control character" english)))))
 
 (test every-translation-fills-in-with-the-values-its-english-text-takes
-  (dolist (entry (portuguese-entries))
-    (let* ((english (first entry))
-           (arguments (loop for directive in (i18n:format-directives english)
-                            when (member (char directive (1- (length directive))) '(#\a #\s #\d #\f #\[ #\{ #\*))
-                              collect (case (char directive (1- (length directive)))
-                                        (#\d 1)
-                                        (#\f 1.5d0)
-                                        (#\[ 1)
-                                        (#\{ '(:mm))
-                                        (t "text")))))
-      (is (stringp (handler-case (i18n:with-language (:pt-br) (apply #'i18n:trf english arguments))
-                     (error (condition) (format nil "~a" condition))))
-          "~s" english))))
+  (dolist (language *translated-languages-under-test*)
+    (dolist (entry (portuguese-entries language))
+      (let* ((english (first entry))
+             (arguments (loop for directive in (i18n:format-directives english)
+                              when (member (char directive (1- (length directive))) '(#\a #\s #\d #\f #\[ #\{ #\*))
+                                collect (case (char directive (1- (length directive)))
+                                          (#\d 1)
+                                          (#\f 1.5d0)
+                                          (#\[ 1)
+                                          (#\{ '(:mm))
+                                          (t "text")))))
+        (is (stringp (handler-case (i18n:with-language (language) (apply #'i18n:trf english arguments))
+                       (error (condition) (format nil "~a" condition))))
+            "~a: ~s" language english)))))
+
+(test russian-counts-name-what-they-count-before-the-number-so-every-number-reads-right
+  (i18n:with-language (:ru-ru)
+    (dolist (count '(0 1 2 4 5 11 21 22 100))
+      (let ((text (i18n:trf "Deleted ~d ~:*~[entities~;entity~:;entities~].~a" count "")))
+        (is (char= (code-char #x423) (char text 0)) "it begins with the verb, in Cyrillic")
+        (is (search (format nil ": ~d." count) text) "~d" count)
+        (is (null (search "entit" text)) "no English left")))))
 
 (test directives-are-read-with-their-parameters-and-modifiers
   (is (equal '("~a" "~d") (i18n:format-directives "x ~a y ~d")))
@@ -197,7 +239,7 @@ asked to speak it."
     (unwind-protect
          (progn
            (click-widget application :language)
-           (is (equal '((:menu-item :en-us) (:menu-item :pt-br)) (language-menu-rows application)))
+           (is (equal '((:menu-item :en-us) (:menu-item :pt-br) (:menu-item :ru-ru)) (language-menu-rows application)))
            (is (ui:widget-active (find-widget application '(:menu-item :en-us))) "the one in use is highlighted")
            (click-widget application '(:menu-item :pt-br))
            (is (eq :pt-br i18n:*language*))
@@ -206,7 +248,13 @@ asked to speak it."
            (click-widget application :language)
            (click-widget application '(:menu-item :en-us))
            (is (eq :en-us i18n:*language*))
-           (is (string= "Save" (ui:widget-hint (find-widget application :save)))))
+           (is (string= "Save" (ui:widget-hint (find-widget application :save))))
+           (click-widget application :language)
+           (click-widget application '(:menu-item :ru-ru))
+           (is (eq :ru-ru i18n:*language*))
+           (is (string/= "Save" (ui:widget-hint (find-widget application :save))))
+           (is (char= (code-char #x421) (char (ui:widget-hint (find-widget application :save)) 0))
+               "the hint of Save is Sokhranit, in Cyrillic"))
       (setf i18n:*language* :en-us))))
 
 (defun render-texts (application)
@@ -214,40 +262,58 @@ asked to speak it."
   (app:app-render application)
   (all-text application))
 
-(test no-english-text-reaches-the-screen-in-portuguese
-  (i18n:with-language (:pt-br)
-    (let* ((application (make-test-app :drawing (rng:generate-drawing :seed 5 :entity-count 40)))
-           (leftovers '()))
-      (flet ((check (label)
-               (let ((found (untranslated-texts (render-texts application))))
-                 (when found
-                   (push (list label found) leftovers)))))
-        (check "the main window")
-        (dolist (kind '(:line :rectangle :circle :polyline :text :dimension))
-          (let ((entity (find kind (entities-of application) :key #'dom:entity-kind)))
-            (when entity
-              (select-only application entity)
-              (check kind))))
-        (app:operation-select-all application)
-        (check "a selection")
-        (click-widget application :draw)
-        (check "the draw menu")
-        (press application :escape)
-        (click-widget application :language)
-        (check "the language menu")
-        (press application :escape)
-        (click-widget application :layer-rename)
-        (check "a prompt")
-        (app:close-prompt application)
-        (app:operation-open application)
-        (check "the open dialog")
-        (app:close-file-dialog application)
-        (app:operation-save-as application)
-        (check "the save dialog")
-        (app:close-file-dialog application)
-        (app:operation-new application)
-        (check "an empty drawing"))
-      (is (null leftovers) "English text on the screen in Portuguese: ~s" leftovers))))
+(test no-english-text-reaches-the-screen-in-another-language
+  (dolist (language *translated-languages-under-test*)
+    (i18n:with-language (language)
+      (let* ((application (make-test-app :drawing (rng:generate-drawing :seed 5 :entity-count 40)))
+             (leftovers '()))
+        (flet ((check (label)
+                 (let ((found (untranslated-texts (render-texts application) language)))
+                   (when found
+                     (push (list label found) leftovers)))))
+          (check "the main window")
+          (dolist (kind '(:line :rectangle :circle :polyline :text :dimension :arc :ellipse :polygon))
+            (let ((entity (find kind (entities-of application) :key #'dom:entity-kind)))
+              (when entity
+                (select-only application entity)
+                (check kind))))
+          (app:operation-select-all application)
+          (check "a selection")
+          (click-widget application :draw)
+          (check "the draw menu")
+          (press application :escape)
+          (click-widget application :language)
+          (check "the language menu")
+          (press application :escape)
+          (click-widget application :more)
+          (check "the more menu")
+          (press application :escape)
+          (click-widget application :layer-rename)
+          (check "a prompt")
+          (app:close-prompt application)
+          (app:operation-open application)
+          (check "the open dialog")
+          (app:close-file-dialog application)
+          (app:operation-save-as application)
+          (check "the save dialog")
+          (app:close-file-dialog application)
+          (app:operation-run-script application)
+          (check "the script dialog")
+          (app:close-file-dialog application)
+          (app:operation-export-image application)
+          (check "the picture dialog")
+          (app:close-file-dialog application)
+          (app:show-notice application "Could not export" "x")
+          (app:close-prompt application)
+          (press application :f2)
+          (check "the console")
+          (press application :f2)
+          (app:open-welcome application)
+          (check "the start screen")
+          (app:close-welcome application)
+          (app:operation-new application)
+          (check "an empty drawing"))
+        (is (null leftovers) "English text on the screen in ~a: ~s" language leftovers)))))
 
 (test the-messages-of-the-operations-come-out-in-portuguese
   (i18n:with-language (:pt-br)

@@ -86,7 +86,8 @@ BLOCK: 64 double-floats, row by row, already centered on zero.
 COEFFICIENTS: where the 64 coefficients go, row by row.
 SCRATCH: 64 double-floats to work in."
   (declare (type (simple-array double-float (64)) block coefficients scratch)
-           (optimize (speed 3) (safety 0)))
+           (optimize (speed 3) (safety 0))
+           (sb-ext:muffle-conditions sb-ext:compiler-note))
   (dotimes (row 8)
     (dotimes (frequency 8)
       (let ((sum 0d0))
@@ -115,7 +116,8 @@ HEIGHT: height in pixels.
 RGB: the pixels, row by row from the top, three bytes each."
   (declare (type fixnum width height)
            (type (simple-array (unsigned-byte 8) (*)) rgb)
-           (optimize (speed 3) (safety 0)))
+           (optimize (speed 3) (safety 0))
+           (sb-ext:muffle-conditions sb-ext:compiler-note))
   (let* ((count (* width height))
          (y (make-array count :element-type 'double-float))
          (cb (make-array count :element-type 'double-float))
@@ -144,7 +146,8 @@ QUANTIZATION: the table, 64 values row by row."
   (declare (type fixnum width height)
            (type (simple-array double-float (*)) plane)
            (type (simple-array fixnum (64)) quantization)
-           (optimize (speed 3) (safety 0)))
+           (optimize (speed 3) (safety 0))
+           (sb-ext:muffle-conditions sb-ext:compiler-note))
   (let* ((columns (ceiling width +block-size+))
          (rows (ceiling height +block-size+))
          (result (make-array (* columns rows)))

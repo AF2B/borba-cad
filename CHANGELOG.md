@@ -31,6 +31,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Russian (ru-RU).** The language menu lists Русский (Россия) beside English (US) and Português (Brasil);
+  `--language ru-RU` and `BORBA_CAD_LANGUAGE=ru-RU` choose it. The catalog has every text of the program, in
+  the terms Russian CAD programs use (чертёж, слой, отрезок, привязка, размер); the plurals, which in Russian
+  have three forms that a format directive cannot tell apart, are written as "what is counted: number" so
+  that every number reads right. The catalog was written by the assistant and has not been read by a native
+  speaker: expect to correct some of it. The lint and the tests ask of Russian what they ask of Portuguese,
+  including that no English text reaches the screen in any of the windows.
 - **Export as JPEG.** More > Export as JPEG... saves what the canvas shows, the rectangle where the user sees
   the grid and the drawing, as a `.jpg` file: at the view they have, at the sharpness of the display (a
   screen that doubles the pixels gives a picture of twice the size), and without the panels, the

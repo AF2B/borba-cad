@@ -45,7 +45,7 @@
   --log-stderr           also print log lines on standard error
   --log-sample EVENT=N   write only one in N entries of an event
   --font FILE            monospace TrueType font (default: Noto Sans Mono, DejaVu Sans Mono, ...)
-  --language TAG         interface language: en-US (default) or pt-BR; the choice made in the program is kept
+  --language TAG         interface language: en-US (default), pt-BR or ru-RU; the choice made in the program is kept
   --width N, --height N  initial window size in logical pixels
   --demo                 run the scripted demonstration drawing
   --exit-after-demo      close the window when the demonstration ends
