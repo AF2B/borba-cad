@@ -149,6 +149,23 @@ CHANGES: list of CHANGE records."
         (setf (cdr (nthcdr (1- limit) (history-undo-stack history))) nil)))
     t))
 
+(defun history-record (history
+                       changes)
+  "Record CHANGES, which have already been applied to the drawing, for undo, discarding the redo
+stack: what a command that made its changes one by one, to see them as it went, leaves as one
+step. An empty change set is ignored and returns NIL.
+
+HISTORY: the history to record into.
+CHANGES: list of CHANGE records, each entity appearing at most once, that take the drawing from
+how it was before the command to how it is now."
+  (when changes
+    (push changes (history-undo-stack history))
+    (setf (history-redo-stack history) nil)
+    (let ((limit (history-limit history)))
+      (when (> (length (history-undo-stack history)) limit)
+        (setf (cdr (nthcdr (1- limit) (history-undo-stack history))) nil)))
+    t))
+
 (defun history-undo (history
                      drawing)
   "Undo the most recent change set; return true, or NIL when there is nothing to undo.

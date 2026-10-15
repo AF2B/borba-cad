@@ -12,6 +12,7 @@
                     (#:view #:borba-cad/viewport)
                     (#:persist #:borba-cad/persistence)
                     (#:dxf #:borba-cad/dxf)
+                    (#:script #:borba-cad/script)
                     (#:obs #:borba-cad/observability)
                     (#:scene #:borba-cad/scene)
                     (#:ui #:borba-cad/ui)

@@ -28,6 +28,40 @@ BLUE: blue channel, 0 to 255."
             +default-layer-gray+
             +default-layer-gray+))
 
+(defparameter *layer-palette-channels*
+  '((235 235 235)
+    (255 120 80)
+    (120 200 255)
+    (160 220 120)
+    (255 220 100)
+    (200 160 255)
+    (255 150 200)
+    (100 220 200))
+  "Red, green and blue (0 to 255) of the colors offered to layers: new layers take the next one and the
+color button cycles through them.")
+
+(defparameter *layer-palette*
+  (mapcar (lambda (channels)
+            (apply #'make-rgb channels))
+          *layer-palette-channels*)
+  "The palette as RGB values.")
+
+(defun palette-color-after (color)
+  "Return the palette color that follows COLOR, or the first when COLOR is not in the palette.
+
+COLOR: an RGB color."
+  (let ((position (position color *layer-palette* :test #'equalp)))
+    (nth (if position
+             (mod (1+ position) (length *layer-palette*))
+             0)
+         *layer-palette*)))
+
+(defun palette-color-at (index)
+  "Return the palette color at INDEX, counting round the palette: the color a new layer is given.
+
+INDEX: a whole number, such as the id the next layer will have."
+  (nth (mod index (length *layer-palette*)) *layer-palette*))
+
 (defstruct (layer (:constructor %make-layer (id
                                              name
                                              color

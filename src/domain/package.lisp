@@ -22,6 +22,9 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:+default-layer-gray+
    #:default-layer-name
    #:default-layer-color
+   #:*layer-palette*
+   #:palette-color-after
+   #:palette-color-at
    ;; Entity protocol
    #:entity
    #:entity-p
@@ -204,6 +207,7 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:history
    #:make-history
    #:history-commit
+   #:history-record
    #:history-undo
    #:history-redo
    #:history-clear

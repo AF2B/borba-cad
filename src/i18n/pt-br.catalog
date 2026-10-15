@@ -380,4 +380,10 @@
   ("expected a group code, a whole number, found ~s" "esperava um código de grupo, um número inteiro, mas achou ~s")
   ("the file ends after a group code, without its value" "o arquivo termina depois de um código de grupo, sem o valor dele")
   ("the file has more than ~d groups" "o arquivo tem mais de ~d grupos")
-  ("a SECTION must be followed by its name" "uma SECTION deve ser seguida de seu nome")))
+  ("a SECTION must be followed by its name" "uma SECTION deve ser seguida de seu nome")
+  ("The expression is not finished: a parenthesis is open."
+   "A expressão não está terminada: há um parêntese aberto.")
+  ("It took more than ~d seconds, so it was stopped and nothing was changed."
+   "Levou mais de ~d segundos, então foi interrompido e nada foi alterado.")
+  ("It ran out of memory, so it was stopped and nothing was changed."
+   "Faltou memória, então foi interrompido e nada foi alterado.")))

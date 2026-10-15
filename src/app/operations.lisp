@@ -5,23 +5,6 @@
 
 (declaim (ftype function make-tool tool-cancel tool-kind))
 
-(defparameter *layer-palette-channels*
-  '((235 235 235)
-    (255 120 80)
-    (120 200 255)
-    (160 220 120)
-    (255 220 100)
-    (200 160 255)
-    (255 150 200)
-    (100 220 200))
-  "Red, green and blue (0 to 255) of the colors offered to layers: new layers take the next
-one and the color button cycles through them.")
-
-(defparameter *layer-palette*
-  (mapcar (lambda (channels) (apply #'dom:make-rgb channels))
-          *layer-palette-channels*)
-  "The palette as RGB values.")
-
 (defparameter *untitled-file-name* "untitled.bcad"
   "File name offered in the Save As prompt for a drawing that has none.")
 
@@ -270,13 +253,6 @@ KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :
 
 ;;; Layers
 
-(defun palette-color-after (color)
-  "Return the palette color that follows COLOR, or the first when COLOR is not in the palette.
-
-COLOR: a domain RGB color."
-  (let ((position (position color *layer-palette* :test #'equalp)))
-    (nth (if position (mod (1+ position) (length *layer-palette*)) 0) *layer-palette*)))
-
 (defun layer-operation (app
                         context
                         thunk)
@@ -305,9 +281,7 @@ NAME: the layer name."
                    (lambda ()
                      (let ((layer (dom:add-layer (app-drawing app)
                                                  name
-                                                 (nth (mod (dom:drawing-next-layer-id (app-drawing app))
-                                                           (length *layer-palette*))
-                                                      *layer-palette*))))
+                                                 (dom:palette-color-at (dom:drawing-next-layer-id (app-drawing app))))))
                        (dom:set-current-layer (app-drawing app) (dom:layer-id layer))
                        (set-message app (i18n:trf "Layer ~s created and selected." (dom:layer-name layer)))))))
 
@@ -382,7 +356,7 @@ LAYER-ID: layer id."
                    (lambda ()
                      (dom:recolor-layer (app-drawing app)
                                         layer-id
-                                        (palette-color-after
+                                        (dom:palette-color-after
                                          (dom:layer-color (dom:find-layer (app-drawing app) layer-id)))))))
 
 (defun operation-set-current-layer (app

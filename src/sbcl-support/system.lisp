@@ -119,3 +119,32 @@ COUNT: how many calls to show."
 OCTETS: the bytes.
 EXTERNAL-FORMAT: :utf-8 or :cp1252 (Windows Western European)."
   (sb-ext:octets-to-string octets :external-format external-format))
+
+(defmacro with-uninterrupted (&body body)
+  "Run BODY so that a timeout cannot unwind it half way: the interruption waits until BODY is done.
+For the steps that must finish to leave a data structure whole.
+
+BODY: the forms to run."
+  `(sb-sys:without-interrupts ,@body))
+
+(defun call-with-timeout (seconds
+                          function)
+  "Call FUNCTION, and stop it with a TIMEOUT condition if it runs for more than SECONDS. The condition
+is signaled in the code that runs, so it unwinds through it: what must not be left half done has to be
+in WITH-UNINTERRUPTED. Returns what FUNCTION returns.
+
+SECONDS: the longest time to wait, as a number of seconds.
+FUNCTION: function of no arguments."
+  (sb-ext:with-timeout seconds
+    (funcall function)))
+
+(deftype timeout ()
+  "The condition that CALL-WITH-TIMEOUT signals when the time is up."
+  'sb-ext:timeout)
+
+(defun function-lambda-list (function)
+  "Return the lambda list of a function, as written when it was defined, for a help that shows how a
+command is used.
+
+FUNCTION: a function or a macro function."
+  (sb-kernel:%fun-lambda-list function))

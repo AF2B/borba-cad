@@ -17,6 +17,7 @@
                              (:file "clock")
                              (:file "memory")
                              (:file "system")
+                             (:file "streams")
                              (:file "portable-filesystem")
                              (:file "filesystem")))
                (:module "i18n"
@@ -86,6 +87,13 @@
                              (:file "import")
                              (:file "export")
                              (:file "files")))
+               (:module "script"
+                :serial t
+                :components ((:file "package")
+                             (:file "context")
+                             (:file "dsl")
+                             (:file "evaluator")
+                             (:file "export")))
                (:module "observability"
                 :serial t
                 :components ((:file "package")
@@ -238,6 +246,7 @@
                (:file "grips-tests")
                (:file "dxf-tests")
                (:file "dxf-app-tests")
+               (:file "script-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

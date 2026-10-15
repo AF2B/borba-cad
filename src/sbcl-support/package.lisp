@@ -26,6 +26,12 @@
    #:command-line-arguments
    #:process-id
    #:octets->string
+   #:with-uninterrupted
+   #:call-with-timeout
+   #:timeout
+   #:function-lambda-list
+   #:make-limited-output-stream
+   #:limited-output-text
    #:lisp-version-string
    #:kernel-release-string
    #:cpu-model-string

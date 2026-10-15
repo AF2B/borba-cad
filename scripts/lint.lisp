@@ -39,6 +39,10 @@
 (defparameter *lint-exempt-from-scan* '("scripts/lint.lisp")
   "Files that name the markers and forms in order to look for them.")
 
+(defparameter *unsafe-form-exemptions* '(("(eval " "src/script/evaluator.lisp"))
+  "Forms that a file may use although the rule forbids them, as (form file): the evaluator is the one place
+where what the user types is run, and it reads that text with the reader's evaluation off.")
+
 (defun lint-files ()
   "Return the pathnames of the Lisp files that the source rules apply to."
   (loop for directory in *lint-directories*
@@ -91,7 +95,8 @@ PATH: the file."
                  (violation number "line has ~d columns; the limit is ~d" (length line) +maximum-line-length+))
                (unless exempt
                  (dolist (form *unsafe-forms*)
-                   (when (search form line)
+                   (when (and (search form line)
+                              (not (member (list form name) *unsafe-form-exemptions* :test #'equal)))
                      (violation number "forbidden form ~a" form)))
                  (dolist (marker *case-sensitive-markers*)
                    (when (search marker line)
@@ -353,14 +358,54 @@ NODE: a list node."
                  '("defstruct" "define-condition" "defclass")
                  :test #'string=))))
 
+(defun local-function-names (forms)
+  "Return the names that FLET, LABELS and MACROLET define anywhere in FORMS, in lower case. A call to one of
+them is a call to the local function, whatever a global function of the same name takes.
+
+FORMS: the parsed forms of a file."
+  (let ((names '()))
+    (labels ((walk (node)
+               (when (and (eq :list (source-node-kind node))
+                          (null (source-node-text node)))
+                 (let ((elements (remove :comment (source-node-children node) :key #'source-node-kind)))
+                   (when (and elements
+                              (eq :atom (source-node-kind (first elements)))
+                              (member (string-downcase (source-node-text (first elements)))
+                                      '("flet" "labels" "macrolet")
+                                      :test #'string=)
+                              (second elements)
+                              (eq :list (source-node-kind (second elements))))
+                     (dolist (binding (remove :comment (source-node-children (second elements))
+                                              :key #'source-node-kind))
+                       (let ((head (and (eq :list (source-node-kind binding))
+                                        (first (source-node-children binding)))))
+                         (when (and head (eq :atom (source-node-kind head)))
+                           (pushnew (bare-name (source-node-text head)) names :test #'string=)))))
+                   (mapc #'walk (source-node-children node))))))
+      (mapc #'walk forms))
+    names))
+
+(defun foreign-symbol-p (text)
+  "Return true when TEXT is written with the package prefix of a package the project does not define: the
+functions of SBCL's own packages are not the project's functions of the same name.
+
+TEXT: the written symbol."
+  (and (find #\: text)
+       (> (length text) 3)
+       (string-equal "sb-" text :end2 3)))
+
 (defun layout-violations (path
                           functions)
   "Return the violations of the layout rule in the file at PATH.
 
 PATH: the file.
 FUNCTIONS: hash table from the project's function names to their signatures."
-  (let ((name (relative-name path))
-        (violations '()))
+  (let* ((name (relative-name path))
+         (violations '())
+         (forms (parse-source (with-open-file (stream path :external-format :utf-8)
+                                (let ((text (make-string (file-length stream))))
+                                  (subseq text 0 (read-sequence text stream))))))
+         (locals (local-function-names forms)))
     (labels ((lambda-list-position-p (head
                                       position
                                       seen-lambda-list)
@@ -379,6 +424,8 @@ FUNCTIONS: hash table from the project's function names to their signatures."
                               (not lambda-list-p)
                               (eq :atom (source-node-kind (first elements)))
                               (char/= #\: (char (source-node-text (first elements)) 0))
+                              (not (foreign-symbol-p (source-node-text (first elements))))
+                              (not (member (bare-name (source-node-text (first elements))) locals :test #'string=))
                               (gethash (bare-name (source-node-text (first elements))) functions))
                      (let ((lines (mapcar #'source-node-line
                                           (call-parameters node
@@ -407,9 +454,7 @@ FUNCTIONS: hash table from the project's function names to their signatures."
                                 (when is-lambda-list
                                   (setf seen-lambda-list t))
                                 (check child is-lambda-list))))))))
-      (dolist (form (parse-source (with-open-file (stream path :external-format :utf-8)
-                                    (let ((text (make-string (file-length stream))))
-                                      (subseq text 0 (read-sequence text stream))))))
+      (dolist (form forms)
         (check form nil)))
     (nreverse violations)))
 
