@@ -71,6 +71,11 @@ drawing as an argument: `borba-cad plan.bcad`.
 
 ## Using the program
 
+When the program starts without a drawing it shows a **start screen** in the middle of the window: the
+drawings you worked on last (up to five, the latest first, with the folder each is in), and New drawing,
+Open a drawing..., Run a script... and Quit. The arrows and Enter, or the pointer, choose; Escape goes on
+with the empty drawing. Starting with a file (`borba-cad plan.bcad`) skips it.
+
 The Select tool and the Draw button, which opens the list of drawing tools, are in the palette on the left; every tool also has a key, shown in the list.
 The title bar holds the file and history buttons, the document name (a dot marks unsaved changes),
 the More menu (DXF, the console and the scripts), the language menu (English (US), the default, or

@@ -110,6 +110,10 @@ EVENT: a pointer event."
         (when (app-telemetry app)
           (obs:telemetry-record-viewport-update (app-telemetry app) (- (sbcl:monotonic-nanoseconds) started)))))
     (cond ((or (app-prompt app) (app-dialog app)) nil)
+          ((app-welcome app)
+           (follow-pointer-in-welcome app
+                                      x
+                                      y))
           ((app-menu app)
            (follow-pointer-in-menu app
                                    x
@@ -158,7 +162,7 @@ EVENT: a pointer event."
            (handle-widget-click app hit))
           ((app-menu app)
            (close-menu app))
-          ((or (app-prompt app) (app-dialog app)) nil)
+          ((or (app-prompt app) (app-dialog app) (app-welcome app)) nil)
           ((and (canvas-contains-p app
                                    x
                                    y)
@@ -253,6 +257,7 @@ EVENT: a wheel event."
           (app-pointer-y app) y)
     (cond ((app-prompt app) nil)
           ((app-menu app) nil)
+          ((app-welcome app) nil)
           ((app-dialog app)
            (handle-dialog-wheel app delta))
           ((and (console-open-p app)
@@ -410,6 +415,7 @@ EVENT: a key event."
           ((app-dialog app) (handle-dialog-key app
                                                key
                                                modifiers))
+          ((app-welcome app) (handle-welcome-key app key))
           ((app-menu app) (handle-menu-key app key))
           ((console-focused-p app) (handle-console-key app
                                                        key

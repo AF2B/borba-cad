@@ -145,10 +145,11 @@ pointer, the open menu, the file dialog when one is open, and the modal prompt w
 APP: the application."
   (let* ((layout (app-layout app))
          (side (ui:layout-side-panel layout))
-         (blocked (and (or (app-prompt app) (app-dialog app) (app-menu app)) t))
+         (blocked (and (or (app-prompt app) (app-dialog app) (app-menu app) (app-welcome app)) t))
          (dialog-widgets (and (app-dialog app)
                               (file-dialog-widgets app (and (app-prompt app) t))))
-         (base-widgets (append (empty-hint-widgets app (ui:layout-canvas layout))
+         (base-widgets (append (and (not (app-welcome app))
+                                    (empty-hint-widgets app (ui:layout-canvas layout)))
                                (list (ui:make-widget :panel
                                                      :side-panel
                                                      (ui:rect-x side)
@@ -181,7 +182,8 @@ APP: the application."
                       dialog-widgets
                       (let ((tooltip (tooltip-widget app hovered)))
                         (and tooltip (list tooltip)))
-                      (menu-widgets app base-widgets))))
+                      (menu-widgets app base-widgets)
+                      (welcome-widgets app))))
     (if (app-prompt app)
         (append all (prompt-widgets app))
         all)))

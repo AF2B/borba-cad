@@ -103,6 +103,15 @@ SCROLL: how many lines the output is scrolled up from its end."
   (pending "" :type string)
   (scroll 0 :type fixnum))
 
+(defstruct (welcome (:constructor make-welcome (recents
+                                                highlight)))
+  "The start screen.
+
+RECENTS: the pathnames of the recent drawings it lists, the latest first.
+HIGHLIGHT: position, among its choices, of the one the keyboard is on."
+  recents
+  highlight)
+
 (defstruct (app (:constructor %make-app))
   "The whole application state.
 
@@ -131,6 +140,7 @@ EDIT: edit state of that field.
 PROMPT: the open modal prompt, or NIL.
 DIALOG: the open file dialog, or NIL.
 MENU: the open drop-down menu, or NIL.
+WELCOME: the start screen, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
 GRIP-DRAG: the grip being dragged, or NIL.
 CONSOLE: the console.
@@ -172,6 +182,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   prompt
   dialog
   menu
+  welcome
   (polygon-sides 6 :type (integer 3))
   grip-drag
   (console (make-console))

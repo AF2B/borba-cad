@@ -31,6 +31,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **A start screen.** When the program starts without a drawing it opens a window in the middle of the
+  screen with the recent drawings (those that still exist, up to five, the latest first, each with the
+  name of its folder), **New drawing**, **Open a drawing...**, **Run a script...** and **Quit**. It is a
+  list of choices like the menus are: arrows, Home, End and Enter, or the pointer; the rest of the window
+  ignores the pointer and the keys while it is open, and Escape goes on with the empty drawing. A recent
+  drawing that cannot be opened says why and leaves the screen open. Starting with a file, a demo and the
+  tests skip it.
 - DXF import reads more of what real files have: **splines** (B-splines and rational ones, from their
   knots, control points and weights; or through their fit points) become polylines of short straight
   segments, **leaders** become lines without their arrowheads, **3D faces** become their outlines

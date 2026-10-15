@@ -395,7 +395,8 @@ PATH: its file, or NIL for a new drawing."
         (app-saved-revision app) (dom:drawing-revision drawing)
         (app-translation app) nil
         (app-window app) nil
-        (app-interaction app) nil)
+        (app-interaction app) nil
+        (app-welcome app) nil)
   (clrhash (app-selection app))
   (operation-set-tool app :select)
   (operation-zoom-extents app)

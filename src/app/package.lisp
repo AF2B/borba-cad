@@ -131,6 +131,11 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-edit-property
    #:operation-import-dxf
    #:operation-export-dxf
+   #:open-welcome
+   #:close-welcome
+   #:app-welcome
+   #:welcome-recents
+   #:welcome-highlight
    #:operation-toggle-console
    #:operation-run-script
    #:operation-export-script
