@@ -127,6 +127,7 @@ APP: the application."
                            nil)))
     (list (choice :import-dxf (i18n:tr "Import DXF...") :import "Ctrl+Shift+I" #'operation-import-dxf)
           (choice :export-dxf (i18n:tr "Export DXF...") :export "Ctrl+Shift+E" #'operation-export-dxf)
+          (choice :export-image (i18n:tr "Export as JPEG...") :export nil #'operation-export-image)
           nil
           (choice :console (i18n:tr "Console") :console "F2" #'operation-toggle-console)
           (choice :run-script (i18n:tr "Run script...") :open nil #'operation-run-script)

@@ -178,13 +178,14 @@ EXTENSIONS: the extensions, without the dot."
 
 (defun dialog-extensions (dialog)
   "Return the extensions of the files that the dialog lists when it is not asked to list all: those of
-a drawing of the program, of a DXF file, or of a script.
+a drawing of the program, of a DXF file, of a script, or of a picture.
 
 DIALOG: the file dialog."
   (ecase (file-dialog-purpose dialog)
     (:drawing persist:*known-drawing-extensions*)
     (:dxf *dxf-extensions*)
-    (:script *script-extensions*)))
+    (:script *script-extensions*)
+    (:image *image-extensions*)))
 
 (defun compute-visible-entries (entries
                                 show-all
@@ -484,16 +485,19 @@ name, when saving; nothing when opening.
 
 APP: the application.
 MODE: :open or :save.
-PURPOSE: :drawing, :dxf or :script; a DXF file or a script is offered the name of the drawing with its own
-extension."
+PURPOSE: :drawing, :dxf, :script or :image; a DXF file, a script or a picture is offered the name of the
+drawing with its own extension."
   (cond ((eq mode :open) "")
-        ((member purpose '(:dxf :script))
+        ((member purpose '(:dxf :script :image))
          (concatenate 'string
                       (if (app-file-path app)
                           (pathname-name (app-file-path app))
                           (pathname-name *untitled-file-name*))
                       "."
-                      (first (if (eq purpose :dxf) *dxf-extensions* *script-extensions*))))
+                      (first (ecase purpose
+                               (:dxf *dxf-extensions*)
+                               (:script *script-extensions*)
+                               (:image *image-extensions*)))))
         ((app-file-path app) (file-namestring (app-file-path app)))
         (t *untitled-file-name*)))
 
@@ -506,7 +510,7 @@ extension."
 APP: the application.
 MODE: :open or :save.
 CONTINUATION: function of no arguments run after a successful save, or NIL.
-PURPOSE: :drawing, :dxf or :script."
+PURPOSE: :drawing, :dxf, :script or :image."
   (let* ((dialog (%make-file-dialog mode
                                     continuation
                                     purpose))

@@ -144,6 +144,9 @@ WELCOME: the start screen, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
 GRIP-DRAG: the grip being dragged, or NIL.
 CONSOLE: the console.
+IMAGE-CAPTURER: function of no arguments that returns what the canvas shows as a picture, as three values: the
+pixels (bytes, row by row from the top, red, green and blue of each), the width and the height; or NIL when this
+window cannot make one.
 CLIPBOARD-READER: function of no arguments that returns the text on the system clipboard, or NIL.
 CLIPBOARD-WRITER: function of one string that puts it on the system clipboard, or NIL.
 CLIPBOARD-FALLBACK: the clipboard text kept here while there is no system clipboard.
@@ -186,6 +189,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   (polygon-sides 6 :type (integer 3))
   grip-drag
   (console (make-console))
+  image-capturer
   clipboard-reader
   clipboard-writer
   clipboard-fallback

@@ -4,6 +4,7 @@
                     (#:i18n #:borba-cad/i18n)
                     (#:dxf #:borba-cad/dxf)
                     (#:script #:borba-cad/script)
+                    (#:image #:borba-cad/image)
                     (#:sbcl #:borba-cad/sbcl-support)
                     (#:geo #:borba-cad/geometry)
                     (#:dom #:borba-cad/domain)
@@ -136,6 +137,9 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:app-welcome
    #:welcome-recents
    #:welcome-highlight
+   #:app-image-capturer
+   #:operation-export-image
+   #:export-image-from-app
    #:operation-toggle-console
    #:operation-run-script
    #:operation-export-script

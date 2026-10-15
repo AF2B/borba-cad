@@ -235,6 +235,83 @@ HEIGHT: framebuffer height in pixels."
                  height
                  (gl:read-pixels 0 0 width height :rgb :unsigned-byte)))
 
+(defun flip-rows (pixels
+                  width
+                  height)
+  "Return pixels read from the framebuffer, whose first row is the bottom one, as rows from the top.
+
+PIXELS: bytes, three for each pixel.
+WIDTH: width in pixels.
+HEIGHT: height in pixels."
+  (let ((flipped (make-array (* 3 width height) :element-type '(unsigned-byte 8)))
+        (row-size (* 3 width)))
+    (dotimes (row height flipped)
+      (replace flipped
+               pixels
+               :start1 (* row row-size)
+               :start2 (* (- height 1 row) row-size)
+               :end2 (* (- height row) row-size)))))
+
+(defun capture-canvas (app
+                       window
+                       renderer)
+  "Draw the canvas alone, as it is on the screen (the grid and the drawing, at the view the user has, and nothing
+of the panels, the selection, the tool or the cursor), and read its pixels back. The picture is as sharp as the
+display: a window on a screen that doubles the pixels gives a picture of twice the size. Returns the pixels,
+bytes from the top row, three for each pixel, then the width and the height; or NIL when the canvas has no area.
+
+APP: the application.
+WINDOW: the SDL window.
+RENDERER: the renderer."
+  (let ((list (scene:make-draw-list))
+        (theme (app:app-theme app))
+        (viewport (app:app-viewport app)))
+    (setf (scene:draw-list-white-u list) (atlas-white-uv)
+          (scene:draw-list-white-v list) (atlas-white-uv))
+    (scene:build-scene list
+                       (app:app-drawing app)
+                       viewport
+                       (scene:make-scene-state)
+                       theme)
+    (multiple-value-bind (logical-width logical-height scale framebuffer-width framebuffer-height)
+        (present-frame window
+                       renderer
+                       list
+                       (scene:theme-canvas-background theme))
+      (declare (ignore logical-width logical-height))
+      (let* ((left (max 0 (round (* scale (view:viewport-origin-x viewport)))))
+             (top (max 0 (round (* scale (view:viewport-origin-y viewport)))))
+             (width (min (- framebuffer-width left) (round (* scale (view:viewport-width viewport)))))
+             (height (min (- framebuffer-height top) (round (* scale (view:viewport-height viewport))))))
+        (app:app-request-redraw app)
+        (when (and (plusp width) (plusp height))
+          (gl:pixel-store :pack-alignment 1)
+          (let ((pixels (gl:read-pixels left
+                                        (- framebuffer-height top height)
+                                        width
+                                        height
+                                        :rgb
+                                        :unsigned-byte)))
+            (values (flip-rows (coerce pixels '(simple-array (unsigned-byte 8) (*)))
+                               width
+                               height)
+                    width
+                    height)))))))
+
+(defun install-image-capturer (app
+                               window
+                               renderer)
+  "Make the application able to take a picture of the canvas.
+
+APP: the application.
+WINDOW: the SDL window.
+RENDERER: the renderer."
+  (setf (app:app-image-capturer app)
+        (lambda ()
+          (capture-canvas app
+                          window
+                          renderer))))
+
 (defun call-guarded (app
                      context
                      function)
@@ -598,6 +675,9 @@ SCREENSHOT: file name to save the last demonstration frame to, or NIL."
                                                              :width (float width 1d0)
                                                              :height (float height 1d0))))
                                       (install-system-clipboard app)
+                                      (install-image-capturer app
+                                                              window
+                                                              renderer)
                                       (run-session (make-session :app app
                                                                  :window window
                                                                  :renderer renderer

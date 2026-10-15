@@ -88,6 +88,10 @@
                              (:file "import")
                              (:file "export")
                              (:file "files")))
+               (:module "image"
+                :serial t
+                :components ((:file "package")
+                             (:file "jpeg")))
                (:module "script"
                 :serial t
                 :components ((:file "package")
@@ -132,6 +136,7 @@
                              (:file "dxf-operations")
                              (:file "console")
                              (:file "script-operations")
+                             (:file "image-operations")
                              (:file "grips")
                              (:file "file-browser")
                              (:file "tools")
@@ -253,6 +258,7 @@
                (:file "script-tests")
                (:file "console-tests")
                (:file "welcome-tests")
+               (:file "image-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

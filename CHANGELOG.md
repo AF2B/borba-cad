@@ -31,6 +31,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Export as JPEG.** More > Export as JPEG... saves what the canvas shows, the rectangle where the user sees
+  the grid and the drawing, as a `.jpg` file: at the view they have, at the sharpness of the display (a
+  screen that doubles the pixels gives a picture of twice the size), and without the panels, the
+  selection, the tool in use or the cursor. A window says it worked, with the size of the file and of the
+  picture, or why it did not. The encoder is written in Lisp (baseline JPEG, quality 90, Huffman tables made
+  for each picture), so the program still needs no library; it was checked against ImageMagick and a test
+  decoder, and codes 2560 x 1440 in about half a second.
 - **A start screen.** When the program starts without a drawing it opens a window in the middle of the
   screen with the recent drawings (those that still exist, up to five, the latest first, each with the
   name of its folder), **New drawing**, **Open a drawing...**, **Run a script...** and **Quit**. It is a

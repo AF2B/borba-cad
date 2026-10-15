@@ -50,9 +50,10 @@ TARGET: the pathname to save to."
 (defun save-text-file (path
                        writer
                        &key before-commit
-                            (external-format :utf-8))
-  "Write a text file atomically: write a sibling temporary file, flush it to disk, then rename it
-over PATH. A failure at any point leaves any existing file at PATH untouched and removes the
+                            (external-format :utf-8)
+                            (element-type 'character))
+  "Write a file atomically, a text file unless ELEMENT-TYPE says bytes: write a sibling temporary file, flush
+it to disk, then rename it over PATH. A failure at any point leaves any existing file at PATH untouched and removes the
 temporary file. When PATH is a symbolic link the file it points to is replaced, not the link,
 and a replaced file keeps its permissions. Returns two values: the saved pathname and a
 property list with :bytes, :serialize-nanoseconds (including the disk flush) and
@@ -62,7 +63,8 @@ PATH: destination pathname.
 WRITER: function of the output stream that writes the contents.
 BEFORE-COMMIT: optional function called with the temporary pathname just before the rename;
 a test seam for injecting failures.
-EXTERNAL-FORMAT: the encoding of the file."
+EXTERNAL-FORMAT: the encoding of the file.
+ELEMENT-TYPE: CHARACTER for a text file, or (UNSIGNED-BYTE 8) for one of bytes."
   (let* ((target (sbcl:true-path (merge-pathnames path)))
          (temporary (temporary-path-for target))
          (permissions (and (eq :file (sbcl:file-kind target))
@@ -77,6 +79,7 @@ EXTERNAL-FORMAT: the encoding of the file."
                (with-open-file (stream temporary
                                        :direction :output
                                        :if-exists :error
+                                       :element-type element-type
                                        :external-format external-format)
                  (funcall writer stream)
                  (sbcl:sync-output-stream stream))
@@ -99,6 +102,19 @@ EXTERNAL-FORMAT: the encoding of the file."
             (list :bytes (sbcl:file-size-bytes target)
                   :serialize-nanoseconds (- written started)
                   :rename-nanoseconds (- (sbcl:monotonic-nanoseconds) written)))))
+
+(defun save-binary-file (path
+                         octets
+                         &key before-commit)
+  "Write a file of bytes atomically, as SAVE-TEXT-FILE writes a text one, and return what it returns.
+
+PATH: destination pathname.
+OCTETS: the bytes of the file.
+BEFORE-COMMIT: optional function called with the temporary pathname just before the rename."
+  (save-text-file path
+                  (lambda (stream) (write-sequence octets stream))
+                  :before-commit before-commit
+                  :element-type '(unsigned-byte 8)))
 
 (defun save-drawing (drawing
                      path

@@ -78,7 +78,7 @@ with the empty drawing. Starting with a file (`borba-cad plan.bcad`) skips it.
 
 The Select tool and the Draw button, which opens the list of drawing tools, are in the palette on the left; every tool also has a key, shown in the list.
 The title bar holds the file and history buttons, the document name (a dot marks unsaved changes),
-the More menu (DXF, the console and the scripts), the language menu (English (US), the default, or
+the More menu (DXF, a JPEG of the canvas, the console and the scripts), the language menu (English (US), the default, or
 Portuguese (Brazil), kept for the next run) and the performance overlay; the status bar holds the hints, the pointer position and the chips
 that switch the grid, grid snap, object snap, display unit and zoom to fit. Keys: `L` line, `R` rectangle, `C` circle, `P` polyline
 (Enter finishes, clicking the first vertex closes), `A` arc (center, start, direction of the end),
@@ -123,7 +123,7 @@ file cannot be opened or saved the dialog stays open and says why. The recent li
 `var/state/recent-files.txt` (`--state-dir`); the dialog starts in the folder of the open drawing,
 or in your documents folder (`--drawings-dir`).
 
-## DXF
+## DXF and pictures
 
 The More button of the title bar (three dots) has **Import DXF** (`Ctrl+Shift+I`) and **Export DXF**
 (`Ctrl+Shift+E`), which open the file dialog for `.dxf` files.
@@ -140,6 +140,11 @@ The More button of the title bar (three dots) has **Import DXF** (`Ctrl+Shift+I`
   as themselves; rectangles, polygons and ellipses as closed polylines; dimensions as lines, arrowheads
   and text; layers with their state and the nearest of AutoCAD's 256 colors. The status bar says what
   changed shape.
+
+**Export as JPEG** (More menu) saves a picture of **what the canvas shows**: the rectangle where the grid and
+the drawing are, at the view you have, as sharp as your display (twice the size on a screen that doubles its
+pixels). The panels, the selection, the tool in use and the cursor are not in it. The encoder is part of the
+program (baseline JPEG, quality 90), so it needs no library.
 
 The `.bcad` file stays the program's own format: it keeps rectangles, polygons, ellipses and dimensions as
 what they are.
@@ -226,5 +231,5 @@ dimension leave as polylines, lines and text), and the import was tried on files
 Brazilian Portuguese keeps the decimal point in numbers and leaves in English the messages about the
 structure of a damaged file, the errors the console prints (Lisp's own are English) and the text the
 `help` command prints; a command or a script that fails halfway leaves the layers it made; a command
-runs on the window's thread, so the window waits for it (up to its limit); no printing. No `LICENSE`
+runs on the window's thread, so the window waits for it (up to its limit); no printing; the only picture format is JPEG. No `LICENSE`
 file yet: the author has not chosen one.

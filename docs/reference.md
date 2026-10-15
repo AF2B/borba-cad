@@ -53,9 +53,13 @@ NIL when it selects only what it holds (dragged from left to right).
 - `PROMPT`: the open modal prompt, or NIL.
 - `DIALOG`: the open file dialog, or NIL.
 - `MENU`: the open drop-down menu, or NIL.
+- `WELCOME`: the start screen, or NIL.
 - `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
 - `GRIP-DRAG`: the grip being dragged, or NIL.
 - `CONSOLE`: the console.
+- `IMAGE-CAPTURER`: function of no arguments that returns what the canvas shows as a picture, as three values: the
+pixels (bytes, row by row from the top, red, green and blue of each), the width and the height; or NIL when this
+window cannot make one.
 - `CLIPBOARD-READER`: function of no arguments that returns the text on the system clipboard, or NIL.
 - `CLIPBOARD-WRITER`: function of one string that puts it on the system clipboard, or NIL.
 - `CLIPBOARD-FALLBACK`: the clipboard text kept here while there is no system clipboard.
@@ -197,6 +201,14 @@ Handle one input event and record its handling time for the aggregated input sta
 
 ```lisp
 (app-history instance)
+```
+
+(undocumented)
+
+### `app-image-capturer` (function)
+
+```lisp
+(app-image-capturer instance)
 ```
 
 (undocumented)
@@ -413,6 +425,14 @@ Return true when typed characters should be delivered as text events.
 
 - `APP`: the application.
 
+### `app-welcome` (function)
+
+```lisp
+(app-welcome instance)
+```
+
+(undocumented)
+
 ### `app-window` (function)
 
 ```lisp
@@ -548,6 +568,16 @@ Close the open menu, if there is one.
 ```
 
 Close the modal prompt without running anything.
+
+- `APP`: the application.
+
+### `close-welcome` (function)
+
+```lisp
+(close-welcome app)
+```
+
+Close the start screen, if it is open, and go on with the drawing as it is.
 
 - `APP`: the application.
 
@@ -785,14 +815,27 @@ true on success.
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
 
+### `export-image-from-app` (function)
+
+```lisp
+(export-image-from-app app path-text)
+```
+
+Save what the canvas shows as a JPEG file at PATH-TEXT (.jpg is added to a name without an extension), and
+tell the user how it went in a modal. The picture is the canvas as it is on the screen, without the panels,
+the selection and the cursor. On failure the previous file is untouched. Returns true on success.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
+
 ### `export-script-from-app` (function)
 
 ```lisp
 (export-script-from-app app path-text)
 ```
 
-Save the drawing as a script at PATH-TEXT (.lisp is added to a name without an extension). On failure the
-previous file is untouched and the reason is shown. Returns true on success.
+Save the drawing as a script at PATH-TEXT (.lisp is added to a name without an extension) and tell the user
+how it went in a modal. On failure the previous file is untouched. Returns true on success.
 
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
@@ -1298,8 +1341,8 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 - `APP`: the application.
 - `MODE`: :open or :save.
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
-- `PURPOSE`: :drawing for a drawing of the program, :dxf to import or export a DXF file, or :script to run a
-script or export one.
+- `PURPOSE`: :drawing for a drawing of the program, :dxf to import or export a DXF file, :script to run a script
+or export one, or :image to export a picture.
 
 ### `open-menu` (function)
 
@@ -1337,6 +1380,16 @@ Open a modal prompt with a text field, OK and Cancel. ON-ACCEPT runs after the p
 - `MESSAGE`: explanation under the heading.
 - `INITIAL`: text the field starts with, selected so typing replaces it.
 - `ON-ACCEPT`: function of one argument, the typed string.
+
+### `open-welcome` (function)
+
+```lisp
+(open-welcome app)
+```
+
+Show the start screen over the window.
+
+- `APP`: the application.
 
 ### `operation-add-layer` (function)
 
@@ -1445,6 +1498,16 @@ Open the dialog where the user picks a folder and a name, and export the drawing
 
 - `APP`: the application.
 
+### `operation-export-image` (function)
+
+```lisp
+(operation-export-image app)
+```
+
+Open the dialog where the user picks a folder and a name, and export what the canvas shows there as a JPEG.
+
+- `APP`: the application.
+
 ### `operation-export-script` (function)
 
 ```lisp
@@ -1538,7 +1601,7 @@ Rename a layer.
 (operation-run-script app)
 ```
 
-Open the dialog where the user finds a script to run on the drawing.
+Open the dialog where the user finds a script to run.
 
 - `APP`: the application.
 
@@ -1884,9 +1947,8 @@ The window changed size.
 (run-script-file-in-app app path-text)
 ```
 
-Read the script file at PATH-TEXT and ask whether to run it, saying what it is and warning that it is a
-program. It runs when the user says so. On failure the reason is shown. Returns true when the question was
-asked.
+Read the script file at PATH-TEXT and ask where it is to draw; it runs when the user answers. On failure
+the reason is shown. Returns true when the question was asked.
 
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
@@ -2171,6 +2233,22 @@ Return the entries the list shows (see COMPUTE-VISIBLE-ENTRIES). The answer is k
 folder, the search text or the All files switch changes.
 
 - `DIALOG`: the file dialog.
+
+### `welcome-highlight` (function)
+
+```lisp
+(welcome-highlight instance)
+```
+
+(undocumented)
+
+### `welcome-recents` (function)
+
+```lisp
+(welcome-recents instance)
+```
+
+(undocumented)
 
 ### `wheel-event` (type)
 
@@ -6712,6 +6790,28 @@ Run BODY speaking LANGUAGE.
 - `LANGUAGE`: a language keyword.
 - `BODY`: the forms to run.
 
+## BORBA-CAD/IMAGE
+
+Making picture files from pixels: a JPEG encoder in plain Lisp, so that the program needs no
+library to export what the canvas shows.
+
+### `+default-jpeg-quality+` (constant)
+
+The quality a picture is encoded with when none is asked for, from 1 to 100.
+
+### `encode-jpeg` (function)
+
+```lisp
+(encode-jpeg width height rgb &key (quality +default-jpeg-quality+))
+```
+
+Return the bytes of a JPEG file of a picture.
+
+- `WIDTH`: width in pixels, from 1 to 65535.
+- `HEIGHT`: height in pixels, from 1 to 65535.
+- `RGB`: the pixels, row by row from the top, a byte each of red, green and blue.
+- `QUALITY`: from 1 (smallest file) to 100 (best picture).
+
 ## BORBA-CAD/OBSERVABILITY
 
 Structured logging with rotation, operation timing, interval aggregation,
@@ -7785,6 +7885,18 @@ entries beyond the limit. Returns true when the list was written, and NIL when i
 - `STATE-DIRECTORY`: the folder where the program keeps what it remembers, or NIL.
 - `PATH`: the drawing's pathname.
 
+### `save-binary-file` (function)
+
+```lisp
+(save-binary-file path octets &key before-commit)
+```
+
+Write a file of bytes atomically, as SAVE-TEXT-FILE writes a text one, and return what it returns.
+
+- `PATH`: destination pathname.
+- `OCTETS`: the bytes of the file.
+- `BEFORE-COMMIT`: optional function called with the temporary pathname just before the rename.
+
 ### `save-drawing` (function)
 
 ```lisp
@@ -7815,11 +7927,11 @@ written, and NIL when it could not be (or STATE-DIRECTORY is NIL, or the text ha
 ### `save-text-file` (function)
 
 ```lisp
-(save-text-file path writer &key before-commit (external-format utf-8))
+(save-text-file path writer &key before-commit (external-format utf-8) (element-type 'character))
 ```
 
-Write a text file atomically: write a sibling temporary file, flush it to disk, then rename it
-over PATH. A failure at any point leaves any existing file at PATH untouched and removes the
+Write a file atomically, a text file unless ELEMENT-TYPE says bytes: write a sibling temporary file, flush
+it to disk, then rename it over PATH. A failure at any point leaves any existing file at PATH untouched and removes the
 temporary file. When PATH is a symbolic link the file it points to is replaced, not the link,
 and a replaced file keeps its permissions. Returns two values: the saved pathname and a
 property list with :bytes, :serialize-nanoseconds (including the disk flush) and
@@ -7830,6 +7942,7 @@ property list with :bytes, :serialize-nanoseconds (including the disk flush) and
 - `BEFORE-COMMIT`: optional function called with the temporary pathname just before the rename;
 a test seam for injecting failures.
 - `EXTERNAL-FORMAT`: the encoding of the file.
+- `ELEMENT-TYPE`: CHARACTER for a text file, or (UNSIGNED-BYTE 8) for one of bytes.
 
 ### `user-directories-entry` (function)
 

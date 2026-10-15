@@ -429,4 +429,12 @@
   ("Quit" "Sair")
   ("What would you like to do?" "O que você quer fazer?")
   ("Recent drawings" "Desenhos recentes")
-  ("Drawings you open or save will be listed here." "Os desenhos que você abrir ou salvar aparecem aqui.")))
+  ("Drawings you open or save will be listed here." "Os desenhos que você abrir ou salvar aparecem aqui.")
+  ("Export as JPEG..." "Exportar como JPEG...")
+  ("Export as a JPEG image" "Exportar como imagem JPEG")
+  ("Image exported" "Imagem exportada")
+  ("~a was saved (~a). It shows what is on the canvas, ~d x ~d pixels."
+   "~a foi salvo (~a). Mostra o que está na área de desenho, ~d x ~d pixels.")
+  ("cannot be made: this window cannot make pictures" "não pôde ser feito: esta janela não consegue fazer imagens")
+  ("cannot be made: there is nothing on the canvas to take a picture of"
+   "não pôde ser feito: não há nada na área de desenho para fotografar")))

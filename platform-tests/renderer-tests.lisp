@@ -248,6 +248,46 @@ RENDERER: the renderer."
                                (platform::save-screenshot path (frame-width frame) (frame-height frame))
                                path)))))
 
+(defun observe-canvas-capture (window
+                              renderer)
+  "Take a picture of the canvas of an application with a generated drawing, as the export of an image does.
+
+WINDOW: the SDL window.
+RENDERER: the renderer."
+  (let* ((drawing (rng:generate-drawing :seed 5 :entity-count 60))
+         (application (app:make-app (base:default-config)
+                                    :drawing drawing
+                                    :width (float +test-window-width+ 1d0)
+                                    :height (float +test-window-height+ 1d0)))
+         (theme (app:app-theme application))
+         (background (color-octets (scene:theme-canvas-background theme))))
+    (app:app-handle-event application (platform::resize-event-for window))
+    (app:operation-zoom-extents application)
+    (multiple-value-bind (pixels width height) (platform::capture-canvas application window renderer)
+      (multiple-value-bind (logical-width) (sdl2:get-window-size window)
+        (let* ((scale (/ (float (platform::drawable-size window) 1d0) logical-width))
+               (canvas (ui:layout-canvas (app:app-layout application)))
+               (ink 0)
+               (corner (and pixels (list (aref pixels 0) (aref pixels 1) (aref pixels 2)))))
+          (when pixels
+            (dotimes (index (* width height))
+              (unless (same-color-p (list (aref pixels (* 3 index))
+                                          (aref pixels (+ 1 (* 3 index)))
+                                          (aref pixels (+ 2 (* 3 index))))
+                                    background)
+                (incf ink))))
+          (list :width width
+                :height height
+                :expected-width (round (* scale (ui:rect-width canvas)))
+                :expected-height (round (* scale (ui:rect-height canvas)))
+                :window-width (round (* scale +test-window-width+))
+                :octets (and pixels (length pixels))
+                :ink ink
+                :corner corner
+                :background background
+                :jpeg-bytes (and pixels
+                                 (length (borba-cad/image:encode-jpeg width height pixels)))))))))
+
 (defun collect-observations ()
   "Open one window and take every observation of the renderer tests in it."
   (platform::call-with-gl-window
@@ -261,7 +301,8 @@ RENDERER: the renderer."
            :text (observe-text window renderer)
            :interface-text (observe-interface-text window renderer)
            :clipboard (observe-clipboard)
-           :application (observe-application-frame window renderer)))))
+           :application (observe-application-frame window renderer)
+           :capture (observe-canvas-capture window renderer)))))
 
 (defun observation (&rest path)
   "Return a value from the shared observations, taking them on first use.
@@ -363,3 +404,23 @@ PATH: keywords leading to the value, for example :shapes :background."
         (is (= 12 (obs:sample-summary-count summary)))
         (is (plusp (obs:sample-summary-max summary))))
       (is (plusp (length (platform:frame-benchmark-result-gl-renderer result)))))))
+
+(test the-picture-of-the-canvas-is-the-canvas-and-nothing-of-the-panels
+  (when (display-or-skip)
+    (is (= (observation :capture :expected-width) (observation :capture :width)))
+    (is (= (observation :capture :expected-height) (observation :capture :height)))
+    (is (< (observation :capture :width) (observation :capture :window-width)) "the panels are left out")
+    (is (= (* 3 (observation :capture :width) (observation :capture :height)) (observation :capture :octets)))))
+
+(test the-picture-of-the-canvas-has-its-background-and-its-drawing
+  (when (display-or-skip)
+    (is (same-color-p (observation :capture :corner) (observation :capture :background))
+        "the top left corner is the background of the canvas, not a panel")
+    (is (> (observation :capture :ink) 200) "the drawing left ink")
+    (is (< (observation :capture :ink)
+           (* (observation :capture :width) (observation :capture :height)))
+        "and the background shows between the entities")))
+
+(test the-picture-of-the-canvas-encodes-as-a-jpeg
+  (when (display-or-skip)
+    (is (> (observation :capture :jpeg-bytes) 500))))

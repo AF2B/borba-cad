@@ -146,8 +146,8 @@ APP: the application."
 APP: the application.
 MODE: :open or :save.
 CONTINUATION: function of no arguments run after a successful save, or NIL.
-PURPOSE: :drawing for a drawing of the program, :dxf to import or export a DXF file, or :script to run a
-script or export one."
+PURPOSE: :drawing for a drawing of the program, :dxf to import or export a DXF file, :script to run a script
+or export one, or :image to export a picture."
   (setf (app-dialog app) (make-file-dialog app
                                            mode
                                            continuation
@@ -278,7 +278,8 @@ TEXT: a name or a path."
     (:dxf (persist:file-path-with-extension text
                                             (first *dxf-extensions*)
                                             *dxf-extensions*))
-    (:script (script-file-path text))))
+    (:script (script-file-path text))
+    (:image (image-file-path text))))
 
 (defun open-dialog-file (app
                          dialog
@@ -292,7 +293,8 @@ PATH-TEXT: the file name."
   (ecase (file-dialog-purpose dialog)
     (:drawing (load-drawing-into-app app path-text))
     (:dxf (import-dxf-into-app app path-text))
-    (:script (run-script-file-in-app app path-text))))
+    (:script (run-script-file-in-app app path-text))
+    (:image nil)))
 
 (defun save-dialog-file (app
                          dialog
@@ -306,7 +308,8 @@ PATH-TEXT: the file name."
   (ecase (file-dialog-purpose dialog)
     (:drawing (save-app-drawing app path-text))
     (:dxf (export-dxf-from-app app path-text))
-    (:script (export-script-from-app app path-text))))
+    (:script (export-script-from-app app path-text))
+    (:image (export-image-from-app app path-text))))
 
 (defun finish-save (app
                     dialog

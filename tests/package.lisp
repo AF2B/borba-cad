@@ -13,6 +13,7 @@
                     (#:persist #:borba-cad/persistence)
                     (#:dxf #:borba-cad/dxf)
                     (#:script #:borba-cad/script)
+                    (#:image #:borba-cad/image)
                     (#:obs #:borba-cad/observability)
                     (#:scene #:borba-cad/scene)
                     (#:ui #:borba-cad/ui)
