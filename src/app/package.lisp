@@ -5,6 +5,7 @@
                     (#:dxf #:borba-cad/dxf)
                     (#:script #:borba-cad/script)
                     (#:image #:borba-cad/image)
+                    (#:plot #:borba-cad/plot)
                     (#:sbcl #:borba-cad/sbcl-support)
                     (#:geo #:borba-cad/geometry)
                     (#:dom #:borba-cad/domain)
@@ -147,6 +148,11 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:app-image-capturer
    #:operation-export-image
    #:export-image-from-app
+   #:operation-export-pdf
+   #:operation-export-svg
+   #:export-pdf-from-app
+   #:export-svg-from-app
+   #:app-plot-settings
    #:modify-tool-kind-p
    #:selection-tool-kind-p
    #:*selection-tool-kinds*

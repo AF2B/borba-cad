@@ -241,6 +241,31 @@ intersection snap uses.
 | Extend | The end nearer the click moves along the line (or the circle of the arc) to the nearest crossing beyond it that is farther than the tolerance, and, for an arc, does not pass its other end. |
 | Fillet | The corner is where the lines cross. On each line the side that holds the click stays; the tangent length is `r / tan(θ/2)` for the angle θ between the two kept rays, the center lies on their bisector at `r / sin(θ/2)` from the corner, and the arc is the short one between the tangent points. Refused when the lines are parallel or too short on the kept side. |
 
+### Plotting (`src/plot/`)
+
+A sheet is measured in millimetres with its origin at the bottom left and y up, like the drawing; the scale is the
+millimetres of paper for a millimetre of the drawing (the drawing's own unit does not matter, its coordinates are
+millimetres). The sheets are A4, A3, A2, A1, A0 and Letter, standing up; the plan turns each one to suit the
+drawing.
+
+| Step | Rule |
+|---|---|
+| Scale | Typed as `1:50`, `1/50`, a plain `50` (a fiftieth), `2:1` (twice life size) or `fit`. Fit makes the bounds of the visible entities as large as the sheet allows inside the margins. |
+| Orientation | With fit, the one that gives the larger scale. With a given scale, the one that fits, or, when neither does, the one where the drawing reaches out of the margins the least. |
+| Placement | The bounds of the visible entities are centered on the sheet. Entities on hidden layers are not drawn; locked ones are. |
+| Curves | A circle, arc or ellipse becomes a run of segments chosen from its radius on the sheet, so that a chord is never more than 0.02 mm from the curve, with at least 16 segments for a circle and at most 720. |
+| Dimensions | Their layouts (extension lines, dimension line, annotation segments) become strokes, their arrowheads filled triangles and their text a text item, all at the scale. |
+| Ink | Black, or the color of the layer, except that a color with a luminance above 0.7 is black, since it would not show on white. |
+
+The PDF has one page, a catalog, a page tree, the content stream, the standard font Courier and an information
+dictionary. The content stream sets round caps and joins and the line width, then draws strokes (`m`, `l`, `S` or
+`s`), fills (`f`) and text (`BT`, `Tf`, `Tm`, `Tj`, `ET`) in points. Courier is used because its advance is 0.6 of the
+size, as the text of the program is measured everywhere else. The strings are written in the font's WinAnsi
+encoding: ASCII as it is, Latin-1 as octal escapes, `\`, `(` and `)` escaped, and any other character as a question
+mark, which the caller is told the number of. The file is not compressed and has no timestamps, so the same drawing
+and settings always make the same bytes; the cross-reference table has the exact offsets. The SVG keeps all
+characters, flips y, and puts text in a monospace font with `xml:space="preserve"`.
+
 ## 8. Viewport math (`src/viewport/`)
 
 ```

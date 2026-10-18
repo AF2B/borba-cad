@@ -150,6 +150,7 @@ MENU: the open drop-down menu, or NIL.
 WELCOME: the start screen, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
 FILLET-RADIUS: the radius, in millimetres, the fillet tool gives the next arc.
+PLOT-SETTINGS: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 GRIP-DRAG: the grip being dragged, or NIL.
 CONSOLE: the console.
 CONSTRAINT: :ortho, :polar or NIL, how the next point is held to the last one.
@@ -201,6 +202,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   welcome
   (polygon-sides 6 :type (integer 3))
   (fillet-radius +default-fillet-radius+ :type double-float)
+  plot-settings
   grip-drag
   (console (make-console))
   constraint

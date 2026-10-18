@@ -72,6 +72,7 @@ Exit status: 0 on a normal exit, 2 for a bad option, 1 for any other failure.
 
 ```
 src/sbcl-support  src/base  src/geometry  src/domain  src/viewport  src/persistence
+src/dxf  src/plot  src/image  src/script
 src/observability src/scene src/ui        src/app                          -> system borba-cad
 src/platform                                                               -> borba-cad/platform
 test-support/  tests/  platform-tests/  bench/  scripts/  docs/  examples/

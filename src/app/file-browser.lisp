@@ -185,7 +185,9 @@ DIALOG: the file dialog."
     (:drawing persist:*known-drawing-extensions*)
     (:dxf *dxf-extensions*)
     (:script *script-extensions*)
-    (:image *image-extensions*)))
+    (:image *image-extensions*)
+    (:pdf *pdf-extensions*)
+    (:svg *svg-extensions*)))
 
 (defun compute-visible-entries (entries
                                 show-all
@@ -485,10 +487,10 @@ name, when saving; nothing when opening.
 
 APP: the application.
 MODE: :open or :save.
-PURPOSE: :drawing, :dxf, :script or :image; a DXF file, a script or a picture is offered the name of the
-drawing with its own extension."
+PURPOSE: :drawing, :dxf, :script, :image, :pdf or :svg; a DXF file, a script, a picture or a sheet is offered the
+name of the drawing with its own extension."
   (cond ((eq mode :open) "")
-        ((member purpose '(:dxf :script :image))
+        ((member purpose '(:dxf :script :image :pdf :svg))
          (concatenate 'string
                       (if (app-file-path app)
                           (pathname-name (app-file-path app))
@@ -497,7 +499,9 @@ drawing with its own extension."
                       (first (ecase purpose
                                (:dxf *dxf-extensions*)
                                (:script *script-extensions*)
-                               (:image *image-extensions*)))))
+                               (:image *image-extensions*)
+                               (:pdf *pdf-extensions*)
+                               (:svg *svg-extensions*)))))
         ((app-file-path app) (file-namestring (app-file-path app)))
         (t *untitled-file-name*)))
 
@@ -510,7 +514,7 @@ drawing with its own extension."
 APP: the application.
 MODE: :open or :save.
 CONTINUATION: function of no arguments run after a successful save, or NIL.
-PURPOSE: :drawing, :dxf, :script or :image."
+PURPOSE: :drawing, :dxf, :script, :image, :pdf or :svg."
   (let* ((dialog (%make-file-dialog mode
                                     continuation
                                     purpose))

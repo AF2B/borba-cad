@@ -25,6 +25,7 @@ One ASDF file (`borba-cad.asd`), seven systems. One package per module directory
 | | `domain` | Entities, layers, drawing, change sets, history, picking, snapping, transformations (rotate, mirror, scale), inspector property model. | `geometry`, `base` |
 | | `viewport` | World↔screen transform, zoom/pan, extents, adaptive grid. | `geometry`, `base` |
 | | `persistence` | `.bcad` reader/writer/validator, atomic save, path cleaning, the recent-files list, the settings. | `domain`, `base` |
+| | `plot` | Plotting on a sheet: the sheet sizes, the scale and the placement, the entities flattened into strokes, filled triangles and text in sheet millimetres, and the writers of a PDF (by hand) and of an SVG. | `domain`, `geometry`, `base` |
 | | `dxf` | ASCII DXF: the reader (groups, records, sections), the import into a drawing with a report of what was left out, the R12 writer, the color index. | `persistence`, `domain`, `geometry`, `base` |
 | | `image` | Picture files made from pixels: the JPEG encoder. | none |
 | | `script` | The language the program is driven with: the commands (Lisp functions in `borba-cad/script`, read in the user package `borba-cad/user`), the context and transaction a command runs in, the evaluator (reads, runs, times out, reports), and the writer that turns a drawing into the commands that draw it. | `persistence`, `domain`, `geometry`, `base`, `i18n`, `sbcl-support` |

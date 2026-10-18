@@ -62,6 +62,13 @@ complete, user-facing message in the language of the interface."))
   (:documentation "An edit that changes existing entities, such as trimming or filleting, cannot be done as asked.
 REASON is a complete sentence in the language of the interface."))
 
+(define-condition export-refused (borba-cad-error)
+  ((reason :initarg :reason :reader export-refused-reason))
+  (:report (lambda (condition stream)
+             (write-string (export-refused-reason condition) stream)))
+  (:documentation "A drawing cannot be exported as asked, for example because there is nothing visible to put on
+the sheet. REASON is a complete sentence in the language of the interface."))
+
 (define-condition drawing-file-error (borba-cad-error)
   ((path :initarg :path :initform nil :reader drawing-file-error-path)
    (reason :initarg :reason :reader drawing-file-error-reason))

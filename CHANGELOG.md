@@ -6,6 +6,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **PDF and SVG export.** More > Export as PDF and Export as SVG put the drawing on an A4, A3, A2 or A1 sheet at
+  a scale you type (`1:50`, `2:1`, or `fit`), in black or in the colors of the layers, with the sheet turned to
+  suit the drawing, a margin, 0.25 mm lines and curves within 0.02 mm of the true ones. The PDF is written by
+  hand, without any library; the notice says the sheet and the scale and warns when the drawing does not fit
+  or when characters had to become question marks. The last choices are remembered.
 - **Trim, extend, offset and fillet.** Four tools in the Modify menu that work on what is clicked. Trim cuts away
   the part of a line, an arc or a circle between the crossings with the other visible entities; extend lengthens
   a line or an arc up to the next entity; offset copies a line, circle, arc, rectangle, polygon or polyline at

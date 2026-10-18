@@ -26,7 +26,7 @@ draw by typing Lisp into a console, because the language of the program is Lisp 
 - **A Lisp console**: `(rect-size 0 0 (m 9) (m 6))` draws; any Common Lisp works; a command is one step of
   undo, and one that fails leaves nothing behind. Scripts run from files and drawings export as scripts.
 - **Files**: its own `.bcad` format (text, versioned, never evaluated), DXF import of any ASCII version and DXF
-  R12 export, and a JPEG of what the canvas shows.
+  R12 export, a JPEG of what the canvas shows, and PDF and SVG sheets to print at a scale.
 - **Friendly**: a start screen with your recent drawings, a file dialog with places and search, and the
   interface in English, Brazilian Portuguese or Russian.
 - **Measured**: every operation is timed and logged; benchmarks and a session log back the numbers.
@@ -235,6 +235,18 @@ are scripts to read and run.
 - **JPEG export** (More > Export as JPEG) saves what the canvas shows, at the view you have and as sharp as
   your display, without the panels, the selection or the cursor. The encoder is written in Lisp.
 
+- **PDF and SVG export** (More > Export as PDF, Export as SVG) put the drawing on a sheet to a scale. Four
+  questions come first: the sheet (A4, A3, A2 or A1), the scale (`1:50`, `1:100`, any ratio such as `1:75`
+  or `2:1`, or `fit` to make the drawing as large as the sheet allows; the last answer is remembered), whether
+  to print in black or in the colors of the layers (very light colors print black, as they would not show on
+  white), and then the name of the file. The sheet is turned to suit the drawing, which goes in the middle
+  inside a 10 mm margin, lines are 0.25 mm thick, and curves are drawn as segments within 0.02 mm of the true
+  curve. The message at the end says the sheet and the scale, and warns when the drawing does not fit at that
+  scale. The PDF is written by hand, with no library: vector paths and text in Courier, whose characters are as
+  wide as the text of the program is measured, so what you see is what prints. Characters outside Latin-1, such
+  as Cyrillic, cannot be written in that font and become question marks, which the message counts; the SVG
+  keeps every character.
+
 Exports end with a message in the middle of the window that says the file was saved or why it was not.
 
 **Ortho, polar and typed points.** `F8` (the **Ortho** chip) holds the next point of a line, polyline or
@@ -301,8 +313,8 @@ those of 1.0.0.
 
 - Run on Linux x86_64 with SBCL; the Windows build is made by the workflow and has not yet been opened on a
   real Windows machine.
-- Single-line text, axis-aligned rectangles and linear, radius, diameter and angle dimensions only; no
-  printing; JPEG is the only picture format.
+- Single-line text, axis-aligned rectangles and linear, radius, diameter and angle dimensions only; there is
+  no printing from the program itself, only PDF and SVG sheets and a JPEG; the PDF font has no Cyrillic.
 - The DXF import was tried on test files and a few small files from the internet, not on a collection of real
   drawings.
 - Portuguese and Russian keep the decimal point, and leave in English the console's error messages and the

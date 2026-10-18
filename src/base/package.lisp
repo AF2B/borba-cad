@@ -45,6 +45,8 @@
    #:layer-error-reason
    #:edit-refused
    #:edit-refused-reason
+   #:export-refused
+   #:export-refused-reason
    #:drawing-file-error
    #:drawing-file-error-path
    #:drawing-file-error-reason

@@ -96,6 +96,12 @@
                              (:file "import")
                              (:file "export")
                              (:file "files")))
+               (:module "plot"
+                :serial t
+                :components ((:file "package")
+                             (:file "layout")
+                             (:file "pdf")
+                             (:file "svg")))
                (:module "image"
                 :serial t
                 :components ((:file "package")
@@ -146,6 +152,7 @@
                              (:file "console")
                              (:file "script-operations")
                              (:file "image-operations")
+                             (:file "plot-operations")
                              (:file "autosave")
                              (:file "constraints")
                              (:file "grips")
@@ -281,6 +288,7 @@
                (:file "measure-tests")
                (:file "dimension-tests")
                (:file "reshaping-tests")
+               (:file "plot-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

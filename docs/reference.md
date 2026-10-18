@@ -77,6 +77,7 @@ NIL when it selects only what it holds (dragged from left to right).
 - `WELCOME`: the start screen, or NIL.
 - `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
 - `FILLET-RADIUS`: the radius, in millimetres, the fillet tool gives the next arc.
+- `PLOT-SETTINGS`: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 - `GRIP-DRAG`: the grip being dragged, or NIL.
 - `CONSOLE`: the console.
 - `CONSTRAINT`: :ortho, :polar or NIL, how the next point is held to the last one.
@@ -334,6 +335,14 @@ Return the regions of the window as they are now: the console takes its strip fr
 
 ```lisp
 (app-overlay-visible instance)
+```
+
+(undocumented)
+
+### `app-plot-settings` (function)
+
+```lisp
+(app-plot-settings instance)
 ```
 
 (undocumented)
@@ -928,6 +937,18 @@ the selection and the cursor. On failure the previous file is untouched. Returns
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
 
+### `export-pdf-from-app` (function)
+
+```lisp
+(export-pdf-from-app app path-text)
+```
+
+Save the drawing as a PDF file at PATH-TEXT (.pdf is added to a name without an extension), on the sheet and at the
+scale that were chosen. Returns true on success.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
+
 ### `export-script-from-app` (function)
 
 ```lisp
@@ -936,6 +957,18 @@ the selection and the cursor. On failure the previous file is untouched. Returns
 
 Save the drawing as a script at PATH-TEXT (.lisp is added to a name without an extension) and tell the user
 how it went in a modal. On failure the previous file is untouched. Returns true on success.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
+
+### `export-svg-from-app` (function)
+
+```lisp
+(export-svg-from-app app path-text)
+```
+
+Save the drawing as an SVG file at PATH-TEXT (.svg is added to a name without an extension), on the sheet and at the
+scale that were chosen. Returns true on success.
 
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
@@ -1476,7 +1509,7 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 - `MODE`: :open or :save.
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
 - `PURPOSE`: :drawing for a drawing of the program, :dxf to import or export a DXF file, :script to run a script
-or export one, or :image to export a picture.
+or export one, :image to export a picture, or :pdf or :svg to export a sheet.
 
 ### `open-menu` (function)
 
@@ -1642,6 +1675,17 @@ Open the dialog where the user picks a folder and a name, and export what the ca
 
 - `APP`: the application.
 
+### `operation-export-pdf` (function)
+
+```lisp
+(operation-export-pdf app)
+```
+
+Ask how the drawing is to be put on the sheet, then open the dialog where the user picks a folder and a name, and
+export it there as a PDF file.
+
+- `APP`: the application.
+
 ### `operation-export-script` (function)
 
 ```lisp
@@ -1649,6 +1693,17 @@ Open the dialog where the user picks a folder and a name, and export what the ca
 ```
 
 Open the dialog where the user picks a folder and a name, and export the drawing there as a script.
+
+- `APP`: the application.
+
+### `operation-export-svg` (function)
+
+```lisp
+(operation-export-svg app)
+```
+
+Ask how the drawing is to be put on the sheet, then open the dialog where the user picks a folder and a name, and
+export it there as an SVG file.
 
 - `APP`: the application.
 
@@ -2946,6 +3001,19 @@ REASON is a complete sentence in the language of the interface.
 Return the name of an entity kind in the current language, in lower case, for example "line".
 
 - `KIND`: an entity kind keyword.
+
+### `export-refused` (condition)
+
+A drawing cannot be exported as asked, for example because there is nothing visible to put on
+the sheet. REASON is a complete sentence in the language of the interface.
+
+### `export-refused-reason` (generic function)
+
+```lisp
+(export-refused-reason condition)
+```
+
+(undocumented)
 
 ### `format-area` (function)
 
@@ -9397,6 +9465,346 @@ Write an RGB image as a PNG file.
 - `HEIGHT`: image height in pixels.
 - `PIXELS`: octet vector of WIDTH x HEIGHT x 3 values, one row after another.
 - `FLIP-VERTICAL`: true when the rows run bottom to top, as OpenGL returns them.
+
+## BORBA-CAD/PLOT
+
+Plotting a drawing on a sheet of paper, to scale: the sheet sizes, the scale and where the drawing
+goes on the sheet, the entities flattened into strokes, filled triangles and text in sheet coordinates, and two
+writers of that, one of a PDF file made by hand and one of an SVG file.
+
+### `*paper-sizes*` (variable)
+
+The sheets, as (keyword name width height) with the width and the height in millimetres, the sheet standing up.
+
+### `+points-per-millimeter+` (constant)
+
+How many PDF points, 1/72 of an inch, there are in a millimetre.
+
+### `make-plot-settings` (function)
+
+```lisp
+(make-plot-settings &key (paper a4) ratio (monochrome t) (line-width +default-line-width+) (margin +default-margin+))
+```
+
+Create validated plot settings. Signals INVALID-INPUT when one makes no sense.
+
+- `PAPER`: a keyword of *PAPER-SIZES*.
+- `RATIO`: millimetres of paper for a millimetre of the drawing, above zero, or NIL to fit the drawing to the sheet.
+- `MONOCHROME`: true to draw everything in black.
+- `LINE-WIDTH`: thickness of lines in millimetres, above zero.
+- `MARGIN`: empty edge of the sheet in millimetres, zero or more and less than half of the sheet.
+
+### `paper-name` (function)
+
+```lisp
+(paper-name paper)
+```
+
+Return the name of a sheet, such as "A4".
+
+- `PAPER`: a keyword of *PAPER-SIZES*.
+
+### `paper-size` (function)
+
+```lisp
+(paper-size paper)
+```
+
+Return the width and the height of a sheet standing up, in millimetres, as two values.
+
+- `PAPER`: a keyword of *PAPER-SIZES*.
+
+### `parse-plot-scale` (function)
+
+```lisp
+(parse-plot-scale text)
+```
+
+Return the scale that TEXT names: NIL for "fit", or the millimetres of paper for a millimetre of the drawing.
+"1:50" and "1/50" and a plain "50" are a fiftieth, "2:1" is twice life size. Signals INVALID-INPUT when
+TEXT names none.
+
+- `TEXT`: what was typed.
+
+### `plan-plot` (function)
+
+```lisp
+(plan-plot drawing settings)
+```
+
+Work out where the drawing goes on the sheet and flatten what is visible into plot items. Signals EXPORT-REFUSED
+when nothing is visible.
+
+- `DRAWING`: the drawing.
+- `SETTINGS`: the plot settings.
+
+### `plot-fill` (type)
+
+A filled polygon, in practice an arrowhead.
+
+- `POINTS`: the vertices as a list of (x . y) conses in sheet millimetres.
+- `COLOR`: a list of red, green and blue, each from 0 to 1.
+
+### `plot-fill-color` (function)
+
+```lisp
+(plot-fill-color instance)
+```
+
+(undocumented)
+
+### `plot-fill-points` (function)
+
+```lisp
+(plot-fill-points instance)
+```
+
+(undocumented)
+
+### `plot-plan` (type)
+
+Where a drawing goes on a sheet and what is drawn there.
+
+- `SETTINGS`: the plot settings.
+- `WIDTH`: width of the sheet in millimetres, in the orientation chosen.
+- `HEIGHT`: height of the sheet in millimetres.
+- `RATIO`: the millimetres of paper for a millimetre of the drawing, as worked out for a fit.
+- `FITS`: true when the drawing lies within the margins.
+- `OFFSET-X`: sheet x of the origin of the drawing.
+- `OFFSET-Y`: sheet y of the origin of the drawing.
+- `ENTITY-COUNT`: how many entities are drawn.
+- `ITEMS`: the strokes, fills and texts, in drawing order, in sheet coordinates.
+
+### `plot-plan-entity-count` (function)
+
+```lisp
+(plot-plan-entity-count instance)
+```
+
+(undocumented)
+
+### `plot-plan-fits` (function)
+
+```lisp
+(plot-plan-fits instance)
+```
+
+(undocumented)
+
+### `plot-plan-height` (function)
+
+```lisp
+(plot-plan-height instance)
+```
+
+(undocumented)
+
+### `plot-plan-items` (function)
+
+```lisp
+(plot-plan-items instance)
+```
+
+(undocumented)
+
+### `plot-plan-ratio` (function)
+
+```lisp
+(plot-plan-ratio instance)
+```
+
+(undocumented)
+
+### `plot-plan-settings` (function)
+
+```lisp
+(plot-plan-settings instance)
+```
+
+(undocumented)
+
+### `plot-plan-width` (function)
+
+```lisp
+(plot-plan-width instance)
+```
+
+(undocumented)
+
+### `plot-settings` (type)
+
+How a drawing is put on a sheet.
+
+- `PAPER`: a keyword of *PAPER-SIZES*.
+- `RATIO`: the millimetres of paper for a millimetre of the drawing, or NIL to make it as large as the sheet allows.
+- `MONOCHROME`: true to draw everything in black, false to use the colors of the layers.
+- `LINE-WIDTH`: the thickness of lines, in millimetres of paper.
+- `MARGIN`: the empty edge of the sheet, in millimetres.
+
+### `plot-settings-line-width` (function)
+
+```lisp
+(plot-settings-line-width instance)
+```
+
+(undocumented)
+
+### `plot-settings-margin` (function)
+
+```lisp
+(plot-settings-margin instance)
+```
+
+(undocumented)
+
+### `plot-settings-monochrome` (function)
+
+```lisp
+(plot-settings-monochrome instance)
+```
+
+(undocumented)
+
+### `plot-settings-paper` (function)
+
+```lisp
+(plot-settings-paper instance)
+```
+
+(undocumented)
+
+### `plot-settings-ratio` (function)
+
+```lisp
+(plot-settings-ratio instance)
+```
+
+(undocumented)
+
+### `plot-stroke` (type)
+
+A run of segments.
+
+- `POINTS`: the vertices as a list of (x . y) conses in sheet millimetres.
+- `CLOSED`: true when the last joins the first.
+- `COLOR`: a list of red, green and blue, each from 0 to 1.
+
+### `plot-stroke-closed` (function)
+
+```lisp
+(plot-stroke-closed instance)
+```
+
+(undocumented)
+
+### `plot-stroke-color` (function)
+
+```lisp
+(plot-stroke-color instance)
+```
+
+(undocumented)
+
+### `plot-stroke-points` (function)
+
+```lisp
+(plot-stroke-points instance)
+```
+
+(undocumented)
+
+### `plot-text` (type)
+
+A line of text.
+
+- `STRING`: the characters.
+- `X`: sheet x of the start of the baseline.
+- `Y`: sheet y of the start of the baseline.
+- `HEIGHT`: the size of the characters in millimetres.
+- `ANGLE`: direction of the baseline, in radians counter-clockwise from the sheet's x.
+- `COLOR`: a list of red, green and blue, each from 0 to 1.
+
+### `plot-text-angle` (function)
+
+```lisp
+(plot-text-angle instance)
+```
+
+(undocumented)
+
+### `plot-text-color` (function)
+
+```lisp
+(plot-text-color instance)
+```
+
+(undocumented)
+
+### `plot-text-height` (function)
+
+```lisp
+(plot-text-height instance)
+```
+
+(undocumented)
+
+### `plot-text-string` (function)
+
+```lisp
+(plot-text-string instance)
+```
+
+(undocumented)
+
+### `plot-text-x` (function)
+
+```lisp
+(plot-text-x instance)
+```
+
+(undocumented)
+
+### `plot-text-y` (function)
+
+```lisp
+(plot-text-y instance)
+```
+
+(undocumented)
+
+### `render-pdf` (function)
+
+```lisp
+(render-pdf drawing settings)
+```
+
+Return the drawing as the bytes of a PDF file, and the plot plan that was used, and how many characters of text had
+to be written as a question mark because the PDF font cannot show them. Signals EXPORT-REFUSED when nothing is visible.
+
+- `DRAWING`: the drawing.
+- `SETTINGS`: the plot settings.
+
+### `render-svg` (function)
+
+```lisp
+(render-svg drawing settings)
+```
+
+Return the drawing as the text of an SVG file, and the plot plan that was used. Signals EXPORT-REFUSED when nothing
+is visible.
+
+- `DRAWING`: the drawing.
+- `SETTINGS`: the plot settings.
+
+### `scale-text` (function)
+
+```lisp
+(scale-text ratio)
+```
+
+Return a scale as a ratio, such as 1:50, or 2:1 when it enlarges.
+
+- `RATIO`: millimetres of paper for a millimetre of the drawing.
 
 ## BORBA-CAD/SBCL-SUPPORT
 
