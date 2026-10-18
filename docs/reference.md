@@ -1345,7 +1345,8 @@ Create the application around a drawing (a new empty one by default).
 Create the tool named by KIND.
 
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
-:mirror, :scale, :measure-distance, :measure-angle or :measure-area.
+:mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension, :diameter-dimension or
+:angular-dimension.
 
 ### `make-wheel-event` (function)
 
@@ -1789,8 +1790,9 @@ Activate a tool, cancelling whatever the previous one was doing.
 
 - `APP`: the application.
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
-:mirror, :scale, :measure-distance, :measure-angle or :measure-area. A tool that changes the selection is
-not activated when nothing is selected.
+:mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension,
+:diameter-dimension or :angular-dimension. A tool that changes the selection is not activated when nothing is
+selected.
 
 ### `operation-toggle-console` (function)
 
@@ -3543,6 +3545,102 @@ too long or already used.
 - `NAME`: layer name.
 - `COLOR`: an RGB color.
 
+### `angular-dimension-end-angle` (function)
+
+```lisp
+(angular-dimension-end-angle instance)
+```
+
+(undocumented)
+
+### `angular-dimension-entity` (type)
+
+An angle dimension: the angle at a vertex between two arms, drawn as an arc of a given radius from the first arm
+to the second, counter-clockwise. The value is derived from the arms.
+
+- `VERTEX-X`: x of the vertex.
+- `VERTEX-Y`: y of the vertex.
+- `START-ANGLE`: direction of the first arm, in radians counter-clockwise from +x, in [0, 2 pi).
+- `END-ANGLE`: direction of the second arm, in [0, 2 pi).
+- `RADIUS`: radius of the dimension arc.
+- `TEXT-HEIGHT`: text height (em size); every part of the dimension scales with it.
+- `PRECISION`: decimals of the angle in degrees.
+- `SWEEP`: the angle measured, in (0, 2 pi); computed from the arms.
+- `TEXT`: the displayed text, computed at construction.
+- `LAYOUT`: the geometric layout of all parts, computed at construction.
+
+### `angular-dimension-layout` (function)
+
+```lisp
+(angular-dimension-layout instance)
+```
+
+(undocumented)
+
+### `angular-dimension-precision` (function)
+
+```lisp
+(angular-dimension-precision instance)
+```
+
+(undocumented)
+
+### `angular-dimension-radius` (function)
+
+```lisp
+(angular-dimension-radius instance)
+```
+
+(undocumented)
+
+### `angular-dimension-start-angle` (function)
+
+```lisp
+(angular-dimension-start-angle instance)
+```
+
+(undocumented)
+
+### `angular-dimension-sweep` (function)
+
+```lisp
+(angular-dimension-sweep instance)
+```
+
+(undocumented)
+
+### `angular-dimension-text` (function)
+
+```lisp
+(angular-dimension-text instance)
+```
+
+(undocumented)
+
+### `angular-dimension-text-height` (function)
+
+```lisp
+(angular-dimension-text-height instance)
+```
+
+(undocumented)
+
+### `angular-dimension-vertex-x` (function)
+
+```lisp
+(angular-dimension-vertex-x instance)
+```
+
+(undocumented)
+
+### `angular-dimension-vertex-y` (function)
+
+```lisp
+(angular-dimension-vertex-y instance)
+```
+
+(undocumented)
+
 ### `apply-changes` (function)
 
 ```lisp
@@ -4174,7 +4272,7 @@ of GRIP values. The default is none.
 ```
 
 Return the entity's kind keyword (:line, :rectangle, :circle, :polyline,
-:text, :dimension, :arc, :ellipse or :polygon).
+:text, :dimension, :arc, :ellipse, :polygon, :radial-dimension or :angular-dimension).
 
 - `ENTITY`: an entity.
 
@@ -4703,6 +4801,25 @@ A straight segment between two points.
 
 (undocumented)
 
+### `make-angular-dimension` (function)
+
+```lisp
+(make-angular-dimension &key id layer-id vertex-x vertex-y start-angle end-angle radius text-height precision)
+```
+
+Create a validated angle dimension. Signals INVALID-ENTITY when an invariant is violated.
+
+- `ID`: positive entity id.
+- `LAYER-ID`: id of the layer.
+- `VERTEX-X`: x of the vertex, in millimetres.
+- `VERTEX-Y`: y of the vertex.
+- `START-ANGLE`: direction of the first arm in radians; any finite angle, kept reduced to [0, 2 pi).
+- `END-ANGLE`: direction of the second arm; the angle is measured counter-clockwise from the first arm, and the
+two must differ.
+- `RADIUS`: radius of the dimension arc, above the length tolerance.
+- `TEXT-HEIGHT`: text height (em size), above the length tolerance.
+- `PRECISION`: decimals displayed, 0 to +MAXIMUM-DIMENSION-PRECISION+.
+
 ### `make-arc` (function)
 
 ```lisp
@@ -4871,6 +4988,25 @@ and no two consecutive vertices coincident (including last and first when closed
 
 (undocumented)
 
+### `make-radial-dimension` (function)
+
+```lisp
+(make-radial-dimension &key id layer-id center-x center-y radius angle diameter text-height unit precision)
+```
+
+Create a validated radius or diameter dimension. Signals INVALID-ENTITY when an invariant is violated.
+
+- `ID`: positive entity id.
+- `LAYER-ID`: id of the layer.
+- `CENTER-X`: x of the center, in millimetres.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: radius, above the length tolerance.
+- `ANGLE`: direction of the leader in radians; any finite angle, kept reduced to [0, 2 pi).
+- `DIAMETER`: true for a diameter dimension.
+- `TEXT-HEIGHT`: text height (em size), above the length tolerance.
+- `UNIT`: displayed length unit keyword.
+- `PRECISION`: decimals displayed, 0 to +MAXIMUM-DIMENSION-PRECISION+.
+
 ### `make-rectangle` (function)
 
 ```lisp
@@ -5007,7 +5143,7 @@ PASTE-LAYER-ID picks, and moved by (DX, DY).
 ### `pick-entity` (function)
 
 ```lisp
-(pick-entity drawing x y radius)
+(pick-entity drawing x y radius &optional kinds)
 ```
 
 Return the pickable entity nearest to the point within RADIUS, or NIL. When several are at
@@ -5017,6 +5153,7 @@ the same distance the one created last (topmost) wins.
 - `X`: point x in millimetres.
 - `Y`: point y in millimetres.
 - `RADIUS`: pick radius in millimetres.
+- `KINDS`: a list of entity kinds, when only entities of those kinds may be picked.
 
 ### `pickable-entities` (function)
 
@@ -5168,6 +5305,113 @@ One row of the property inspector.
 
 ```lisp
 (property-value instance)
+```
+
+(undocumented)
+
+### `radial-dimension-angle` (function)
+
+```lisp
+(radial-dimension-angle instance)
+```
+
+(undocumented)
+
+### `radial-dimension-center-x` (function)
+
+```lisp
+(radial-dimension-center-x instance)
+```
+
+(undocumented)
+
+### `radial-dimension-center-y` (function)
+
+```lisp
+(radial-dimension-center-y instance)
+```
+
+(undocumented)
+
+### `radial-dimension-diameter` (function)
+
+```lisp
+(radial-dimension-diameter instance)
+```
+
+(undocumented)
+
+### `radial-dimension-edge` (function)
+
+```lisp
+(radial-dimension-edge dimension)
+```
+
+Return the point where the leader of DIMENSION meets the circle, as two values.
+
+- `DIMENSION`: a radial dimension entity.
+
+### `radial-dimension-entity` (type)
+
+A radius or diameter dimension of a circle or an arc: a leader from the center through the circle at an angle,
+and the measured value. The value is derived from the radius; the text is derived from it, the unit and the
+precision.
+
+- `CENTER-X`: x of the center of the circle.
+- `CENTER-Y`: y of the center of the circle.
+- `RADIUS`: radius of the circle.
+- `ANGLE`: direction of the leader from the center, in radians counter-clockwise from +x, in [0, 2 pi).
+- `DIAMETER`: true for a diameter dimension, false for a radius dimension.
+- `TEXT-HEIGHT`: text height (em size); every part of the dimension scales with it.
+- `UNIT`: length unit keyword of the displayed text.
+- `PRECISION`: decimals in the displayed text.
+- `TEXT`: the displayed text, computed at construction.
+- `LAYOUT`: the geometric layout of all parts, computed at construction.
+
+### `radial-dimension-layout` (function)
+
+```lisp
+(radial-dimension-layout instance)
+```
+
+(undocumented)
+
+### `radial-dimension-precision` (function)
+
+```lisp
+(radial-dimension-precision instance)
+```
+
+(undocumented)
+
+### `radial-dimension-radius` (function)
+
+```lisp
+(radial-dimension-radius instance)
+```
+
+(undocumented)
+
+### `radial-dimension-text` (function)
+
+```lisp
+(radial-dimension-text instance)
+```
+
+(undocumented)
+
+### `radial-dimension-text-height` (function)
+
+```lisp
+(radial-dimension-text-height instance)
+```
+
+(undocumented)
+
+### `radial-dimension-unit` (function)
+
+```lisp
+(radial-dimension-unit instance)
 ```
 
 (undocumented)
@@ -5672,6 +5916,25 @@ Signals INVALID-ENTITY when a moved entity would leave the drawing limits.
 - `DX`: displacement along x in millimetres.
 - `DY`: displacement along y in millimetres.
 
+### `update-angular-dimension` (function)
+
+```lisp
+(update-angular-dimension dimension &key (id (entity-id dimension)) (layer-id (entity-layer-id dimension)) (vertex-x (angular-dimension-vertex-x dimension)) (vertex-y (angular-dimension-vertex-y dimension)) (start-angle (angular-dimension-start-angle dimension)) (end-angle (angular-dimension-end-angle dimension)) (radius (angular-dimension-radius dimension)) (text-height (angular-dimension-text-height dimension)) (precision (angular-dimension-precision dimension)))
+```
+
+Return a validated copy of DIMENSION with the given fields replaced.
+
+- `DIMENSION`: the dimension to copy.
+- `ID`: replacement id.
+- `LAYER-ID`: replacement layer id.
+- `VERTEX-X`: replacement vertex x.
+- `VERTEX-Y`: replacement vertex y.
+- `START-ANGLE`: replacement direction of the first arm.
+- `END-ANGLE`: replacement direction of the second arm.
+- `RADIUS`: replacement arc radius.
+- `TEXT-HEIGHT`: replacement text height.
+- `PRECISION`: replacement decimals.
+
 ### `update-arc` (function)
 
 ```lisp
@@ -5787,6 +6050,26 @@ Return a validated copy of POLYLINE with the given fields replaced.
 - `LAYER-ID`: replacement layer id.
 - `COORDINATES`: replacement coordinates (copied).
 - `CLOSED`: replacement closed flag.
+
+### `update-radial-dimension` (function)
+
+```lisp
+(update-radial-dimension dimension &key (id (entity-id dimension)) (layer-id (entity-layer-id dimension)) (center-x (radial-dimension-center-x dimension)) (center-y (radial-dimension-center-y dimension)) (radius (radial-dimension-radius dimension)) (angle (radial-dimension-angle dimension)) (diameter (radial-dimension-diameter dimension)) (text-height (radial-dimension-text-height dimension)) (unit (radial-dimension-unit dimension)) (precision (radial-dimension-precision dimension)))
+```
+
+Return a validated copy of DIMENSION with the given fields replaced.
+
+- `DIMENSION`: the dimension to copy.
+- `ID`: replacement id.
+- `LAYER-ID`: replacement layer id.
+- `CENTER-X`: replacement center x.
+- `CENTER-Y`: replacement center y.
+- `RADIUS`: replacement radius.
+- `ANGLE`: replacement leader direction.
+- `DIAMETER`: replacement diameter flag.
+- `TEXT-HEIGHT`: replacement text height.
+- `UNIT`: replacement display unit.
+- `PRECISION`: replacement decimals.
 
 ### `update-rectangle` (function)
 
@@ -6315,6 +6598,106 @@ its ends included, to the angle tolerance.
 - `START-ANGLE`: the angle at which the arc starts.
 - `SWEEP`: how far it turns, in (0, 2 pi).
 
+### `annotation-layout` (type)
+
+Everything needed to draw a radius, diameter or angle dimension, in world coordinates.
+
+- `SEGMENTS`: doubles, x1 y1 x2 y2 for each stroked segment.
+- `ARROWHEADS`: doubles, six for each filled triangle (tip, base corner, base corner).
+- `TEXT-X`: x of the text baseline start.
+- `TEXT-Y`: y of the text baseline start.
+- `TEXT-ANGLE`: text direction in radians.
+- `TEXT-WIDTH`: width of the text line.
+- `TEXT-HEIGHT`: text height (em size).
+- `BOUNDS`: bounds of every part.
+
+### `annotation-layout-arrowheads` (function)
+
+```lisp
+(annotation-layout-arrowheads instance)
+```
+
+(undocumented)
+
+### `annotation-layout-bounds` (function)
+
+```lisp
+(annotation-layout-bounds instance)
+```
+
+(undocumented)
+
+### `annotation-layout-segments` (function)
+
+```lisp
+(annotation-layout-segments instance)
+```
+
+(undocumented)
+
+### `annotation-layout-text-angle` (function)
+
+```lisp
+(annotation-layout-text-angle instance)
+```
+
+(undocumented)
+
+### `annotation-layout-text-height` (function)
+
+```lisp
+(annotation-layout-text-height instance)
+```
+
+(undocumented)
+
+### `annotation-layout-text-width` (function)
+
+```lisp
+(annotation-layout-text-width instance)
+```
+
+(undocumented)
+
+### `annotation-layout-text-x` (function)
+
+```lisp
+(annotation-layout-text-x instance)
+```
+
+(undocumented)
+
+### `annotation-layout-text-y` (function)
+
+```lisp
+(annotation-layout-text-y instance)
+```
+
+(undocumented)
+
+### `annotation-pick-distance` (function)
+
+```lisp
+(annotation-pick-distance layout x y)
+```
+
+Return the distance from a point to the nearest stroke or the text of an annotation.
+
+- `LAYOUT`: an annotation layout.
+- `X`: point x.
+- `Y`: point y.
+
+### `annotation-touches-bounds-p` (function)
+
+```lisp
+(annotation-touches-bounds-p layout bounds)
+```
+
+Return true when a stroke or the text of an annotation has a point inside BOUNDS or on its edge.
+
+- `LAYOUT`: an annotation layout.
+- `BOUNDS`: the window.
+
 ### `arc-bounds` (function)
 
 ```lisp
@@ -6658,6 +7041,24 @@ Return the point of the segment nearest to P as three values: x, y and the param
 - `X2`: x of the segment end.
 - `Y2`: y of the segment end.
 
+### `compute-angular-dimension-layout` (function)
+
+```lisp
+(compute-angular-dimension-layout vertex-x vertex-y start-angle end-angle radius text-height character-count)
+```
+
+Compute the layout of an angle dimension: the two arms as extension lines, an arc of the given radius from
+the first arm to the second, counter-clockwise, an arrowhead at each end of the arc, and the text, level, beyond
+the middle of the arc.
+
+- `VERTEX-X`: x of the vertex.
+- `VERTEX-Y`: y of the vertex.
+- `START-ANGLE`: direction of the first arm, in radians.
+- `END-ANGLE`: direction of the second arm; the dimension turns counter-clockwise from the first to this one.
+- `RADIUS`: radius of the dimension arc.
+- `TEXT-HEIGHT`: text height (em size) that sizes every part.
+- `CHARACTER-COUNT`: characters in the dimension text.
+
 ### `compute-dimension-layout` (function)
 
 ```lisp
@@ -6676,6 +7077,24 @@ length tolerance.
 - `OFFSET`: signed distance of the dimension line from the measured segment.
 - `TEXT-HEIGHT`: text height (em size) that sizes every part.
 - `CHARACTER-COUNT`: number of characters in the dimension text.
+
+### `compute-radial-dimension-layout` (function)
+
+```lisp
+(compute-radial-dimension-layout center-x center-y radius angle diameter text-height character-count)
+```
+
+Compute the layout of a radius or diameter dimension of a circle. A radius dimension is a leader from the center
+through the circle at ANGLE, with an arrowhead on the circle and the text on a tail beyond it. A diameter
+dimension is the line through the center at ANGLE, with an arrowhead at each end and the text above it.
+
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: radius of the circle.
+- `ANGLE`: direction of the leader from the center, in radians.
+- `DIAMETER`: true for a diameter dimension.
+- `TEXT-HEIGHT`: text height (em size) that sizes every part.
+- `CHARACTER-COUNT`: characters in the dimension text.
 
 ### `contour-area` (function)
 
@@ -10306,6 +10725,23 @@ Longest time a command typed in the console may run.
 
 Longest time a script file may run.
 
+### `angle-dimension` (function)
+
+```lisp
+(angle-dimension x y start end radius &key height decimals)
+```
+
+Dimension the angle at the vertex (X, Y) from the arm that points toward START to the arm that points toward
+END, counter-clockwise, with an arc of the given radius. Returns its id.
+
+- `X`: x of the vertex.
+- `Y`: y of the vertex.
+- `START`: the direction of the first arm, in degrees.
+- `END`: the direction of the second arm, in degrees.
+- `RADIUS`: the radius of the arc that carries the dimension.
+- `HEIGHT`: the text height, or the one the drawing uses.
+- `DECIMALS`: how many decimals of a degree the text shows, or 1.
+
 ### `arc` (function)
 
 ```lisp
@@ -10410,6 +10846,23 @@ Return how many forms TEXT holds, or NIL when it cannot be read.
 
 Select nothing. Returns 0.
 
+### `diameter-dimension` (function)
+
+```lisp
+(diameter-dimension x y radius &key (angle 45) height unit decimals)
+```
+
+Dimension the diameter of the circle centered on (X, Y), with a line through the center at ANGLE. Returns its
+id.
+
+- `X`: x of the center.
+- `Y`: y of the center.
+- `RADIUS`: the radius of the circle (the text says twice that).
+- `ANGLE`: the direction of the line, in degrees.
+- `HEIGHT`: the text height, or the one the drawing uses.
+- `UNIT`: :millimeter, :centimeter or :meter, or the one lengths are shown in.
+- `DECIMALS`: how many decimals the text shows, or the usual number for the unit.
+
 ### `dimension` (function)
 
 ```lisp
@@ -10487,8 +10940,8 @@ across it. Returns its id.
 
 Return the ids of the entities, in the order they are drawn, bottom first.
 
-- `KIND`: only the entities of this kind: :line, :rectangle, :circle, :polyline, :text, :dimension, :arc,
-:ellipse or :polygon.
+- `KIND`: only the entities of this kind: :line, :rectangle, :circle, :polyline, :text, :dimension,
+:radial-dimension, :angular-dimension, :arc, :ellipse or :polygon.
 - `LAYER`: only the entities on the layer with this name.
 
 ### `entity-count` (function)
@@ -10730,6 +11183,23 @@ ROTATION. Returns its id.
 Return an angle of VALUE radians, to be given where a command takes an angle: (rad pi) is half a turn.
 
 - `VALUE`: a number of radians.
+
+### `radius-dimension` (function)
+
+```lisp
+(radius-dimension x y radius &key (angle 45) height unit decimals)
+```
+
+Dimension the radius of the circle centered on (X, Y), with a leader that leaves the center at ANGLE. Returns
+its id.
+
+- `X`: x of the center.
+- `Y`: y of the center.
+- `RADIUS`: the radius of the circle.
+- `ANGLE`: the direction of the leader, in degrees.
+- `HEIGHT`: the text height, or the one the drawing uses.
+- `UNIT`: :millimeter, :centimeter or :meter, or the one lengths are shown in.
+- `DECIMALS`: how many decimals the text shows, or the usual number for the unit.
 
 ### `read-source-forms` (function)
 

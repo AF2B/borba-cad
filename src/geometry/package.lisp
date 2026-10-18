@@ -103,4 +103,17 @@ No screen, pixel or rendering concepts appear here.")
    #:dimension-layout-text-width
    #:dimension-layout-text-height
    #:dimension-layout-bounds
+   #:annotation-layout
+   #:annotation-layout-segments
+   #:annotation-layout-arrowheads
+   #:annotation-layout-text-x
+   #:annotation-layout-text-y
+   #:annotation-layout-text-angle
+   #:annotation-layout-text-width
+   #:annotation-layout-text-height
+   #:annotation-layout-bounds
+   #:compute-radial-dimension-layout
+   #:compute-angular-dimension-layout
+   #:annotation-pick-distance
+   #:annotation-touches-bounds-p
    #:compute-dimension-layout))

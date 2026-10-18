@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Radius, diameter and angle dimensions.** Three new tools in the Draw menu. A radius or diameter dimension is
+  made by clicking a circle or an arc and then where the leader should point; its text starts with R or the
+  diameter sign and always reads left to right. An angle dimension takes the vertex, a point on each arm and a
+  click for the arc, whose side chooses which of the two angles is measured. Each has its grips, its inspector
+  rows, the console commands `radius-dimension`, `diameter-dimension` and `angle-dimension`, and is carried
+  through rotate, mirror, scale, copy, the script export and the DXF export (as lines, arrowheads and text).
 - **Measuring.** A ruler button in the palette opens Distance (`M`), Angle (`Shift+A`) and Area (`Shift+Q`).
   Distance gives the length, the parts along each axis and the direction; angle gives the smaller angle at a
   vertex and the one that completes the turn; area closes a contour of clicked corners (Enter, or the first
@@ -33,6 +39,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
   (only when it changed since the last copy), and the copy is removed when the drawing is saved or closed in
   the usual ways. After a crash the next start asks whether to recover the work: Recover, Discard or Not now.
   A copy that cannot be written is logged and never interrupts the user.
+
+### Changed
+
+- The `.bcad` format is now version 3, which adds the radius, diameter and angle dimensions. Versions 1 and 2
+  still open and are saved as version 3; a version 3 file cannot be opened by an earlier release of the program.
 
 ## [1.2.0] - 2026-10-15
 

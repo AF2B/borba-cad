@@ -304,6 +304,45 @@ DIMENSION: a dimension entity."
                        (dom:dimension-text dimension)
                        (geo:dimension-layout-text-angle layout))))
 
+(defun write-annotation (layer
+                         layout
+                         text)
+  "Write a radius, diameter or angle dimension as its parts: its segments as lines, its arrowheads as filled
+triangles, and its text.
+
+LAYER: the name of the layer.
+LAYOUT: its annotation layout.
+TEXT: the text it shows."
+  (let ((segments (geo:annotation-layout-segments layout))
+        (arrows (geo:annotation-layout-arrowheads layout)))
+    (loop for offset from 0 below (length segments) by 4
+          do (write-line-entity layer
+                                (aref segments offset)
+                                (aref segments (+ offset 1))
+                                (aref segments (+ offset 2))
+                                (aref segments (+ offset 3))))
+    (loop for offset from 0 below (length arrows) by 6
+          do (group 0 "SOLID")
+             (group 8 layer)
+             (group-point 10
+                          (aref arrows offset)
+                          (aref arrows (+ offset 1)))
+             (group-point 11
+                          (aref arrows (+ offset 2))
+                          (aref arrows (+ offset 3)))
+             (group-point 12
+                          (aref arrows (+ offset 4))
+                          (aref arrows (+ offset 5)))
+             (group-point 13
+                          (aref arrows (+ offset 4))
+                          (aref arrows (+ offset 5))))
+    (write-text-entity layer
+                       (geo:annotation-layout-text-x layout)
+                       (geo:annotation-layout-text-y layout)
+                       (geo:annotation-layout-text-height layout)
+                       text
+                       (geo:annotation-layout-text-angle layout))))
+
 (defun write-entity-as-dxf (entity
                             layer
                             report)
@@ -349,6 +388,16 @@ REPORT: the report, in which what changes shape is noted."
     (dom:dimension-entity
      (note report (i18n:tr "Dimensions were written as their lines, arrowheads and text."))
      (write-dimension layer entity))
+    (dom:radial-dimension-entity
+     (note report (i18n:tr "Dimensions were written as their lines, arrowheads and text."))
+     (write-annotation layer
+                       (dom:radial-dimension-layout entity)
+                       (dom:radial-dimension-text entity)))
+    (dom:angular-dimension-entity
+     (note report (i18n:tr "Dimensions were written as their lines, arrowheads and text."))
+     (write-annotation layer
+                       (dom:angular-dimension-layout entity)
+                       (dom:angular-dimension-text entity)))
     (dom:arc-entity
      (group 0 "ARC")
      (group 8 layer)

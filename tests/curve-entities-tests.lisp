@@ -182,7 +182,7 @@
 
 (test a-version-1-file-cannot-hold-the-new-entities
   (let* ((text (persist:drawing-to-string (curve-drawing)))
-         (old (replace-once-text text "(format-version 2)" "(format-version 1)")))
+         (old (replace-once-text text "(format-version 3)" "(format-version 1)")))
     (handler-case (progn (persist:parse-drawing-text old)
                          (fail "a version 1 file with an arc was accepted"))
       (base:drawing-file-content-error (condition)
@@ -291,9 +291,10 @@
 (test the-draw-menu-lists-the-new-tools-in-their-place
   (let ((application (make-test-app)))
     (click-widget application :draw)
-    (is (equal '(:line :polyline :rectangle :polygon :circle :arc :ellipse :text :dimension)
+    (is (equal *draw-menu-order*
                (mapcar (lambda (row) (second (ui:widget-id row))) (menu-rows application))))
-    (is (equal '("L" "P" "R" "N" "C" "A" "E" "T" "D") (mapcar #'ui:widget-shortcut (menu-rows application))))
+    (is (equal '("L" "P" "R" "N" "C" "A" "E" "T" "D" nil nil nil)
+               (mapcar #'ui:widget-shortcut (menu-rows application))))
     (click-widget application '(:menu-item :arc))
     (is (eq :arc (app:tool-kind (app:app-tool application))))
     (is (eq :arc (ui:widget-icon (find-widget application :draw))))))

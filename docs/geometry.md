@@ -136,6 +136,20 @@ The layout is a plain value (`dimension-layout`: 8 doubles of extension lines, 4
 line, 12 of the arrowheads, the text anchor, angle and width, and the bounds of every part), so
 `scene` draws it and `domain` measures it with the same numbers.
 
+The radius, diameter and angle dimensions (`geometry/annotation.lisp`) share one layout value,
+`annotation-layout`: a list of stroked segments, a list of arrowhead triangles, the text anchor, angle and width,
+and the bounds of every part. The sizes are the same multiples of the text height `h` as above.
+
+| Dimension | Layout |
+|---|---|
+| Radius | a leader from the center through the circle at the leader angle, continuing past it by a tail of `0.5·h`, the width of the text and `0.5·h`; an arrowhead with its tip on the circle pointing outward; the text on the tail, baseline `0.35·h` above it, running along it and flipped when the leader points leftward so that it reads left to right |
+| Diameter | the line through the center at the leader angle, from circle to circle, with an arrowhead at each end pointing outward; the text centered above it |
+| Angle | two extension lines along the arms, from `0.4·h` (or half the radius when smaller) from the vertex to `0.6·h` past the arc; the arc, in segments of at most four degrees, counter-clockwise from the first arm to the second; an arrowhead at each end of the arc, tangent to it; the text level, centered on the bisector, beyond the arc by `0.4·h` plus half of its extent along the bisector |
+| Small dimensions | when the line or the arc is shorter than twice the arrow length the arrows sit outside it, pointing inward |
+
+Picking and crossing use the segments and the filled box of the text, so the arc is picked on its chords
+(within a millimetre of the true arc).
+
 ## 6. Entities and their invariants
 
 Entities are immutable values built by validating constructors; a violation signals `invalid-entity`
@@ -153,6 +167,8 @@ layer. Stacking order is id order.
 | Polyline | at least 2 vertices (3 when closed), at most 100,000; no two consecutive vertices coincide | length, vertex count |
 | Text | non-empty single line, at most 256 characters; height > tolerance; any angle, kept in [0, 2π) | width |
 | Dimension | definition points farther apart than the tolerance; text height > tolerance; precision 0 to 6 | measured length |
+| Radius or diameter dimension | radius > tolerance; text height > tolerance; precision 0 to 6; leader angle kept in [0, 2π); the text is `R` and the radius, or the diameter sign and twice the radius | measured length |
+| Angle dimension | arm directions differ by more than the angle tolerance and by less than a whole turn (the angle is measured counter-clockwise from the first arm to the second); radius > tolerance; text height > tolerance; precision 0 to 6 | angle |
 
 Rotating, mirroring and scaling (`src/domain/transforms.lisp`) are generic functions that return a new
 entity of the same id and layer: `entity-rotated`, `entity-mirrored` and `entity-scaled`. A mirror reverses

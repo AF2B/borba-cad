@@ -181,7 +181,8 @@ step that is forgotten fails loudly at run time or in a test, except the documen
    `entity-translated`, `entity-snap-points`, `entity-properties` (what the inspector edits),
    `entity-derived-values`, `entity-with-property`, `entity-with-layer`, `entity-with-identity` (paste)
    and `entity-touches-bounds-p` (crossing selection; the default, bounds overlap, is right for filled
-   boxes only).
+   boxes only); `entity-grips` and `entity-with-grip` when the shape has handles; and, in
+   `domain/transforms.lisp`, `entity-rotated`, `entity-mirrored` and `entity-scaled`.
    Add the keyword to `*entity-kinds*` in `domain/entity.lisp`.
 3. **Persistence** (`src/persistence/format.lisp`): one `make-entity-format` row describes the
    fields; the reader and writer are table-driven. A new entity type changes the file format: see
@@ -201,7 +202,9 @@ step that is forgotten fails loudly at run time or in a test, except the documen
 8. **DXF** (`src/dxf/`): a clause in the `etypecase` of `write-entity-as-dxf` in `export.lisp` (a forgotten
    one is a run-time error, caught by the export tests), and, when DXF has an equivalent, a clause of
    `import-record` and a kind of shape in `import.lisp`.
-9. **Docs**: `docs/geometry.md` (entity table), `README.md`, `CHANGELOG.md`, then `make docs`.
+9. **Script**: a clause in the `etypecase` of `entity-command` (`script/export.lisp`) so that the drawing can be
+   exported as a script, and a command in `script/dsl.lisp` that makes the entity.
+10. **Docs**: `docs/geometry.md` (entity table), `README.md`, `CHANGELOG.md`, then `make docs`.
 
 The dimension, the last type added, appears in 14 source files. Three hold the type's own code
 (`domain/dimension.lisp`, `geometry/dimension.lisp` and the tool in `app/tools.lisp`); four need a

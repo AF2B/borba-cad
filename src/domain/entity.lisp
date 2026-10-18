@@ -27,7 +27,8 @@ small enough that reducing it to a turn loses no precision that matters.")
 (defconstant +inspector-maximum-vertex-rows+ 6
   "Number of polyline vertices that the inspector lists for numeric editing.")
 
-(defparameter *entity-kinds* '(:line :rectangle :circle :polyline :text :dimension :arc :ellipse :polygon)
+(defparameter *entity-kinds*
+  '(:line :rectangle :circle :polyline :text :dimension :arc :ellipse :polygon :radial-dimension :angular-dimension)
   "Every entity kind keyword, in toolbar order.")
 
 (defun entity-kinds ()
@@ -77,7 +78,7 @@ VALUE: the number."
 
 (defgeneric entity-kind (entity)
   (:documentation "Return the entity's kind keyword (:line, :rectangle, :circle, :polyline,
-:text, :dimension, :arc, :ellipse or :polygon).
+:text, :dimension, :arc, :ellipse, :polygon, :radial-dimension or :angular-dimension).
 
 ENTITY: an entity."))
 

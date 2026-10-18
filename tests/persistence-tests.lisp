@@ -28,7 +28,7 @@
 (defparameter *golden-text*
   (format nil "~{~a~%~}"
           (list "(drawing"
-            " (format-version 2)"
+            " (format-version 3)"
             " (unit millimeter)"
             " (display-unit millimeter)"
             " (grid (spacing 100.0) (visible t) (snap t) (object-snap t))"
@@ -50,7 +50,7 @@
                          "  (dimension (id 6) (layer 0) (x1 0.0) (y1 0.0) (x2 1000.0) (y2 0.0) "
                          "(offset 500.0) (text-height 100.0) (unit meter) (precision 2))")
             " ))"))
-  "The exact text the writer must produce for GOLDEN-DRAWING (documents format version 2).")
+  "The exact text the writer must produce for GOLDEN-DRAWING (documents format version 3).")
 
 (defun replace-once (text old new)
   "Return TEXT with the single occurrence of OLD replaced by NEW; fails the test if OLD is not
@@ -260,11 +260,11 @@ fragment."
 
 (test version-errors-are-distinct-and-explicit
   (signals-file-error (base:drawing-file-version-error :line 2 :message "newer")
-                      (replace-once *golden-text* "(format-version 2)" "(format-version 3)"))
+                      (replace-once *golden-text* "(format-version 3)" "(format-version 4)"))
   (signals-file-error (base:drawing-file-version-error :message "not supported")
-                      (replace-once *golden-text* "(format-version 2)" "(format-version 0)"))
+                      (replace-once *golden-text* "(format-version 3)" "(format-version 0)"))
   (signals-file-error (base:drawing-file-content-error :message "whole number")
-                      (replace-once *golden-text* "(format-version 2)" "(format-version 2.0)")))
+                      (replace-once *golden-text* "(format-version 3)" "(format-version 3.0)")))
 
 (test header-fields-are-required-ordered-and-validated
   (signals-file-error (base:drawing-file-content-error :message "expected the field (unit")

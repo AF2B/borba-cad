@@ -103,7 +103,23 @@ ENTITY: an entity."
      (format nil "(polygon ~a ~a ~a ~d ~a)"
              (number-text (dom:polygon-center-x entity)) (number-text (dom:polygon-center-y entity))
              (number-text (dom:polygon-radius entity)) (dom:polygon-sides entity)
-             (angle-text (dom:polygon-rotation entity))))))
+             (angle-text (dom:polygon-rotation entity))))
+    (dom:radial-dimension-entity
+     (format nil "(~:[radius~;diameter~]-dimension ~a ~a ~a :angle ~a :height ~a :unit ~a :decimals ~d)"
+             (dom:radial-dimension-diameter entity)
+             (number-text (dom:radial-dimension-center-x entity)) (number-text (dom:radial-dimension-center-y entity))
+             (number-text (dom:radial-dimension-radius entity)) (angle-text (dom:radial-dimension-angle entity))
+             (number-text (dom:radial-dimension-text-height entity))
+             (keyword-text (dom:radial-dimension-unit entity)) (dom:radial-dimension-precision entity)))
+    (dom:angular-dimension-entity
+     (format nil "(angle-dimension ~a ~a ~a ~a ~a :height ~a :decimals ~d)"
+             (number-text (dom:angular-dimension-vertex-x entity))
+             (number-text (dom:angular-dimension-vertex-y entity))
+             (angle-text (dom:angular-dimension-start-angle entity))
+             (angle-text (dom:angular-dimension-end-angle entity))
+             (number-text (dom:angular-dimension-radius entity))
+             (number-text (dom:angular-dimension-text-height entity))
+             (dom:angular-dimension-precision entity)))))
 
 (defun keyword-text (keyword)
   "Return a keyword as lower case source.

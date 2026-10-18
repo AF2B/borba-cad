@@ -17,14 +17,16 @@ ENTITY: an entity."
 (defun pick-entity (drawing
                     x
                     y
-                    radius)
+                    radius
+                    &optional kinds)
   "Return the pickable entity nearest to the point within RADIUS, or NIL. When several are at
 the same distance the one created last (topmost) wins.
 
 DRAWING: the drawing.
 X: point x in millimetres.
 Y: point y in millimetres.
-RADIUS: pick radius in millimetres."
+RADIUS: pick radius in millimetres.
+KINDS: a list of entity kinds, when only entities of those kinds may be picked."
   (declare (type double-float x y radius))
   (let ((store (drawing-store drawing))
         (best nil)
@@ -32,10 +34,11 @@ RADIUS: pick radius in millimetres."
     (declare (type double-float best-distance))
     (loop for index from (1- (store-count store)) downto 0
           do (let ((entity (store-entity-at store index)))
-               (when (geo:bounds-near-point-p (entity-bounds entity)
-                                              x
-                                              y
-                                              radius)
+               (when (and (or (null kinds) (member (entity-kind entity) kinds))
+                          (geo:bounds-near-point-p (entity-bounds entity)
+                                                   x
+                                                   y
+                                                   radius))
                  (let ((distance (entity-pick-distance entity
                                                        x
                                                        y)))

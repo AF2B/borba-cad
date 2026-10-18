@@ -39,7 +39,10 @@
         (list :ellipse :ellipse (i18n:mark "Ellipse") "E")
         nil
         (list :text :text (i18n:mark "Text") "T")
-        (list :dimension :dimension (i18n:mark "Dimension") "D"))
+        (list :dimension :dimension (i18n:mark "Dimension") "D")
+        (list :radius-dimension :radius-dimension (i18n:mark "Radius dimension") nil)
+        (list :diameter-dimension :diameter-dimension (i18n:mark "Diameter dimension") nil)
+        (list :angular-dimension :angular-dimension (i18n:mark "Angle dimension") nil))
   "The choices of the draw menu, top to bottom, as (tool-kind icon label shortcut), with NIL between
 groups. The labels are in English and are translated where the menu is built.")
 

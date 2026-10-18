@@ -243,8 +243,9 @@ APP: the application."
 
 APP: the application.
 KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
-:mirror, :scale, :measure-distance, :measure-angle or :measure-area. A tool that changes the selection is
-not activated when nothing is selected."
+:mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension,
+:diameter-dimension or :angular-dimension. A tool that changes the selection is not activated when nothing is
+selected."
   (cond ((and (modify-tool-kind-p kind) (zerop (hash-table-count (app-selection app))))
          (set-message app
                       (i18n:tr "Select what you want to change first.")

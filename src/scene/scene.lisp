@@ -400,6 +400,54 @@ COLOR: an RGBA."
                    (geo:dimension-layout-text-angle layout)
                    color)))
 
+(defun emit-annotation (frame
+                        layout
+                        text
+                        color)
+  "Emit the segments, arrowheads and text of a radius, diameter or angle dimension.
+
+FRAME: the build context.
+LAYOUT: its annotation layout.
+TEXT: the text it shows.
+COLOR: an RGBA."
+  (let* ((segments (geo:annotation-layout-segments layout))
+         (arrows (geo:annotation-layout-arrowheads layout))
+         (viewport (frame-viewport frame))
+         (arrow-pixels (view:world-length->pixels viewport
+                                                  (* geo:+dimension-arrow-length-ratio+
+                                                     (geo:annotation-layout-text-height layout)))))
+    (loop for index from 0 below (length segments) by 4
+          do (emit-world-segment frame
+                                 (aref segments index)
+                                 (aref segments (+ index 1))
+                                 (aref segments (+ index 2))
+                                 (aref segments (+ index 3))
+                                 color))
+    (when (>= arrow-pixels +arrow-minimum-pixels+)
+      (loop for base from 0 below (length arrows) by 6
+            do (flet ((corner (index)
+                        (multiple-value-bind (sx sy)
+                            (view:world->screen viewport
+                                                (+ (aref arrows (+ base (* 2 index))) (frame-offset-x frame))
+                                                (+ (aref arrows (+ base (* 2 index) 1)) (frame-offset-y frame)))
+                          (cons (to-single sx) (to-single sy)))))
+                 (let ((a (corner 0)) (b (corner 1)) (c (corner 2)))
+                   (add-triangle (frame-list frame)
+                                 (car a)
+                                 (cdr a)
+                                 (car b)
+                                 (cdr b)
+                                 (car c)
+                                 (cdr c)
+                                 color)))))
+    (emit-text-run frame
+                   text
+                   (geo:annotation-layout-text-x layout)
+                   (geo:annotation-layout-text-y layout)
+                   (geo:annotation-layout-text-height layout)
+                   (geo:annotation-layout-text-angle layout)
+                   color)))
+
 (defun emit-entity (frame
                     entity
                     color)
@@ -467,6 +515,16 @@ COLOR: an RGBA."
      (emit-dimension frame
                      entity
                      color))
+    (dom:radial-dimension-entity
+     (emit-annotation frame
+                      (dom:radial-dimension-layout entity)
+                      (dom:radial-dimension-text entity)
+                      color))
+    (dom:angular-dimension-entity
+     (emit-annotation frame
+                      (dom:angular-dimension-layout entity)
+                      (dom:angular-dimension-text entity)
+                      color))
     (dom:arc-entity
      (emit-arc frame
                (dom:arc-center-x entity)

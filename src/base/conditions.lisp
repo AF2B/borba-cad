@@ -9,7 +9,9 @@
         (cons :dimension (i18n:mark "dimension"))
         (cons :arc (i18n:mark "arc"))
         (cons :ellipse (i18n:mark "ellipse"))
-        (cons :polygon (i18n:mark "polygon")))
+        (cons :polygon (i18n:mark "polygon"))
+        (cons :radial-dimension (i18n:mark "radial dimension"))
+        (cons :angular-dimension (i18n:mark "angle dimension")))
   "The name of each kind of entity, in English, as an error message says it. It is translated where
 it is shown.")
 

@@ -7,9 +7,10 @@
 ;;;; supported one. What a version added is recorded here, in the table, as the SINCE of a field or of
 ;;;; an entity kind, together with the DEFAULT that a field gets when a file is older than the field:
 ;;;; that table is the migration, and a file of an older version is read as the newer one with the
-;;;; defaults filled in. Version 2 added the angle of a text.
+;;;; defaults filled in. Version 2 added the angle of a text, the arc, the ellipse and the polygon. Version 3 added
+;;;; the radius, diameter and angle dimensions.
 
-(defconstant +supported-format-version+ 2
+(defconstant +supported-format-version+ 3
   "The newest format version: the one this program writes, and the newest it reads.")
 
 (defconstant +oldest-supported-format-version+ 1
@@ -192,7 +193,53 @@ NAMES-AND-ACCESSORS: alternating field names and accessor symbols."
                                                            'dom:polygon-sides))
                                     (real-fields "rotation"
                                                  'dom:polygon-rotation))
-                            :since 2))
+                            :since 2)
+        (make-entity-format :radial-dimension
+                            "radial-dimension"
+                            'dom:make-radial-dimension
+                            (append (real-fields "center-x"
+                                                 'dom:radial-dimension-center-x
+                                                 "center-y"
+                                                 'dom:radial-dimension-center-y
+                                                 "radius"
+                                                 'dom:radial-dimension-radius
+                                                 "angle"
+                                                 'dom:radial-dimension-angle)
+                                    (list (make-field-spec :diameter
+                                                           "diameter"
+                                                           :boolean
+                                                           'dom:radial-dimension-diameter))
+                                    (real-fields "text-height"
+                                                 'dom:radial-dimension-text-height)
+                                    (list (make-field-spec :unit
+                                                           "unit"
+                                                           :unit
+                                                           'dom:radial-dimension-unit)
+                                          (make-field-spec :precision
+                                                           "precision"
+                                                           :integer
+                                                           'dom:radial-dimension-precision)))
+                            :since 3)
+        (make-entity-format :angular-dimension
+                            "angular-dimension"
+                            'dom:make-angular-dimension
+                            (append (real-fields "vertex-x"
+                                                 'dom:angular-dimension-vertex-x
+                                                 "vertex-y"
+                                                 'dom:angular-dimension-vertex-y
+                                                 "start-angle"
+                                                 'dom:angular-dimension-start-angle
+                                                 "end-angle"
+                                                 'dom:angular-dimension-end-angle
+                                                 "radius"
+                                                 'dom:angular-dimension-radius
+                                                 "text-height"
+                                                 'dom:angular-dimension-text-height)
+                                    (list (make-field-spec :precision
+                                                           "precision"
+                                                           :integer
+                                                           'dom:angular-dimension-precision)))
+                            :since 3))
   "The storage format of every entity kind.")
 
 (defun find-format-by-kind (kind)

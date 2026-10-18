@@ -17,7 +17,7 @@ draw by typing Lisp into a console, because the language of the program is Lisp 
 ## Highlights
 
 - **Drafting**: lines, polylines, rectangles, regular polygons, circles, arcs, ellipses, text at any angle and
-  aligned dimensions, on layers you can show, hide, lock and recolor.
+  aligned, radius, diameter and angle dimensions, on layers you can show, hide, lock and recolor.
 - **Editing**: window and crossing selection, grips to stretch and turn what is selected, a numeric inspector
   for every property, copy and paste (also between windows), and undo and redo of everything.
 - **Precision**: grid snap and object snap (endpoints, midpoints, centers, intersections, quadrants and, from
@@ -113,6 +113,13 @@ Select one entity and its **grips** appear: squares to change its shape, a circl
 entity (Shift+click adds or removes), dragging from left to right selects what lies inside the rectangle and
 from right to left (dashed) what it touches, and dragging a selection moves it.
 
+**Radius, diameter and angle dimensions** are in the Draw menu. For a radius or a diameter, click the circle or
+the arc, then click where the leader should point; the text follows the leader and always reads left to right.
+For an angle, click the vertex, a point on each arm and a last point for the arc: the side of the vertex that
+this last click is on says which of the two angles the arms make is measured. All three keep their numbers
+live: change the radius or the unit in the inspector and the text follows, and the grips turn the leader or
+move the arms and the arc.
+
 **Rotate, mirror and scale** work on the selection, so select first (the Modify button says so otherwise).
 Rotate: click the center, then the direction to turn toward, or type the angle in degrees. Mirror: click the
 two ends of the mirror line, then say whether to keep or delete the originals. Scale: click the base point,
@@ -137,6 +144,7 @@ points work as they do when drawing.
 | `Shift+R`, `Shift+M`, `Shift+S` | Rotate, mirror, scale the selection |
 | `M`, `Shift+A`, `Shift+Q` | Measure a distance, an angle, an area |
 | `L` `P` `R` `N` `C` `A` `E` `T` `D` | Line, polyline (Enter finishes, the first vertex closes), rectangle, polygon (Up and Down set the sides), circle, arc (center, start, end counter-clockwise), ellipse (center, axis end, other half-axis), text (drag to turn it), dimension |
+| The Draw menu | Also the **radius**, **diameter** and **angle** dimensions, which have no key |
 | `Esc` | Cancel what the tool is doing, then back to Select, then clear the selection |
 | `Delete`, `Ctrl+A` | Delete the selection, select all |
 | `Ctrl+C`, `Ctrl+X`, `Ctrl+V`, `Ctrl+Shift+V` | Copy, cut, paste at the pointer, paste where it was copied from |
@@ -168,7 +176,8 @@ millimetres and angles degrees, unless written `(rad x)`; `(mm 3)`, `(cm 20)`, `
 (select-all) (fit) (help)
 ```
 
-The commands: `line rect rect-size circle arc ellipse polygon pline text dimension` draw; `move copy rotate
+The commands: `line rect rect-size circle arc ellipse polygon pline text dimension radius-dimension diameter-dimension
+angle-dimension` draw; `move copy rotate
 mirror scale erase edit move-to-layer` change; `layer with-layer layers entities entity-count extents info` look and arrange;
 `select select-all deselect selected fit` act on the window; `display-unit grid-spacing` set the drawing; `say`
 and `help` talk, and `(help 'line)` explains one. Up and Down recall commands, Page Up and Page Down scroll, an
@@ -200,8 +209,8 @@ are scripts to read and run.
 
 ## Files and formats
 
-- **`.bcad`**, the program's own format: UTF-8 text, one S-expression, an explicit `format-version` (2; version
-  1 files open and are migrated), doubles that read back exactly. Loading never evaluates code; a malformed
+- **`.bcad`**, the program's own format: UTF-8 text, one S-expression, an explicit `format-version` (3; versions
+  1 and 2 open and are migrated), doubles that read back exactly. Loading never evaluates code; a malformed
   file is refused with its line and column, and a failed open leaves the open drawing untouched. Saving is
   atomic (temporary file, flush, rename).
 - **DXF import** (More > Import DXF) reads an ASCII DXF of any version as a new drawing: layers, lines,
@@ -280,8 +289,8 @@ those of 1.0.0.
 
 - Run on Linux x86_64 with SBCL; the Windows build is made by the workflow and has not yet been opened on a
   real Windows machine.
-- Single-line text, axis-aligned rectangles and aligned linear dimensions only; no printing; JPEG is the only
-  picture format.
+- Single-line text, axis-aligned rectangles and linear, radius, diameter and angle dimensions only; no
+  printing; JPEG is the only picture format.
 - The DXF import was tried on test files and a few small files from the internet, not on a collection of real
   drawings.
 - Portuguese and Russian keep the decimal point, and leave in English the console's error messages and the

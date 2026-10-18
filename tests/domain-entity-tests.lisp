@@ -220,7 +220,11 @@
         (dom:make-arc :id 1 :layer-id 0 :center-x 0d0 :center-y 0d0 :radius 100d0 :start-angle 0d0
                       :end-angle 1d0)
         (dom:make-ellipse :id 1 :layer-id 0 :center-x 0d0 :center-y 0d0 :radius-x 200d0 :radius-y 100d0)
-        (dom:make-polygon :id 1 :layer-id 0 :center-x 0d0 :center-y 0d0 :radius 100d0 :sides 6)))
+        (dom:make-polygon :id 1 :layer-id 0 :center-x 0d0 :center-y 0d0 :radius 100d0 :sides 6)
+        (dom:make-radial-dimension :id 1 :layer-id 0 :center-x 0d0 :center-y 0d0 :radius 100d0 :angle 0.7d0
+                                   :diameter nil :text-height 20d0 :unit :millimeter :precision 1)
+        (dom:make-angular-dimension :id 1 :layer-id 0 :vertex-x 0d0 :vertex-y 0d0 :start-angle 0.2d0
+                                    :end-angle 1.4d0 :radius 100d0 :text-height 20d0 :precision 1)))
 
 (test every-kind-reports-a-distinct-kind-keyword-and-bounds
   (let ((entities (every-entity-kind)))

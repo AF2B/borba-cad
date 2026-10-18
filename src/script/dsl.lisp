@@ -393,6 +393,125 @@ DECIMALS: how many decimals the text shows, or the usual number for the unit."
                                       :unit unit
                                       :precision (or decimals (base:default-display-precision unit)))))))
 
+(defconstant +default-angle-decimals+ 1
+  "How many decimals of a degree the text of an angle dimension shows, unless the command says.")
+
+(defun radial-dimension (x
+                         y
+                         radius
+                         angle
+                         diameter
+                         height
+                         unit
+                         decimals)
+  "Add the dimension of a circle, as a radius or as a diameter. Returns its id.
+
+X: x of the center.
+Y: y of the center.
+RADIUS: the radius of the circle.
+ANGLE: the direction of the leader from the center, in degrees.
+DIAMETER: true for a diameter dimension.
+HEIGHT: the text height, or NIL for the one the drawing uses.
+UNIT: the unit of the text, or NIL for the one lengths are shown in.
+DECIMALS: how many decimals the text shows, or NIL for the usual number for the unit."
+  (let* ((drawing (the-drawing))
+         (unit (or unit (dom:drawing-display-unit drawing))))
+    (add-entity (lambda (id layer-id)
+                  (dom:make-radial-dimension :id id
+                                             :layer-id layer-id
+                                             :center-x (number-of x)
+                                             :center-y (number-of y)
+                                             :radius (number-of radius)
+                                             :angle (angle-radians angle)
+                                             :diameter diameter
+                                             :text-height (if height
+                                                              (number-of height)
+                                                              (dom:drawing-default-text-height drawing))
+                                             :unit unit
+                                             :precision (or decimals (base:default-display-precision unit)))))))
+
+(defun radius-dimension (x
+                         y
+                         radius
+                         &key (angle 45)
+                              height
+                              unit
+                              decimals)
+  "Dimension the radius of the circle centered on (X, Y), with a leader that leaves the center at ANGLE. Returns
+its id.
+
+X: x of the center.
+Y: y of the center.
+RADIUS: the radius of the circle.
+ANGLE: the direction of the leader, in degrees.
+HEIGHT: the text height, or the one the drawing uses.
+UNIT: :millimeter, :centimeter or :meter, or the one lengths are shown in.
+DECIMALS: how many decimals the text shows, or the usual number for the unit."
+  (radial-dimension x
+                    y
+                    radius
+                    angle
+                    nil
+                    height
+                    unit
+                    decimals))
+
+(defun diameter-dimension (x
+                           y
+                           radius
+                           &key (angle 45)
+                                height
+                                unit
+                                decimals)
+  "Dimension the diameter of the circle centered on (X, Y), with a line through the center at ANGLE. Returns its
+id.
+
+X: x of the center.
+Y: y of the center.
+RADIUS: the radius of the circle (the text says twice that).
+ANGLE: the direction of the line, in degrees.
+HEIGHT: the text height, or the one the drawing uses.
+UNIT: :millimeter, :centimeter or :meter, or the one lengths are shown in.
+DECIMALS: how many decimals the text shows, or the usual number for the unit."
+  (radial-dimension x
+                    y
+                    radius
+                    angle
+                    t
+                    height
+                    unit
+                    decimals))
+
+(defun angle-dimension (x
+                        y
+                        start
+                        end
+                        radius
+                        &key height
+                             decimals)
+  "Dimension the angle at the vertex (X, Y) from the arm that points toward START to the arm that points toward
+END, counter-clockwise, with an arc of the given radius. Returns its id.
+
+X: x of the vertex.
+Y: y of the vertex.
+START: the direction of the first arm, in degrees.
+END: the direction of the second arm, in degrees.
+RADIUS: the radius of the arc that carries the dimension.
+HEIGHT: the text height, or the one the drawing uses.
+DECIMALS: how many decimals of a degree the text shows, or 1."
+  (add-entity (lambda (id layer-id)
+                (dom:make-angular-dimension :id id
+                                            :layer-id layer-id
+                                            :vertex-x (number-of x)
+                                            :vertex-y (number-of y)
+                                            :start-angle (angle-radians start)
+                                            :end-angle (angle-radians end)
+                                            :radius (number-of radius)
+                                            :text-height (if height
+                                                             (number-of height)
+                                                             (dom:drawing-default-text-height (the-drawing)))
+                                            :precision (or decimals +default-angle-decimals+)))))
+
 ;;; Finding entities
 
 (defun entity-ids-of (designator)
@@ -424,8 +543,8 @@ ID: an entity id."
                       layer)
   "Return the ids of the entities, in the order they are drawn, bottom first.
 
-KIND: only the entities of this kind: :line, :rectangle, :circle, :polyline, :text, :dimension, :arc,
-:ellipse or :polygon.
+KIND: only the entities of this kind: :line, :rectangle, :circle, :polyline, :text, :dimension,
+:radial-dimension, :angular-dimension, :arc, :ellipse or :polygon.
 LAYER: only the entities on the layer with this name."
   (let ((wanted-layer (and layer (dom:find-layer-by-name (the-drawing) layer)))
         (ids '()))
@@ -771,7 +890,8 @@ THINGS: anything."
   nil)
 
 (defparameter *help-topics*
-  '(("Making entities" line rect rect-size circle arc ellipse polygon pline text dimension)
+  '(("Making entities" line rect rect-size circle arc ellipse polygon pline text dimension radius-dimension
+     diameter-dimension angle-dimension)
     ("Layers" layer with-layer layers)
     ("Changing entities" move copy erase edit move-to-layer rotate mirror scale)
     ("Finding entities" entities entity-count extents info)

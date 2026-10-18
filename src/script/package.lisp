@@ -76,6 +76,9 @@ commands that draw it.")
    #:pline
    #:text
    #:dimension
+   #:radius-dimension
+   #:diameter-dimension
+   #:angle-dimension
    ;; Editing
    #:move
    #:copy

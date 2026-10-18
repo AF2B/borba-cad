@@ -570,3 +570,87 @@ CORNERS: a vector of alternating x and y values."
                         :y2 y2
                         :offset (* factor (dimension-offset dimension))
                         :text-height (* factor (dimension-text-height dimension))))))
+
+(defmethod entity-rotated ((dimension radial-dimension-entity) center-x center-y angle)
+  (multiple-value-bind (x y) (rotate-xy (radial-dimension-center-x dimension)
+                                        (radial-dimension-center-y dimension)
+                                        center-x
+                                        center-y
+                                        angle)
+    (update-radial-dimension dimension
+                             :center-x x
+                             :center-y y
+                             :angle (+ (radial-dimension-angle dimension) angle))))
+
+(defmethod entity-mirrored ((dimension radial-dimension-entity) line-x1 line-y1 line-x2 line-y2)
+  (multiple-value-bind (x y) (mirror-xy (radial-dimension-center-x dimension)
+                                        (radial-dimension-center-y dimension)
+                                        line-x1
+                                        line-y1
+                                        line-x2
+                                        line-y2)
+    (update-radial-dimension dimension
+                             :center-x x
+                             :center-y y
+                             :angle (mirror-angle (radial-dimension-angle dimension)
+                                                  line-x1
+                                                  line-y1
+                                                  line-x2
+                                                  line-y2))))
+
+(defmethod entity-scaled ((dimension radial-dimension-entity) center-x center-y factor)
+  (multiple-value-bind (x y) (scale-xy (radial-dimension-center-x dimension)
+                                       (radial-dimension-center-y dimension)
+                                       center-x
+                                       center-y
+                                       factor)
+    (update-radial-dimension dimension
+                             :center-x x
+                             :center-y y
+                             :radius (* factor (radial-dimension-radius dimension))
+                             :text-height (* factor (radial-dimension-text-height dimension)))))
+
+(defmethod entity-rotated ((dimension angular-dimension-entity) center-x center-y angle)
+  (multiple-value-bind (x y) (rotate-xy (angular-dimension-vertex-x dimension)
+                                        (angular-dimension-vertex-y dimension)
+                                        center-x
+                                        center-y
+                                        angle)
+    (update-angular-dimension dimension
+                              :vertex-x x
+                              :vertex-y y
+                              :start-angle (+ (angular-dimension-start-angle dimension) angle)
+                              :end-angle (+ (angular-dimension-end-angle dimension) angle))))
+
+(defmethod entity-mirrored ((dimension angular-dimension-entity) line-x1 line-y1 line-x2 line-y2)
+  (multiple-value-bind (x y) (mirror-xy (angular-dimension-vertex-x dimension)
+                                        (angular-dimension-vertex-y dimension)
+                                        line-x1
+                                        line-y1
+                                        line-x2
+                                        line-y2)
+    (update-angular-dimension dimension
+                              :vertex-x x
+                              :vertex-y y
+                              :start-angle (mirror-angle (angular-dimension-end-angle dimension)
+                                                         line-x1
+                                                         line-y1
+                                                         line-x2
+                                                         line-y2)
+                              :end-angle (mirror-angle (angular-dimension-start-angle dimension)
+                                                       line-x1
+                                                       line-y1
+                                                       line-x2
+                                                       line-y2))))
+
+(defmethod entity-scaled ((dimension angular-dimension-entity) center-x center-y factor)
+  (multiple-value-bind (x y) (scale-xy (angular-dimension-vertex-x dimension)
+                                       (angular-dimension-vertex-y dimension)
+                                       center-x
+                                       center-y
+                                       factor)
+    (update-angular-dimension dimension
+                              :vertex-x x
+                              :vertex-y y
+                              :radius (* factor (angular-dimension-radius dimension))
+                              :text-height (* factor (angular-dimension-text-height dimension)))))

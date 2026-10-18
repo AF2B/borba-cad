@@ -155,6 +155,33 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:dimension-layout
    #:dimension-measured-length
    #:dimension-text
+   #:radial-dimension-entity
+   #:make-radial-dimension
+   #:update-radial-dimension
+   #:radial-dimension-center-x
+   #:radial-dimension-center-y
+   #:radial-dimension-radius
+   #:radial-dimension-angle
+   #:radial-dimension-diameter
+   #:radial-dimension-text-height
+   #:radial-dimension-unit
+   #:radial-dimension-precision
+   #:radial-dimension-text
+   #:radial-dimension-layout
+   #:radial-dimension-edge
+   #:angular-dimension-entity
+   #:make-angular-dimension
+   #:update-angular-dimension
+   #:angular-dimension-vertex-x
+   #:angular-dimension-vertex-y
+   #:angular-dimension-start-angle
+   #:angular-dimension-end-angle
+   #:angular-dimension-radius
+   #:angular-dimension-text-height
+   #:angular-dimension-precision
+   #:angular-dimension-sweep
+   #:angular-dimension-text
+   #:angular-dimension-layout
    ;; Entity store
    #:entity-store
    #:make-entity-store
