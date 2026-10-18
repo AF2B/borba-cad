@@ -538,7 +538,9 @@ BLOCKED: true while a modal covers the palette."
 (defparameter *snap-kind-labels*
   (list (cons :endpoint (i18n:mark "endpoint"))
         (cons :center (i18n:mark "center"))
-        (cons :grid (i18n:mark "grid")))
+        (cons :grid (i18n:mark "grid"))
+        (cons :ortho (i18n:mark "ortho"))
+        (cons :polar (i18n:mark "polar")))
   "How the status bar names what the pointer snapped to, in English; it is translated where shown.")
 
 (defun snap-kind-label (kind)
@@ -603,6 +605,14 @@ APP: the application."
           (list :object-snap (i18n:tr "OSnap") nil
                 (lambda () (operation-toggle-object-snap app))
                 (i18n:tr "Snap to endpoints and centers") "O" (dom:drawing-object-snap drawing))
+          (list :ortho (i18n:tr "Ortho") nil
+                (lambda () (operation-toggle-ortho app))
+                (i18n:tr "Hold the next point to a horizontal or vertical line") "F8"
+                (eq :ortho (app-constraint app)))
+          (list :polar (i18n:tr "Polar") nil
+                (lambda () (operation-toggle-polar app))
+                (i18n:tr "Hold the next point to multiples of 15 degrees") "F10"
+                (eq :polar (app-constraint app)))
           (list :unit
                 (i18n:trf "Unit: ~a" (base:unit-abbreviation (dom:drawing-display-unit drawing)))
                 :unit

@@ -560,7 +560,8 @@ true, recent files are remembered in a folder inside DIRECTORY."
       (is (eq :error (app:file-dialog-message-severity (dialog-of application))))
       (is (= 4 (dom:drawing-entity-count (app:app-drawing application))) "the open drawing is untouched")
       (app:app-render application)
-      (is (some (lambda (text) (search "newer" text)) (all-text application)) "and the user sees why")
+      (is (some (lambda (text) (search "broken.bcad" text)) (all-text application))
+          "and the user sees the message, which a long folder name may cut short")
       (click-widget application '(:entry "zeta.bcad"))
       (is (null (app:file-dialog-message (dialog-of application))) "choosing something else clears it"))))
 

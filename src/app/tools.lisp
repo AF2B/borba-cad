@@ -71,6 +71,14 @@ TOOL: a tool.")
   (:method ((tool tool))
     nil))
 
+(defgeneric tool-anchor (tool)
+  (:documentation "Return the last point TOOL has been given, as an (x . y) cons, which ortho and polar hold the
+next one to and a typed length is measured from; NIL when it has none.
+
+TOOL: a tool.")
+  (:method ((tool tool))
+    nil))
+
 (defgeneric tool-preview-entities (tool app)
   (:documentation "Return the entities TOOL would create now, drawn as a preview.
 
@@ -384,6 +392,9 @@ TOOL: the tool."))
 (defmethod tool-in-progress-p ((tool two-click-tool))
   (and (first-point tool) t))
 
+(defmethod tool-anchor ((tool two-click-tool))
+  (first-point tool))
+
 (defclass line-tool (two-click-tool) ()
   (:documentation "Creates a line segment from two clicks."))
 (defmethod tool-kind ((tool line-tool)) :line)
@@ -524,6 +535,9 @@ Y: world y of the point.")
 
 (defmethod tool-in-progress-p ((tool point-sequence-tool))
   (and (sequence-points tool) t))
+
+(defmethod tool-anchor ((tool point-sequence-tool))
+  (first (sequence-points tool)))
 
 (defun direction-from (center
                        x
@@ -731,6 +745,9 @@ CLOSED: true to close it."
 
 (defmethod tool-in-progress-p ((tool polyline-tool))
   (and (polyline-points tool) t))
+
+(defmethod tool-anchor ((tool polyline-tool))
+  (first (polyline-points tool)))
 
 ;;; Text
 
@@ -942,6 +959,10 @@ Y: world y of the line."
 
 (defmethod tool-in-progress-p ((tool dimension-tool))
   (and (dimension-first-point tool) t))
+
+(defmethod tool-anchor ((tool dimension-tool))
+  (and (null (dimension-second-point tool))
+       (dimension-first-point tool)))
 
 (defun make-tool (kind)
   "Create the tool named by KIND.

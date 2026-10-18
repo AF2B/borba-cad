@@ -6,6 +6,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Ortho, polar and typed points.** `F8` and `F10`, and chips in the status bar, hold the next point of a line,
+  polyline, dimension, rectangle, circle, arc, ellipse or polygon to a horizontal or vertical line from the
+  last point (ortho) or to multiples of 15 degrees (polar); an object snap still wins. A tool that waits for a
+  point also takes it typed: a length toward the pointer, `x;y`, `@x;y` or `length<angle`, in the display unit
+  or with `mm`, `cm` or `m`. A text that is not a point is said and kept for correcting.
 - **Autosave and recovery.** A drawing with unsaved changes is copied to the state directory every minute
   (only when it changed since the last copy), and the copy is removed when the drawing is saved or closed in
   the usual ways. After a crash the next start asks whether to recover the work: Recover, Discard or Not now.

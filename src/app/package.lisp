@@ -146,6 +146,14 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:app-image-capturer
    #:operation-export-image
    #:export-image-from-app
+   #:operation-toggle-ortho
+   #:operation-toggle-polar
+   #:constrain-point
+   #:parse-point-input
+   #:app-constraint
+   #:app-coordinate-edit
+   #:tool-anchor
+   #:+polar-increment-degrees+
    #:operation-toggle-console
    #:operation-run-script
    #:operation-export-script

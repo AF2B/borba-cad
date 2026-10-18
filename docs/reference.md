@@ -20,6 +20,10 @@ Pointer travel, in pixels, before a press becomes a drag; below it a release is 
 How close, in pixels, the pointer must be to an entity to pick it: about 1.6 mm on screen,
 enough for a steady hand and small enough not to grab distant entities.
 
+### `+polar-increment-degrees+` (constant)
+
+The angle, in degrees, whose multiples polar holds the next point to.
+
 ### `+snap-radius-pixels+` (constant)
 
 How close, in pixels, the pointer must be to an endpoint or center for object snap to grab it.
@@ -61,6 +65,8 @@ NIL when it selects only what it holds (dragged from left to right).
 - `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
 - `GRIP-DRAG`: the grip being dragged, or NIL.
 - `CONSOLE`: the console.
+- `CONSTRAINT`: :ortho, :polar or NIL, how the next point is held to the last one.
+- `COORDINATE-EDIT`: the edit state of a point being typed, or NIL.
 - `AUTOSAVE-TIME`: monotonic time of the last look of the autosave, or NIL before the first.
 - `AUTOSAVE-REVISION`: the revision of the drawing in the copy written last, or -1.
 - `AUTOSAVE-WRITTEN`: true when this session has written a copy that is still in the state directory.
@@ -115,6 +121,22 @@ new one.
 
 ```lisp
 (app-console instance)
+```
+
+(undocumented)
+
+### `app-constraint` (function)
+
+```lisp
+(app-constraint instance)
+```
+
+(undocumented)
+
+### `app-coordinate-edit` (function)
+
+```lisp
+(app-coordinate-edit instance)
 ```
 
 (undocumented)
@@ -700,6 +722,21 @@ the expression is still open afterwards, wait for the next line.
 
 - `APP`: the application.
 
+### `constrain-point` (function)
+
+```lisp
+(constrain-point mode anchor x y)
+```
+
+Return the point that MODE holds (X, Y) to, as two values: with :ortho, the nearest point of the horizontal or
+the vertical line through the anchor; with :polar, the nearest point of the ray from the anchor at a multiple
+of the polar increment.
+
+- `MODE`: :ortho or :polar.
+- `ANCHOR`: an (x . y) cons, the last point.
+- `X`: world x of the point.
+- `Y`: world y of the point.
+
 ### `create-folder` (function)
 
 ```lisp
@@ -720,7 +757,7 @@ The pointer position in world coordinates.
 - `RAW-Y`: world y under the pointer.
 - `X`: world x after snapping.
 - `Y`: world y after snapping.
-- `SNAP-KIND`: :endpoint, :center, :grid or NIL.
+- `SNAP-KIND`: :endpoint, :center, :grid, :ortho, :polar or NIL.
 - `MODIFIERS`: modifier keys held.
 
 ### `cursor-raw-x` (function)
@@ -1775,6 +1812,17 @@ Turn snapping to endpoints and centers on or off.
 
 - `APP`: the application.
 
+### `operation-toggle-ortho` (function)
+
+```lisp
+(operation-toggle-ortho app)
+```
+
+Turn ortho on, which holds the next point to a horizontal or vertical line from the last one, or off. It
+replaces polar.
+
+- `APP`: the application.
+
 ### `operation-toggle-overlay` (function)
 
 ```lisp
@@ -1782,6 +1830,17 @@ Turn snapping to endpoints and centers on or off.
 ```
 
 Show or hide the performance overlay.
+
+- `APP`: the application.
+
+### `operation-toggle-polar` (function)
+
+```lisp
+(operation-toggle-polar app)
+```
+
+Turn polar on, which holds the next point to the nearest multiple of 15 degrees from the last one, or off. It
+replaces ortho.
 
 - `APP`: the application.
 
@@ -1814,6 +1873,22 @@ Undo the last change.
 Fit the view to every visible entity.
 
 - `APP`: the application.
+
+### `parse-point-input` (function)
+
+```lisp
+(parse-point-input text anchor pointer unit)
+```
+
+Return the point that typed TEXT names, as two values in millimetres. Signals INVALID-INPUT when it names none.
+The forms are: a length, which goes from the anchor toward the pointer; x;y, an absolute point; @x;y, a point
+at that distance from the anchor along x and y; and length<angle, a point at that length from the anchor in
+that direction in degrees (with the @ or without it). Without an anchor the origin takes its place.
+
+- `TEXT`: what was typed.
+- `ANCHOR`: an (x . y) cons, the last point, or NIL for the first.
+- `POINTER`: an (x . y) cons, where the pointer is, or NIL.
+- `UNIT`: the display unit, assumed for numbers without a unit.
 
 ### `pointer-event` (type)
 
@@ -2245,6 +2320,17 @@ Open the menu KIND, or close it when it is already open.
 ### `tool` (type)
 
 Base of every tool.
+
+### `tool-anchor` (generic function)
+
+```lisp
+(tool-anchor tool)
+```
+
+Return the last point TOOL has been given, as an (x . y) cons, which ortho and polar hold the
+next one to and a typed length is measured from; NIL when it has none.
+
+- `TOOL`: a tool.
 
 ### `tool-in-progress-p` (generic function)
 
@@ -9131,7 +9217,8 @@ rectangle itself.
 (add-snap-marker list viewport snap theme)
 ```
 
-Emit the snap indicator: a square for endpoints, a circle for centers, a cross for the grid.
+Emit the snap indicator: a square for endpoints, a circle for centers, a cross for the grid and for
+ortho, and a diagonal cross for polar.
 
 - `LIST`: the draw list.
 - `VIEWPORT`: the viewport.

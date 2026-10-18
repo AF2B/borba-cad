@@ -167,6 +167,7 @@ APP: the application."
                                                 (ui:layout-tool-palette layout)
                                                 blocked)
                                (console-widgets app blocked)
+                               (coordinate-input-widgets app)
                                (toolbar-widgets app blocked)))
          (hovered (ui:widget-at (append base-widgets
                                         dialog-widgets

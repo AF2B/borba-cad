@@ -801,7 +801,9 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
     (is (string= "aXc" (ui:edit-state-text (app:prompt-edit (app:app-prompt application)))))
     (press application :escape)
     (is (null (app:app-prompt application)))
-    (is (not (app:app-wants-text-input-p application)))
+    (is (app:app-wants-text-input-p application) "the text tool takes a typed point, so it listens")
+    (press application :escape)
+    (is (not (app:app-wants-text-input-p application)) "and the select tool does not")
     (is (= 0 (dom:drawing-entity-count (app:app-drawing application))))))
 
 (test prompt-buttons-can-be-clicked

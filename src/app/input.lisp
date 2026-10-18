@@ -36,6 +36,14 @@ MODIFIERS: modifier keys held."
                           world-x
                           world-y
                           (view:pixels->world-length viewport +snap-radius-pixels+))
+        (let ((anchor (tool-anchor (app-tool app)))
+              (mode (app-constraint app)))
+          (when (and anchor mode (member kind '(nil :grid)))
+            (multiple-value-setq (snapped-x snapped-y) (constrain-point mode
+                                                                        anchor
+                                                                        snapped-x
+                                                                        snapped-y))
+            (setf kind mode)))
         (setf (app-cursor app) (make-cursor world-x
                                             world-y
                                             snapped-x
@@ -146,6 +154,7 @@ EVENT: a pointer event."
                             x
                             y)))
     (clear-message app)
+    (cancel-coordinate-input app)
     (when (and (app-focus app) (not (member (app-focus app) '(:prompt :dialog)))
                (not (and hit (equal (ui:widget-id hit) (app-focus app))))
                (not (and (console-focused-p app)
@@ -391,6 +400,8 @@ KEY: key keyword."
                (:u (operation-cycle-display-unit app) t)
                (:home (operation-zoom-extents app) t)
                (:f2 (operation-toggle-console app) t)
+               (:f8 (operation-toggle-ortho app) t)
+               (:f10 (operation-toggle-polar app) t)
                (:f3 (operation-toggle-overlay app) t)
                (t nil))))))
 
@@ -423,6 +434,9 @@ EVENT: a key event."
           ((app-focus app) (handle-field-key app
                                              key
                                              modifiers))
+          ((app-coordinate-edit app) (handle-coordinate-key app
+                                                            key
+                                                            modifiers))
           ((eq key :space) (setf (app-space-down app) t))
           ((modifier-p modifiers :control) (handle-control-shortcut app
                                                                     key
@@ -447,7 +461,9 @@ EVENT: a text event."
           ((app-dialog app)
            (handle-dialog-text app (text-event-text event)))
           ((and (app-focus app) (app-edit app))
-           (setf (app-edit app) (ui:edit-insert (app-edit app) (text-event-text event)))))
+           (setf (app-edit app) (ui:edit-insert (app-edit app) (text-event-text event))))
+          (t
+           (type-into-coordinate-input app (text-event-text event))))
     (app-request-redraw app)))
 
 (defun app-resize (app

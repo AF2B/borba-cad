@@ -127,6 +127,7 @@ from right to left (dashed) what it touches, and dragging a selection moves it.
 | `Ctrl+N`, `Ctrl+O`, `Ctrl+S`, `Ctrl+Shift+S` | New, open, save, save as (a drawing dropped on the window opens too) |
 | `Ctrl+Shift+I`, `Ctrl+Shift+E` | Import DXF, export DXF |
 | `F2`, `F3` | Console, performance overlay |
+| `F8`, `F10` | Ortho, polar |
 
 </details>
 
@@ -194,6 +195,14 @@ are scripts to read and run.
   your display, without the panels, the selection or the cursor. The encoder is written in Lisp.
 
 Exports end with a message in the middle of the window that says the file was saved or why it was not.
+
+**Ortho, polar and typed points.** `F8` (the **Ortho** chip) holds the next point of a line, polyline or
+dimension to a horizontal or vertical line from the last one, `F10` (**Polar**) to multiples of 15 degrees; an
+object snap (endpoint, center) still wins. While a drawing tool waits for a point you can also **type it**:
+start with a digit, `-`, `@` or `.` and a box opens. A length (`1500`) goes from the last point toward the
+pointer (along the axis when ortho or polar holds it), `x;y` is an absolute point, `@x;y` is that far from the
+last point, and `length<angle` (`1000<45`, degrees) is polar from it. Numbers are in the display unit unless
+they say `mm`, `cm` or `m`. Enter accepts, Esc throws the text away.
 
 **Autosave.** While a drawing has changes that are not saved, a copy is written to the state directory every
 minute (only when something changed) and taken away once the drawing is saved or closed. If the program

@@ -629,7 +629,8 @@ THEME: the theme."
                         viewport
                         snap
                         theme)
-  "Emit the snap indicator: a square for endpoints, a circle for centers, a cross for the grid.
+  "Emit the snap indicator: a square for endpoints, a circle for centers, a cross for the grid and for
+ortho, and a diagonal cross for polar.
 
 LIST: the draw list.
 VIEWPORT: the viewport.
@@ -665,9 +666,12 @@ THEME: the theme."
                             (line previous-x previous-y next-x next-y)
                             (setf previous-x next-x
                                   previous-y next-y)))))
-              (:grid
+              ((:grid :ortho)
                (line (- sx half) sy (+ sx half) sy)
-               (line sx (- sy half) sx (+ sy half))))))))))
+               (line sx (- sy half) sx (+ sy half)))
+              (:polar
+               (line (- sx half) (- sy half) (+ sx half) (+ sy half))
+               (line (- sx half) (+ sy half) (+ sx half) (- sy half))))))))))
 
 (defconstant +crossing-dash-pixels+ 6f0
   "Length of a dash of the outline of a crossing selection, in pixels.")

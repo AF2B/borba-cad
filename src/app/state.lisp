@@ -34,7 +34,7 @@ RAW-X: world x under the pointer.
 RAW-Y: world y under the pointer.
 X: world x after snapping.
 Y: world y after snapping.
-SNAP-KIND: :endpoint, :center, :grid or NIL.
+SNAP-KIND: :endpoint, :center, :grid, :ortho, :polar or NIL.
 MODIFIERS: modifier keys held."
   (raw-x 0d0 :type double-float :read-only t)
   (raw-y 0d0 :type double-float :read-only t)
@@ -144,6 +144,8 @@ WELCOME: the start screen, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
 GRIP-DRAG: the grip being dragged, or NIL.
 CONSOLE: the console.
+CONSTRAINT: :ortho, :polar or NIL, how the next point is held to the last one.
+COORDINATE-EDIT: the edit state of a point being typed, or NIL.
 AUTOSAVE-TIME: monotonic time of the last look of the autosave, or NIL before the first.
 AUTOSAVE-REVISION: the revision of the drawing in the copy written last, or -1.
 AUTOSAVE-WRITTEN: true when this session has written a copy that is still in the state directory.
@@ -192,6 +194,8 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   (polygon-sides 6 :type (integer 3))
   grip-drag
   (console (make-console))
+  constraint
+  coordinate-edit
   autosave-time
   (autosave-revision -1 :type fixnum)
   autosave-written
@@ -268,7 +272,14 @@ APP: the application."
   "Return true when typed characters should be delivered as text events.
 
 APP: the application."
-  (and (or (app-focus app) (app-prompt app) (app-dialog app)) t))
+  (and (or (app-focus app)
+           (app-prompt app)
+           (app-dialog app)
+           (app-coordinate-edit app)
+           (and (app-tool app)
+                (not (eq :select (tool-kind (app-tool app))))
+                (not (or (app-menu app) (app-welcome app)))))
+       t))
 
 (defun set-message (app
                     text
