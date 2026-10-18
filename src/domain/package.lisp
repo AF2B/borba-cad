@@ -40,6 +40,16 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:entity-with-property
    #:entity-with-layer
    #:entity-with-identity
+   #:entity-rotated
+   #:entity-mirrored
+   #:entity-scaled
+   #:transform-entities-changes
+   #:rotate-entities-changes
+   #:mirror-entities-changes
+   #:scale-entities-changes
+   #:rotate-xy
+   #:mirror-xy
+   #:scale-xy
    #:entity-touches-bounds-p
    #:grip
    #:make-grip

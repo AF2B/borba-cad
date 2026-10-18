@@ -385,13 +385,18 @@ MODIFIERS: modifier keys held."
       (t nil))))
 
 (defun handle-plain-shortcut (app
-                              key)
-  "Handle a key without modifiers on the canvas; returns true when it was a shortcut.
+                              key
+                              &optional modifiers)
+  "Handle a key on the canvas without Control; returns true when it was a shortcut. With Shift, R, M and S
+choose the tools that rotate, mirror and scale the selection.
 
 APP: the application.
-KEY: key keyword."
-  (let ((tool (cdr (assoc key *tool-shortcuts*))))
-    (cond (tool (operation-set-tool app tool) t)
+KEY: key keyword.
+MODIFIERS: modifier keys held."
+  (let ((tool (cdr (assoc key *tool-shortcuts*)))
+        (modify-tool (and (modifier-p modifiers :shift) (cdr (assoc key *modify-shortcuts*)))))
+    (cond (modify-tool (operation-set-tool app modify-tool) t)
+          (tool (operation-set-tool app tool) t)
           (t (case key
                (:escape (cancel-or-select app) t)
                ((:delete :backspace) (operation-delete-selection app) t)
@@ -446,7 +451,9 @@ EVENT: a key event."
                      app
                      key
                      modifiers))
-          (t (handle-plain-shortcut app key)))
+          (t (handle-plain-shortcut app
+                                    key
+                                    modifiers)))
     (app-request-redraw app)))
 
 (defun handle-text (app

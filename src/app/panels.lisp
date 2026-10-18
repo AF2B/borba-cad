@@ -469,7 +469,7 @@ select tool is.
 
 APP: the application."
   (let ((kind (tool-kind (app-tool app))))
-    (if (eq kind :select)
+    (if (or (eq kind :select) (modify-tool-kind-p kind))
         :pencil
         kind)))
 
@@ -487,7 +487,9 @@ BLOCKED: true while a modal covers the palette."
          (button-x (/ (- (ui:rect-width rect) +palette-button-size+) 2))
          (select-y (+ (ui:rect-y rect) ui:+padding+))
          (separator-y (+ select-y +palette-button-size+ +palette-button-gap+ +palette-separator-drop+))
-         (draw-y (+ select-y +palette-button-size+ +palette-button-gap+ +palette-group-gap+)))
+         (draw-y (+ select-y +palette-button-size+ +palette-button-gap+ +palette-group-gap+))
+         (modify-y (+ draw-y +palette-button-size+ +palette-button-gap+))
+         (modifying (modify-tool-kind-p (tool-kind (app-tool app)))))
     (list (ui:make-widget :panel
                           :palette
                           (ui:rect-x rect)
@@ -519,7 +521,7 @@ BLOCKED: true while a modal covers the palette."
                                       (toggle-menu app
                                                    :draw
                                                    :draw))
-                            :active (not selecting)
+                            :active (not (or selecting modifying))
                             :blocked blocked
                             :hint (i18n:tr "Drawing tools")
                             :variant :tool
@@ -528,6 +530,27 @@ BLOCKED: true while a modal covers the palette."
                           :draw-caret
                           (- (+ button-x +palette-button-size+) +caret-size+ +caret-margin+)
                           (+ draw-y (/ (- +palette-button-size+ +caret-size+) 2))
+                          +caret-size+
+                          +caret-size+
+                          :icon :caret
+                          :color (scene:theme-text-faint theme))
+          (make-icon-button :modify
+                            (if modifying (tool-kind (app-tool app)) :rotate)
+                            button-x
+                            modify-y
+                            :action (lambda ()
+                                      (toggle-menu app
+                                                   :modify
+                                                   :modify))
+                            :active modifying
+                            :blocked blocked
+                            :hint (i18n:tr "Change the selection: rotate, mirror, scale")
+                            :variant :tool
+                            :size +palette-button-size+)
+          (ui:make-widget :icon
+                          :modify-caret
+                          (- (+ button-x +palette-button-size+) +caret-size+ +caret-margin+)
+                          (+ modify-y (/ (- +palette-button-size+ +caret-size+) 2))
                           +caret-size+
                           +caret-size+
                           :icon :caret

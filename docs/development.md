@@ -253,6 +253,12 @@ cancel handlers, `tool-preview-entities`), a clause in `make-tool`, a shortcut, 
 an icon.
 A tool only proposes change sets; `app` commits them through the history, which times and logs them.
 
+A tool that acts on the selection (rotate, mirror, scale in `src/app/transform-tools.lisp`) is listed in
+`*modify-tool-kinds*` instead of the draw list, appears in the Modify menu (`modify-menu-items` in `menus.lisp`) and
+is refused by `operation-set-tool` while nothing is selected. A new transformation also needs a generic in
+`domain/transforms.lisp` with a method per entity kind, a `*-entities-changes` function in `domain/commands.lisp`
+and a console command in `script/dsl.lisp`.
+
 ### Adding a measured operation
 
 Wrap it in `obs:with-operation` (event name such as `geometry.thing`, fields such as

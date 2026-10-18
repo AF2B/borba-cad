@@ -153,6 +153,15 @@ layer. Stacking order is id order.
 | Text | non-empty single line, at most 256 characters; height > tolerance; any angle, kept in [0, 2π) | width |
 | Dimension | definition points farther apart than the tolerance; text height > tolerance; precision 0 to 6 | measured length |
 
+Rotating, mirroring and scaling (`src/domain/transforms.lisp`) are generic functions that return a new
+entity of the same id and layer: `entity-rotated`, `entity-mirrored` and `entity-scaled`. A mirror reverses
+the sense of an arc, so its start and end angles swap and it still turns counter-clockwise; a text is moved
+but not turned back to front; a dimension negates its offset so it stays on the same side of what it
+measures; a scale also scales the text heights and the dimension offset. A rectangle stays one only while
+the result is axis-aligned; otherwise it becomes a closed polyline with the same id. The result goes
+through the usual constructor, so a transformation that leaves the drawing limit or shrinks a length below
+the tolerance signals `invalid-entity` and changes nothing.
+
 Layers hold a unique non-empty name (at most 64 characters), an RGB color, and the flags visible
 and locked. The default layer (id 0) always exists and cannot be deleted; a layer that holds
 entities cannot be deleted either.

@@ -101,8 +101,8 @@ Open a drawing at startup with `make run FILE=examples/floor-plan.bcad`, change 
 
 When it starts without a drawing, a **start screen** offers the drawings you worked on last (up to five, each
 with its folder), a new drawing, a drawing to open, a script to run, or the way out; Escape goes on with an
-empty drawing. The palette on the left holds the Select tool and the **Draw** button, which lists every drawing
-tool with its key. The title bar has the file and history buttons, the name of the drawing (a dot marks unsaved
+empty drawing. The palette on the left holds the Select tool, the **Draw** button, which lists every drawing
+tool with its key, and the **Modify** button, which lists the tools that change the selection. The title bar has the file and history buttons, the name of the drawing (a dot marks unsaved
 changes), the **More** menu (DXF, JPEG, the console and the scripts), the language menu and the performance
 overlay. The side panel holds the layers and the properties, where every property of the selection is
 editable as a number; input that makes no sense is refused with a message and the old value is kept. The
@@ -113,11 +113,19 @@ Select one entity and its **grips** appear: squares to change its shape, a circl
 entity (Shift+click adds or removes), dragging from left to right selects what lies inside the rectangle and
 from right to left (dashed) what it touches, and dragging a selection moves it.
 
+**Rotate, mirror and scale** work on the selection, so select first (the Modify button says so otherwise).
+Rotate: click the center, then the direction to turn toward, or type the angle in degrees. Mirror: click the
+two ends of the mirror line, then say whether to keep or delete the originals. Scale: click the base point,
+then a reference and a target (the factor is their distance ratio), or type the factor. A live preview follows
+the pointer, `Ctrl` on the last click keeps the originals and selects the copies, and the whole operation is
+one step of undo. A rectangle turned to a slant becomes a closed polyline; entities on locked layers stay.
+
 <details>
 <summary><b>Keys</b></summary>
 
 | Keys | What they do |
 |---|---|
+| `Shift+R`, `Shift+M`, `Shift+S` | Rotate, mirror, scale the selection |
 | `L` `P` `R` `N` `C` `A` `E` `T` `D` | Line, polyline (Enter finishes, the first vertex closes), rectangle, polygon (Up and Down set the sides), circle, arc (center, start, end counter-clockwise), ellipse (center, axis end, other half-axis), text (drag to turn it), dimension |
 | `Esc` | Cancel what the tool is doing, then back to Select, then clear the selection |
 | `Delete`, `Ctrl+A` | Delete the selection, select all |
@@ -144,13 +152,14 @@ millimetres and angles degrees, unless written `(rad x)`; `(mm 3)`, `(cm 20)`, `
 (dotimes (i 3) (circle (* i (m 2)) 0 300))
 (text 100 100 "Living room" :height 250 :angle 15)
 (move (entities :kind :circle) 0 (m 1))   ; ids, or lists of ids
+(rotate 1 90 :about-x 0 :about-y 0)       ; also (mirror ids x1 y1 x2 y2) and (scale ids 2); :copy t keeps the originals
 (edit 2 :radius 500)                      ; the properties the inspector lists
 (format t "~d entities~%" (entity-count)) ; prints in the console
 (select-all) (fit) (help)
 ```
 
-The commands: `line rect rect-size circle arc ellipse polygon pline text dimension` draw; `move copy erase
-edit move-to-layer` change; `layer with-layer layers entities entity-count extents info` look and arrange;
+The commands: `line rect rect-size circle arc ellipse polygon pline text dimension` draw; `move copy rotate
+mirror scale erase edit move-to-layer` change; `layer with-layer layers entities entity-count extents info` look and arrange;
 `select select-all deselect selected fit` act on the window; `display-unit grid-spacing` set the drawing; `say`
 and `help` talk, and `(help 'line)` explains one. Up and Down recall commands, Page Up and Page Down scroll, an
 expression whose parentheses are still open waits for its next lines, `Ctrl+L` clears.

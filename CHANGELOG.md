@@ -6,6 +6,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Rotate, mirror and scale.** A **Modify** button in the palette (and `Shift+R`, `Shift+M`, `Shift+S`) turns,
+  reflects or resizes the selection with a live preview. Rotate takes a center and a direction or a typed
+  angle, mirror takes two points and asks whether to keep the originals, scale takes a base point and a
+  reference and a target or a typed factor. `Ctrl` on the last click keeps the originals and selects the
+  copies; each operation is one step of undo; a rectangle turned to a slant becomes a closed polyline;
+  entities on locked layers are left alone and the message says so. The console gets `rotate`, `mirror` and
+  `scale`, each with `:copy t`.
 - **More object snaps.** The OSnap chip now also gives midpoints (of segments, sides and arcs), quadrants (of
   circles and arcs), intersections (of lines, rectangles, polylines, polygons, circles and arcs with each other)
   and, from the last point of the tool, perpendiculars and points of tangency to circles and arcs. Each has

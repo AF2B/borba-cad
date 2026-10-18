@@ -69,7 +69,7 @@ MESSAGE-LINES: how many lines the message may take before it is cut, or NIL for 
                                           highlight)))
   "An open drop-down menu.
 
-KIND: :draw, :language or :more.
+KIND: :draw, :modify, :language or :more.
 ANCHOR: id of the button the menu hangs from.
 HIGHLIGHT: position, among the choices, of the one the keyboard is on."
   kind

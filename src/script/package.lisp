@@ -79,6 +79,9 @@ commands that draw it.")
    ;; Editing
    #:move
    #:copy
+   #:rotate
+   #:mirror
+   #:scale
    #:erase
    #:edit
    #:move-to-layer

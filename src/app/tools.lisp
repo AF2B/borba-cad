@@ -71,6 +71,18 @@ TOOL: a tool.")
   (:method ((tool tool))
     nil))
 
+(defgeneric tool-typed-number (tool app number)
+  (:documentation "Take a plain number that was typed while TOOL waits for a point: an angle in degrees for rotate,
+a factor for scale. Return true when the tool used it, and NIL when it has no use for one now, so that the text
+is read as a point.
+
+TOOL: a tool.
+APP: the application.
+NUMBER: the number typed.")
+  (:method ((tool tool) app number)
+    (declare (ignore app number))
+    nil))
+
 (defgeneric tool-anchor (tool)
   (:documentation "Return the last point TOOL has been given, as an (x . y) cons, which ortho and polar hold the
 next one to and a typed length is measured from; NIL when it has none.
@@ -967,7 +979,8 @@ Y: world y of the line."
 (defun make-tool (kind)
   "Create the tool named by KIND.
 
-KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse or :polygon."
+KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
+:mirror or :scale."
   (ecase kind
     (:select (make-instance 'select-tool))
     (:line (make-instance 'line-tool))
@@ -978,7 +991,10 @@ KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :
     (:dimension (make-instance 'dimension-tool))
     (:arc (make-instance 'arc-tool))
     (:ellipse (make-instance 'ellipse-tool))
-    (:polygon (make-instance 'polygon-tool))))
+    (:polygon (make-instance 'polygon-tool))
+    (:rotate (make-instance 'rotate-tool))
+    (:mirror (make-instance 'mirror-tool))
+    (:scale (make-instance 'scale-tool))))
 
 (defparameter *tool-shortcuts*
   '((:l . :line) (:r . :rectangle) (:c . :circle) (:p . :polyline) (:t . :text) (:d . :dimension)

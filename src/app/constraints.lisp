@@ -152,6 +152,16 @@ TEXT: what was typed."
            (setf (app-coordinate-edit app) (ui:edit-insert (ui:make-edit-state :maximum-length 64) text))))
     (app-request-redraw app)))
 
+(defun plain-number (text)
+  "Return the number TEXT is when it is only a number, with no @, no semicolon and no angle mark, and no unit;
+otherwise NIL.
+
+TEXT: what was typed."
+  (and (not (find-if (lambda (character) (find character "@;<")) text))
+       (handler-case (base:parse-decimal (string-trim " " text))
+         (base:invalid-input ()
+           nil))))
+
 (defun commit-coordinate-input (app)
   "Give the tool the point that was typed, as if it had been clicked. A text that names no point is said and kept
 for correcting.
@@ -159,7 +169,14 @@ for correcting.
 APP: the application."
   (let* ((tool (app-tool app))
          (cursor (app-cursor app))
-         (text (ui:edit-state-text (app-coordinate-edit app))))
+         (text (ui:edit-state-text (app-coordinate-edit app)))
+         (number (plain-number text)))
+    (when (and number (tool-typed-number tool
+                                         app
+                                         number))
+      (setf (app-coordinate-edit app) nil)
+      (app-request-redraw app)
+      (return-from commit-coordinate-input nil))
     (handler-case
         (multiple-value-bind (x y)
             (parse-point-input text

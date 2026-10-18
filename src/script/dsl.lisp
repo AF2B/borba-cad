@@ -500,6 +500,115 @@ DY: how far along y."
         (push (emit-change nil duplicate) copies)))
     (nreverse copies)))
 
+(defun transform-ids (ids
+                      transform
+                      copy)
+  "Change the entities with IDS by what TRANSFORM makes of them, one change each, or add what it makes of them
+as new entities when COPY is true. Entities on a locked layer are left. Returns how many were changed, or the ids
+of the copies.
+
+IDS: an id or a list of ids.
+TRANSFORM: function of an entity that returns the transformed entity.
+COPY: true to keep the originals and add the results."
+  (let ((changed 0)
+        (copies '()))
+    (dolist (id (entity-ids-of ids))
+      (let ((entity (the-entity id)))
+        (when (dom:editable-entity-p (the-drawing) entity)
+          (let ((result (funcall transform entity)))
+            (cond (copy
+                   (push (emit-change nil
+                                      (dom:entity-with-identity result
+                                                                (dom:drawing-next-entity-id (the-drawing))
+                                                                (dom:entity-layer-id entity)))
+                         copies))
+                  (t
+                   (emit-change entity result)
+                   (incf changed)))))))
+    (if copy
+        (nreverse copies)
+        changed)))
+
+(defun rotate (ids
+               angle
+               &key (about-x 0)
+                    (about-y 0)
+                    copy)
+  "Turn entities counter-clockwise by an angle about a point, or, with COPY, add turned copies of them. A
+rectangle turned to a slant becomes a closed polyline. Entities on a locked layer are left. Returns how many
+were turned, or the ids of the copies.
+
+IDS: an id or a list of ids.
+ANGLE: the angle in degrees, or (rad x).
+ABOUT-X: x of the center of the turn.
+ABOUT-Y: y of the center.
+COPY: true to keep the originals and add the turned copies."
+  (let ((radians (angle-radians angle))
+        (center-x (number-of about-x))
+        (center-y (number-of about-y)))
+    (transform-ids ids
+                   (lambda (entity) (dom:entity-rotated entity
+                                                        center-x
+                                                        center-y
+                                                        radians))
+                   copy)))
+
+(defun mirror (ids
+               x1
+               y1
+               x2
+               y2
+               &key copy)
+  "Reflect entities in the line through two points, or, with COPY, add reflected copies of them. A text keeps
+facing the way it did; only where it starts is reflected. Entities on a locked layer are left. Returns how many
+were reflected, or the ids of the copies.
+
+IDS: an id or a list of ids.
+X1: x of the first point of the line.
+Y1: y of the first point.
+X2: x of the second point.
+Y2: y of the second point.
+COPY: true to keep the originals and add the reflected copies."
+  (let ((line-x1 (number-of x1))
+        (line-y1 (number-of y1))
+        (line-x2 (number-of x2))
+        (line-y2 (number-of y2)))
+    (when (= line-x1 line-x2)
+      (when (= line-y1 line-y2)
+        (error "The two points of the mirror line must be apart.")))
+    (transform-ids ids
+                   (lambda (entity) (dom:entity-mirrored entity
+                                                         line-x1
+                                                         line-y1
+                                                         line-x2
+                                                         line-y2))
+                   copy)))
+
+(defun scale (ids
+              factor
+              &key (about-x 0)
+                   (about-y 0)
+                   copy)
+  "Scale entities about a point by a positive factor, or, with COPY, add scaled copies of them. Entities on a
+locked layer are left. Returns how many were scaled, or the ids of the copies.
+
+IDS: an id or a list of ids.
+FACTOR: what every length is multiplied by.
+ABOUT-X: x of the center of the scaling.
+ABOUT-Y: y of the center.
+COPY: true to keep the originals and add the scaled copies."
+  (let ((multiplier (number-of factor))
+        (center-x (number-of about-x))
+        (center-y (number-of about-y)))
+    (unless (> multiplier 0d0)
+      (error "The factor must be above zero, but ~s was given." factor))
+    (transform-ids ids
+                   (lambda (entity) (dom:entity-scaled entity
+                                                       center-x
+                                                       center-y
+                                                       multiplier))
+                   copy)))
+
 (defun erase (ids)
   "Erase entities. Entities on a locked layer are left. Returns how many were erased.
 
@@ -664,7 +773,7 @@ THINGS: anything."
 (defparameter *help-topics*
   '(("Making entities" line rect rect-size circle arc ellipse polygon pline text dimension)
     ("Layers" layer with-layer layers)
-    ("Changing entities" move copy erase edit move-to-layer)
+    ("Changing entities" move copy erase edit move-to-layer rotate mirror scale)
     ("Finding entities" entities entity-count extents info)
     ("Selection and view" select select-all deselect selected fit)
     ("Settings" display-unit grid-spacing)

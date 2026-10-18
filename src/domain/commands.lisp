@@ -151,3 +151,105 @@ LAYER-ID: id of the destination layer."
                                          entity
                                          (entity-with-layer entity layer-id)))
             skipped)))
+
+(defun transform-entities-changes (drawing
+                                   ids
+                                   transform
+                                   copy)
+  "Return the change set that replaces the entities with IDS by what TRANSFORM makes of them, or, when COPY
+is true, adds what it makes of them as new entities and leaves them as they are, and the number skipped
+because they are missing or on a locked layer. Signals INVALID-ENTITY when a result would not be valid.
+
+DRAWING: the drawing.
+IDS: list of entity ids.
+TRANSFORM: function of an entity that returns the transformed entity, with the same id and layer.
+COPY: true to keep the originals and add the results."
+  (multiple-value-bind (entities skipped)
+      (existing-editable-entities drawing ids)
+    (let ((next-id (drawing-next-entity-id drawing)))
+      (values (mapcar (lambda (entity)
+                        (let ((result (funcall transform entity)))
+                          (if copy
+                              (prog1 (make-change next-id
+                                                  nil
+                                                  (entity-with-identity result
+                                                                        next-id
+                                                                        (entity-layer-id entity)))
+                                (incf next-id))
+                              (make-change (entity-id entity)
+                                           entity
+                                           result))))
+                      entities)
+              skipped))))
+
+(defun rotate-entities-changes (drawing
+                                ids
+                                center-x
+                                center-y
+                                angle
+                                &key copy)
+  "Return the change set that turns the entities with IDS about a point (or adds turned copies), and the number
+skipped.
+
+DRAWING: the drawing.
+IDS: list of entity ids.
+CENTER-X: x of the center of the turn.
+CENTER-Y: y of the center.
+ANGLE: radians, counter-clockwise.
+COPY: true to keep the originals and add the turned copies."
+  (transform-entities-changes drawing
+                              ids
+                              (lambda (entity) (entity-rotated entity
+                                                               center-x
+                                                               center-y
+                                                               angle))
+                              copy))
+
+(defun mirror-entities-changes (drawing
+                                ids
+                                line-x1
+                                line-y1
+                                line-x2
+                                line-y2
+                                &key copy)
+  "Return the change set that reflects the entities with IDS in the line through two points (or adds reflected
+copies), and the number skipped.
+
+DRAWING: the drawing.
+IDS: list of entity ids.
+LINE-X1: x of the first point of the line.
+LINE-Y1: y of the first point.
+LINE-X2: x of the second point.
+LINE-Y2: y of the second point.
+COPY: true to keep the originals and add the reflected copies."
+  (transform-entities-changes drawing
+                              ids
+                              (lambda (entity) (entity-mirrored entity
+                                                                line-x1
+                                                                line-y1
+                                                                line-x2
+                                                                line-y2))
+                              copy))
+
+(defun scale-entities-changes (drawing
+                               ids
+                               center-x
+                               center-y
+                               factor
+                               &key copy)
+  "Return the change set that scales the entities with IDS about a point (or adds scaled copies), and the
+number skipped.
+
+DRAWING: the drawing.
+IDS: list of entity ids.
+CENTER-X: x of the center of the scaling.
+CENTER-Y: y of the center.
+FACTOR: a positive number.
+COPY: true to keep the originals and add the scaled copies."
+  (transform-entities-changes drawing
+                              ids
+                              (lambda (entity) (entity-scaled entity
+                                                              center-x
+                                                              center-y
+                                                              factor))
+                              copy))
