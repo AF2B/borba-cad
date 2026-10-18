@@ -980,8 +980,8 @@ Y: world y of the line."
   "Create the tool named by KIND.
 
 KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
-:mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension, :diameter-dimension or
-:angular-dimension."
+:mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension, :diameter-dimension,
+:angular-dimension, :trim, :extend, :offset or :fillet."
   (ecase kind
     (:select (make-instance 'select-tool))
     (:line (make-instance 'line-tool))
@@ -1001,7 +1001,11 @@ KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :
     (:measure-area (make-instance 'measure-area-tool))
     (:radius-dimension (make-instance 'radial-dimension-tool))
     (:diameter-dimension (make-instance 'radial-dimension-tool :diameter t))
-    (:angular-dimension (make-instance 'angular-dimension-tool))))
+    (:angular-dimension (make-instance 'angular-dimension-tool))
+    (:trim (make-instance 'trim-tool))
+    (:extend (make-instance 'extend-tool))
+    (:offset (make-instance 'offset-tool))
+    (:fillet (make-instance 'fillet-tool))))
 
 (defparameter *tool-shortcuts*
   '((:l . :line) (:r . :rectangle) (:c . :circle) (:p . :polyline) (:t . :text) (:d . :dimension)

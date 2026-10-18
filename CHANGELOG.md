@@ -6,6 +6,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Trim, extend, offset and fillet.** Four tools in the Modify menu that work on what is clicked. Trim cuts away
+  the part of a line, an arc or a circle between the crossings with the other visible entities; extend lengthens
+  a line or an arc up to the next entity; offset copies a line, circle, arc, rectangle, polygon or polyline at
+  a distance given by a click or typed, on the same layer, with a closed shape growing or shrinking by the side
+  that was clicked and corners kept sharp; fillet rounds the corner of two lines with an arc of a remembered
+  radius, or only takes them to the corner when the radius is zero. Each is one step of undo, and each says in
+  a sentence why it could not be done.
 - **Radius, diameter and angle dimensions.** Three new tools in the Draw menu. A radius or diameter dimension is
   made by clicking a circle or an arc and then where the leader should point; its text starts with R or the
   diameter sign and always reads left to right. An angle dimension takes the vertex, a point on each arm and a

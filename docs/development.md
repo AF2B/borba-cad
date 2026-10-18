@@ -262,6 +262,11 @@ is refused by `operation-set-tool` while nothing is selected. A new transformati
 `domain/transforms.lisp` with a method per entity kind, a `*-entities-changes` function in `domain/commands.lisp`
 and a console command in `script/dsl.lisp`.
 
+A tool that changes what is clicked rather than the selection (`src/app/reshape-tools.lisp`) works out its change
+set in `domain/reshaping.lisp`, which signals `edit-refused` with a sentence when it cannot be done, and commits it
+with `commit-reshaping`, which says the sentence in the status bar. It is in `*modify-tool-kinds*` but not in
+`*selection-tool-kinds*`, so it needs no selection.
+
 A tool that only measures (`src/app/measure-tools.lisp`) never commits a change: it keeps its points, draws them
 and a text label through `tool-preview-entities` (a text entity sized in pixels, so the label does not change
 with the zoom), and says the result in the status bar. It is listed in `*measure-tool-kinds*` and appears in the

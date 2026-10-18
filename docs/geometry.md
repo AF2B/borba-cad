@@ -226,6 +226,21 @@ entities cannot be deleted either.
 - A move or an edit that would break an invariant is refused and leaves the drawing unchanged:
   change sets are validated completely before the first modification.
 
+### Reshaping (`src/domain/reshaping.lisp`)
+
+Offset, trim, extend and fillet work out change sets and signal `edit-refused`, with a sentence, when they cannot
+be done. What cuts and what stops is every primitive (segment, circle, arc: `entity-primitives`) of every entity on
+a visible layer but the one being edited; crossings come from `primitive-intersections`, the same code the
+intersection snap uses.
+
+| Operation | Rule |
+|---|---|
+| Offset | `entity-offset` with a positive distance puts a line or an open polyline on its left, and makes a circle, an arc, a rectangle, a polygon or a closed polyline bigger; a regular polygon's apothem moves by the distance (its radius by `d / cos(π/n)`). A polyline keeps its corners sharp: each vertex moves by `d (n1 + n2) / (1 + n1·n2)`, and a corner whose miter would exceed ten times the distance is refused. `entity-offset-through` gives the signed distance for the copy to pass through a point, from the nearest segment's line, outward for closed shapes. |
+| Trim of a line | The crossings are projected onto the line; those within the tolerance of an end are ignored. The part between the nearest one below the click and the nearest one above it (or the end) is cut away, leaving up to two lines; the first keeps the id. |
+| Trim of an arc or circle | The same on the sweep of the arc. A circle needs two crossings; it becomes the arc that goes counter-clockwise from the crossing after the click to the one before it. |
+| Extend | The end nearer the click moves along the line (or the circle of the arc) to the nearest crossing beyond it that is farther than the tolerance, and, for an arc, does not pass its other end. |
+| Fillet | The corner is where the lines cross. On each line the side that holds the click stays; the tangent length is `r / tan(θ/2)` for the angle θ between the two kept rays, the center lies on their bisector at `r / sin(θ/2)` from the corner, and the arc is the short one between the tangent points. Refused when the lines are parallel or too short on the kept side. |
+
 ## 8. Viewport math (`src/viewport/`)
 
 ```

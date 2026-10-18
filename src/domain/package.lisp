@@ -182,6 +182,13 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:angular-dimension-sweep
    #:angular-dimension-text
    #:angular-dimension-layout
+   ;; Reshaping
+   #:entity-offset
+   #:entity-offset-through
+   #:offset-changes
+   #:trim-changes
+   #:extend-changes
+   #:fillet-changes
    ;; Entity store
    #:entity-store
    #:make-entity-store

@@ -69,6 +69,7 @@
                              (:file "snapping")
                              (:file "picking")
                              (:file "commands")
+                             (:file "reshaping")
                              (:file "transfer")))
                (:module "viewport"
                 :serial t
@@ -153,6 +154,7 @@
                              (:file "transform-tools")
                              (:file "measure-tools")
                              (:file "dimension-tools")
+                             (:file "reshape-tools")
                              (:file "entity-clipboard")
                              (:file "panels")
                              (:file "side-panels")
@@ -278,6 +280,7 @@
                (:file "transform-tests")
                (:file "measure-tests")
                (:file "dimension-tests")
+               (:file "reshaping-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

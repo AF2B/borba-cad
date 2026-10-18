@@ -19,6 +19,9 @@ enough for a steady hand and small enough not to grab distant entities.")
 (defconstant +error-message-nanoseconds+ (* 12 sbcl:+nanoseconds-per-second+)
   "How long an error stays in the status bar: longer, so that it can be read.")
 
+(defconstant +default-fillet-radius+ 100d0
+  "Radius, in millimetres, of the arc the fillet tool makes until another is typed.")
+
 (defconstant +maximum-message-length+ 400
   "Longest status message kept, in characters.")
 
@@ -146,6 +149,7 @@ DIALOG: the open file dialog, or NIL.
 MENU: the open drop-down menu, or NIL.
 WELCOME: the start screen, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
+FILLET-RADIUS: the radius, in millimetres, the fillet tool gives the next arc.
 GRIP-DRAG: the grip being dragged, or NIL.
 CONSOLE: the console.
 CONSTRAINT: :ortho, :polar or NIL, how the next point is held to the last one.
@@ -196,6 +200,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   menu
   welcome
   (polygon-sides 6 :type (integer 3))
+  (fillet-radius +default-fillet-radius+ :type double-float)
   grip-drag
   (console (make-console))
   constraint

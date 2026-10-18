@@ -48,6 +48,7 @@ No screen, pixel or rendering concepts appear here.")
    #:circle-perpendicular-feet
    #:circle-tangent-points
    ;; Arcs, ellipses, regular polygons
+   #:+pi+
    #:+two-pi+
    #:arc-sweep
    #:angle-within-sweep-p

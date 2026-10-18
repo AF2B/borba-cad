@@ -85,6 +85,7 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:app-inspector-scroll
    #:app-window-crossing
    #:app-polygon-sides
+   #:app-fillet-radius
    #:app-window-width
    #:app-window-height
    #:app-dirty-p
@@ -147,6 +148,8 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-export-image
    #:export-image-from-app
    #:modify-tool-kind-p
+   #:selection-tool-kind-p
+   #:*selection-tool-kinds*
    #:measure-tool-kind-p
    #:*measure-tool-kinds*
    #:*modify-tool-kinds*

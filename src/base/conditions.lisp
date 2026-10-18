@@ -55,6 +55,13 @@ complete, user-facing message in the language of the interface."))
              (write-string (i18n:trf "Layer error: ~a" (layer-error-reason condition)) stream)))
   (:documentation "A layer operation is not allowed."))
 
+(define-condition edit-refused (borba-cad-error)
+  ((reason :initarg :reason :reader edit-refused-reason))
+  (:report (lambda (condition stream)
+             (write-string (edit-refused-reason condition) stream)))
+  (:documentation "An edit that changes existing entities, such as trimming or filleting, cannot be done as asked.
+REASON is a complete sentence in the language of the interface."))
+
 (define-condition drawing-file-error (borba-cad-error)
   ((path :initarg :path :initform nil :reader drawing-file-error-path)
    (reason :initarg :reason :reader drawing-file-error-reason))

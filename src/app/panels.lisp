@@ -546,7 +546,7 @@ BLOCKED: true while a modal covers the palette."
                                                    :modify))
                             :active modifying
                             :blocked blocked
-                            :hint (i18n:tr "Change the selection: rotate, mirror, scale")
+                            :hint (i18n:tr "Modify: rotate, mirror, scale, trim, extend, offset, fillet")
                             :variant :tool
                             :size +palette-button-size+)
           (ui:make-widget :icon

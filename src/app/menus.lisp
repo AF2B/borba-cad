@@ -101,18 +101,21 @@ APP: the application."
                                         (eq kind active))))))))
 
 (defun modify-menu-items (app)
-  "Return the choices of the modify menu: the tools that change the selection.
+  "Return the choices of the modify menu: the tools that change the selection, and those that change what is
+clicked, with NIL between the two groups.
 
 APP: the application."
   (let ((active (tool-kind (app-tool app))))
-    (loop for (kind icon label shortcut) in *modify-menu-tools*
-          collect (let ((kind kind))
-                    (make-menu-item kind
-                                    (i18n:tr label)
-                                    icon
-                                    shortcut
-                                    (lambda () (choose-menu-tool app kind))
-                                    (eq kind active))))))
+    (loop for spec in *modify-menu-tools*
+          collect (when spec
+                    (destructuring-bind (kind icon label shortcut) spec
+                      (let ((kind kind))
+                        (make-menu-item kind
+                                        (i18n:tr label)
+                                        icon
+                                        shortcut
+                                        (lambda () (choose-menu-tool app kind))
+                                        (eq kind active))))))))
 
 (defun measure-menu-items (app)
   "Return the choices of the measure menu: the tools that measure.

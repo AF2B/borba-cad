@@ -102,7 +102,7 @@ Open a drawing at startup with `make run FILE=examples/floor-plan.bcad`, change 
 When it starts without a drawing, a **start screen** offers the drawings you worked on last (up to five, each
 with its folder), a new drawing, a drawing to open, a script to run, or the way out; Escape goes on with an
 empty drawing. The palette on the left holds the Select tool, the **Draw** button, which lists every drawing
-tool with its key, the **Modify** button, which lists the tools that change the selection, and the **Measure** button. The title bar has the file and history buttons, the name of the drawing (a dot marks unsaved
+tool with its key, the **Modify** button, which lists the tools that change what is drawn, and the **Measure** button. The title bar has the file and history buttons, the name of the drawing (a dot marks unsaved
 changes), the **More** menu (DXF, JPEG, the console and the scripts), the language menu and the performance
 overlay. The side panel holds the layers and the properties, where every property of the selection is
 editable as a number; input that makes no sense is refused with a message and the old value is kept. The
@@ -119,6 +119,17 @@ For an angle, click the vertex, a point on each arm and a last point for the arc
 this last click is on says which of the two angles the arms make is measured. All three keep their numbers
 live: change the radius or the unit in the inspector and the text follows, and the grips turn the leader or
 move the arms and the arc.
+
+**Trim, extend, offset and fillet** are in the Modify menu (`Shift+T`, `Shift+E`, `Shift+O`, `Shift+F`) and work
+on what you click, with nothing selected. Trim removes the part of a line, an arc or a circle that you click, up to
+the nearest crossings with any other visible entity (a line may be left in two pieces; a circle becomes the arc
+that is left). Extend lengthens the end of a line or an arc that is nearer to the click up to the next entity in
+its way. Offset copies a line, circle, arc, rectangle, polygon or polyline: click the entity, then click on the
+side and at the distance of the copy (or type the distance) and the copy goes on the same layer; a closed shape
+grows when you click outside it and shrinks when you click inside. Fillet rounds the corner of two lines: click
+each on the part that stays; the radius is remembered, starts at 100 mm, and a number typed before the first
+click changes it (zero only takes the lines to the corner). Each one is a step of undo, and when it cannot do
+what you clicked for, the status bar says why.
 
 **Rotate, mirror and scale** work on the selection, so select first (the Modify button says so otherwise).
 Rotate: click the center, then the direction to turn toward, or type the angle in degrees. Mirror: click the
@@ -142,6 +153,7 @@ points work as they do when drawing.
 | Keys | What they do |
 |---|---|
 | `Shift+R`, `Shift+M`, `Shift+S` | Rotate, mirror, scale the selection |
+| `Shift+T`, `Shift+E`, `Shift+O`, `Shift+F` | Trim, extend, offset, fillet |
 | `M`, `Shift+A`, `Shift+Q` | Measure a distance, an angle, an area |
 | `L` `P` `R` `N` `C` `A` `E` `T` `D` | Line, polyline (Enter finishes, the first vertex closes), rectangle, polygon (Up and Down set the sides), circle, arc (center, start, end counter-clockwise), ellipse (center, axis end, other half-axis), text (drag to turn it), dimension |
 | The Draw menu | Also the **radius**, **diameter** and **angle** dimensions, which have no key |

@@ -264,9 +264,11 @@
 (test the-modify-button-opens-a-list-of-the-tools-that-change-the-selection
   (let ((application (app-with-selection (snap-line 1 0 0 1000 0))))
     (click-widget application :modify)
-    (is (equal '((:menu-item :rotate) (:menu-item :mirror) (:menu-item :scale))
+    (is (equal '((:menu-item :rotate) (:menu-item :mirror) (:menu-item :scale)
+                 (:menu-item :trim) (:menu-item :extend) (:menu-item :offset) (:menu-item :fillet))
                (mapcar #'ui:widget-id (menu-rows application))))
-    (is (equal '("Shift+R" "Shift+M" "Shift+S") (mapcar #'ui:widget-shortcut (menu-rows application))))
+    (is (equal '("Shift+R" "Shift+M" "Shift+S" "Shift+T" "Shift+E" "Shift+O" "Shift+F")
+               (mapcar #'ui:widget-shortcut (menu-rows application))))
     (click-widget application '(:menu-item :mirror))
     (is (eq :mirror (app:tool-kind (app:app-tool application))))
     (is (ui:widget-active (find-widget application :modify)) "the Modify button lights up")

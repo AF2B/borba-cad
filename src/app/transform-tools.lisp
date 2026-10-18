@@ -5,8 +5,18 @@
 ;;;; one step of undo. Holding Control at the last click of rotate and scale keeps the originals and adds the
 ;;;; changed copies; mirror asks.
 
-(defparameter *modify-tool-kinds* '(:rotate :mirror :scale)
-  "The tools that change the selection, which the Modify button opens, as opposed to those that draw.")
+(defparameter *selection-tool-kinds* '(:rotate :mirror :scale)
+  "The tools that change what is selected as a whole, and so need a selection.")
+
+(defparameter *modify-tool-kinds* '(:rotate :mirror :scale :trim :extend :offset :fillet)
+  "The tools that change what is drawn, which the Modify button opens, as opposed to those that draw: the ones that
+need a selection, and the ones that work on what is clicked.")
+
+(defun selection-tool-kind-p (kind)
+  "Return true when KIND is a tool that changes the selection as a whole.
+
+KIND: a tool kind keyword."
+  (and (member kind *selection-tool-kinds*) t))
 
 (defun modify-tool-kind-p (kind)
   "Return true when KIND is a tool that changes the selection.
@@ -425,9 +435,15 @@ COPY: true to keep the originals."
 (defparameter *modify-menu-tools*
   (list (list :rotate :rotate (i18n:mark "Rotate") "Shift+R")
         (list :mirror :mirror (i18n:mark "Mirror") "Shift+M")
-        (list :scale :scale (i18n:mark "Scale") "Shift+S"))
-  "The choices of the modify menu, top to bottom, as (tool-kind icon label shortcut). The labels are in English
-and are translated where the menu is built.")
+        (list :scale :scale (i18n:mark "Scale") "Shift+S")
+        nil
+        (list :trim :trim (i18n:mark "Trim") "Shift+T")
+        (list :extend :extend (i18n:mark "Extend") "Shift+E")
+        (list :offset :offset (i18n:mark "Offset") "Shift+O")
+        (list :fillet :fillet (i18n:mark "Fillet") "Shift+F"))
+  "The choices of the modify menu, top to bottom, as (tool-kind icon label shortcut), with NIL between groups. The
+labels are in English and are translated where the menu is built.")
 
-(defparameter *modify-shortcuts* '((:r . :rotate) (:m . :mirror) (:s . :scale))
+(defparameter *modify-shortcuts*
+  '((:r . :rotate) (:m . :mirror) (:s . :scale) (:t . :trim) (:e . :extend) (:o . :offset) (:f . :fillet))
   "Letter keys that activate the modify tools when Shift is held.")

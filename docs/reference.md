@@ -13,7 +13,12 @@ The tools that measure, which the Measure button opens.
 
 ### `*modify-tool-kinds*` (variable)
 
-The tools that change the selection, which the Modify button opens, as opposed to those that draw.
+The tools that change what is drawn, which the Modify button opens, as opposed to those that draw: the ones that
+need a selection, and the ones that work on what is clicked.
+
+### `*selection-tool-kinds*` (variable)
+
+The tools that change what is selected as a whole, and so need a selection.
 
 ### `+autosave-interval-nanoseconds+` (constant)
 
@@ -71,6 +76,7 @@ NIL when it selects only what it holds (dragged from left to right).
 - `MENU`: the open drop-down menu, or NIL.
 - `WELCOME`: the start screen, or NIL.
 - `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
+- `FILLET-RADIUS`: the radius, in millimetres, the fillet tool gives the next arc.
 - `GRIP-DRAG`: the grip being dragged, or NIL.
 - `CONSOLE`: the console.
 - `CONSTRAINT`: :ortho, :polar or NIL, how the next point is held to the last one.
@@ -203,6 +209,14 @@ Return true when the drawing has unsaved changes.
 
 ```lisp
 (app-file-path instance)
+```
+
+(undocumented)
+
+### `app-fillet-radius` (function)
+
+```lisp
+(app-fillet-radius instance)
 ```
 
 (undocumented)
@@ -1345,8 +1359,8 @@ Create the application around a drawing (a new empty one by default).
 Create the tool named by KIND.
 
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
-:mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension, :diameter-dimension or
-:angular-dimension.
+:mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension, :diameter-dimension,
+:angular-dimension, :trim, :extend, :offset or :fillet.
 
 ### `make-wheel-event` (function)
 
@@ -1791,8 +1805,8 @@ Activate a tool, cancelling whatever the previous one was doing.
 - `APP`: the application.
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
 :mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension,
-:diameter-dimension or :angular-dimension. A tool that changes the selection is not activated when nothing is
-selected.
+:diameter-dimension, :angular-dimension, :trim, :extend, :offset or :fillet. A tool that changes the selection
+(rotate, mirror, scale) is not activated when nothing is selected.
 
 ### `operation-toggle-console` (function)
 
@@ -2272,6 +2286,16 @@ Return the grips to show: those of the selected entity, or none.
 Return the ids of the selected entities in ascending order.
 
 - `APP`: the application.
+
+### `selection-tool-kind-p` (function)
+
+```lisp
+(selection-tool-kind-p kind)
+```
+
+Return true when KIND is a tool that changes the selection as a whole.
+
+- `KIND`: a tool kind keyword.
 
 ### `set-clipboard-text` (function)
 
@@ -2899,6 +2923,19 @@ The file text is not well-formed.
 ### `drawing-file-version-error` (condition)
 
 The file declares a format version this program cannot read.
+
+### `edit-refused` (condition)
+
+An edit that changes existing entities, such as trimming or filleting, cannot be done as asked.
+REASON is a complete sentence in the language of the interface.
+
+### `edit-refused-reason` (generic function)
+
+```lisp
+(edit-refused-reason condition)
+```
+
+(undocumented)
 
 ### `entity-kind-label` (function)
 
@@ -4307,6 +4344,34 @@ only its insertion point is reflected.
 - `LINE-X2`: x of the second point.
 - `LINE-Y2`: y of the second point.
 
+### `entity-offset` (generic function)
+
+```lisp
+(entity-offset entity distance)
+```
+
+Return the entity that lies DISTANCE from ENTITY, with the same id and layer, or NIL when this kind
+of entity cannot be offset. A positive distance grows a circle, an arc, a rectangle or a polygon, and a closed
+polyline, and puts a line or an open polyline on its left, looking from its start to its end; a negative one
+does the opposite. Signals INVALID-ENTITY when the result would not be valid.
+
+- `ENTITY`: an entity.
+- `DISTANCE`: millimetres.
+
+### `entity-offset-through` (generic function)
+
+```lisp
+(entity-offset-through entity x y)
+```
+
+Return the signed distance that offsetting ENTITY must be given for the result to pass through the
+point, on the side the offset uses, or NIL when this kind of entity cannot be offset. For a shape made of
+segments it is the distance to the line of the nearest segment.
+
+- `ENTITY`: an entity.
+- `X`: world x of the point.
+- `Y`: world y of the point.
+
 ### `entity-p` (function)
 
 ```lisp
@@ -4461,6 +4526,20 @@ constructor. Signals INVALID-ENTITY when the result would be invalid.
 - `KEY`: a PROPERTY-KEY returned by ENTITY-PROPERTIES.
 - `VALUE`: new value (double-float, string, boolean or unit keyword according to the kind).
 
+### `extend-changes` (function)
+
+```lisp
+(extend-changes drawing id x y)
+```
+
+Return the change set that extends the line or the arc with ID, at the end that is nearer to the point, up to the
+first entity that stands in its way. Signals EDIT-REFUSED when it cannot be done.
+
+- `DRAWING`: the drawing.
+- `ID`: id of the entity to extend.
+- `X`: world x of the click, which says which end.
+- `Y`: world y of the click.
+
 ### `extract-entities` (function)
 
 ```lisp
@@ -4472,6 +4551,25 @@ they are on, with the settings of DRAWING that give its numbers meaning.
 
 - `DRAWING`: the drawing the entities come from.
 - `ENTITIES`: a non-empty list of entities of DRAWING.
+
+### `fillet-changes` (function)
+
+```lisp
+(fillet-changes drawing first-id first-x first-y second-id second-x second-y radius)
+```
+
+Return the change set that rounds the corner of two lines: each is cut or lengthened to the point where an arc of
+the given radius touches it, on the side of the corner where it was clicked, and the arc is added on the layer of the
+first. With a radius of zero the lines are only taken to the corner. Signals EDIT-REFUSED when it cannot be done.
+
+- `DRAWING`: the drawing.
+- `FIRST-ID`: id of the first line.
+- `FIRST-X`: world x of the click on the first line.
+- `FIRST-Y`: world y of the click on the first line.
+- `SECOND-ID`: id of the second line.
+- `SECOND-X`: world x of the click on the second line.
+- `SECOND-Y`: world y of the click on the second line.
+- `RADIUS`: radius of the arc, millimetres, zero or more.
 
 ### `find-layer` (function)
 
@@ -5105,6 +5203,20 @@ Return, as two values, the reflection of the point (X, Y) in the line through tw
 - `LINE-Y1`: y of the first point.
 - `LINE-X2`: x of the second point.
 - `LINE-Y2`: y of the second point.
+
+### `offset-changes` (function)
+
+```lisp
+(offset-changes drawing id distance)
+```
+
+Return the change set that adds the entity that lies DISTANCE from the entity with ID, on the same layer.
+Signals EDIT-REFUSED when the entity is missing, on a locked layer or of a kind that cannot be offset, and
+INVALID-ENTITY when the result would not be valid.
+
+- `DRAWING`: the drawing.
+- `ID`: id of the entity to offset.
+- `DISTANCE`: millimetres; positive grows or goes left, see ENTITY-OFFSET.
 
 ### `palette-color-after` (function)
 
@@ -5916,6 +6028,21 @@ Signals INVALID-ENTITY when a moved entity would leave the drawing limits.
 - `DX`: displacement along x in millimetres.
 - `DY`: displacement along y in millimetres.
 
+### `trim-changes` (function)
+
+```lisp
+(trim-changes drawing id x y)
+```
+
+Return the change set that trims the line, arc or circle with ID: the part of it that lies between the two
+places where other entities cross it, or between one and its end, and that holds the point, is cut away. A line
+or an arc may be left in two pieces. Signals EDIT-REFUSED when it cannot be done.
+
+- `DRAWING`: the drawing.
+- `ID`: id of the entity to trim.
+- `X`: world x of the click, which says which part to cut away.
+- `Y`: world y of the click.
+
 ### `update-angular-dimension` (function)
 
 ```lisp
@@ -6551,6 +6678,10 @@ How far an extension line runs past the dimension line, as a fraction of the tex
 ### `+dimension-text-gap-ratio+` (constant)
 
 Gap between the dimension line and the text baseline, as a fraction of the text height.
+
+### `+pi+` (constant)
+
+Pi as a double-float.
 
 ### `+text-advance-ratio+` (constant)
 
