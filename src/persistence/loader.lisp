@@ -91,6 +91,20 @@ NODE: an element."
                        (node-value node)
                        dom:*hatch-patterns*)))
 
+(defvar *reading-drawing* nil
+  "The drawing being read, which the placements of blocks look their blocks up in.")
+
+(defun node-block (node)
+  "Return the block definition that a string node names, from the blocks read so far.
+
+NODE: an element."
+  (unless (eq (node-kind node) :string)
+    (content-failure node "expected the name of a block as a quoted string"))
+  (or (and *reading-drawing* (dom:find-block *reading-drawing* (node-value node)))
+      (content-failure node
+                       "unknown block ~s; a block must be defined in the (blocks ...) section"
+                       (node-value node))))
+
 (defun single-value (value-nodes
                      field-node)
   "Return the only value of a field, or fail when there is not exactly one.
@@ -124,6 +138,7 @@ FIELD-NODE: the whole field, for error positions."
     (:string (node-string (single-value value-nodes field-node)))
     (:unit (node-unit (single-value value-nodes field-node)))
     (:pattern (node-pattern (single-value value-nodes field-node)))
+    (:block (node-block (single-value value-nodes field-node)))
     (:reals (let ((values (make-array (length value-nodes) :element-type 'double-float)))
               (loop for node in value-nodes
                     for index from 0
@@ -377,6 +392,55 @@ SEEN-IDS: hash table of entity ids already read."
                                   (lambda ()
                                     (apply (entity-format-constructor entity-format) fields)))))))
 
+(defun parse-block (node
+                    drawing)
+  "Interpret one (block (name ...) (entities ...)) element and add the block to the drawing.
+
+NODE: the block element.
+DRAWING: the drawing being built."
+  (unless (and (eq (node-kind node) :list)
+               (let ((head (first (node-value node))))
+                 (and head (eq (node-kind head) :word) (string= (node-value head) "block"))))
+    (content-failure node "expected a block such as (block (name \"door\") (entities ...))"))
+  (let ((fields (rest (node-value node))))
+    (unless (and (= 2 (length fields))
+                 (every (lambda (field) (eq (node-kind field) :list)) fields))
+      (content-failure node "a block has two fields: (name ...) and (entities ...)"))
+    (destructuring-bind (name-field entities-field) fields
+      (let ((name-head (first (node-value name-field)))
+            (entities-head (first (node-value entities-field))))
+        (unless (and name-head (eq (node-kind name-head) :word) (string= (node-value name-head) "name"))
+          (content-failure name-field "expected the field (name ...) here"))
+        (unless (and entities-head (eq (node-kind entities-head) :word)
+                     (string= (node-value entities-head) "entities"))
+          (content-failure entities-field "expected the field (entities ...) here"))
+        (let* ((name (node-string (single-value (rest (node-value name-field)) name-field)))
+               (seen-ids (make-hash-table))
+               (entities (mapcar (lambda (entity-node)
+                                   (parse-entity entity-node
+                                                 drawing
+                                                 (1+ +maximum-identifier+)
+                                                 seen-ids))
+                                 (rest (node-value entities-field)))))
+          (call-with-content-errors node
+                                    (lambda ()
+                                      (when (dom:find-block drawing name)
+                                        (content-failure node
+                                                         "block ~s is defined twice"
+                                                         name))
+                                      (dom:define-block drawing
+                                                        (dom:make-block-definition :name name
+                                                                                   :entities entities)))))))))
+
+(defun parse-blocks (node
+                     drawing)
+  "Read every block of the (blocks ...) element into the drawing.
+
+NODE: the blocks element.
+DRAWING: the drawing being built."
+  (dolist (block-node (rest (node-value node)))
+    (parse-block block-node drawing)))
+
 (defun read-entities-section (source
                               drawing
                               next-entity-id)
@@ -425,7 +489,8 @@ SOURCE: the source."
         (drawing (dom:make-drawing)))
     (unless (and (eq (node-kind head) :word) (string= (node-value head) "drawing"))
       (content-failure head "a drawing file must start with (drawing ...)"))
-    (setf *format-version* (check-format-version (expect-field source "format-version")))
+    (setf *format-version* (check-format-version (expect-field source "format-version"))
+          *reading-drawing* drawing)
     (let ((unit-node (expect-field source "unit")))
       (unless (eq :millimeter (node-unit (field-single-value unit-node)))
         (content-failure unit-node "only millimeter is supported as the storage unit")))
@@ -473,6 +538,8 @@ SOURCE: the source."
                                  :snap-to-grid (getf grid :snap)
                                  :object-snap (getf grid :object-snap)
                                  :default-text-height text-height)
+      (when (>= *format-version* 5)
+        (parse-blocks (expect-field source "blocks") drawing))
       (let ((entities (read-entities-section source
                                              drawing
                                              next-entity-id)))
@@ -494,6 +561,7 @@ subclass naming the line and column of the first problem. Nothing is evaluated.
 TEXT: the file contents.
 PATH: file name used in error messages, or NIL."
   (let ((*file-path* path)
+        (*reading-drawing* nil)
         (*format-version* +supported-format-version+)
         (source (make-source (coerce text '(simple-array character (*))))))
     (when (and (plusp (length (source-text source)))

@@ -535,6 +535,12 @@ CLOSED: true when the last joins the first."
                                                       (sheet-y plan (aref triangles (+ index 5)))))
                                           color)))))
 
+(defmethod entity-items (drawing (insert dom:insert-entity) plan)
+  (loop for placed in (dom:insert-entities insert)
+        append (entity-items drawing
+                             placed
+                             plan)))
+
 (defun segment-strokes (drawing
                         entity
                         plan

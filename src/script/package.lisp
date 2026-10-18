@@ -76,6 +76,11 @@ commands that draw it.")
    #:pline
    #:text
    #:dimension
+   #:with-block
+   #:make-block
+   #:insert
+   #:explode
+   #:blocks
    #:hatch
    #:hatch-polygon
    #:radius-dimension

@@ -3,7 +3,8 @@
 ;;;; User-level operations. Each one validates, changes the drawing through the history, times
 ;;;; itself, and reports failures to the user instead of raising them.
 
-(declaim (ftype function make-tool tool-cancel tool-kind selection-tool-kind-p measure-tool-kind-p))
+(declaim (ftype function make-tool tool-cancel tool-kind selection-tool-kind-p measure-tool-kind-p activate-tool
+                operation-insert-block))
 
 (defparameter *untitled-file-name* "untitled.bcad"
   "File name offered in the Save As prompt for a drawing that has none.")
@@ -142,6 +143,7 @@ DISPLAY-UNIT: the drawing's display unit, assumed for numbers without a unit suf
   (ecase kind
     ((:coordinate :length) (base:parse-length text display-unit))
     (:angle (base:degrees->radians (base:parse-decimal text)))
+    (:factor (float (base:parse-decimal text) 1d0))
     (:integer (handler-case (parse-integer (string-trim " " text))
                 (parse-error ()
                   (error 'base:invalid-input :text text :reason (i18n:tr "expected a whole number")))))
@@ -250,14 +252,10 @@ changes the selection (rotate, mirror, scale) is not activated when nothing is s
          (set-message app
                       (i18n:tr "Select what you want to change first.")
                       :error))
+        ((eq kind :insert)
+         (operation-insert-block app))
         (t
-         (when (app-tool app)
-           (tool-cancel (app-tool app) app))
-         (setf (app-tool app) (make-tool kind)
-               (app-interaction app) nil
-               (app-translation app) nil
-               (app-window app) nil
-               (app-window-crossing app) nil)))
+         (activate-tool app (make-tool kind))))
   (app-request-redraw app))
 
 ;;; Layers

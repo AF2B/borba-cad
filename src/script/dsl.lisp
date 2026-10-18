@@ -170,14 +170,24 @@ BODY: the commands to run."
 
 ;;; Making entities
 
+(defvar *block-collector* nil
+  "While a block is being made, a cons whose car is the list of the entities drawn into it so far, newest first.")
+
 (defun add-entity (builder)
-  "Make an entity with BUILDER, add it to the drawing, and return its id.
+  "Make an entity with BUILDER, add it to the drawing, and return its id. While a block is being made the entity goes
+into the block instead, with the next id of the block, on the default layer.
 
 BUILDER: function of the id and the layer id that returns the entity."
-  (let* ((drawing (the-drawing))
-         (layer-id (creation-layer-id))
-         (entity (funcall builder (dom:drawing-next-entity-id drawing) layer-id)))
-    (emit-change nil entity)))
+  (if *block-collector*
+      (let ((entity (funcall builder
+                             (1+ (length (car *block-collector*)))
+                             dom:+default-layer-id+)))
+        (push entity (car *block-collector*))
+        (dom:entity-id entity))
+      (let* ((drawing (the-drawing))
+             (layer-id (creation-layer-id))
+             (entity (funcall builder (dom:drawing-next-entity-id drawing) layer-id)))
+        (emit-change nil entity))))
 
 (defun line (x1
              y1
@@ -573,6 +583,95 @@ SPACING: the distance between two lines, or the usual one for the size of the sh
                       (error "~a" condition)))))
     (emit-change nil (dom:change-after (first changes)))))
 
+;;; Blocks
+
+(defun call-with-block (name
+                        thunk)
+  "Run THUNK, with what it draws going into a new block called NAME instead of the drawing, and add the block to the
+drawing. Returns the name of the block.
+
+NAME: what the block is called.
+THUNK: function of no arguments that draws."
+  (let ((*block-collector* (list nil)))
+    (funcall thunk)
+    (let ((definition (dom:make-block-definition :name name
+                                                 :entities (reverse (car *block-collector*)))))
+      (dom:define-block (the-drawing) definition)
+      (dom:block-definition-name definition))))
+
+(defmacro with-block (name &body body)
+  "Make a block called NAME of the entities that BODY draws; they are not drawn in the drawing. Place it with INSERT.
+Returns the name.
+
+NAME: what the block is called.
+BODY: drawing commands, such as LINE and CIRCLE."
+  `(call-with-block ,name (lambda () ,@body)))
+
+(defun make-block (name
+                   ids
+                   &key (base-x 0)
+                        (base-y 0))
+  "Make a block called NAME of the entities with IDS, which are replaced by one placement of it at the base point.
+Returns the id of the placement.
+
+NAME: what the block is called.
+IDS: an id or a list of ids.
+BASE-X: x of the point that is the base point of the block.
+BASE-Y: y of that point."
+  (multiple-value-bind (definition changes)
+      (dom:make-block-changes (the-drawing)
+                              (entity-ids-of ids)
+                              name
+                              (number-of base-x)
+                              (number-of base-y))
+    (dom:define-block (the-drawing) definition)
+    (let ((placed nil))
+      (dolist (change changes)
+        (let ((after (dom:change-after change)))
+          (emit-change (dom:change-before change) after)
+          (when after
+            (setf placed (dom:entity-id after)))))
+      placed)))
+
+(defun insert (name
+               x
+               y
+               &key (scale 1)
+                    (rotation 0)
+                    flipped)
+  "Place the block called NAME with its base point at (X, Y). Returns the id of the placement.
+
+NAME: the name of the block.
+X: x of the point.
+Y: y of the point.
+SCALE: how many times larger than the block.
+ROTATION: the turn, in degrees.
+FLIPPED: true to reflect the block across its vertical axis before it is turned."
+  (when *block-collector*
+    (error "A block cannot hold a block: place it after the block is made."))
+  (creation-layer-id)
+  (let ((changes (dom:insert-changes (the-drawing)
+                                     name
+                                     (number-of x)
+                                     (number-of y)
+                                     :scale (float (number-of scale) 1d0)
+                                     :rotation (angle-radians rotation)
+                                     :flipped flipped)))
+    (emit-change nil (dom:change-after (first changes)))))
+
+(defun explode (ids)
+  "Replace the placements of blocks among IDS by the entities they stand for. Returns how many were exploded.
+
+IDS: an id or a list of ids."
+  (multiple-value-bind (changes exploded) (dom:explode-changes (the-drawing) (entity-ids-of ids))
+    (dolist (change changes)
+      (emit-change (dom:change-before change) (dom:change-after change)))
+    exploded))
+
+(defun blocks ()
+  "Return the names of the blocks, in alphabetical order."
+  (dom:block-names (the-drawing)))
+
 ;;; Finding entities
 
 (defun entity-ids-of (designator)
@@ -811,6 +910,7 @@ VALUE: what the command was given."
   (ecase (dom:property-kind property)
     ((:coordinate :length) (number-of value))
     (:angle (angle-radians value))
+    (:factor (float (number-of value) 1d0))
     ((:text :integer :boolean :unit :pattern) value)))
 
 (defun edit (id
@@ -927,7 +1027,7 @@ PROPERTY: an inspector property."
   (let ((value (dom:property-value property)))
     (case (dom:property-kind property)
       (:angle (base:format-decimal (base:radians->degrees value) 4))
-      ((:coordinate :length) (persist:format-double value))
+      ((:coordinate :length :factor) (persist:format-double value))
       (:boolean (if value "yes" "no"))
       ((:unit :pattern) (string-downcase (symbol-name value)))
       (t value))))
@@ -954,6 +1054,7 @@ THINGS: anything."
   '(("Making entities" line rect rect-size circle arc ellipse polygon pline text dimension radius-dimension
      diameter-dimension angle-dimension hatch hatch-polygon)
     ("Layers" layer with-layer layers)
+    ("Blocks" with-block make-block insert explode blocks)
     ("Changing entities" move copy erase edit move-to-layer rotate mirror scale)
     ("Finding entities" entities entity-count extents info)
     ("Selection and view" select select-all deselect selected fit)

@@ -38,7 +38,7 @@ STREAM: output stream."
                           stream)
   "Write one property value according to its storage TYPE.
 
-TYPE: :real, :reals, :boolean, :string, :unit, :pattern or :integer.
+TYPE: :real, :reals, :boolean, :string, :unit, :pattern, :block or :integer.
 VALUE: the property value.
 STREAM: output stream."
   (ecase type
@@ -50,6 +50,7 @@ STREAM: output stream."
     (:string (write-quoted-string value stream))
     (:unit (write-string (string-downcase (symbol-name value)) stream))
     (:pattern (write-string (string-downcase (symbol-name value)) stream))
+    (:block (write-quoted-string (dom:block-definition-name value) stream))
     (:integer (format stream "~d" value))))
 
 (defun write-entity (entity
@@ -88,6 +89,20 @@ STREAM: output stream."
             (if (dom:layer-visible layer) "t" "nil")
             (if (dom:layer-locked layer) "t" "nil"))))
 
+(defun write-block (definition
+                    stream)
+  "Write one block definition: its name and its entities.
+
+DEFINITION: the block definition.
+STREAM: output stream."
+  (format stream "  (block (name ")
+  (write-quoted-string (dom:block-definition-name definition) stream)
+  (format stream ")~%   (entities~%")
+  (dolist (entity (dom:block-definition-entities definition))
+    (write-string "   " stream)
+    (write-entity entity stream))
+  (format stream "   ))~%"))
+
 (defun write-drawing (drawing
                       stream)
   "Write DRAWING in the .bcad format (the newest version).
@@ -110,6 +125,10 @@ STREAM: character output stream; UTF-8 is expected."
   (format stream " (layers~%")
   (dolist (layer (dom:layers-in-order drawing))
     (write-layer layer stream))
+  (format stream " )~%")
+  (format stream " (blocks~%")
+  (dolist (definition (dom:block-definitions drawing))
+    (write-block definition stream))
   (format stream " )~%")
   (format stream " (entities~%")
   (dom:map-entities (lambda (entity) (write-entity entity stream))

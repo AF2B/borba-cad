@@ -226,7 +226,14 @@
         (dom:make-angular-dimension :id 1 :layer-id 0 :vertex-x 0d0 :vertex-y 0d0 :start-angle 0.2d0
                                     :end-angle 1.4d0 :radius 100d0 :text-height 20d0 :precision 1)
         (dom:make-hatch :id 1 :layer-id 0 :coordinates (doubles 0d0 0d0 100d0 0d0 100d0 100d0 0d0 100d0)
-                        :pattern :lines :angle 0.5d0 :spacing 10d0)))
+                        :pattern :lines :angle 0.5d0 :spacing 10d0)
+        (dom:make-insert :id 1 :layer-id 0
+                         :block (dom:make-block-definition
+                                 :name "pair"
+                                 :entities (list (dom:make-line :id 1 :layer-id 0 :x1 0d0 :y1 0d0 :x2 50d0 :y2 20d0)
+                                                 (dom:make-circle :id 2 :layer-id 0 :center-x 10d0 :center-y 10d0
+                                                                  :radius 5d0)))
+                         :x 100d0 :y 100d0 :scale 2d0 :rotation 0.3d0)))
 
 (test every-kind-reports-a-distinct-kind-keyword-and-bounds
   (let ((entities (every-entity-kind)))

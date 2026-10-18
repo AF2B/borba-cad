@@ -347,9 +347,7 @@
   (let ((text (persist:drawing-to-string (dimension-drawing))))
     (is (search (format nil "(format-version ~d)" persist:+supported-format-version+) text))
     (dolist (version '(1 2))
-      (let ((old (replace-once-text text
-                                    (format nil "(format-version ~d)" persist:+supported-format-version+)
-                                    (format nil "(format-version ~d)" version))))
+      (let ((old (as-older-version text version)))
         (handler-case (progn (persist:parse-drawing-text old)
                              (fail "a version ~d file with a dimension was accepted" version))
           (base:drawing-file-content-error (condition)
@@ -372,10 +370,7 @@
     (is (search "(format-version 2)" fixture))
     (is (= 9 (dom:drawing-entity-count drawing)))
     (is (search (format nil "(format-version ~d)" persist:+supported-format-version+) written))
-    (is (string= (replace-once-text fixture
-                                    "(format-version 2)"
-                                    (format nil "(format-version ~d)" persist:+supported-format-version+))
-                 written)
+    (is (string= (as-newest-version fixture 2) written)
         "everything else is as it was")
     (is (equal (entity-values drawing) (entity-values (persist:parse-drawing-text written))))))
 

@@ -87,3 +87,33 @@
   (is (= 1 persist:+oldest-supported-format-version+))
   (loop for version from persist:+oldest-supported-format-version+ to persist:+supported-format-version+
         do (is (typep version '(integer 1)))))
+
+(defun as-newest-version (text version)
+  "Return the text of a file of an older VERSION as the writer writes it in the newest version: the version line,
+and the section of blocks that version 5 added, which is empty.
+
+TEXT: the text of the old file.
+VERSION: its format version."
+  (let ((renumbered (replace-once-text text
+                                       (format nil "(format-version ~d)" version)
+                                       (format nil "(format-version ~d)" persist:+supported-format-version+))))
+    (if (< version 5)
+        (replace-once-text renumbered
+                           (format nil " )~% (entities")
+                           (format nil " )~% (blocks~% )~% (entities"))
+        renumbered)))
+
+(defun as-older-version (text version)
+  "Return the text of a file of the newest version as the file of an older VERSION would read: with that version
+line, and without the section of blocks when the version predates it.
+
+TEXT: the text of a file of the newest version, with an empty section of blocks.
+VERSION: the format version to say."
+  (let ((renumbered (replace-once-text text
+                                       (format nil "(format-version ~d)" persist:+supported-format-version+)
+                                       (format nil "(format-version ~d)" version))))
+    (if (< version 5)
+        (replace-once-text renumbered
+                           (format nil " (blocks~% )~%")
+                           "")
+        renumbered)))

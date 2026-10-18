@@ -303,9 +303,7 @@
 (test an-older-file-cannot-hold-a-hatch
   (let ((text (persist:drawing-to-string (hatch-drawing))))
     (dolist (version '(1 2 3))
-      (let ((old (replace-once-text text
-                                    (format nil "(format-version ~d)" persist:+supported-format-version+)
-                                    (format nil "(format-version ~d)" version))))
+      (let ((old (as-older-version text version)))
         (handler-case (progn (persist:parse-drawing-text old)
                              (fail "a version ~d file with a hatch was accepted" version))
           (base:drawing-file-content-error (condition)
@@ -327,10 +325,7 @@
          (written (persist:drawing-to-string drawing)))
     (is (search "(format-version 3)" fixture))
     (is (= 12 (dom:drawing-entity-count drawing)))
-    (is (string= (replace-once-text fixture
-                                    "(format-version 3)"
-                                    (format nil "(format-version ~d)" persist:+supported-format-version+))
-                 written))))
+    (is (string= (as-newest-version fixture 3) written))))
 
 ;;; The scene, DXF, plots and the console
 
@@ -402,7 +397,7 @@
   (let ((application (hatching-app)))
     (click-widget application :draw)
     (let ((kinds (mapcar (lambda (row) (second (ui:widget-id row))) (menu-rows application))))
-      (is (equal '(:hatch :solid-fill) (last kinds 2))))
+      (is (equal '(:hatch :solid-fill :insert) (subseq kinds 12 15))))
     (click-widget application '(:menu-item :solid-fill))
     (is (eq :solid-fill (app:tool-kind (app:app-tool application))))))
 

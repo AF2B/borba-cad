@@ -1011,5 +1011,5 @@ KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :
 
 (defparameter *tool-shortcuts*
   '((:l . :line) (:r . :rectangle) (:c . :circle) (:p . :polyline) (:t . :text) (:d . :dimension)
-    (:a . :arc) (:e . :ellipse) (:n . :polygon) (:m . :measure-distance))
+    (:a . :arc) (:e . :ellipse) (:n . :polygon) (:m . :measure-distance) (:i . :insert))
   "Letter keys that activate tools.")

@@ -104,6 +104,14 @@ ENTITY: an entity."
              (number-text (dom:polygon-center-x entity)) (number-text (dom:polygon-center-y entity))
              (number-text (dom:polygon-radius entity)) (dom:polygon-sides entity)
              (angle-text (dom:polygon-rotation entity))))
+    (dom:insert-entity
+     (format nil "(insert ~a ~a ~a :scale ~a :rotation ~a~:[~; :flipped t~])"
+             (string-text (dom:block-definition-name (dom:insert-block entity)))
+             (number-text (dom:insert-x entity))
+             (number-text (dom:insert-y entity))
+             (number-text (dom:insert-scale entity))
+             (angle-text (dom:insert-rotation entity))
+             (dom:insert-flipped entity)))
     (dom:hatch-entity
      (let ((coordinates (dom:hatch-coordinates entity)))
        (format nil "(hatch-polygon '(~{~a~^ ~}) :pattern ~a :angle ~a :spacing ~a)"
@@ -172,6 +180,11 @@ DRAWING: the drawing."
     (dolist (layer (dom:layers-in-order drawing))
       (write-line (layer-command layer) stream))
     (terpri stream)
+    (dolist (definition (dom:block-definitions drawing))
+      (format stream "(with-block ~a~%" (string-text (dom:block-definition-name definition)))
+      (dolist (entity (dom:block-definition-entities definition))
+        (format stream "  ~a~%" (entity-command entity)))
+      (format stream ")~%"))
     (let ((current nil))
       (dom:map-entities (lambda (entity)
                           (unless (eql current (dom:entity-layer-id entity))

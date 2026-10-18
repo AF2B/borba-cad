@@ -45,7 +45,9 @@
         (list :angular-dimension :angular-dimension (i18n:mark "Angle dimension") nil)
         nil
         (list :hatch :hatch (i18n:mark "Hatch") nil)
-        (list :solid-fill :solid-fill (i18n:mark "Solid fill") nil))
+        (list :solid-fill :solid-fill (i18n:mark "Solid fill") nil)
+        nil
+        (list :insert :insert (i18n:mark "Insert block") "I"))
   "The choices of the draw menu, top to bottom, as (tool-kind icon label shortcut), with NIL between
 groups. The labels are in English and are translated where the menu is built.")
 
@@ -103,6 +105,17 @@ APP: the application."
                                         (lambda () (choose-menu-tool app kind))
                                         (eq kind active))))))))
 
+(defun run-modify-command (app
+                           kind)
+  "Do what a choice of the modify menu, or its key, asks: make a tool the active one, or do the thing at once.
+
+APP: the application.
+KIND: a tool kind, or :make-block or :explode."
+  (case kind
+    (:make-block (operation-make-block app))
+    (:explode (operation-explode-selection app))
+    (t (operation-set-tool app kind))))
+
 (defun modify-menu-items (app)
   "Return the choices of the modify menu: the tools that change the selection, and those that change what is
 clicked, with NIL between the two groups.
@@ -117,7 +130,9 @@ APP: the application."
                                         (i18n:tr label)
                                         icon
                                         shortcut
-                                        (lambda () (choose-menu-tool app kind))
+                                        (lambda ()
+                                          (close-menu app)
+                                          (run-modify-command app kind))
                                         (eq kind active))))))))
 
 (defun measure-menu-items (app)

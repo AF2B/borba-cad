@@ -8,7 +8,7 @@
 (defparameter *selection-tool-kinds* '(:rotate :mirror :scale)
   "The tools that change what is selected as a whole, and so need a selection.")
 
-(defparameter *modify-tool-kinds* '(:rotate :mirror :scale :trim :extend :offset :fillet)
+(defparameter *modify-tool-kinds* '(:rotate :mirror :scale :trim :extend :offset :fillet :make-block)
   "The tools that change what is drawn, which the Modify button opens, as opposed to those that draw: the ones that
 need a selection, and the ones that work on what is clicked.")
 
@@ -440,10 +440,14 @@ COPY: true to keep the originals."
         (list :trim :trim (i18n:mark "Trim") "Shift+T")
         (list :extend :extend (i18n:mark "Extend") "Shift+E")
         (list :offset :offset (i18n:mark "Offset") "Shift+O")
-        (list :fillet :fillet (i18n:mark "Fillet") "Shift+F"))
+        (list :fillet :fillet (i18n:mark "Fillet") "Shift+F")
+        nil
+        (list :make-block :make-block (i18n:mark "Make block...") "Shift+B")
+        (list :explode :explode (i18n:mark "Explode") "Shift+X"))
   "The choices of the modify menu, top to bottom, as (tool-kind icon label shortcut), with NIL between groups. The
 labels are in English and are translated where the menu is built.")
 
 (defparameter *modify-shortcuts*
-  '((:r . :rotate) (:m . :mirror) (:s . :scale) (:t . :trim) (:e . :extend) (:o . :offset) (:f . :fillet))
+  '((:r . :rotate) (:m . :mirror) (:s . :scale) (:t . :trim) (:e . :extend) (:o . :offset) (:f . :fillet)
+    (:b . :make-block) (:x . :explode))
   "Letter keys that activate the modify tools when Shift is held.")

@@ -31,6 +31,9 @@ ENTITIES: a non-empty list of entities of DRAWING."
                          (layer-color layer)
                          (layer-visible layer)
                          (layer-locked layer)))))
+    (dolist (entity entities)
+      (when (eq :insert (entity-kind entity))
+        (define-block snippet (insert-block entity))))
     (apply-changes snippet (create-entities-changes entities))
     (restore-drawing-state snippet
                            :current-layer-id (entity-layer-id (first entities))
@@ -66,20 +69,35 @@ ENTITY: the entity, with its layer id in SNIPPET."
         (layer-id same-name)
         (drawing-current-layer-id drawing))))
 
+(defun placed-in-drawing (drawing
+                          entity)
+  "Return ENTITY, with a placement of a block made to place the block of that name that DRAWING has.
+
+DRAWING: the drawing the entity goes into.
+ENTITY: an entity of a copied drawing."
+  (if (eq :insert (entity-kind entity))
+      (update-insert entity
+                     :block (find-block drawing (block-definition-name (insert-block entity))))
+      entity))
+
 (defun pasted-entities (drawing
                         snippet
                         dx
                         dy)
   "Return the entities of SNIPPET as new entities of DRAWING: with fresh ids, on the layers that
-PASTE-LAYER-ID picks, and moved by (DX, DY).
+PASTE-LAYER-ID picks, and moved by (DX, DY). The blocks of SNIPPET that DRAWING does not have are added to it, and a
+placement of a block that it has uses its block, whatever the copy said.
 
 DRAWING: the drawing they are pasted into.
 SNIPPET: the copied drawing.
 DX: displacement along x.
 DY: displacement along y."
+  (dolist (definition (block-definitions snippet))
+    (unless (find-block drawing (block-definition-name definition))
+      (define-block drawing definition)))
   (loop for entity in (drawing-entities snippet)
         for id from (drawing-next-entity-id drawing)
-        collect (entity-translated (entity-with-identity entity
+        collect (entity-translated (entity-with-identity (placed-in-drawing drawing entity)
                                                          id
                                                          (paste-layer-id drawing
                                                                          snippet

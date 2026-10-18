@@ -29,7 +29,7 @@ small enough that reducing it to a turn loses no precision that matters.")
 
 (defparameter *entity-kinds*
   '(:line :rectangle :circle :polyline :text :dimension :arc :ellipse :polygon :radial-dimension :angular-dimension
-    :hatch)
+    :hatch :insert)
   "Every entity kind keyword, in toolbar order.")
 
 (defun entity-kinds ()
@@ -56,7 +56,8 @@ BOUNDS: world-space bounds, computed once at construction."
 
 KEY: identifies the property for ENTITY-WITH-PROPERTY.
 LABEL: English label shown to the user.
-KIND: :coordinate, :length, :angle (radians), :text, :boolean, :unit, :pattern or :integer.
+KIND: :coordinate, :length, :angle (radians), :factor (a number without a unit), :text, :boolean, :unit,
+:pattern or :integer.
 VALUE: current value (millimetres for lengths and coordinates).
 EDITABLE: true when the user may change it."
   key
@@ -79,7 +80,7 @@ VALUE: the number."
 
 (defgeneric entity-kind (entity)
   (:documentation "Return the entity's kind keyword (:line, :rectangle, :circle, :polyline,
-:text, :dimension, :arc, :ellipse, :polygon, :radial-dimension, :angular-dimension or :hatch).
+:text, :dimension, :arc, :ellipse, :polygon, :radial-dimension, :angular-dimension, :hatch or :insert).
 
 ENTITY: an entity."))
 

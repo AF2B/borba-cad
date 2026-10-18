@@ -65,6 +65,8 @@
                              (:file "polygon")
                              (:file "hatch")
                              (:file "transforms")
+                             (:file "block")
+                             (:file "insert")
                              (:file "store")
                              (:file "drawing")
                              (:file "changes")
@@ -72,6 +74,7 @@
                              (:file "picking")
                              (:file "commands")
                              (:file "reshaping")
+                             (:file "block-commands")
                              (:file "transfer")))
                (:module "viewport"
                 :serial t
@@ -164,6 +167,7 @@
                              (:file "measure-tools")
                              (:file "dimension-tools")
                              (:file "reshape-tools")
+                             (:file "block-tools")
                              (:file "entity-clipboard")
                              (:file "panels")
                              (:file "side-panels")
@@ -292,6 +296,7 @@
                (:file "reshaping-tests")
                (:file "plot-tests")
                (:file "hatch-tests")
+               (:file "block-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

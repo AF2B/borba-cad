@@ -20,6 +20,7 @@ at any practical zoom and would be hidden by the adaptive grid display.")
 STORE: the entities.
 LAYERS: id to layer.
 LAYER-ORDER: layer ids in display order.
+BLOCKS: block name, without case, to the block definition.
 CURRENT-LAYER-ID: layer that receives new entities.
 UNIT: unit in which coordinates are stored (always :millimeter in format version 1).
 DISPLAY-UNIT: unit in which the user sees and types lengths.
@@ -34,6 +35,7 @@ REVISION: counter bumped by every change, for dirty tracking and cache invalidat
   (store (make-entity-store) :type entity-store :read-only t)
   (layers (make-hash-table) :type hash-table :read-only t)
   (layer-order nil :type list)
+  (blocks (make-hash-table :test 'equal) :type hash-table :read-only t)
   (current-layer-id +default-layer-id+ :type (integer 0))
   (unit :millimeter :type keyword)
   (display-unit :millimeter :type keyword)
@@ -69,6 +71,73 @@ DRAWING: the drawing."
 
 DRAWING: the drawing."
   (store-count (drawing-store drawing)))
+
+;;; Blocks
+
+(defun find-block (drawing
+                   name)
+  "Return the block called NAME, compared without regard to case, or NIL.
+
+DRAWING: the drawing.
+NAME: a block name."
+  (values (gethash (block-name-key name) (drawing-blocks drawing))))
+
+(defun block-definitions (drawing)
+  "Return the blocks of the drawing, sorted by name.
+
+DRAWING: the drawing."
+  (sort (loop for definition being the hash-values of (drawing-blocks drawing)
+              collect definition)
+        #'string-lessp
+        :key #'block-definition-name))
+
+(defun block-names (drawing)
+  "Return the names of the blocks of the drawing, sorted.
+
+DRAWING: the drawing."
+  (mapcar #'block-definition-name (block-definitions drawing)))
+
+(defun block-in-use-p (drawing
+                       name)
+  "Return true when an entity of the drawing is a placement of the block called NAME.
+
+DRAWING: the drawing.
+NAME: a block name."
+  (let ((key (block-name-key name))
+        (used nil))
+    (map-entities (lambda (entity)
+                    (when (and (eq :insert (entity-kind entity))
+                               (string= key (block-name-key (block-definition-name (insert-block entity)))))
+                      (setf used t)))
+                  (drawing-store drawing))
+    used))
+
+(defun define-block (drawing
+                     definition)
+  "Add a block to the drawing, or replace the block of the same name when no entity places it. Signals EDIT-REFUSED when
+a block of that name is placed in the drawing.
+
+DRAWING: the drawing.
+DEFINITION: the block definition."
+  (let ((name (block-definition-name definition)))
+    (when (and (find-block drawing name) (block-in-use-p drawing name))
+      (error 'base:edit-refused
+             :reason (i18n:trf "A block called ~a is already in use in this drawing." name)))
+    (setf (gethash (block-name-key name) (drawing-blocks drawing)) definition)
+    (touch-drawing drawing)
+    definition))
+
+(defun remove-block (drawing
+                     name)
+  "Take the block called NAME out of the drawing. Signals EDIT-REFUSED when it is placed.
+
+DRAWING: the drawing.
+NAME: a block name."
+  (when (block-in-use-p drawing name)
+    (error 'base:edit-refused
+           :reason (i18n:trf "A block called ~a is in use and cannot be removed." name)))
+  (remhash (block-name-key name) (drawing-blocks drawing))
+  (touch-drawing drawing))
 
 ;;; Layers
 

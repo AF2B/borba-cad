@@ -114,6 +114,15 @@ Select one entity and its **grips** appear: squares to change its shape, a circl
 entity (Shift+click adds or removes), dragging from left to right selects what lies inside the rectangle and
 from right to left (dashed) what it touches, and dragging a selection moves it.
 
+**Blocks.** Select entities, choose **Make block...** in the Modify menu (`Shift+B`), type a name and click the base
+point: the entities become one placement of the block. **Insert block** in the Draw menu (`I`) asks which block, then
+a click puts it down (a number typed before the click is the scale), and a second click turns it toward the pointer
+(Enter keeps it straight, a number typed after the first click is the angle in degrees). **Explode** (`Shift+X`) turns
+a placement back into its entities. A block is defined once and kept in the file; every placement draws, picks and
+snaps like the entities it stands for, takes the layer of the placement, and has a position, scale, rotation and
+flip that the inspector edits. Rotate, mirror and scale work on placements, and copy and paste carry the block along.
+A block cannot hold a block. In the console: `with-block`, `make-block`, `insert`, `explode` and `blocks`.
+
 **Hatch and Solid fill** are in the Draw menu. Click inside a closed shape (a rectangle, circle, ellipse,
 polygon or closed polyline: the smallest one that holds the point is used) and it is filled, with a live preview
 while you move. A hatch is lines at 45 degrees, half the text height apart; select it and the inspector changes
@@ -230,8 +239,8 @@ are scripts to read and run.
 
 ## Files and formats
 
-- **`.bcad`**, the program's own format: UTF-8 text, one S-expression, an explicit `format-version` (4; versions
-  1 to 3 open and are migrated), doubles that read back exactly. Loading never evaluates code; a malformed
+- **`.bcad`**, the program's own format: UTF-8 text, one S-expression, an explicit `format-version` (5; versions
+  1 to 4 open and are migrated), doubles that read back exactly. Loading never evaluates code; a malformed
   file is refused with its line and column, and a failed open leaves the open drawing untouched. Saving is
   atomic (temporary file, flush, rename).
 - **DXF import** (More > Import DXF) reads an ASCII DXF of any version as a new drawing: layers, lines,

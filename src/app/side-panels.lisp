@@ -377,6 +377,7 @@ PROPERTY: an inspector property."
     (ecase (dom:property-kind property)
       ((:coordinate :length) (format-model-number app value))
       (:angle (trim-decimal-zeros (base:format-decimal (base:radians->degrees value) 4)))
+      (:factor (trim-decimal-zeros (base:format-decimal value 4)))
       (:text value)
       (:integer (format nil "~d" value))
       (:boolean (if value (i18n:tr "Yes") (i18n:tr "No")))
@@ -460,7 +461,15 @@ BLOCKED: true while a modal covers the panel."
                           (list :label id)
                           (dom:property-label property)
                           width)
-          (case kind
+          (case (if (dom:property-editable property) kind :read-only)
+            (:read-only
+             (make-label id
+                         text
+                         column
+                         0f0
+                         value-width
+                         ui:+row-height+
+                         :color (scene:theme-text-dim (app-theme app))))
             (:boolean
              (ui:make-widget :button
                              id

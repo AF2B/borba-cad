@@ -167,6 +167,7 @@ layer. Stacking order is id order.
 | Polyline | at least 2 vertices (3 when closed), at most 100,000; no two consecutive vertices coincide | length, vertex count |
 | Text | non-empty single line, at most 256 characters; height > tolerance; any angle, kept in [0, 2π) | width |
 | Dimension | definition points farther apart than the tolerance; text height > tolerance; precision 0 to 6 | measured length |
+| Block placement | a known block; scale between 1e-6 and 1e6; position in range; every entity of the block, flipped across its vertical axis, scaled, turned and moved, must be valid and in range; the rotation is kept in [0, 2π) | entities |
 | Hatch | boundary of 3 to 2000 vertices that encloses an area; pattern solid, lines or cross; spacing > tolerance and not more than 5000 lines in a set; angle kept in [0, π) | area, perimeter, vertices |
 | Radius or diameter dimension | radius > tolerance; text height > tolerance; precision 0 to 6; leader angle kept in [0, 2π); the text is `R` and the radius, or the diameter sign and twice the radius | measured length |
 | Angle dimension | arm directions differ by more than the angle tolerance and by less than a whole turn (the angle is measured counter-clockwise from the first arm to the second); radius > tolerance; text height > tolerance; precision 0 to 6 | angle |
@@ -226,6 +227,17 @@ entities cannot be deleted either.
   anchor, or on the ray at the nearest multiple of 15 degrees, unless an object snap was taken.
 - A move or an edit that would break an invariant is refused and leaves the drawing unchanged:
   change sets are validated completely before the first modification.
+
+### Blocks (`domain/block.lisp`, `domain/insert.lisp`)
+
+A block definition is immutable: a name, and entities numbered from 1 on the default layer with the base point at
+the origin; it holds no block. A placement holds the definition and the entities as placed, computed once at
+construction in this order: flip across the block's vertical axis, scale about the origin, turn about the origin, move
+to the position, and put on the layer of the placement. Drawing, picking, crossing, snapping and the exports use
+those entities. Mirroring a placement in a line at angle φ reflects its position, sets its rotation to
+`2φ − rotation + π` and toggles its flip, which is the composition of the reflection with the placement; rotating
+adds to the rotation and scaling multiplies the scale. A definition can be replaced only while no placement uses it,
+and definitions are kept by name without regard to case.
 
 ### Hatching (`geometry/hatching.lisp`, `domain/hatch.lisp`)
 

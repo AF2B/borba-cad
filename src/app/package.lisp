@@ -153,6 +153,12 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:export-pdf-from-app
    #:export-svg-from-app
    #:app-plot-settings
+   #:app-last-block-name
+   #:operation-insert-block
+   #:operation-make-block
+   #:operation-explode-selection
+   #:make-block-tool
+   #:insert-tool
    #:modify-tool-kind-p
    #:selection-tool-kind-p
    #:*selection-tool-kinds*

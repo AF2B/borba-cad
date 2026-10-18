@@ -397,7 +397,7 @@ MODIFIERS: modifier keys held."
         (modify-tool (and (modifier-p modifiers :shift)
                           (or (cdr (assoc key *modify-shortcuts*))
                               (cdr (assoc key *measure-shortcuts*))))))
-    (cond (modify-tool (operation-set-tool app modify-tool) t)
+    (cond (modify-tool (run-modify-command app modify-tool) t)
           (tool (operation-set-tool app tool) t)
           (t (case key
                (:escape (cancel-or-select app) t)

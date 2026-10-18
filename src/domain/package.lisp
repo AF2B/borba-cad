@@ -182,6 +182,36 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:angular-dimension-sweep
    #:angular-dimension-text
    #:angular-dimension-layout
+   ;; Blocks
+   #:block-definition
+   #:make-block-definition
+   #:block-definition-name
+   #:block-definition-entities
+   #:block-definition-bounds
+   #:+maximum-block-entities+
+   #:+maximum-block-name-length+
+   #:clean-block-name
+   #:block-name-key
+   #:find-block
+   #:block-definitions
+   #:block-names
+   #:block-in-use-p
+   #:define-block
+   #:remove-block
+   #:insert-entity
+   #:make-insert
+   #:update-insert
+   #:insert-block
+   #:insert-x
+   #:insert-y
+   #:insert-scale
+   #:insert-rotation
+   #:insert-flipped
+   #:insert-entities
+   #:+maximum-insert-scale+
+   #:make-block-changes
+   #:insert-changes
+   #:explode-changes
    ;; Hatch
    #:hatch-entity
    #:make-hatch

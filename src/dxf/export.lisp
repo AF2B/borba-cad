@@ -421,6 +421,12 @@ REPORT: the report, in which what changes shape is noted."
     (dom:hatch-entity
      (note report (i18n:tr "Hatches were written as lines or filled triangles."))
      (write-hatch layer entity))
+    (dom:insert-entity
+     (note report (i18n:tr "Blocks were written as the entities they stand for."))
+     (dolist (placed (dom:insert-entities entity))
+       (write-entity-as-dxf placed
+                            layer
+                            report)))
     (dom:radial-dimension-entity
      (note report (i18n:tr "Dimensions were written as their lines, arrowheads and text."))
      (write-annotation layer

@@ -8,7 +8,7 @@
 
 (defparameter *draw-menu-order*
   '(:line :polyline :rectangle :polygon :circle :arc :ellipse :text :dimension :radius-dimension :diameter-dimension
-    :angular-dimension :hatch :solid-fill)
+    :angular-dimension :hatch :solid-fill :insert)
   "The tools of the draw menu, top to bottom.")
 
 (defun menu-rows (application)
@@ -35,7 +35,7 @@
       (dolist (row rows)
         (is (ui:widget-icon row))
         (is (ui:widget-label row)))
-      (is (equal '("L" "P" "R" "N" "C" "A" "E" "T" "D" nil nil nil nil nil) (mapcar #'ui:widget-shortcut rows))
+      (is (equal '("L" "P" "R" "N" "C" "A" "E" "T" "D" nil nil nil nil nil "I") (mapcar #'ui:widget-shortcut rows))
           "the letters, and none for the round dimensions and the hatches"))
     (is-true (find-widget application :menu))))
 
@@ -56,7 +56,7 @@
 
 (test choosing-a-row-activates-that-tool-and-closes-the-list
   (let ((application (make-test-app)))
-    (dolist (kind *draw-menu-order*)
+    (dolist (kind (remove :insert *draw-menu-order*))
       (choose-tool application kind)
       (is (eq kind (app:tool-kind (app:app-tool application))))
       (is (null (menu-rows application)) "the list closed"))))
@@ -115,11 +115,11 @@
     (is (eq :polyline (highlighted-row application)))
     (press application :up)
     (press application :up)
-    (is (eq :solid-fill (highlighted-row application)) "up from the first goes to the last")
+    (is (eq :insert (highlighted-row application)) "up from the first goes to the last")
     (press application :down)
     (is (eq :line (highlighted-row application)) "down from the last goes to the first")
     (press application :end)
-    (is (eq :solid-fill (highlighted-row application)))
+    (is (eq :insert (highlighted-row application)))
     (press application :home)
     (is (eq :line (highlighted-row application)))
     (press application :down)

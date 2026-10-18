@@ -78,6 +78,7 @@ NIL when it selects only what it holds (dragged from left to right).
 - `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
 - `FILLET-RADIUS`: the radius, in millimetres, the fillet tool gives the next arc.
 - `PLOT-SETTINGS`: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
+- `LAST-BLOCK-NAME`: the name of the block that was last made or placed, or NIL.
 - `GRIP-DRAG`: the grip being dragged, or NIL.
 - `CONSOLE`: the console.
 - `CONSTRAINT`: :ortho, :polar or NIL, how the next point is held to the last one.
@@ -269,6 +270,14 @@ Handle one input event and record its handling time for the aggregated input sta
 
 ```lisp
 (app-inspector-scroll instance)
+```
+
+(undocumented)
+
+### `app-last-block-name` (function)
+
+```lisp
+(app-last-block-name instance)
 ```
 
 (undocumented)
@@ -1259,6 +1268,12 @@ drawing is untouched and the reason is shown. Returns true on success, or when t
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
 
+### `insert-tool` (type)
+
+Places a block: a click for the point its base point goes to, then a click that turns it toward the
+pointer, or Enter to leave it as it is. A number typed before the first click is the scale, and one typed after it is
+the turn in degrees.
+
 ### `key-event` (type)
 
 A key press or release.
@@ -1334,6 +1349,11 @@ Create the application around a drawing (a new empty one by default).
 - `WIDTH`: initial logical window width.
 - `HEIGHT`: initial logical window height.
 - `THEME`: the color theme.
+
+### `make-block-tool` (type)
+
+Waits for the click that says where the base point of the block is, and then makes the block of the
+entities that were selected, which are replaced by one placement of it.
 
 ### `make-file-drop-event` (function)
 
@@ -1655,6 +1675,16 @@ Set one property of one entity to an already interpreted value.
 - `KEY`: property key from the entity's property list.
 - `VALUE`: the new value (double-float, string, integer, boolean or unit keyword).
 
+### `operation-explode-selection` (function)
+
+```lisp
+(operation-explode-selection app)
+```
+
+Replace the selected placements of blocks by the entities they stand for.
+
+- `APP`: the application.
+
 ### `operation-export-dxf` (function)
 
 ```lisp
@@ -1715,6 +1745,26 @@ export it there as an SVG file.
 
 Open the dialog where the user finds a DXF file to import as a new drawing, after offering to save the
 current one.
+
+- `APP`: the application.
+
+### `operation-insert-block` (function)
+
+```lisp
+(operation-insert-block app)
+```
+
+Place a block: ask which, then wait for the clicks that say where and how it is turned.
+
+- `APP`: the application.
+
+### `operation-make-block` (function)
+
+```lisp
+(operation-make-block app)
+```
+
+Make a block of the selection: ask its name, then wait for the click that gives its base point.
 
 - `APP`: the application.
 
@@ -3616,6 +3666,14 @@ Most change sets kept for undo. Bounds the memory used by history (NFR-6).
 
 Number of polyline vertices that the inspector lists for numeric editing.
 
+### `+maximum-block-entities+` (constant)
+
+Most entities one block may hold.
+
+### `+maximum-block-name-length+` (constant)
+
+Longest accepted block name.
+
 ### `+maximum-dimension-precision+` (constant)
 
 Largest number of decimals shown in a dimension text.
@@ -3624,6 +3682,10 @@ Largest number of decimals shown in a dimension text.
 
 Most lines one set of a hatch may have, which keeps a spacing that is tiny next to the region from making a hatch
 of millions of segments.
+
+### `+maximum-insert-scale+` (constant)
+
+Largest scale of a placement, which is also the reciprocal of the smallest.
 
 ### `+maximum-layer-name-length+` (constant)
 
@@ -3843,6 +3905,79 @@ skipped. Signals LAYER-ERROR when the layer does not exist.
 - `IDS`: list of entity ids.
 - `LAYER-ID`: id of the destination layer.
 
+### `block-definition` (type)
+
+A named group of entities.
+
+- `NAME`: what the block is called, with the case the user gave it.
+- `ENTITIES`: the entities, in the order they were drawn, with the base point of the block at the origin.
+- `BOUNDS`: the bounds of the entities.
+
+### `block-definition-bounds` (function)
+
+```lisp
+(block-definition-bounds instance)
+```
+
+(undocumented)
+
+### `block-definition-entities` (function)
+
+```lisp
+(block-definition-entities instance)
+```
+
+(undocumented)
+
+### `block-definition-name` (function)
+
+```lisp
+(block-definition-name instance)
+```
+
+(undocumented)
+
+### `block-definitions` (function)
+
+```lisp
+(block-definitions drawing)
+```
+
+Return the blocks of the drawing, sorted by name.
+
+- `DRAWING`: the drawing.
+
+### `block-in-use-p` (function)
+
+```lisp
+(block-in-use-p drawing name)
+```
+
+Return true when an entity of the drawing is a placement of the block called NAME.
+
+- `DRAWING`: the drawing.
+- `NAME`: a block name.
+
+### `block-name-key` (function)
+
+```lisp
+(block-name-key name)
+```
+
+Return what blocks are compared by: the name without case, so that Door and door are one block.
+
+- `NAME`: a block name.
+
+### `block-names` (function)
+
+```lisp
+(block-names drawing)
+```
+
+Return the names of the blocks of the drawing, sorted.
+
+- `DRAWING`: the drawing.
+
 ### `change` (type)
 
 One entity's transition inside a change set.
@@ -3907,6 +4042,16 @@ A circle.
 
 (undocumented)
 
+### `clean-block-name` (function)
+
+```lisp
+(clean-block-name name)
+```
+
+Return a block name trimmed, or signal EDIT-REFUSED when it is empty, too long or holds a control character.
+
+- `NAME`: what the user typed.
+
 ### `create-entities-changes` (function)
 
 ```lisp
@@ -3954,6 +4099,18 @@ Return the color of the default layer.
 ```
 
 Return the name of the default layer.
+
+### `define-block` (function)
+
+```lisp
+(define-block drawing definition)
+```
+
+Add a block to the drawing, or replace the block of the same name when no entity places it. Signals EDIT-REFUSED when
+a block of that name is placed in the drawing.
+
+- `DRAWING`: the drawing.
+- `DEFINITION`: the block definition.
 
 ### `delete-entities-changes` (function)
 
@@ -4112,6 +4269,7 @@ The drawing aggregate: layers, entities and drawing-wide settings.
 - `STORE`: the entities.
 - `LAYERS`: id to layer.
 - `LAYER-ORDER`: layer ids in display order.
+- `BLOCKS`: block name, without case, to the block definition.
 - `CURRENT-LAYER-ID`: layer that receives new entities.
 - `UNIT`: unit in which coordinates are stored (always :millimeter in format version 1).
 - `DISPLAY-UNIT`: unit in which the user sees and types lengths.
@@ -4402,7 +4560,7 @@ of GRIP values. The default is none.
 ```
 
 Return the entity's kind keyword (:line, :rectangle, :circle, :polyline,
-:text, :dimension, :arc, :ellipse, :polygon, :radial-dimension, :angular-dimension or :hatch).
+:text, :dimension, :arc, :ellipse, :polygon, :radial-dimension, :angular-dimension, :hatch or :insert).
 
 - `ENTITY`: an entity.
 
@@ -4619,6 +4777,19 @@ constructor. Signals INVALID-ENTITY when the result would be invalid.
 - `KEY`: a PROPERTY-KEY returned by ENTITY-PROPERTIES.
 - `VALUE`: new value (double-float, string, boolean or unit keyword according to the kind).
 
+### `explode-changes` (function)
+
+```lisp
+(explode-changes drawing ids)
+```
+
+Return the change set that replaces each placement of a block among the entities with IDS by the entities it
+stands for, on its layer, and how many placements were exploded and how many of IDS were skipped (missing, on a
+locked layer, or not placements).
+
+- `DRAWING`: the drawing.
+- `IDS`: list of entity ids.
+
 ### `extend-changes` (function)
 
 ```lisp
@@ -4663,6 +4834,17 @@ first. With a radius of zero the lines are only taken to the corner. Signals EDI
 - `SECOND-X`: world x of the click on the second line.
 - `SECOND-Y`: world y of the click on the second line.
 - `RADIUS`: radius of the arc, millimetres, zero or more.
+
+### `find-block` (function)
+
+```lisp
+(find-block drawing name)
+```
+
+Return the block called NAME, compared without regard to case, or NIL.
+
+- `DRAWING`: the drawing.
+- `NAME`: a block name.
 
 ### `find-layer` (function)
 
@@ -4961,6 +5143,91 @@ Return the number of change sets that can be undone.
 
 - `HISTORY`: a history.
 
+### `insert-block` (function)
+
+```lisp
+(insert-block instance)
+```
+
+(undocumented)
+
+### `insert-changes` (function)
+
+```lisp
+(insert-changes drawing name x y &key (scale 1.0d0) (rotation 0.0d0) flipped)
+```
+
+Return the change set that places the block called NAME on the current layer. Signals EDIT-REFUSED when there is no
+such block, and INVALID-ENTITY when the placement would not be valid.
+
+- `DRAWING`: the drawing.
+- `NAME`: the name of the block.
+- `X`: x of the point the base point of the block goes to.
+- `Y`: y of that point.
+- `SCALE`: how many times larger than the definition.
+- `ROTATION`: the turn, in radians.
+- `FLIPPED`: true to reflect the block across its vertical axis first.
+
+### `insert-entities` (function)
+
+```lisp
+(insert-entities instance)
+```
+
+(undocumented)
+
+### `insert-entity` (type)
+
+A block placed in a drawing.
+
+- `BLOCK`: the block definition.
+- `X`: x of the point where the base point of the block goes.
+- `Y`: y of that point.
+- `SCALE`: how many times larger than the definition it is.
+- `ROTATION`: how far it is turned, in radians counter-clockwise, in [0, 2 pi).
+- `FLIPPED`: true when the block is reflected across its own vertical axis before it is turned.
+- `ENTITIES`: the entities of the block as placed, on the layer of the placement, computed at construction.
+
+### `insert-flipped` (function)
+
+```lisp
+(insert-flipped instance)
+```
+
+(undocumented)
+
+### `insert-rotation` (function)
+
+```lisp
+(insert-rotation instance)
+```
+
+(undocumented)
+
+### `insert-scale` (function)
+
+```lisp
+(insert-scale instance)
+```
+
+(undocumented)
+
+### `insert-x` (function)
+
+```lisp
+(insert-x instance)
+```
+
+(undocumented)
+
+### `insert-y` (function)
+
+```lisp
+(insert-y instance)
+```
+
+(undocumented)
+
 ### `invert-changes` (function)
 
 ```lisp
@@ -5119,6 +5386,40 @@ Create a validated arc. Signals INVALID-ENTITY when an invariant is violated.
 - `END-ANGLE`: direction of the end; the arc turns counter-clockwise from the start to it, and the
 two must differ.
 
+### `make-block-changes` (function)
+
+```lisp
+(make-block-changes drawing ids name base-x base-y)
+```
+
+Return the definition of a block made of the entities with IDS, and the change set that replaces them with a
+placement of it at the base point, on the layer of the first of them, and how many of IDS were skipped because they are
+missing or on a locked layer. The caller adds the definition to the drawing before applying the changes. Signals
+EDIT-REFUSED when there is nothing to make it of, the name is no good or is that of a block in use, or one of the
+entities is a placement; and INVALID-ENTITY when the placement would not be valid.
+
+- `DRAWING`: the drawing.
+- `IDS`: list of entity ids, in the order they are to be drawn in the block.
+- `NAME`: what the block is called.
+- `BASE-X`: x of the base point of the block.
+- `BASE-Y`: y of the base point.
+
+### `make-block-definition` (function)
+
+```lisp
+(make-block-definition &key name entities (base-x 0.0d0) (base-y 0.0d0))
+```
+
+Create a block from entities that are in a drawing, moved so that the base point is the origin and given the ids 1
+and on and the default layer. Signals EDIT-REFUSED when the name is no good, there are no entities, there are too many
+of them, or one of them is a placement of a block, which a block cannot hold; and INVALID-ENTITY when moving one makes
+it invalid.
+
+- `NAME`: what the block is called.
+- `ENTITIES`: the entities, in the order they are to be drawn.
+- `BASE-X`: x of the point that is the origin of the block.
+- `BASE-Y`: y of that point.
+
 ### `make-change` (function)
 
 ```lisp
@@ -5232,6 +5533,24 @@ above the tolerance and does not make more than +MAXIMUM-HATCH-LINES+ lines.
 ```
 
 (undocumented)
+
+### `make-insert` (function)
+
+```lisp
+(make-insert &key id layer-id block x y (scale 1.0d0) (rotation 0.0d0) flipped)
+```
+
+Create a validated placement of a block. Signals INVALID-ENTITY when an invariant is violated, including when
+placing the block makes one of its entities invalid, for example by taking it out of the drawing.
+
+- `ID`: positive entity id.
+- `LAYER-ID`: id of the layer.
+- `BLOCK`: the block definition.
+- `X`: x of the point where the base point goes, in millimetres.
+- `Y`: y of that point.
+- `SCALE`: how many times larger, above zero.
+- `ROTATION`: the turn in radians; any finite angle, kept reduced to [0, 2 pi).
+- `FLIPPED`: true to reflect the block across its vertical axis before it is turned.
 
 ### `make-line` (function)
 
@@ -5446,7 +5765,8 @@ Return the palette color at INDEX, counting round the palette: the color a new l
 ```
 
 Return the entities of SNIPPET as new entities of DRAWING: with fresh ids, on the layers that
-PASTE-LAYER-ID picks, and moved by (DX, DY).
+PASTE-LAYER-ID picks, and moved by (DX, DY). The blocks of SNIPPET that DRAWING does not have are added to it, and a
+placement of a block that it has uses its block, whatever the copy said.
 
 - `DRAWING`: the drawing they are pasted into.
 - `SNIPPET`: the copied drawing.
@@ -5578,7 +5898,8 @@ One row of the property inspector.
 
 - `KEY`: identifies the property for ENTITY-WITH-PROPERTY.
 - `LABEL`: English label shown to the user.
-- `KIND`: :coordinate, :length, :angle (radians), :text, :boolean, :unit, :pattern or :integer.
+- `KIND`: :coordinate, :length, :angle (radians), :factor (a number without a unit), :text, :boolean, :unit,
+:pattern or :integer.
 - `VALUE`: current value (millimetres for lengths and coordinates).
 - `EDITABLE`: true when the user may change it.
 
@@ -5781,6 +6102,17 @@ An axis-aligned rectangle.
 ```
 
 (undocumented)
+
+### `remove-block` (function)
+
+```lisp
+(remove-block drawing name)
+```
+
+Take the block called NAME out of the drawing. Signals EDIT-REFUSED when it is placed.
+
+- `DRAWING`: the drawing.
+- `NAME`: a block name.
 
 ### `remove-layer` (function)
 
@@ -6347,6 +6679,24 @@ Return a validated copy of HATCH with the given fields replaced.
 - `PATTERN`: replacement pattern.
 - `ANGLE`: replacement direction of the lines.
 - `SPACING`: replacement spacing.
+
+### `update-insert` (function)
+
+```lisp
+(update-insert insert &key (id (entity-id insert)) (layer-id (entity-layer-id insert)) (block (insert-block insert)) (x (insert-x insert)) (y (insert-y insert)) (scale (insert-scale insert)) (rotation (insert-rotation insert)) (flipped (insert-flipped insert)))
+```
+
+Return a validated copy of INSERT with the given fields replaced.
+
+- `INSERT`: the placement to copy.
+- `ID`: replacement id.
+- `LAYER-ID`: replacement layer id.
+- `BLOCK`: replacement block definition.
+- `X`: replacement x.
+- `Y`: replacement y.
+- `SCALE`: replacement scale.
+- `ROTATION`: replacement turn.
+- `FLIPPED`: replacement flip.
 
 ### `update-line` (function)
 
@@ -11509,6 +11859,14 @@ angle END. Returns its id.
 - `START`: the angle it starts at, in degrees.
 - `END`: the angle it ends at, in degrees.
 
+### `blocks` (function)
+
+```lisp
+(blocks)
+```
+
+Return the names of the blocks, in alphabetical order.
+
 ### `circle` (function)
 
 ```lisp
@@ -11730,6 +12088,16 @@ caller to record.
 - `TEXT`: Lisp source, read in the user package.
 - `TIMEOUT`: the longest time to run, in seconds.
 
+### `explode` (function)
+
+```lisp
+(explode ids)
+```
+
+Replace the placements of blocks among IDS by the entities they stand for. Returns how many were exploded.
+
+- `IDS`: an id or a list of ids.
+
 ### `extents` (function)
 
 ```lisp
@@ -11825,6 +12193,21 @@ Say what an entity is: its kind, its layer, and each of its properties and measu
 
 - `ID`: the id of the entity.
 
+### `insert` (function)
+
+```lisp
+(insert name x y &key (scale 1) (rotation 0) flipped)
+```
+
+Place the block called NAME with its base point at (X, Y). Returns the id of the placement.
+
+- `NAME`: the name of the block.
+- `X`: x of the point.
+- `Y`: y of the point.
+- `SCALE`: how many times larger than the block.
+- `ROTATION`: the turn, in degrees.
+- `FLIPPED`: true to reflect the block across its vertical axis before it is turned.
+
 ### `layer` (function)
 
 ```lisp
@@ -11869,6 +12252,20 @@ Draw a line from (X1, Y1) to (X2, Y2). Returns its id.
 Return VALUE metres as millimetres: (m 5) is 5000.
 
 - `VALUE`: a number.
+
+### `make-block` (function)
+
+```lisp
+(make-block name ids &key (base-x 0) (base-y 0))
+```
+
+Make a block called NAME of the entities with IDS, which are replaced by one placement of it at the base point.
+Returns the id of the placement.
+
+- `NAME`: what the block is called.
+- `IDS`: an id or a list of ids.
+- `BASE-X`: x of the point that is the base point of the block.
+- `BASE-Y`: y of that point.
 
 ### `make-script-context` (function)
 
@@ -12194,6 +12591,18 @@ Write STRING with its baseline starting at (X, Y). Returns its id.
 - `STRING`: the text.
 - `HEIGHT`: the text height, or the one the drawing uses for new text.
 - `ANGLE`: the direction of the baseline, in degrees.
+
+### `with-block` (macro)
+
+```lisp
+(with-block name &body body)
+```
+
+Make a block called NAME of the entities that BODY draws; they are not drawn in the drawing. Place it with INSERT.
+Returns the name.
+
+- `NAME`: what the block is called.
+- `BODY`: drawing commands, such as LINE and CIRCLE.
 
 ### `with-layer` (macro)
 

@@ -8,9 +8,10 @@
 ;;;; an entity kind, together with the DEFAULT that a field gets when a file is older than the field:
 ;;;; that table is the migration, and a file of an older version is read as the newer one with the
 ;;;; defaults filled in. Version 2 added the angle of a text, the arc, the ellipse and the polygon. Version 3 added
-;;;; the radius, diameter and angle dimensions. Version 4 added the hatch.
+;;;; the radius, diameter and angle dimensions. Version 4 added the hatch. Version 5 added the blocks
+;;;; section and the placement of a block.
 
-(defconstant +supported-format-version+ 4
+(defconstant +supported-format-version+ 5
   "The newest format version: the one this program writes, and the newest it reads.")
 
 (defconstant +oldest-supported-format-version+ 1
@@ -26,7 +27,7 @@
 
 KEY: keyword passed to the entity constructor.
 NAME: field name in the file.
-TYPE: :real, :reals, :boolean, :string, :unit, :pattern or :integer.
+TYPE: :real, :reals, :boolean, :string, :unit, :pattern, :block or :integer.
 ACCESSOR: symbol of the function that reads the property from an entity.
 SINCE: the first format version that has the field; a file of an older version does not have it.
 DEFAULT: the value the property gets when the file is older than SINCE."
@@ -259,7 +260,27 @@ NAMES-AND-ACCESSORS: alternating field names and accessor symbols."
                                                    "spacing"
                                                    :real
                                                    'dom:hatch-spacing))
-                            :since 4))
+                            :since 4)
+        (make-entity-format :insert
+                            "insert"
+                            'dom:make-insert
+                            (append (list (make-field-spec :block
+                                                           "block"
+                                                           :block
+                                                           'dom:insert-block))
+                                    (real-fields "x"
+                                                 'dom:insert-x
+                                                 "y"
+                                                 'dom:insert-y
+                                                 "scale"
+                                                 'dom:insert-scale
+                                                 "rotation"
+                                                 'dom:insert-rotation)
+                                    (list (make-field-spec :flipped
+                                                           "flipped"
+                                                           :boolean
+                                                           'dom:insert-flipped)))
+                            :since 5))
   "The storage format of every entity kind.")
 
 (defun find-format-by-kind (kind)

@@ -53,6 +53,9 @@ ENTITY: an entity."
        (closed-segments (polygon-vertices entity) t))
       (circle-entity
        (list (list :circle (circle-center-x entity) (circle-center-y entity) (circle-radius entity))))
+      (insert-entity
+       (loop for placed in (insert-entities entity)
+             append (entity-primitives placed)))
       (arc-entity
        (list (list :arc
                    (arc-center-x entity)

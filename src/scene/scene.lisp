@@ -554,6 +554,11 @@ COLOR: an RGBA."
      (emit-hatch frame
                  entity
                  color))
+    (dom:insert-entity
+     (dolist (placed (dom:insert-entities entity))
+       (emit-entity frame
+                    placed
+                    color)))
     (dom:radial-dimension-entity
      (emit-annotation frame
                       (dom:radial-dimension-layout entity)

@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Blocks.** Make block (`Shift+B`) turns the selection into a named block and one placement of it, Insert block
+  (`I`) places a block with a click, a typed scale and a second click for the turn, and Explode (`Shift+X`) takes a
+  placement apart. A placement has a position, scale, rotation and flip, takes the layer it is on, is drawn, picked
+  and snapped like what it stands for, and goes through rotate, mirror, scale, copy and paste, the script export
+  (`with-block`, `insert`), the DXF export (as plain entities) and the PDF and SVG plots. The console gets
+  `with-block`, `make-block`, `insert`, `explode` and `blocks`.
 - **Hatch and solid fill.** Two tools in the Draw menu fill the smallest closed shape (rectangle, circle, ellipse,
   polygon or closed polyline) under the pointer, with a live preview: Hatch with parallel lines at 45 degrees,
   Solid fill with a solid color. The inspector changes a hatch to lines, cross or solid, and sets its angle and
@@ -60,8 +66,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Changed
 
-- The `.bcad` format is now version 4, which adds the radius, diameter and angle dimensions and the hatch.
-  Versions 1 to 3 still open and are saved as version 4; a version 4 file cannot be opened by an earlier release
+- The `.bcad` format is now version 5, which adds the radius, diameter and angle dimensions, the hatch and the
+  blocks. Versions 1 to 4 still open and are saved as version 5; a version 4 file cannot be opened by an earlier release
   of the program.
 
 ## [1.2.0] - 2026-10-15

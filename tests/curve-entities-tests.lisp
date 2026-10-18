@@ -182,7 +182,7 @@
 
 (test a-version-1-file-cannot-hold-the-new-entities
   (let* ((text (persist:drawing-to-string (curve-drawing)))
-         (old (replace-once-text text "(format-version 4)" "(format-version 1)")))
+         (old (as-older-version text 1)))
     (handler-case (progn (persist:parse-drawing-text old)
                          (fail "a version 1 file with an arc was accepted"))
       (base:drawing-file-content-error (condition)
@@ -293,7 +293,7 @@
     (click-widget application :draw)
     (is (equal *draw-menu-order*
                (mapcar (lambda (row) (second (ui:widget-id row))) (menu-rows application))))
-    (is (equal '("L" "P" "R" "N" "C" "A" "E" "T" "D" nil nil nil nil nil)
+    (is (equal '("L" "P" "R" "N" "C" "A" "E" "T" "D" nil nil nil nil nil "I")
                (mapcar #'ui:widget-shortcut (menu-rows application))))
     (click-widget application '(:menu-item :arc))
     (is (eq :arc (app:tool-kind (app:app-tool application))))
