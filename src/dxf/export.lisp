@@ -343,6 +343,36 @@ TEXT: the text it shows."
                        text
                        (geo:annotation-layout-text-angle layout))))
 
+(defun write-hatch (layer
+                    hatch)
+  "Write a hatch as its parts: the lines of a pattern as lines, and the triangles of a solid one as filled triangles.
+
+LAYER: the name of the layer.
+HATCH: a hatch entity."
+  (let ((segments (dom:hatch-segments hatch))
+        (triangles (dom:hatch-triangles hatch)))
+    (loop for offset from 0 below (length segments) by 4
+          do (write-line-entity layer
+                                (aref segments offset)
+                                (aref segments (+ offset 1))
+                                (aref segments (+ offset 2))
+                                (aref segments (+ offset 3))))
+    (loop for offset from 0 below (length triangles) by 6
+          do (group 0 "SOLID")
+             (group 8 layer)
+             (group-point 10
+                          (aref triangles offset)
+                          (aref triangles (+ offset 1)))
+             (group-point 11
+                          (aref triangles (+ offset 2))
+                          (aref triangles (+ offset 3)))
+             (group-point 12
+                          (aref triangles (+ offset 4))
+                          (aref triangles (+ offset 5)))
+             (group-point 13
+                          (aref triangles (+ offset 4))
+                          (aref triangles (+ offset 5))))))
+
 (defun write-entity-as-dxf (entity
                             layer
                             report)
@@ -388,6 +418,9 @@ REPORT: the report, in which what changes shape is noted."
     (dom:dimension-entity
      (note report (i18n:tr "Dimensions were written as their lines, arrowheads and text."))
      (write-dimension layer entity))
+    (dom:hatch-entity
+     (note report (i18n:tr "Hatches were written as lines or filled triangles."))
+     (write-hatch layer entity))
     (dom:radial-dimension-entity
      (note report (i18n:tr "Dimensions were written as their lines, arrowheads and text."))
      (write-annotation layer

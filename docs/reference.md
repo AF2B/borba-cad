@@ -1393,7 +1393,7 @@ Create the tool named by KIND.
 
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
 :mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension, :diameter-dimension,
-:angular-dimension, :trim, :extend, :offset or :fillet.
+:angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset or :fillet.
 
 ### `make-wheel-event` (function)
 
@@ -1860,8 +1860,8 @@ Activate a tool, cancelling whatever the previous one was doing.
 - `APP`: the application.
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
 :mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension,
-:diameter-dimension, :angular-dimension, :trim, :extend, :offset or :fillet. A tool that changes the selection
-(rotate, mirror, scale) is not activated when nothing is selected.
+:diameter-dimension, :angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset or :fillet. A tool that
+changes the selection (rotate, mirror, scale) is not activated when nothing is selected.
 
 ### `operation-toggle-console` (function)
 
@@ -3580,6 +3580,10 @@ Render each workload in a real window and write the report. Returns the report p
 The drawing model: entities, layers, the drawing aggregate, change sets,
 history, picking and snapping. Pure data and rules; no rendering, input or file I/O.
 
+### `*hatch-patterns*` (variable)
+
+The ways a hatch fills its region: solid, with parallel lines, or with two sets of lines at right angles.
+
 ### `*layer-palette*` (variable)
 
 The palette as RGB values.
@@ -3587,6 +3591,10 @@ The palette as RGB values.
 ### `+default-grid-spacing+` (constant)
 
 Default grid spacing in millimetres (10 cm): a convenient step for building plans.
+
+### `+default-hatch-angle+` (constant)
+
+The direction of the lines of a new hatch: 45 degrees.
 
 ### `+default-layer-gray+` (constant)
 
@@ -3611,6 +3619,11 @@ Number of polyline vertices that the inspector lists for numeric editing.
 ### `+maximum-dimension-precision+` (constant)
 
 Largest number of decimals shown in a dimension text.
+
+### `+maximum-hatch-lines+` (constant)
+
+Most lines one set of a hatch may have, which keeps a spacing that is tiny next to the region from making a hatch
+of millions of segments.
 
 ### `+maximum-layer-name-length+` (constant)
 
@@ -3913,6 +3926,18 @@ Return the change set that adds every entity in ENTITIES.
 Return the change set that adds ENTITY.
 
 - `ENTITY`: the entity to add; its id must be unused.
+
+### `default-hatch-spacing` (function)
+
+```lisp
+(default-hatch-spacing coordinates text-height)
+```
+
+Return the spacing a new hatch of a region gets: half the default text height of the drawing, or more when that
+would make too many lines.
+
+- `COORDINATES`: the boundary of the region.
+- `TEXT-HEIGHT`: the default text height of the drawing.
 
 ### `default-layer-color` (function)
 
@@ -4377,7 +4402,7 @@ of GRIP values. The default is none.
 ```
 
 Return the entity's kind keyword (:line, :rectangle, :circle, :polyline,
-:text, :dimension, :arc, :ellipse, :polygon, :radial-dimension or :angular-dimension).
+:text, :dimension, :arc, :ellipse, :polygon, :radial-dimension, :angular-dimension or :hatch).
 
 - `ENTITY`: an entity.
 
@@ -4738,6 +4763,97 @@ the result would be invalid.
 
 (undocumented)
 
+### `hatch-angle` (function)
+
+```lisp
+(hatch-angle instance)
+```
+
+(undocumented)
+
+### `hatch-changes` (function)
+
+```lisp
+(hatch-changes drawing x y &key (pattern lines) (angle +default-hatch-angle+) spacing)
+```
+
+Return the change set that adds a hatch of the smallest closed shape that holds a point, on the current layer.
+Signals EDIT-REFUSED when no closed shape holds it, and INVALID-ENTITY when the hatch would not be valid.
+
+- `DRAWING`: the drawing.
+- `X`: world x of the point.
+- `Y`: world y of the point.
+- `PATTERN`: :solid, :lines or :cross.
+- `ANGLE`: direction of the lines, in radians.
+- `SPACING`: distance between two lines, or NIL for the default of the region.
+
+### `hatch-coordinates` (function)
+
+```lisp
+(hatch-coordinates instance)
+```
+
+(undocumented)
+
+### `hatch-entity` (type)
+
+A region filled with a pattern: solid, or lines at an angle and a spacing, or two sets of them at right angles. The
+lines are cut by the boundary, and one of them passes through the first vertex, so the pattern moves with the
+region.
+
+- `COORDINATES`: flat array x0 y0 x1 y1 ... of the vertices of the boundary, a simple polygon; owned by the entity.
+- `PATTERN`: :solid, :lines or :cross.
+- `ANGLE`: direction of the lines, in radians, kept in [0, pi) since a line has no sense.
+- `SPACING`: distance between two lines, in millimetres.
+- `SEGMENTS`: the lines, as a flat array x1 y1 x2 y2 ..., computed at construction; empty for a solid hatch.
+- `TRIANGLES`: the triangles that cover the region, as a flat array of six numbers each, computed at construction; empty
+unless the hatch is solid.
+
+### `hatch-pattern` (function)
+
+```lisp
+(hatch-pattern instance)
+```
+
+(undocumented)
+
+### `hatch-region-at` (function)
+
+```lisp
+(hatch-region-at drawing x y)
+```
+
+Return the boundary of the smallest closed shape on a visible layer that holds a point, as a flat array of
+vertices, or NIL when none does.
+
+- `DRAWING`: the drawing.
+- `X`: world x of the point.
+- `Y`: world y of the point.
+
+### `hatch-segments` (function)
+
+```lisp
+(hatch-segments instance)
+```
+
+(undocumented)
+
+### `hatch-spacing` (function)
+
+```lisp
+(hatch-spacing instance)
+```
+
+(undocumented)
+
+### `hatch-triangles` (function)
+
+```lisp
+(hatch-triangles instance)
+```
+
+(undocumented)
+
 ### `history` (type)
 
 Undo and redo stacks of change sets.
@@ -5092,6 +5208,23 @@ Create a validated ellipse. Signals INVALID-ENTITY when an invariant is violated
 
 (undocumented)
 
+### `make-hatch` (function)
+
+```lisp
+(make-hatch &key id layer-id coordinates (pattern lines) (angle +default-hatch-angle+) spacing)
+```
+
+Create a validated hatch. Signals INVALID-ENTITY when an invariant is violated: a boundary of at least three and at
+most +MAXIMUM-HATCH-VERTICES+ vertices, in range, that encloses an area; a known pattern; and a spacing that is
+above the tolerance and does not make more than +MAXIMUM-HATCH-LINES+ lines.
+
+- `ID`: positive entity id.
+- `LAYER-ID`: id of the layer.
+- `COORDINATES`: sequence of doubles x0 y0 x1 y1 ... of the boundary; copied.
+- `PATTERN`: :solid, :lines or :cross.
+- `ANGLE`: direction of the lines in radians; any finite angle, kept in [0, pi).
+- `SPACING`: distance between two lines, in millimetres.
+
 ### `make-history` (function)
 
 ```lisp
@@ -5445,7 +5578,7 @@ One row of the property inspector.
 
 - `KEY`: identifies the property for ENTITY-WITH-PROPERTY.
 - `LABEL`: English label shown to the user.
-- `KIND`: :coordinate, :length, :angle (radians), :text, :boolean, :unit or :integer.
+- `KIND`: :coordinate, :length, :angle (radians), :text, :boolean, :unit, :pattern or :integer.
 - `VALUE`: current value (millimetres for lengths and coordinates).
 - `EDITABLE`: true when the user may change it.
 
@@ -6198,6 +6331,22 @@ Return a validated copy of ELLIPSE with the given fields replaced.
 - `RADIUS-X`: replacement first semi-axis.
 - `RADIUS-Y`: replacement second semi-axis.
 - `ROTATION`: replacement direction of the first axis.
+
+### `update-hatch` (function)
+
+```lisp
+(update-hatch hatch &key (id (entity-id hatch)) (layer-id (entity-layer-id hatch)) (coordinates (hatch-coordinates hatch)) (pattern (hatch-pattern hatch)) (angle (hatch-angle hatch)) (spacing (hatch-spacing hatch)))
+```
+
+Return a validated copy of HATCH with the given fields replaced.
+
+- `HATCH`: the hatch to copy.
+- `ID`: replacement id.
+- `LAYER-ID`: replacement layer id.
+- `COORDINATES`: replacement boundary.
+- `PATTERN`: replacement pattern.
+- `ANGLE`: replacement direction of the lines.
+- `SPACING`: replacement spacing.
 
 ### `update-line` (function)
 
@@ -7307,6 +7456,16 @@ of its loops, which is what the formula means; fewer than three vertices enclose
 
 - `COORDINATES`: simple-array of double-float holding x0 y0 x1 y1 ...
 
+### `contour-signed-area` (function)
+
+```lisp
+(contour-signed-area coordinates)
+```
+
+Return the area of a polygon, positive when it goes around counter-clockwise and negative when clockwise.
+
+- `COORDINATES`: simple-array of double-float holding x0 y0 x1 y1 ...
+
 ### `dimension-layout` (type)
 
 Everything needed to draw one aligned dimension, in world coordinates.
@@ -7486,6 +7645,36 @@ Return BOUNDS grown by MARGIN on every side (shrunk when MARGIN is negative).
 - `BOUNDS`: a bounds value.
 - `MARGIN`: distance added on each side, in millimetres.
 
+### `hatch-line-count` (function)
+
+```lisp
+(hatch-line-count coordinates angle spacing origin-x origin-y)
+```
+
+Return how many parallel lines, SPACING apart and in the direction ANGLE, cross a polygon.
+
+- `COORDINATES`: simple-array of double-float holding x0 y0 x1 y1 ...
+- `ANGLE`: direction of the lines, in radians.
+- `SPACING`: distance between two lines.
+- `ORIGIN-X`: x of the point one of the lines passes through.
+- `ORIGIN-Y`: y of that point.
+
+### `hatch-segments` (function)
+
+```lisp
+(hatch-segments coordinates angle spacing origin-x origin-y)
+```
+
+Return the segments of the parallel lines that hatch a polygon, as a simple array of double-float holding x1 y1 x2 y2
+for each. The lines are SPACING apart in the direction ANGLE, one of them through the origin, and are cut where they
+leave the polygon, so a concave polygon is hatched only inside.
+
+- `COORDINATES`: simple-array of double-float holding x0 y0 x1 y1 ...
+- `ANGLE`: direction of the lines, in radians.
+- `SPACING`: distance between two lines, above zero.
+- `ORIGIN-X`: x of the point one of the lines passes through.
+- `ORIGIN-Y`: y of that point.
+
 ### `make-bounds` (function)
 
 ```lisp
@@ -7598,6 +7787,18 @@ Return the distance from a point to the outline of an ellipse (zero on it).
 - `RADIUS-X`: the semi-axis in the direction ROTATION.
 - `RADIUS-Y`: the semi-axis across it.
 - `ROTATION`: direction of the first axis, in radians.
+
+### `point-in-polygon-p` (function)
+
+```lisp
+(point-in-polygon-p x y coordinates)
+```
+
+Return true when a point is inside a polygon, by the even-odd rule. A point on the boundary may be either.
+
+- `X`: x of the point.
+- `Y`: y of the point.
+- `COORDINATES`: simple-array of double-float holding x0 y0 x1 y1 ...
 
 ### `point-oriented-box-distance` (function)
 
@@ -7874,6 +8075,18 @@ Return the width of a text line in world units.
 
 - `CHARACTER-COUNT`: number of characters (one cell per code point).
 - `HEIGHT`: text height (em size) in world units.
+
+### `triangulate-polygon` (function)
+
+```lisp
+(triangulate-polygon coordinates)
+```
+
+Return the triangles that cover a simple polygon, as a simple array of double-float holding the six coordinates of
+each, by cutting off one ear after another. A corner that is straight is dropped without a triangle, and a polygon
+that has no ear to cut, which only a polygon that crosses itself can be, is finished as a fan.
+
+- `COORDINATES`: simple-array of double-float holding x0 y0 x1 y1 ...
 
 ## BORBA-CAD/I18N
 
@@ -11480,7 +11693,7 @@ across it. Returns its id.
 Return the ids of the entities, in the order they are drawn, bottom first.
 
 - `KIND`: only the entities of this kind: :line, :rectangle, :circle, :polyline, :text, :dimension,
-:radial-dimension, :angular-dimension, :arc, :ellipse or :polygon.
+:radial-dimension, :angular-dimension, :arc, :ellipse, :polygon or :hatch.
 - `LAYER`: only the entities on the layer with this name.
 
 ### `entity-count` (function)
@@ -11553,6 +11766,34 @@ Return VALUE feet as millimetres: (foot 1) is 304.8.
 Return the spacing of the grid, in millimetres, after setting it to SPACING when one is given.
 
 - `SPACING`: the new spacing.
+
+### `hatch` (function)
+
+```lisp
+(hatch x y &key (pattern lines) (angle 45) spacing)
+```
+
+Hatch the smallest closed shape that holds the point (X, Y): a rectangle, circle, ellipse, polygon or closed
+polyline. Returns its id.
+
+- `X`: x of the point.
+- `Y`: y of the point.
+- `PATTERN`: :solid, :lines or :cross.
+- `ANGLE`: the direction of the lines, in degrees.
+- `SPACING`: the distance between two lines, or the usual one for the size of the shape.
+
+### `hatch-polygon` (function)
+
+```lisp
+(hatch-polygon points &key (pattern lines) (angle 45) spacing)
+```
+
+Hatch the polygon through POINTS. Returns its id.
+
+- `POINTS`: a list of (x y) lists, three or more, the last joined to the first.
+- `PATTERN`: :solid, :lines or :cross.
+- `ANGLE`: the direction of the lines, in degrees.
+- `SPACING`: the distance between two lines, or the usual one for the size of the polygon.
 
 ### `help` (function)
 

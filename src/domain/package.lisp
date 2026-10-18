@@ -182,6 +182,22 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:angular-dimension-sweep
    #:angular-dimension-text
    #:angular-dimension-layout
+   ;; Hatch
+   #:hatch-entity
+   #:make-hatch
+   #:update-hatch
+   #:hatch-coordinates
+   #:hatch-pattern
+   #:hatch-angle
+   #:hatch-spacing
+   #:hatch-segments
+   #:hatch-triangles
+   #:*hatch-patterns*
+   #:+default-hatch-angle+
+   #:+maximum-hatch-lines+
+   #:default-hatch-spacing
+   #:hatch-region-at
+   #:hatch-changes
    ;; Reshaping
    #:entity-offset
    #:entity-offset-through

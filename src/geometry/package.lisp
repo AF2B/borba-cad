@@ -78,6 +78,11 @@ No screen, pixel or rendering concepts appear here.")
    #:rectangle-perimeter
    #:polyline-length
    #:contour-area
+   #:contour-signed-area
+   #:point-in-polygon-p
+   #:hatch-line-count
+   #:hatch-segments
+   #:triangulate-polygon
    #:angle-between-rays
    #:polyline-vertex-count
    #:polyline-bounds

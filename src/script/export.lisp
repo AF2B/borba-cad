@@ -104,6 +104,16 @@ ENTITY: an entity."
              (number-text (dom:polygon-center-x entity)) (number-text (dom:polygon-center-y entity))
              (number-text (dom:polygon-radius entity)) (dom:polygon-sides entity)
              (angle-text (dom:polygon-rotation entity))))
+    (dom:hatch-entity
+     (let ((coordinates (dom:hatch-coordinates entity)))
+       (format nil "(hatch-polygon '(~{~a~^ ~}) :pattern ~a :angle ~a :spacing ~a)"
+               (loop for index from 0 below (length coordinates) by 2
+                     collect (format nil "(~a ~a)"
+                                     (number-text (aref coordinates index))
+                                     (number-text (aref coordinates (1+ index)))))
+               (keyword-text (dom:hatch-pattern entity))
+               (angle-text (dom:hatch-angle entity))
+               (number-text (dom:hatch-spacing entity)))))
     (dom:radial-dimension-entity
      (format nil "(~:[radius~;diameter~]-dimension ~a ~a ~a :angle ~a :height ~a :unit ~a :decimals ~d)"
              (dom:radial-dimension-diameter entity)

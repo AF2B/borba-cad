@@ -17,22 +17,24 @@ CLOSED: when true a segment joins the last vertex back to the first."
    :read-only t)
   (closed nil :type boolean :read-only t))
 
-(defun copy-validated-coordinates (coordinates)
+(defun copy-validated-coordinates (coordinates
+                                   &optional (kind :polyline))
   "Return a fresh double-float array holding COORDINATES, signaling INVALID-ENTITY when the
 sequence is not made of x/y pairs of in-range doubles.
 
-COORDINATES: sequence of numbers x0 y0 x1 y1 ..."
+COORDINATES: sequence of numbers x0 y0 x1 y1 ...
+KIND: the entity kind the coordinates belong to, for the message."
   (unless (typep coordinates 'sequence)
-    (invalid-entity-failure :polyline
+    (invalid-entity-failure kind
                             "its coordinates must be a sequence, got ~s"
                             coordinates))
   (when (oddp (length coordinates))
-    (invalid-entity-failure :polyline "its coordinates must come in x/y pairs"))
+    (invalid-entity-failure kind "its coordinates must come in x/y pairs"))
   (let ((copy (make-array (length coordinates) :element-type 'double-float))
         (index 0))
     (map nil
          (lambda (value)
-           (require-coordinate :polyline
+           (require-coordinate kind
                                (i18n:trf "coordinate ~d" index)
                                value)
            (setf (aref copy index) value)

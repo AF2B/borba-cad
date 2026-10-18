@@ -981,7 +981,7 @@ Y: world y of the line."
 
 KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
 :mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension, :diameter-dimension,
-:angular-dimension, :trim, :extend, :offset or :fillet."
+:angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset or :fillet."
   (ecase kind
     (:select (make-instance 'select-tool))
     (:line (make-instance 'line-tool))
@@ -1002,6 +1002,8 @@ KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :
     (:radius-dimension (make-instance 'radial-dimension-tool))
     (:diameter-dimension (make-instance 'radial-dimension-tool :diameter t))
     (:angular-dimension (make-instance 'angular-dimension-tool))
+    (:hatch (make-instance 'hatch-tool :pattern :lines))
+    (:solid-fill (make-instance 'hatch-tool :pattern :solid))
     (:trim (make-instance 'trim-tool))
     (:extend (make-instance 'extend-tool))
     (:offset (make-instance 'offset-tool))

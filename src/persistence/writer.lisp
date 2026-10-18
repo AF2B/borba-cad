@@ -38,7 +38,7 @@ STREAM: output stream."
                           stream)
   "Write one property value according to its storage TYPE.
 
-TYPE: :real, :reals, :boolean, :string, :unit or :integer.
+TYPE: :real, :reals, :boolean, :string, :unit, :pattern or :integer.
 VALUE: the property value.
 STREAM: output stream."
   (ecase type
@@ -49,6 +49,7 @@ STREAM: output stream."
     (:boolean (write-string (if value "t" "nil") stream))
     (:string (write-quoted-string value stream))
     (:unit (write-string (string-downcase (symbol-name value)) stream))
+    (:pattern (write-string (string-downcase (symbol-name value)) stream))
     (:integer (format stream "~d" value))))
 
 (defun write-entity (entity

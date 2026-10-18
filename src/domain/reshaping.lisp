@@ -840,3 +840,92 @@ RADIUS: radius of the arc, millimetres, zero or more."
                                        :radius radius
                                        :start-angle (if counter-clockwise angle-1 angle-2)
                                        :end-angle (if counter-clockwise angle-2 angle-1)))))))))))))
+
+;;; Hatching a region
+
+(defun entity-region-boundary (entity)
+  "Return the vertices of the boundary of a closed shape, as a flat array, or NIL when ENTITY is not one: a
+rectangle, a polygon, a closed polyline, and a circle or an ellipse as a polygon of many sides.
+
+ENTITY: an entity."
+  (typecase entity
+    (rectangle-entity
+     (let ((x1 (rectangle-min-x entity))
+           (y1 (rectangle-min-y entity))
+           (x2 (+ (rectangle-min-x entity) (rectangle-width entity)))
+           (y2 (+ (rectangle-min-y entity) (rectangle-height entity))))
+       (make-array 8 :element-type 'double-float :initial-contents (list x1 y1 x2 y1 x2 y2 x1 y2))))
+    (polygon-entity (polygon-vertices entity))
+    (polyline-entity (and (polyline-closed entity) (polyline-coordinates entity)))
+    (circle-entity (geo:ellipse-points (circle-center-x entity)
+                                       (circle-center-y entity)
+                                       (circle-radius entity)
+                                       (circle-radius entity)
+                                       0d0
+                                       +circle-boundary-vertices+))
+    (ellipse-entity (geo:ellipse-points (ellipse-center-x entity)
+                                        (ellipse-center-y entity)
+                                        (ellipse-radius-x entity)
+                                        (ellipse-radius-y entity)
+                                        (ellipse-rotation entity)
+                                        +circle-boundary-vertices+))
+    (t nil)))
+
+(defun hatch-region-at (drawing
+                        x
+                        y)
+  "Return the boundary of the smallest closed shape on a visible layer that holds a point, as a flat array of
+vertices, or NIL when none does.
+
+DRAWING: the drawing.
+X: world x of the point.
+Y: world y of the point."
+  (let ((best nil)
+        (best-area nil))
+    (map-entities (lambda (entity)
+                    (let ((layer (find-layer drawing (entity-layer-id entity)))
+                          (boundary (entity-region-boundary entity)))
+                      (when (and boundary
+                                 layer
+                                 (layer-visible layer)
+                                 (geo:bounds-contains-point-p (entity-bounds entity)
+                                                              x
+                                                              y)
+                                 (geo:point-in-polygon-p x
+                                                         y
+                                                         boundary))
+                        (let ((area (geo:contour-area boundary)))
+                          (when (or (null best-area) (< area best-area))
+                            (setf best boundary
+                                  best-area area))))))
+                  (drawing-store drawing))
+    best))
+
+(defun hatch-changes (drawing
+                      x
+                      y
+                      &key (pattern :lines)
+                           (angle +default-hatch-angle+)
+                           spacing)
+  "Return the change set that adds a hatch of the smallest closed shape that holds a point, on the current layer.
+Signals EDIT-REFUSED when no closed shape holds it, and INVALID-ENTITY when the hatch would not be valid.
+
+DRAWING: the drawing.
+X: world x of the point.
+Y: world y of the point.
+PATTERN: :solid, :lines or :cross.
+ANGLE: direction of the lines, in radians.
+SPACING: distance between two lines, or NIL for the default of the region."
+  (let ((boundary (hatch-region-at drawing
+                                   x
+                                   y)))
+    (unless boundary
+      (refuse-edit "No closed shape holds that point: use a rectangle, circle, ellipse, polygon or closed polyline."))
+    (create-entity-changes (make-hatch :id (drawing-next-entity-id drawing)
+                                       :layer-id (drawing-current-layer-id drawing)
+                                       :coordinates boundary
+                                       :pattern pattern
+                                       :angle angle
+                                       :spacing (or spacing
+                                                    (default-hatch-spacing boundary
+                                                                           (drawing-default-text-height drawing)))))))

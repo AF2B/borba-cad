@@ -343,11 +343,13 @@
     (is (equal (entity-values drawing) (entity-values back)))
     (is (string= text (persist:drawing-to-string back)))))
 
-(test the-file-says-version-three-and-an-older-version-cannot-hold-the-dimensions
+(test the-file-says-the-newest-version-and-an-older-one-cannot-hold-the-dimensions
   (let ((text (persist:drawing-to-string (dimension-drawing))))
-    (is (search "(format-version 3)" text))
+    (is (search (format nil "(format-version ~d)" persist:+supported-format-version+) text))
     (dolist (version '(1 2))
-      (let ((old (replace-once-text text "(format-version 3)" (format nil "(format-version ~d)" version))))
+      (let ((old (replace-once-text text
+                                    (format nil "(format-version ~d)" persist:+supported-format-version+)
+                                    (format nil "(format-version ~d)" version))))
         (handler-case (progn (persist:parse-drawing-text old)
                              (fail "a version ~d file with a dimension was accepted" version))
           (base:drawing-file-content-error (condition)
@@ -363,14 +365,17 @@
                           (replace-once-text text "(vertex-x " "(vertex-q ")))
       (signals base:drawing-file-error (persist:parse-drawing-text broken)))))
 
-(test a-version-2-file-is-read-and-saved-as-version-3
+(test a-version-2-file-is-read-and-saved-as-the-newest-version
   (let* ((fixture (fixture-text "v2-plan.bcad"))
          (drawing (persist:parse-drawing-text fixture))
          (written (persist:drawing-to-string drawing)))
     (is (search "(format-version 2)" fixture))
     (is (= 9 (dom:drawing-entity-count drawing)))
-    (is (search "(format-version 3)" written))
-    (is (string= (replace-once-text fixture "(format-version 2)" "(format-version 3)") written)
+    (is (search (format nil "(format-version ~d)" persist:+supported-format-version+) written))
+    (is (string= (replace-once-text fixture
+                                    "(format-version 2)"
+                                    (format nil "(format-version ~d)" persist:+supported-format-version+))
+                 written)
         "everything else is as it was")
     (is (equal (entity-values drawing) (entity-values (persist:parse-drawing-text written))))))
 
@@ -469,7 +474,7 @@ and an arc of the same circle."
   (let ((application (dimensioning-app)))
     (click-widget application :draw)
     (let ((kinds (mapcar (lambda (row) (second (ui:widget-id row))) (menu-rows application))))
-      (is (equal '(:dimension :radius-dimension :diameter-dimension :angular-dimension) (last kinds 4))))
+      (is (equal '(:dimension :radius-dimension :diameter-dimension :angular-dimension) (subseq kinds 8 12))))
     (click-widget application '(:menu-item :diameter-dimension))
     (is (eq :diameter-dimension (app:tool-kind (app:app-tool application))))
     (is (ui:widget-active (find-widget application :draw)) "the Draw button wears the icon of the tool")))

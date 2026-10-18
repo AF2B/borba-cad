@@ -512,6 +512,67 @@ DECIMALS: how many decimals of a degree the text shows, or 1."
                                                              (dom:drawing-default-text-height (the-drawing)))
                                             :precision (or decimals +default-angle-decimals+)))))
 
+(defun hatch-pattern-of (pattern)
+  "Return the hatch pattern keyword a command was given, or signal an error saying which are known.
+
+PATTERN: :solid, :lines or :cross."
+  (unless (member pattern dom:*hatch-patterns*)
+    (error "A hatch pattern is one of ~{~(:~a~)~^, ~}, but ~s was given." dom:*hatch-patterns* pattern))
+  pattern)
+
+(defun hatch-polygon (points
+                      &key (pattern :lines)
+                           (angle 45)
+                           spacing)
+  "Hatch the polygon through POINTS. Returns its id.
+
+POINTS: a list of (x y) lists, three or more, the last joined to the first.
+PATTERN: :solid, :lines or :cross.
+ANGLE: the direction of the lines, in degrees.
+SPACING: the distance between two lines, or the usual one for the size of the polygon."
+  (unless (and (listp points) (every (lambda (point) (and (listp point) (= 2 (length point)))) points))
+    (error "A hatch takes a list of points, each (x y), but ~s was given." points))
+  (let ((coordinates (make-array (* 2 (length points)) :element-type 'double-float)))
+    (loop for (x y) in points
+          for index from 0 by 2
+          do (setf (aref coordinates index) (number-of x)
+                   (aref coordinates (1+ index)) (number-of y)))
+    (add-entity (lambda (id layer-id)
+                  (dom:make-hatch :id id
+                                  :layer-id layer-id
+                                  :coordinates coordinates
+                                  :pattern (hatch-pattern-of pattern)
+                                  :angle (angle-radians angle)
+                                  :spacing (if spacing
+                                               (number-of spacing)
+                                               (dom:default-hatch-spacing coordinates
+                                                                          (dom:drawing-default-text-height
+                                                                           (the-drawing)))))))))
+
+(defun hatch (x
+              y
+              &key (pattern :lines)
+                   (angle 45)
+                   spacing)
+  "Hatch the smallest closed shape that holds the point (X, Y): a rectangle, circle, ellipse, polygon or closed
+polyline. Returns its id.
+
+X: x of the point.
+Y: y of the point.
+PATTERN: :solid, :lines or :cross.
+ANGLE: the direction of the lines, in degrees.
+SPACING: the distance between two lines, or the usual one for the size of the shape."
+  (let* ((drawing (the-drawing))
+         (changes (handler-case (dom:hatch-changes drawing
+                                                   (number-of x)
+                                                   (number-of y)
+                                                   :pattern (hatch-pattern-of pattern)
+                                                   :angle (angle-radians angle)
+                                                   :spacing (and spacing (number-of spacing)))
+                    (base:edit-refused (condition)
+                      (error "~a" condition)))))
+    (emit-change nil (dom:change-after (first changes)))))
+
 ;;; Finding entities
 
 (defun entity-ids-of (designator)
@@ -544,7 +605,7 @@ ID: an entity id."
   "Return the ids of the entities, in the order they are drawn, bottom first.
 
 KIND: only the entities of this kind: :line, :rectangle, :circle, :polyline, :text, :dimension,
-:radial-dimension, :angular-dimension, :arc, :ellipse or :polygon.
+:radial-dimension, :angular-dimension, :arc, :ellipse, :polygon or :hatch.
 LAYER: only the entities on the layer with this name."
   (let ((wanted-layer (and layer (dom:find-layer-by-name (the-drawing) layer)))
         (ids '()))
@@ -750,7 +811,7 @@ VALUE: what the command was given."
   (ecase (dom:property-kind property)
     ((:coordinate :length) (number-of value))
     (:angle (angle-radians value))
-    ((:text :integer :boolean :unit) value)))
+    ((:text :integer :boolean :unit :pattern) value)))
 
 (defun edit (id
              &rest changes)
@@ -868,7 +929,7 @@ PROPERTY: an inspector property."
       (:angle (base:format-decimal (base:radians->degrees value) 4))
       ((:coordinate :length) (persist:format-double value))
       (:boolean (if value "yes" "no"))
-      (:unit (string-downcase (symbol-name value)))
+      ((:unit :pattern) (string-downcase (symbol-name value)))
       (t value))))
 
 (defun printed-derived-value (derived)
@@ -891,7 +952,7 @@ THINGS: anything."
 
 (defparameter *help-topics*
   '(("Making entities" line rect rect-size circle arc ellipse polygon pline text dimension radius-dimension
-     diameter-dimension angle-dimension)
+     diameter-dimension angle-dimension hatch hatch-polygon)
     ("Layers" layer with-layer layers)
     ("Changing entities" move copy erase edit move-to-layer rotate mirror scale)
     ("Finding entities" entities entity-count extents info)

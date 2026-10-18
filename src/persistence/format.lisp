@@ -8,9 +8,9 @@
 ;;;; an entity kind, together with the DEFAULT that a field gets when a file is older than the field:
 ;;;; that table is the migration, and a file of an older version is read as the newer one with the
 ;;;; defaults filled in. Version 2 added the angle of a text, the arc, the ellipse and the polygon. Version 3 added
-;;;; the radius, diameter and angle dimensions.
+;;;; the radius, diameter and angle dimensions. Version 4 added the hatch.
 
-(defconstant +supported-format-version+ 3
+(defconstant +supported-format-version+ 4
   "The newest format version: the one this program writes, and the newest it reads.")
 
 (defconstant +oldest-supported-format-version+ 1
@@ -26,7 +26,7 @@
 
 KEY: keyword passed to the entity constructor.
 NAME: field name in the file.
-TYPE: :real, :reals, :boolean, :string, :unit or :integer.
+TYPE: :real, :reals, :boolean, :string, :unit, :pattern or :integer.
 ACCESSOR: symbol of the function that reads the property from an entity.
 SINCE: the first format version that has the field; a file of an older version does not have it.
 DEFAULT: the value the property gets when the file is older than SINCE."
@@ -239,7 +239,27 @@ NAMES-AND-ACCESSORS: alternating field names and accessor symbols."
                                                            "precision"
                                                            :integer
                                                            'dom:angular-dimension-precision)))
-                            :since 3))
+                            :since 3)
+        (make-entity-format :hatch
+                            "hatch"
+                            'dom:make-hatch
+                            (list (make-field-spec :coordinates
+                                                   "vertices"
+                                                   :reals
+                                                   'dom:hatch-coordinates)
+                                  (make-field-spec :pattern
+                                                   "pattern"
+                                                   :pattern
+                                                   'dom:hatch-pattern)
+                                  (make-field-spec :angle
+                                                   "angle"
+                                                   :real
+                                                   'dom:hatch-angle)
+                                  (make-field-spec :spacing
+                                                   "spacing"
+                                                   :real
+                                                   'dom:hatch-spacing))
+                            :since 4))
   "The storage format of every entity kind.")
 
 (defun find-format-by-kind (kind)

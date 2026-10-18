@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Hatch and solid fill.** Two tools in the Draw menu fill the smallest closed shape (rectangle, circle, ellipse,
+  polygon or closed polyline) under the pointer, with a live preview: Hatch with parallel lines at 45 degrees,
+  Solid fill with a solid color. The inspector changes a hatch to lines, cross or solid, and sets its angle and
+  spacing; the pattern moves and turns with the shape, and is carried through rotate, mirror, scale, the script
+  export (`hatch-polygon`), the console (`hatch`), the DXF export (as lines or filled triangles) and the PDF and
+  SVG plots. A spacing that would make more than 5,000 lines is refused.
 - **PDF and SVG export.** More > Export as PDF and Export as SVG put the drawing on an A4, A3, A2 or A1 sheet at
   a scale you type (`1:50`, `2:1`, or `fit`), in black or in the colors of the layers, with the sheet turned to
   suit the drawing, a margin, 0.25 mm lines and curves within 0.02 mm of the true ones. The PDF is written by
@@ -54,8 +60,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Changed
 
-- The `.bcad` format is now version 3, which adds the radius, diameter and angle dimensions. Versions 1 and 2
-  still open and are saved as version 3; a version 3 file cannot be opened by an earlier release of the program.
+- The `.bcad` format is now version 4, which adds the radius, diameter and angle dimensions and the hatch.
+  Versions 1 to 3 still open and are saved as version 4; a version 4 file cannot be opened by an earlier release
+  of the program.
 
 ## [1.2.0] - 2026-10-15
 

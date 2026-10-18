@@ -448,6 +448,41 @@ COLOR: an RGBA."
                    (geo:annotation-layout-text-angle layout)
                    color)))
 
+(defun emit-hatch (frame
+                   hatch
+                   color)
+  "Emit a hatch: the triangles of a solid one, and the lines of the others.
+
+FRAME: the build context.
+HATCH: a hatch entity.
+COLOR: an RGBA."
+  (let ((triangles (dom:hatch-triangles hatch))
+        (segments (dom:hatch-segments hatch))
+        (viewport (frame-viewport frame)))
+    (loop for base from 0 below (length triangles) by 6
+          do (flet ((corner (index)
+                      (multiple-value-bind (sx sy)
+                          (view:world->screen viewport
+                                              (+ (aref triangles (+ base (* 2 index))) (frame-offset-x frame))
+                                              (+ (aref triangles (+ base (* 2 index) 1)) (frame-offset-y frame)))
+                        (cons (to-single sx) (to-single sy)))))
+               (let ((a (corner 0)) (b (corner 1)) (c (corner 2)))
+                 (add-triangle (frame-list frame)
+                               (car a)
+                               (cdr a)
+                               (car b)
+                               (cdr b)
+                               (car c)
+                               (cdr c)
+                               color))))
+    (loop for index from 0 below (length segments) by 4
+          do (emit-world-segment frame
+                                 (aref segments index)
+                                 (aref segments (+ index 1))
+                                 (aref segments (+ index 2))
+                                 (aref segments (+ index 3))
+                                 color))))
+
 (defun emit-entity (frame
                     entity
                     color)
@@ -515,6 +550,10 @@ COLOR: an RGBA."
      (emit-dimension frame
                      entity
                      color))
+    (dom:hatch-entity
+     (emit-hatch frame
+                 entity
+                 color))
     (dom:radial-dimension-entity
      (emit-annotation frame
                       (dom:radial-dimension-layout entity)

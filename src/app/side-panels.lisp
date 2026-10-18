@@ -361,6 +361,12 @@ BLOCKED: true while a modal covers the card."
 
 ;;; Inspector
 
+(defparameter *hatch-pattern-labels*
+  (list (cons :solid (i18n:mark "Solid"))
+        (cons :lines (i18n:mark "Lines"))
+        (cons :cross (i18n:mark "Cross")))
+  "How the inspector names each pattern of a hatch, in English; it is translated where shown.")
+
 (defun format-property-value (app
                               property)
   "Return the text that shows a property's value in the inspector and in its edit field.
@@ -374,7 +380,8 @@ PROPERTY: an inspector property."
       (:text value)
       (:integer (format nil "~d" value))
       (:boolean (if value (i18n:tr "Yes") (i18n:tr "No")))
-      (:unit (base:unit-abbreviation value)))))
+      (:unit (base:unit-abbreviation value))
+      (:pattern (i18n:tr (cdr (assoc value *hatch-pattern-labels*)))))))
 
 (defun format-derived-value (app
                              derived)
@@ -488,6 +495,24 @@ BLOCKED: true while a modal covers the panel."
                                                                   key
                                                                   next)))
                              :hint (i18n:tr "Click to change the unit")))
+            (:pattern
+             (ui:make-widget :button
+                             id
+                             column
+                             0f0
+                             value-width
+                             ui:+row-height+
+                             :label text
+                             :blocked blocked
+                             :action (lambda ()
+                                       (let ((next (or (second (member (dom:property-value property)
+                                                                       dom:*hatch-patterns*))
+                                                       (first dom:*hatch-patterns*))))
+                                         (operation-edit-property app
+                                                                  entity-id
+                                                                  key
+                                                                  next)))
+                             :hint (i18n:tr "Click to change the pattern")))
             (t
              (ui:make-widget :field
                              id

@@ -77,6 +77,20 @@ NODE: an element."
                        (node-value node)
                        (base:supported-length-units))))
 
+(defun node-pattern (node)
+  "Return the hatch pattern keyword named by a word node.
+
+NODE: an element."
+  (unless (eq (node-kind node) :word)
+    (content-failure node "expected a hatch pattern name"))
+  (or (find (node-value node) dom:*hatch-patterns*
+            :key (lambda (pattern) (string-downcase (symbol-name pattern)))
+            :test #'string=)
+      (content-failure node
+                       "unknown hatch pattern ~s; use one of ~{~(~a~)~^, ~}"
+                       (node-value node)
+                       dom:*hatch-patterns*)))
+
 (defun single-value (value-nodes
                      field-node)
   "Return the only value of a field, or fail when there is not exactly one.
@@ -109,6 +123,7 @@ FIELD-NODE: the whole field, for error positions."
     (:boolean (node-boolean (single-value value-nodes field-node)))
     (:string (node-string (single-value value-nodes field-node)))
     (:unit (node-unit (single-value value-nodes field-node)))
+    (:pattern (node-pattern (single-value value-nodes field-node)))
     (:reals (let ((values (make-array (length value-nodes) :element-type 'double-float)))
               (loop for node in value-nodes
                     for index from 0

@@ -654,3 +654,57 @@ CORNERS: a vector of alternating x and y values."
                               :vertex-y y
                               :radius (* factor (angular-dimension-radius dimension))
                               :text-height (* factor (angular-dimension-text-height dimension)))))
+
+(defun transformed-hatch-coordinates (hatch
+                                      transform)
+  "Return the boundary of a hatch with every vertex moved by TRANSFORM.
+
+HATCH: a hatch entity.
+TRANSFORM: function of x and y that returns the new x and y as two values."
+  (let* ((coordinates (hatch-coordinates hatch))
+         (result (make-array (length coordinates) :element-type 'double-float)))
+    (loop for index from 0 below (length coordinates) by 2
+          do (multiple-value-bind (x y) (funcall transform
+                                                 (aref coordinates index)
+                                                 (aref coordinates (1+ index)))
+               (setf (aref result index) x
+                     (aref result (1+ index)) y)))
+    result))
+
+(defmethod entity-rotated ((hatch hatch-entity) center-x center-y angle)
+  (update-hatch hatch
+                :coordinates (transformed-hatch-coordinates hatch
+                                                            (lambda (x y)
+                                                              (rotate-xy x
+                                                                         y
+                                                                         center-x
+                                                                         center-y
+                                                                         angle)))
+                :angle (+ (hatch-angle hatch) angle)))
+
+(defmethod entity-mirrored ((hatch hatch-entity) line-x1 line-y1 line-x2 line-y2)
+  (update-hatch hatch
+                :coordinates (transformed-hatch-coordinates hatch
+                                                            (lambda (x y)
+                                                              (mirror-xy x
+                                                                         y
+                                                                         line-x1
+                                                                         line-y1
+                                                                         line-x2
+                                                                         line-y2)))
+                :angle (mirror-angle (hatch-angle hatch)
+                                     line-x1
+                                     line-y1
+                                     line-x2
+                                     line-y2)))
+
+(defmethod entity-scaled ((hatch hatch-entity) center-x center-y factor)
+  (update-hatch hatch
+                :coordinates (transformed-hatch-coordinates hatch
+                                                            (lambda (x y)
+                                                              (scale-xy x
+                                                                        y
+                                                                        center-x
+                                                                        center-y
+                                                                        factor)))
+                :spacing (* factor (hatch-spacing hatch))))

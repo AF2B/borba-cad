@@ -17,7 +17,8 @@ draw by typing Lisp into a console, because the language of the program is Lisp 
 ## Highlights
 
 - **Drafting**: lines, polylines, rectangles, regular polygons, circles, arcs, ellipses, text at any angle and
-  aligned, radius, diameter and angle dimensions, on layers you can show, hide, lock and recolor.
+  aligned, radius, diameter and angle dimensions, hatches and solid fills, on layers you can show, hide, lock and
+  recolor.
 - **Editing**: window and crossing selection, grips to stretch and turn what is selected, a numeric inspector
   for every property, copy and paste (also between windows), and undo and redo of everything.
 - **Precision**: grid snap and object snap (endpoints, midpoints, centers, intersections, quadrants and, from
@@ -112,6 +113,14 @@ zoom to fit.
 Select one entity and its **grips** appear: squares to change its shape, a circle to move it. Click picks an
 entity (Shift+click adds or removes), dragging from left to right selects what lies inside the rectangle and
 from right to left (dashed) what it touches, and dragging a selection moves it.
+
+**Hatch and Solid fill** are in the Draw menu. Click inside a closed shape (a rectangle, circle, ellipse,
+polygon or closed polyline: the smallest one that holds the point is used) and it is filled, with a live preview
+while you move. A hatch is lines at 45 degrees, half the text height apart; select it and the inspector changes
+the pattern (lines, cross or solid; click the row to go through them), the angle and the spacing. The hatch is its
+own entity with its own boundary, so deleting or moving the shape it was made from does not touch it, and its
+pattern is anchored to its first vertex, so it moves and turns with it. Clicking a hatch picks it on its lines
+or boundary, or anywhere inside when it is solid.
 
 **Radius, diameter and angle dimensions** are in the Draw menu. For a radius or a diameter, click the circle or
 the arc, then click where the leader should point; the text follows the leader and always reads left to right.
@@ -221,8 +230,8 @@ are scripts to read and run.
 
 ## Files and formats
 
-- **`.bcad`**, the program's own format: UTF-8 text, one S-expression, an explicit `format-version` (3; versions
-  1 and 2 open and are migrated), doubles that read back exactly. Loading never evaluates code; a malformed
+- **`.bcad`**, the program's own format: UTF-8 text, one S-expression, an explicit `format-version` (4; versions
+  1 to 3 open and are migrated), doubles that read back exactly. Loading never evaluates code; a malformed
   file is refused with its line and column, and a failed open leaves the open drawing untouched. Saving is
   atomic (temporary file, flush, rename).
 - **DXF import** (More > Import DXF) reads an ASCII DXF of any version as a new drawing: layers, lines,

@@ -28,7 +28,8 @@ small enough that reducing it to a turn loses no precision that matters.")
   "Number of polyline vertices that the inspector lists for numeric editing.")
 
 (defparameter *entity-kinds*
-  '(:line :rectangle :circle :polyline :text :dimension :arc :ellipse :polygon :radial-dimension :angular-dimension)
+  '(:line :rectangle :circle :polyline :text :dimension :arc :ellipse :polygon :radial-dimension :angular-dimension
+    :hatch)
   "Every entity kind keyword, in toolbar order.")
 
 (defun entity-kinds ()
@@ -55,7 +56,7 @@ BOUNDS: world-space bounds, computed once at construction."
 
 KEY: identifies the property for ENTITY-WITH-PROPERTY.
 LABEL: English label shown to the user.
-KIND: :coordinate, :length, :angle (radians), :text, :boolean, :unit or :integer.
+KIND: :coordinate, :length, :angle (radians), :text, :boolean, :unit, :pattern or :integer.
 VALUE: current value (millimetres for lengths and coordinates).
 EDITABLE: true when the user may change it."
   key
@@ -78,7 +79,7 @@ VALUE: the number."
 
 (defgeneric entity-kind (entity)
   (:documentation "Return the entity's kind keyword (:line, :rectangle, :circle, :polyline,
-:text, :dimension, :arc, :ellipse, :polygon, :radial-dimension or :angular-dimension).
+:text, :dimension, :arc, :ellipse, :polygon, :radial-dimension, :angular-dimension or :hatch).
 
 ENTITY: an entity."))
 

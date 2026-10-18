@@ -275,3 +275,74 @@ POINT: an (x . y) cons."
 
 (defmethod tool-anchor ((tool angular-dimension-tool))
   (angular-tool-vertex tool))
+
+;;; Hatch
+
+(defclass hatch-tool (tool)
+  ((pattern :initarg :pattern :initform :lines :reader hatch-tool-pattern))
+  (:documentation "Hatches the smallest closed shape under the pointer with a pattern, at the angle and spacing a new
+hatch gets; the inspector changes them afterwards."))
+
+(defmethod tool-kind ((tool hatch-tool))
+  (if (eq :solid (hatch-tool-pattern tool))
+      :solid-fill
+      :hatch))
+
+(defmethod tool-prompt ((tool hatch-tool) app)
+  (declare (ignore app))
+  (if (eq :solid (hatch-tool-pattern tool))
+      (i18n:tr "Solid fill: click inside a closed shape")
+      (i18n:tr "Hatch: click inside a closed shape")))
+
+(defun hatch-of-region (tool
+                        app
+                        boundary)
+  "Return the hatch of a region, with the pattern of the tool and the angle and spacing a new hatch gets. Signals
+INVALID-ENTITY when it would not be valid.
+
+TOOL: the hatch tool.
+APP: the application.
+BOUNDARY: the vertices of the region, as a flat array."
+  (dom:make-hatch :id (creation-id app)
+                  :layer-id (creation-layer-id app)
+                  :coordinates boundary
+                  :pattern (hatch-tool-pattern tool)
+                  :spacing (dom:default-hatch-spacing boundary
+                                                      (dom:drawing-default-text-height (app-drawing app)))))
+
+(defun region-under-pointer (app
+                             cursor)
+  "Return the boundary of the smallest closed shape under the pointer, or NIL.
+
+APP: the application.
+CURSOR: the pointer position."
+  (dom:hatch-region-at (app-drawing app)
+                       (cursor-raw-x cursor)
+                       (cursor-raw-y cursor)))
+
+(defmethod tool-pointer-down ((tool hatch-tool) app cursor)
+  (let ((boundary (region-under-pointer app cursor)))
+    (if boundary
+        (create-entity app
+                       (lambda ()
+                         (hatch-of-region tool
+                                          app
+                                          boundary)))
+        (set-message app
+                     (i18n:tr "Click inside a rectangle, circle, ellipse, polygon or closed polyline.")
+                     :error)))
+  (app-request-redraw app))
+
+(defmethod tool-pointer-move ((tool hatch-tool) app cursor)
+  (declare (ignore cursor))
+  (app-request-redraw app))
+
+(defmethod tool-preview-entities ((tool hatch-tool) app)
+  (let* ((cursor (app-cursor app))
+         (boundary (and cursor (region-under-pointer app cursor)))
+         (hatch (and boundary
+                     (try-entity (lambda ()
+                                   (hatch-of-region tool
+                                                    app
+                                                    boundary))))))
+    (and hatch (list hatch))))

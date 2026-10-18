@@ -76,6 +76,8 @@ commands that draw it.")
    #:pline
    #:text
    #:dimension
+   #:hatch
+   #:hatch-polygon
    #:radius-dimension
    #:diameter-dimension
    #:angle-dimension

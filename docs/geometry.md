@@ -167,6 +167,7 @@ layer. Stacking order is id order.
 | Polyline | at least 2 vertices (3 when closed), at most 100,000; no two consecutive vertices coincide | length, vertex count |
 | Text | non-empty single line, at most 256 characters; height > tolerance; any angle, kept in [0, 2π) | width |
 | Dimension | definition points farther apart than the tolerance; text height > tolerance; precision 0 to 6 | measured length |
+| Hatch | boundary of 3 to 2000 vertices that encloses an area; pattern solid, lines or cross; spacing > tolerance and not more than 5000 lines in a set; angle kept in [0, π) | area, perimeter, vertices |
 | Radius or diameter dimension | radius > tolerance; text height > tolerance; precision 0 to 6; leader angle kept in [0, 2π); the text is `R` and the radius, or the diameter sign and twice the radius | measured length |
 | Angle dimension | arm directions differ by more than the angle tolerance and by less than a whole turn (the angle is measured counter-clockwise from the first arm to the second); radius > tolerance; text height > tolerance; precision 0 to 6 | angle |
 
@@ -225,6 +226,16 @@ entities cannot be deleted either.
   anchor, or on the ray at the nearest multiple of 15 degrees, unless an object snap was taken.
 - A move or an edit that would break an invariant is refused and leaves the drawing unchanged:
   change sets are validated completely before the first modification.
+
+### Hatching (`geometry/hatching.lisp`, `domain/hatch.lisp`)
+
+| Operation | Rule |
+|---|---|
+| Inside | `point-in-polygon-p` casts a ray along +x and counts the edges it crosses (even-odd); a point on the boundary may be either. |
+| Lines | A set of parallel lines, `spacing` apart, in the direction `angle`, one of them through the first vertex of the boundary. A line at the level of a vertex is judged by the half-open rule (an edge counts when one end is above the level and the other is not), the crossings along the line are sorted and taken two by two, so a concave region is hatched only inside; levels within the length tolerance of the extremes are skipped, so no line runs along the boundary. A cross is two sets, at `angle` and `angle + π/2`. |
+| Solid | The boundary is cut into triangles by ears, with the corners kept in linked arrays so that the whole is O(n²): a corner is an ear when it turns counter-clockwise and no other vertex is inside its triangle; a straight corner is dropped; a region that has no ear, which only a self-crossing boundary can be, is finished as a fan. |
+| Region | `hatch-region-at` takes the smallest by area of the closed shapes on visible layers that hold the point (a circle and an ellipse as a polygon of 128 vertices). Holes are not found: a shape inside another is hatched on its own. |
+| Picking | A solid hatch is picked anywhere inside, a line hatch on its lines or its boundary. A hatch offers no snap points, and the shape it was made from keeps its own. |
 
 ### Reshaping (`src/domain/reshaping.lisp`)
 

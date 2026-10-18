@@ -224,7 +224,9 @@
         (dom:make-radial-dimension :id 1 :layer-id 0 :center-x 0d0 :center-y 0d0 :radius 100d0 :angle 0.7d0
                                    :diameter nil :text-height 20d0 :unit :millimeter :precision 1)
         (dom:make-angular-dimension :id 1 :layer-id 0 :vertex-x 0d0 :vertex-y 0d0 :start-angle 0.2d0
-                                    :end-angle 1.4d0 :radius 100d0 :text-height 20d0 :precision 1)))
+                                    :end-angle 1.4d0 :radius 100d0 :text-height 20d0 :precision 1)
+        (dom:make-hatch :id 1 :layer-id 0 :coordinates (doubles 0d0 0d0 100d0 0d0 100d0 100d0 0d0 100d0)
+                        :pattern :lines :angle 0.5d0 :spacing 10d0)))
 
 (test every-kind-reports-a-distinct-kind-keyword-and-bounds
   (let ((entities (every-entity-kind)))

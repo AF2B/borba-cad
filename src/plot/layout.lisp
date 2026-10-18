@@ -517,6 +517,24 @@ CLOSED: true when the last joins the first."
                                    text
                                    (plot-plan-settings plan)))))
 
+(defmethod entity-items (drawing (hatch dom:hatch-entity) plan)
+  (let ((triangles (dom:hatch-triangles hatch))
+        (color (layer-ink drawing
+                          hatch
+                          (plot-plan-settings plan))))
+    (append (segment-strokes drawing
+                             hatch
+                             plan
+                             (dom:hatch-segments hatch))
+            (loop for index from 0 below (length triangles) by 6
+                  collect (make-plot-fill (list (cons (sheet-x plan (aref triangles index))
+                                                      (sheet-y plan (aref triangles (+ index 1))))
+                                                (cons (sheet-x plan (aref triangles (+ index 2)))
+                                                      (sheet-y plan (aref triangles (+ index 3))))
+                                                (cons (sheet-x plan (aref triangles (+ index 4)))
+                                                      (sheet-y plan (aref triangles (+ index 5)))))
+                                          color)))))
+
 (defun segment-strokes (drawing
                         entity
                         plan

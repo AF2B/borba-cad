@@ -42,7 +42,10 @@
         (list :dimension :dimension (i18n:mark "Dimension") "D")
         (list :radius-dimension :radius-dimension (i18n:mark "Radius dimension") nil)
         (list :diameter-dimension :diameter-dimension (i18n:mark "Diameter dimension") nil)
-        (list :angular-dimension :angular-dimension (i18n:mark "Angle dimension") nil))
+        (list :angular-dimension :angular-dimension (i18n:mark "Angle dimension") nil)
+        nil
+        (list :hatch :hatch (i18n:mark "Hatch") nil)
+        (list :solid-fill :solid-fill (i18n:mark "Solid fill") nil))
   "The choices of the draw menu, top to bottom, as (tool-kind icon label shortcut), with NIL between
 groups. The labels are in English and are translated where the menu is built.")
 

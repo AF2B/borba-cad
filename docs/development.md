@@ -268,6 +268,10 @@ set in `domain/reshaping.lisp`, which signals `edit-refused` with a sentence whe
 with `commit-reshaping`, which says the sentence in the status bar. It is in `*modify-tool-kinds*` but not in
 `*selection-tool-kinds*`, so it needs no selection.
 
+A property of a new kind (the pattern of a hatch is a `:pattern`) needs a clause in `format-property-value` and
+a widget in `src/app/side-panels.lisp`, in `property-value-for` and `printed-property-value` of `script/dsl.lisp`,
+and, when it is stored, a field type in `persistence/loader.lisp` and `writer.lisp`.
+
 A tool that only measures (`src/app/measure-tools.lisp`) never commits a change: it keeps its points, draws them
 and a text label through `tool-preview-entities` (a text entity sized in pixels, so the label does not change
 with the zoom), and says the result in the status bar. It is listed in `*measure-tool-kinds*` and appears in the
