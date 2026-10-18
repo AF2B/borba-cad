@@ -630,7 +630,8 @@ THEME: the theme."
                         snap
                         theme)
   "Emit the snap indicator: a square for endpoints, a circle for centers, a cross for the grid and for
-ortho, and a diagonal cross for polar.
+ortho, a diagonal cross for polar and for intersections, a triangle for midpoints, a diamond for quadrants,
+a right angle for perpendiculars and a circle on a line for tangents.
 
 LIST: the draw list.
 VIEWPORT: the viewport.
@@ -650,28 +651,50 @@ THEME: the theme."
                              (to-single x2)
                              (to-single y2)
                              color)))
-            (ecase kind
-              (:endpoint
-               (line (- sx half) (- sy half) (+ sx half) (- sy half))
-               (line (+ sx half) (- sy half) (+ sx half) (+ sy half))
-               (line (+ sx half) (+ sy half) (- sx half) (+ sy half))
-               (line (- sx half) (+ sy half) (- sx half) (- sy half)))
-              (:center
-               (let ((previous-x (+ sx half))
-                     (previous-y sy))
-                 (loop for step from 1 to +snap-circle-segments+
-                       do (let* ((angle (* step (/ (* 2 (float pi 1d0)) +snap-circle-segments+)))
-                                 (next-x (+ sx (* half (cos angle))))
-                                 (next-y (+ sy (* half (sin angle)))))
-                            (line previous-x previous-y next-x next-y)
-                            (setf previous-x next-x
-                                  previous-y next-y)))))
-              ((:grid :ortho)
-               (line (- sx half) sy (+ sx half) sy)
-               (line sx (- sy half) sx (+ sy half)))
-              (:polar
-               (line (- sx half) (- sy half) (+ sx half) (+ sy half))
-               (line (- sx half) (+ sy half) (+ sx half) (- sy half))))))))))
+            (flet ((circle (radius)
+                     (let ((previous-x (+ sx radius))
+                           (previous-y sy))
+                       (loop for step from 1 to +snap-circle-segments+
+                             do (let* ((angle (* step (/ (* 2 (float pi 1d0)) +snap-circle-segments+)))
+                                       (next-x (+ sx (* radius (cos angle))))
+                                       (next-y (+ sy (* radius (sin angle)))))
+                                  (line previous-x previous-y next-x next-y)
+                                  (setf previous-x next-x
+                                        previous-y next-y))))))
+              (ecase kind
+                (:endpoint
+                 (line (- sx half) (- sy half) (+ sx half) (- sy half))
+                 (line (+ sx half) (- sy half) (+ sx half) (+ sy half))
+                 (line (+ sx half) (+ sy half) (- sx half) (+ sy half))
+                 (line (- sx half) (+ sy half) (- sx half) (- sy half)))
+                (:center
+                 (circle half))
+                ((:grid :ortho)
+                 (line (- sx half) sy (+ sx half) sy)
+                 (line sx (- sy half) sx (+ sy half)))
+                (:polar
+                 (line (- sx half) (- sy half) (+ sx half) (+ sy half))
+                 (line (- sx half) (+ sy half) (+ sx half) (- sy half)))
+                (:midpoint
+                 (line sx (- sy half) (+ sx half) (+ sy half))
+                 (line (+ sx half) (+ sy half) (- sx half) (+ sy half))
+                 (line (- sx half) (+ sy half) sx (- sy half)))
+                (:intersection
+                 (line (- sx half) (- sy half) (+ sx half) (+ sy half))
+                 (line (- sx half) (+ sy half) (+ sx half) (- sy half)))
+                (:quadrant
+                 (line sx (- sy half) (+ sx half) sy)
+                 (line (+ sx half) sy sx (+ sy half))
+                 (line sx (+ sy half) (- sx half) sy)
+                 (line (- sx half) sy sx (- sy half)))
+                (:perpendicular
+                 (line (- sx half) (- sy half) (- sx half) (+ sy half))
+                 (line (- sx half) (+ sy half) (+ sx half) (+ sy half))
+                 (line (- sx half) (- sy (/ half 4)) (+ (- sx half) (/ half 2)) (- sy (/ half 4)))
+                 (line (+ (- sx half) (/ half 2)) (- sy (/ half 4)) (+ (- sx half) (/ half 2)) (+ sy half)))
+                (:tangent
+                 (circle (* half 0.7d0))
+                 (line (- sx half) (- sy half) (+ sx half) (- sy half)))))))))))
 
 (defconstant +crossing-dash-pixels+ 6f0
   "Length of a dash of the outline of a crossing selection, in pixels.")

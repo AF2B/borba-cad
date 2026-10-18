@@ -757,7 +757,8 @@ The pointer position in world coordinates.
 - `RAW-Y`: world y under the pointer.
 - `X`: world x after snapping.
 - `Y`: world y after snapping.
-- `SNAP-KIND`: :endpoint, :center, :grid, :ortho, :polar or NIL.
+- `SNAP-KIND`: :endpoint, :midpoint, :center, :intersection, :quadrant, :perpendicular, :tangent, :grid, :ortho,
+:polar or NIL.
 - `MODIFIERS`: modifier keys held.
 
 ### `cursor-raw-x` (function)
@@ -1808,7 +1809,8 @@ Show or hide a layer; its entities leave the selection when hidden.
 (operation-toggle-object-snap app)
 ```
 
-Turn snapping to endpoints and centers on or off.
+Turn snapping to the points of the entities (endpoints, midpoints, centers, intersections, quadrants,
+perpendiculars and tangents) on or off.
 
 - `APP`: the application.
 
@@ -4311,16 +4313,21 @@ Return the layer called NAME (compared case-insensitively), or NIL.
 ### `find-object-snap` (function)
 
 ```lisp
-(find-object-snap drawing x y radius)
+(find-object-snap drawing x y radius &optional anchor)
 ```
 
-Return the object-snap point nearest to (X, Y) within RADIUS as three values (x, y, kind),
-or NIL. Candidates are the endpoints and centers of pickable entities.
+Return the object-snap point nearest to (X, Y) within RADIUS as three values (x, y, kind), or NIL. The
+candidates, on the pickable entities near the pointer, are their endpoints and centers, the midpoints of their
+segments and arcs, the quadrants of circles and arcs, the points where they cross, and, when there is an
+anchor, the feet of perpendiculars to them from it and the points where a line from it touches a circle or an
+arc. At equal distances the endpoint wins, then the intersection, the center, the midpoint, the quadrant, the
+perpendicular and the tangent.
 
 - `DRAWING`: the drawing.
 - `X`: point x in millimetres.
 - `Y`: point y in millimetres.
 - `RADIUS`: snap radius in millimetres.
+- `ANCHOR`: an (x . y) cons, the last point drawn, or NIL.
 
 ### `grip` (type)
 
@@ -5295,17 +5302,18 @@ Enable or disable snapping to the grid.
 ### `snap-point` (function)
 
 ```lisp
-(snap-point drawing x y object-radius)
+(snap-point drawing x y object-radius &optional anchor)
 ```
 
 Return the snapped position for a pointer at (X, Y) as three values (x, y, kind). The kind
-is :endpoint or :center for object snap, :grid for grid snap, NIL when nothing snapped.
-Object snap wins over grid snap; either applies only when enabled in the drawing.
+is one of the kinds of object snap (see FIND-OBJECT-SNAP), :grid for grid snap, NIL when nothing
+snapped. Object snap wins over grid snap; either applies only when enabled in the drawing.
 
 - `DRAWING`: the drawing.
 - `X`: pointer x in millimetres.
 - `Y`: pointer y in millimetres.
 - `OBJECT-RADIUS`: object-snap radius in millimetres.
+- `ANCHOR`: an (x . y) cons, the last point drawn, or NIL.
 
 ### `snap-to-grid` (function)
 
@@ -6338,6 +6346,21 @@ Return the bounds of a circle.
 - `CENTER-Y`: circle center y.
 - `RADIUS`: circle radius.
 
+### `circle-circle-intersections` (function)
+
+```lisp
+(circle-circle-intersections x1 y1 radius1 x2 y2 radius2)
+```
+
+Return the points where two circles cross, as a list of (x . y) conses: none, one when they touch, or two.
+
+- `X1`: x of the center of the first circle.
+- `Y1`: y of its center.
+- `RADIUS1`: its radius.
+- `X2`: x of the center of the second circle.
+- `Y2`: y of its center.
+- `RADIUS2`: its radius.
+
 ### `circle-circumference` (function)
 
 ```lisp
@@ -6362,6 +6385,36 @@ window is no farther than that and the farthest corner no nearer.
 - `CENTER-Y`: y of the center.
 - `RADIUS`: the radius.
 - `BOUNDS`: the window.
+
+### `circle-perpendicular-feet` (function)
+
+```lisp
+(circle-perpendicular-feet px py center-x center-y radius)
+```
+
+Return the points of a circle where the line through them and the center passes through a point, as a list of
+two (x . y) conses; none when the point is the center.
+
+- `PX`: x of the point.
+- `PY`: y of the point.
+- `CENTER-X`: x of the center of the circle.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: its radius.
+
+### `circle-tangent-points` (function)
+
+```lisp
+(circle-tangent-points px py center-x center-y radius)
+```
+
+Return the points of a circle where a line from a point outside it touches it, as a list of two (x . y)
+conses; none when the point is on the circle or inside it.
+
+- `PX`: x of the point.
+- `PY`: y of the point.
+- `CENTER-X`: x of the center of the circle.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: its radius.
 
 ### `clip-segment-to-bounds` (function)
 
@@ -6767,6 +6820,22 @@ Return the distance from point P to the segment (not the infinite line).
 - `X2`: x of the segment end.
 - `Y2`: y of the segment end.
 
+### `point-segment-foot` (function)
+
+```lisp
+(point-segment-foot px py x1 y1 x2 y2)
+```
+
+Return, as two values, the foot of the perpendicular from a point to a segment, or NIL when the foot is
+beyond an end of the segment.
+
+- `PX`: x of the point.
+- `PY`: y of the point.
+- `X1`: x of the start of the segment.
+- `Y1`: y of the start of the segment.
+- `X2`: x of its end.
+- `Y2`: y of its end.
+
 ### `polyline-bounds` (function)
 
 ```lisp
@@ -6882,6 +6951,23 @@ Return the direction of the segment in [0, 2 pi), counter-clockwise from +x.
 - `X2`: x of the end.
 - `Y2`: y of the end.
 
+### `segment-circle-intersections` (function)
+
+```lisp
+(segment-circle-intersections x1 y1 x2 y2 center-x center-y radius)
+```
+
+Return the points where a segment crosses a circle, as a list of (x . y) conses: none, one when it touches or
+enters and stops inside, or two.
+
+- `X1`: x of the start of the segment.
+- `Y1`: y of the start of the segment.
+- `X2`: x of its end.
+- `Y2`: y of its end.
+- `CENTER-X`: x of the center of the circle.
+- `CENTER-Y`: y of the center.
+- `RADIUS`: its radius.
+
 ### `segment-length` (function)
 
 ```lisp
@@ -6894,6 +6980,24 @@ Return the length of the segment between two points.
 - `Y1`: y of the start.
 - `X2`: x of the end.
 - `Y2`: y of the end.
+
+### `segment-segment-intersection` (function)
+
+```lisp
+(segment-segment-intersection x1 y1 x2 y2 x3 y3 x4 y4)
+```
+
+Return, as two values, the point where the segment (X1, Y1)-(X2, Y2) crosses the segment (X3, Y3)-(X4, Y4),
+or NIL when they do not cross: parallel ones, and ones that end before they meet, do not.
+
+- `X1`: x of the start of the first segment.
+- `Y1`: y of the start of the first segment.
+- `X2`: x of its end.
+- `Y2`: y of its end.
+- `X3`: x of the start of the second segment.
+- `Y3`: y of the start of the second segment.
+- `X4`: x of its end.
+- `Y4`: y of its end.
 
 ### `segment-touches-bounds-p` (function)
 
@@ -9218,7 +9322,8 @@ rectangle itself.
 ```
 
 Emit the snap indicator: a square for endpoints, a circle for centers, a cross for the grid and for
-ortho, and a diagonal cross for polar.
+ortho, a diagonal cross for polar and for intersections, a triangle for midpoints, a diamond for quadrants,
+a right angle for perpendiculars and a circle on a line for tangents.
 
 - `LIST`: the draw list.
 - `VIEWPORT`: the viewport.

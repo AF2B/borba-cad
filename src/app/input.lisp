@@ -35,7 +35,8 @@ MODIFIERS: modifier keys held."
           (dom:snap-point drawing
                           world-x
                           world-y
-                          (view:pixels->world-length viewport +snap-radius-pixels+))
+                          (view:pixels->world-length viewport +snap-radius-pixels+)
+                          (tool-anchor (app-tool app)))
         (let ((anchor (tool-anchor (app-tool app)))
               (mode (app-constraint app)))
           (when (and anchor mode (member kind '(nil :grid)))

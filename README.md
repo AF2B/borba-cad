@@ -20,8 +20,9 @@ draw by typing Lisp into a console, because the language of the program is Lisp 
   aligned dimensions, on layers you can show, hide, lock and recolor.
 - **Editing**: window and crossing selection, grips to stretch and turn what is selected, a numeric inspector
   for every property, copy and paste (also between windows), and undo and redo of everything.
-- **Precision**: grid and object snap (endpoints and centers), millimetres inside, shown in mm, cm or m, and
-  doubles that are saved and read back exactly.
+- **Precision**: grid snap and object snap (endpoints, midpoints, centers, intersections, quadrants and, from
+  the last point, perpendiculars and tangents), ortho and polar, points you can type, millimetres inside,
+  shown in mm, cm or m, and doubles that are saved and read back exactly.
 - **A Lisp console**: `(rect-size 0 0 (m 9) (m 6))` draws; any Common Lisp works; a command is one step of
   undo, and one that fails leaves nothing behind. Scripts run from files and drawings export as scripts.
 - **Files**: its own `.bcad` format (text, versioned, never evaluated), DXF import of any ASCII version and DXF
@@ -123,7 +124,7 @@ from right to left (dashed) what it touches, and dragging a selection moves it.
 | `Ctrl+C`, `Ctrl+X`, `Ctrl+V`, `Ctrl+Shift+V` | Copy, cut, paste at the pointer, paste where it was copied from |
 | `Ctrl+Z`, `Ctrl+Y` or `Ctrl+Shift+Z` | Undo, redo |
 | Wheel, middle button or `Space`+drag, `Home` | Zoom at the pointer, pan, fit the drawing |
-| `G`, `S`, `O`, `U` | Grid, grid snap, object snap, display unit |
+| `G`, `S`, `O`, `U` | Grid, grid snap, object snap (see below), display unit |
 | `Ctrl+N`, `Ctrl+O`, `Ctrl+S`, `Ctrl+Shift+S` | New, open, save, save as (a drawing dropped on the window opens too) |
 | `Ctrl+Shift+I`, `Ctrl+Shift+E` | Import DXF, export DXF |
 | `F2`, `F3` | Console, performance overlay |
@@ -198,11 +199,18 @@ Exports end with a message in the middle of the window that says the file was sa
 
 **Ortho, polar and typed points.** `F8` (the **Ortho** chip) holds the next point of a line, polyline or
 dimension to a horizontal or vertical line from the last one, `F10` (**Polar**) to multiples of 15 degrees; an
-object snap (endpoint, center) still wins. While a drawing tool waits for a point you can also **type it**:
+object snap still wins. While a drawing tool waits for a point you can also **type it**:
 start with a digit, `-`, `@` or `.` and a box opens. A length (`1500`) goes from the last point toward the
 pointer (along the axis when ortho or polar holds it), `x;y` is an absolute point, `@x;y` is that far from the
 last point, and `length<angle` (`1000<45`, degrees) is polar from it. Numbers are in the display unit unless
 they say `mm`, `cm` or `m`. Enter accepts, Esc throws the text away.
+
+**Object snap** (`O`, the **OSnap** chip) gives, near the pointer, the **endpoints** (square), **midpoints**
+(triangle), **centers** (circle), **intersections** (cross) and **quadrants** (diamond) of the entities, and, once
+a tool has its first point, the **perpendicular** (right angle) foot on a segment, circle or arc and the points
+of **tangency** to a circle or arc from that point. At the same distance an endpoint wins over an
+intersection, then the center, the midpoint, the quadrant, the perpendicular and the tangent. Hidden and
+locked layers give none. Ellipses, texts and dimensions give their endpoints and centers only.
 
 **Autosave.** While a drawing has changes that are not saved, a copy is written to the state directory every
 minute (only when something changed) and taken away once the drawing is saved or closed. If the program

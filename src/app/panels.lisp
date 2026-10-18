@@ -538,6 +538,11 @@ BLOCKED: true while a modal covers the palette."
 (defparameter *snap-kind-labels*
   (list (cons :endpoint (i18n:mark "endpoint"))
         (cons :center (i18n:mark "center"))
+        (cons :midpoint (i18n:mark "midpoint"))
+        (cons :intersection (i18n:mark "intersection"))
+        (cons :quadrant (i18n:mark "quadrant"))
+        (cons :perpendicular (i18n:mark "perpendicular"))
+        (cons :tangent (i18n:mark "tangent"))
         (cons :grid (i18n:mark "grid"))
         (cons :ortho (i18n:mark "ortho"))
         (cons :polar (i18n:mark "polar")))
@@ -604,7 +609,7 @@ APP: the application."
                 (i18n:tr "Snap to the grid") "S" (dom:drawing-snap-to-grid drawing))
           (list :object-snap (i18n:tr "OSnap") nil
                 (lambda () (operation-toggle-object-snap app))
-                (i18n:tr "Snap to endpoints and centers") "O" (dom:drawing-object-snap drawing))
+                (i18n:tr "Snap to the points of the entities") "O" (dom:drawing-object-snap drawing))
           (list :ortho (i18n:tr "Ortho") nil
                 (lambda () (operation-toggle-ortho app))
                 (i18n:tr "Hold the next point to a horizontal or vertical line") "F8"

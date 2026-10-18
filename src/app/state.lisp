@@ -34,7 +34,8 @@ RAW-X: world x under the pointer.
 RAW-Y: world y under the pointer.
 X: world x after snapping.
 Y: world y after snapping.
-SNAP-KIND: :endpoint, :center, :grid, :ortho, :polar or NIL.
+SNAP-KIND: :endpoint, :midpoint, :center, :intersection, :quadrant, :perpendicular, :tangent, :grid, :ortho,
+:polar or NIL.
 MODIFIERS: modifier keys held."
   (raw-x 0d0 :type double-float :read-only t)
   (raw-y 0d0 :type double-float :read-only t)

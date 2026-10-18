@@ -6,6 +6,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **More object snaps.** The OSnap chip now also gives midpoints (of segments, sides and arcs), quadrants (of
+  circles and arcs), intersections (of lines, rectangles, polylines, polygons, circles and arcs with each other)
+  and, from the last point of the tool, perpendiculars and points of tangency to circles and arcs. Each has
+  its own marker and name in the status bar; at the same distance the endpoint wins. The crossings are looked
+  for among the 40 entities nearest the pointer, so a crowded drawing stays fast.
 - **Ortho, polar and typed points.** `F8` and `F10`, and chips in the status bar, hold the next point of a line,
   polyline, dimension, rectangle, circle, arc, ellipse or polygon to a horizontal or vertical line from the
   last point (ortho) or to multiples of 15 degrees (polar); an object snap still wins. A tool that waits for a

@@ -213,7 +213,8 @@ APP: the application."
   (app-request-redraw app))
 
 (defun operation-toggle-object-snap (app)
-  "Turn snapping to endpoints and centers on or off.
+  "Turn snapping to the points of the entities (endpoints, midpoints, centers, intersections, quadrants,
+perpendiculars and tangents) on or off.
 
 APP: the application."
   (dom:set-object-snap (app-drawing app) (not (dom:drawing-object-snap (app-drawing app))))

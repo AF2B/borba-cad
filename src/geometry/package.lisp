@@ -40,6 +40,13 @@ No screen, pixel or rendering concepts appear here.")
    #:bounds-near-point-p
    ;; Clipping
    #:clip-segment-to-bounds
+   ;; Intersections and points found from a point outside
+   #:segment-segment-intersection
+   #:segment-circle-intersections
+   #:circle-circle-intersections
+   #:point-segment-foot
+   #:circle-perpendicular-feet
+   #:circle-tangent-points
    ;; Arcs, ellipses, regular polygons
    #:+two-pi+
    #:arc-sweep

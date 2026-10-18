@@ -181,10 +181,22 @@ entities cannot be deleted either.
   (angles), the middle (radius) and the center. Ellipse: the four ends of the axes and the center.
   Polygon: each vertex (radius and rotation) and the center. `grip-changes` builds the change set,
   checking that the entity can be edited.
-- **Object snap** offers endpoints (line ends, rectangle corners, polyline vertices, dimension
-  definition points, a text insertion point) and centers (circles) within 12 pixels, converted to
-  millimetres. **Grid snap** rounds to the drawing's own grid spacing, not to the displayed one.
-  Object snap wins over grid snap; with both off the raw coordinates are returned.
+- **Object snap** offers, within 12 pixels converted to millimetres, the endpoints (line ends,
+  rectangle corners, polyline vertices, dimension definition points, a text insertion point) and centers
+  that each entity lists (`entity-snap-points`), and the points that are found from the primitives each
+  entity reduces to (`entity-primitives` in `src/domain/snapping.lisp`: segments, circles and arcs; an
+  ellipse, a text and a dimension have none): the **midpoint** of a segment or an arc, the **quadrants** of
+  a circle or the ones an arc covers, the **intersections** between the primitives of the entities near the
+  pointer (at most 40 of them, so at most a few hundred pairs), and, when a tool has a last point (the
+  anchor), the **perpendicular** feet (on a segment only when the foot is on it, on a circle the two points
+  in line with the center) and the **tangent** points of a circle or an arc (from a point outside it). The
+  crossings come from `src/geometry/intersect.lisp`, with a margin of 1e-9 on the parameters so that two
+  segments that meet end to end cross. The nearest candidate wins; at equal distance (to 1e-9) the kind that
+  comes first in `*object-snap-priority*` does: endpoint, intersection, center, midpoint, quadrant,
+  perpendicular, tangent. **Grid snap** rounds to the drawing's own grid spacing, not to the displayed one.
+  Object snap wins over grid snap; with both off the raw coordinates are returned. **Ortho** and **polar**
+  (application, `constrain-point`) project the snapped point on the horizontal or vertical line through the
+  anchor, or on the ray at the nearest multiple of 15 degrees, unless an object snap was taken.
 - A move or an edit that would break an invariant is refused and leaves the drawing unchanged:
   change sets are validated completely before the first modification.
 

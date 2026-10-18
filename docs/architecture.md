@@ -107,7 +107,7 @@ World space is right-handed with +Y up; angles are counter-clockwise radians. Ke
 ## 8. Input and application model
 
 - Events (`app`): `pointer-event` (move/down/up, button, x, y, modifiers), `wheel-event`, `key-event`, `text-event`, `resize-event`, `quit-event`. `platform` translates SDL events; tests build events directly. The window loop (`platform/main.lisp`) is a `session` and `step-session` (decision A16). Synthetic SDL text events are **not** pushed through SDL (S1: `SDL_PushEvent` of text input crashes sdl2-compat); the translator is tested on locally built event structs.
-- `handle-event` routes: modal prompt → UI widgets → canvas (pan/zoom → active tool). Cursor world position passes through snapping: object snap (endpoint, center; radius in pixels) → grid snap → raw.
+- `handle-event` routes: modal prompt → UI widgets → canvas (pan/zoom → active tool). Cursor world position passes through snapping: object snap (endpoint, midpoint, center, intersection, quadrant, perpendicular, tangent; radius in pixels) → ortho/polar → grid snap → raw.
 - Tools (CLOS): select, line, rectangle, circle, polyline, text, dimension. Each exposes pointer-down/move/up, key, cancel and preview. Tools only *propose* change sets; `app` commits them to history.
 - Move-by-drag renders a preview offset and commits one change set on release (one undo step).
 - Errors are conditions (`borba-cad/base`): `invalid-entity`, `invalid-input`, `drawing-file-error`, `layer-error`, `configuration-error`. `app` converts them into status messages and log entries; nothing is swallowed.
