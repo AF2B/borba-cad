@@ -22,6 +22,9 @@ enough for a steady hand and small enough not to grab distant entities.")
 (defconstant +maximum-message-length+ 400
   "Longest status message kept, in characters.")
 
+(defparameter *degree-sign* (string (code-char 176))
+  "The degree sign, built from its code point to keep sources ASCII.")
+
 (defstruct (cursor (:constructor make-cursor (raw-x
                                               raw-y
                                               x
@@ -69,7 +72,7 @@ MESSAGE-LINES: how many lines the message may take before it is cut, or NIL for 
                                           highlight)))
   "An open drop-down menu.
 
-KIND: :draw, :modify, :language or :more.
+KIND: :draw, :modify, :measure, :language or :more.
 ANCHOR: id of the button the menu hangs from.
 HIGHLIGHT: position, among the choices, of the one the keyboard is on."
   kind

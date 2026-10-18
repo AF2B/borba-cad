@@ -45,9 +45,6 @@
 (defconstant +minimum-thumb-height+ 24f0
   "Shortest scroll indicator, in pixels.")
 
-(defparameter *degree-sign* (string (code-char 176))
-  "The degree sign, built from its code point to keep sources ASCII.")
-
 ;;; Cards
 
 (defun card-bounds (rect

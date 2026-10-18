@@ -42,6 +42,7 @@
                              (:file "curves")
                              (:file "intersect")
                              (:file "shapes")
+                             (:file "measure")
                              (:file "text-extent")
                              (:file "dimension")))
                (:module "domain"
@@ -147,6 +148,7 @@
                              (:file "file-browser")
                              (:file "tools")
                              (:file "transform-tools")
+                             (:file "measure-tools")
                              (:file "entity-clipboard")
                              (:file "panels")
                              (:file "side-panels")
@@ -270,6 +272,7 @@
                (:file "constraints-tests")
                (:file "snapping-tests")
                (:file "transform-tests")
+               (:file "measure-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

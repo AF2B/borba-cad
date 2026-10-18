@@ -147,6 +147,8 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-export-image
    #:export-image-from-app
    #:modify-tool-kind-p
+   #:measure-tool-kind-p
+   #:*measure-tool-kinds*
    #:*modify-tool-kinds*
    #:tool-typed-number
    #:operation-toggle-ortho

@@ -3,7 +3,7 @@
 ;;;; User-level operations. Each one validates, changes the drawing through the history, times
 ;;;; itself, and reports failures to the user instead of raising them.
 
-(declaim (ftype function make-tool tool-cancel tool-kind modify-tool-kind-p))
+(declaim (ftype function make-tool tool-cancel tool-kind modify-tool-kind-p measure-tool-kind-p))
 
 (defparameter *untitled-file-name* "untitled.bcad"
   "File name offered in the Save As prompt for a drawing that has none.")
@@ -243,7 +243,8 @@ APP: the application."
 
 APP: the application.
 KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
-:mirror or :scale. A tool that changes the selection is not activated when nothing is selected."
+:mirror, :scale, :measure-distance, :measure-angle or :measure-area. A tool that changes the selection is
+not activated when nothing is selected."
   (cond ((and (modify-tool-kind-p kind) (zerop (hash-table-count (app-selection app))))
          (set-message app
                       (i18n:tr "Select what you want to change first.")

@@ -102,7 +102,7 @@ Open a drawing at startup with `make run FILE=examples/floor-plan.bcad`, change 
 When it starts without a drawing, a **start screen** offers the drawings you worked on last (up to five, each
 with its folder), a new drawing, a drawing to open, a script to run, or the way out; Escape goes on with an
 empty drawing. The palette on the left holds the Select tool, the **Draw** button, which lists every drawing
-tool with its key, and the **Modify** button, which lists the tools that change the selection. The title bar has the file and history buttons, the name of the drawing (a dot marks unsaved
+tool with its key, the **Modify** button, which lists the tools that change the selection, and the **Measure** button. The title bar has the file and history buttons, the name of the drawing (a dot marks unsaved
 changes), the **More** menu (DXF, JPEG, the console and the scripts), the language menu and the performance
 overlay. The side panel holds the layers and the properties, where every property of the selection is
 editable as a number; input that makes no sense is refused with a message and the old value is kept. The
@@ -120,12 +120,22 @@ then a reference and a target (the factor is their distance ratio), or type the 
 the pointer, `Ctrl` on the last click keeps the originals and selects the copies, and the whole operation is
 one step of undo. A rectangle turned to a slant becomes a closed polyline; entities on locked layers stay.
 
+**Measure** (the ruler button, which needs no selection) measures without drawing anything. **Distance** (`M`):
+click two points; the status bar gives the distance, how far apart they are along each axis and the
+direction. **Angle** (`Shift+A`): click the vertex and a point on each arm; it gives the smaller angle and the
+one that completes the turn. **Area** (`Shift+Q`): click the corners of a contour, close it with Enter or by
+clicking the first corner (Backspace takes the last one back); it gives the area and the perimeter. While you
+measure, the shape and its value show on the canvas, in the display unit of the drawing, and they stay there
+until the next click starts another measurement or Esc leaves the tool. Ortho, polar, object snaps and typed
+points work as they do when drawing.
+
 <details>
 <summary><b>Keys</b></summary>
 
 | Keys | What they do |
 |---|---|
 | `Shift+R`, `Shift+M`, `Shift+S` | Rotate, mirror, scale the selection |
+| `M`, `Shift+A`, `Shift+Q` | Measure a distance, an angle, an area |
 | `L` `P` `R` `N` `C` `A` `E` `T` `D` | Line, polyline (Enter finishes, the first vertex closes), rectangle, polygon (Up and Down set the sides), circle, arc (center, start, end counter-clockwise), ellipse (center, axis end, other half-axis), text (drag to turn it), dimension |
 | `Esc` | Cancel what the tool is doing, then back to Select, then clear the selection |
 | `Delete`, `Ctrl+A` | Delete the selection, select all |

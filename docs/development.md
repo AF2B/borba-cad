@@ -259,6 +259,11 @@ is refused by `operation-set-tool` while nothing is selected. A new transformati
 `domain/transforms.lisp` with a method per entity kind, a `*-entities-changes` function in `domain/commands.lisp`
 and a console command in `script/dsl.lisp`.
 
+A tool that only measures (`src/app/measure-tools.lisp`) never commits a change: it keeps its points, draws them
+and a text label through `tool-preview-entities` (a text entity sized in pixels, so the label does not change
+with the zoom), and says the result in the status bar. It is listed in `*measure-tool-kinds*` and appears in the
+Measure menu.
+
 ### Adding a measured operation
 
 Wrap it in `obs:with-operation` (event name such as `geometry.thing`, fields such as

@@ -21,7 +21,7 @@ One ASDF file (`borba-cad.asd`), seven systems. One package per module directory
 | `borba-cad` (core) | `sbcl-support` | Everything SBCL-specific: monotonic clock, wall clock, heap/RSS, GC-event queue, environment, `fsync`/`rename`, the timeout and the uninterruptible section, the output stream that keeps only its first characters. | SBCL contribs `sb-posix` |
 | | `i18n` | The interface languages: `tr`, `trf`, `mark`, the catalogs (data files read at load time). | none |
 | | `base` | Units, tolerances, conditions, configuration. | `sbcl-support`, `i18n` |
-| | `geometry` | Bounds, distances, clipping, dimension layout, text extents. Doubles only; no screen types. | `base` |
+| | `geometry` | Bounds, distances, clipping, dimension layout, text extents, contour area and angles. Doubles only; no screen types. | `base` |
 | | `domain` | Entities, layers, drawing, change sets, history, picking, snapping, transformations (rotate, mirror, scale), inspector property model. | `geometry`, `base` |
 | | `viewport` | World↔screen transform, zoom/pan, extents, adaptive grid. | `geometry`, `base` |
 | | `persistence` | `.bcad` reader/writer/validator, atomic save, path cleaning, the recent-files list, the settings. | `domain`, `base` |

@@ -980,7 +980,7 @@ Y: world y of the line."
   "Create the tool named by KIND.
 
 KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
-:mirror or :scale."
+:mirror, :scale, :measure-distance, :measure-angle or :measure-area."
   (ecase kind
     (:select (make-instance 'select-tool))
     (:line (make-instance 'line-tool))
@@ -994,9 +994,12 @@ KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :
     (:polygon (make-instance 'polygon-tool))
     (:rotate (make-instance 'rotate-tool))
     (:mirror (make-instance 'mirror-tool))
-    (:scale (make-instance 'scale-tool))))
+    (:scale (make-instance 'scale-tool))
+    (:measure-distance (make-instance 'measure-distance-tool))
+    (:measure-angle (make-instance 'measure-angle-tool))
+    (:measure-area (make-instance 'measure-area-tool))))
 
 (defparameter *tool-shortcuts*
   '((:l . :line) (:r . :rectangle) (:c . :circle) (:p . :polyline) (:t . :text) (:d . :dimension)
-    (:a . :arc) (:e . :ellipse) (:n . :polygon))
+    (:a . :arc) (:e . :ellipse) (:n . :polygon) (:m . :measure-distance))
   "Letter keys that activate tools.")

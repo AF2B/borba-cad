@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Measuring.** A ruler button in the palette opens Distance (`M`), Angle (`Shift+A`) and Area (`Shift+Q`).
+  Distance gives the length, the parts along each axis and the direction; angle gives the smaller angle at a
+  vertex and the one that completes the turn; area closes a contour of clicked corners (Enter, or the first
+  corner) and gives the area and the perimeter. The measured shape and its value are drawn on the canvas, in
+  the display unit, until the next measurement or the end of the tool, and nothing is added to the drawing or
+  to the history.
 - **Rotate, mirror and scale.** A **Modify** button in the palette (and `Shift+R`, `Shift+M`, `Shift+S`) turns,
   reflects or resizes the selection with a live preview. Rotate takes a center and a direction or a typed
   angle, mirror takes two points and asks whether to keep the originals, scale takes a base point and a

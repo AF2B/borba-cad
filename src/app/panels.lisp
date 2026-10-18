@@ -469,7 +469,7 @@ select tool is.
 
 APP: the application."
   (let ((kind (tool-kind (app-tool app))))
-    (if (or (eq kind :select) (modify-tool-kind-p kind))
+    (if (or (eq kind :select) (modify-tool-kind-p kind) (measure-tool-kind-p kind))
         :pencil
         kind)))
 
@@ -489,7 +489,9 @@ BLOCKED: true while a modal covers the palette."
          (separator-y (+ select-y +palette-button-size+ +palette-button-gap+ +palette-separator-drop+))
          (draw-y (+ select-y +palette-button-size+ +palette-button-gap+ +palette-group-gap+))
          (modify-y (+ draw-y +palette-button-size+ +palette-button-gap+))
-         (modifying (modify-tool-kind-p (tool-kind (app-tool app)))))
+         (modifying (modify-tool-kind-p (tool-kind (app-tool app))))
+         (measure-y (+ modify-y +palette-button-size+ +palette-button-gap+))
+         (measuring (measure-tool-kind-p (tool-kind (app-tool app)))))
     (list (ui:make-widget :panel
                           :palette
                           (ui:rect-x rect)
@@ -521,7 +523,7 @@ BLOCKED: true while a modal covers the palette."
                                       (toggle-menu app
                                                    :draw
                                                    :draw))
-                            :active (not (or selecting modifying))
+                            :active (not (or selecting modifying measuring))
                             :blocked blocked
                             :hint (i18n:tr "Drawing tools")
                             :variant :tool
@@ -551,6 +553,29 @@ BLOCKED: true while a modal covers the palette."
                           :modify-caret
                           (- (+ button-x +palette-button-size+) +caret-size+ +caret-margin+)
                           (+ modify-y (/ (- +palette-button-size+ +caret-size+) 2))
+                          +caret-size+
+                          +caret-size+
+                          :icon :caret
+                          :color (scene:theme-text-faint theme))
+          (make-icon-button :measure
+                            (if measuring
+                                (cdr (assoc (tool-kind (app-tool app)) *measure-button-icons*))
+                                :ruler)
+                            button-x
+                            measure-y
+                            :action (lambda ()
+                                      (toggle-menu app
+                                                   :measure
+                                                   :measure))
+                            :active measuring
+                            :blocked blocked
+                            :hint (i18n:tr "Measure: distance, angle, area")
+                            :variant :tool
+                            :size +palette-button-size+)
+          (ui:make-widget :icon
+                          :measure-caret
+                          (- (+ button-x +palette-button-size+) +caret-size+ +caret-margin+)
+                          (+ measure-y (/ (- +palette-button-size+ +caret-size+) 2))
                           +caret-size+
                           +caret-size+
                           :icon :caret

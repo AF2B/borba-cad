@@ -388,13 +388,15 @@ MODIFIERS: modifier keys held."
                               key
                               &optional modifiers)
   "Handle a key on the canvas without Control; returns true when it was a shortcut. With Shift, R, M and S
-choose the tools that rotate, mirror and scale the selection.
+choose the tools that rotate, mirror and scale the selection, and A and Q those that measure an angle and an area.
 
 APP: the application.
 KEY: key keyword.
 MODIFIERS: modifier keys held."
   (let ((tool (cdr (assoc key *tool-shortcuts*)))
-        (modify-tool (and (modifier-p modifiers :shift) (cdr (assoc key *modify-shortcuts*)))))
+        (modify-tool (and (modifier-p modifiers :shift)
+                          (or (cdr (assoc key *modify-shortcuts*))
+                              (cdr (assoc key *measure-shortcuts*))))))
     (cond (modify-tool (operation-set-tool app modify-tool) t)
           (tool (operation-set-tool app tool) t)
           (t (case key

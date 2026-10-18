@@ -111,6 +111,20 @@ APP: the application."
                                     (lambda () (choose-menu-tool app kind))
                                     (eq kind active))))))
 
+(defun measure-menu-items (app)
+  "Return the choices of the measure menu: the tools that measure.
+
+APP: the application."
+  (let ((active (tool-kind (app-tool app))))
+    (loop for (kind icon label shortcut) in *measure-menu-tools*
+          collect (let ((kind kind))
+                    (make-menu-item kind
+                                    (i18n:tr label)
+                                    icon
+                                    shortcut
+                                    (lambda () (choose-menu-tool app kind))
+                                    (eq kind active))))))
+
 (defun language-menu-items (app)
   "Return the choices of the language menu: one per language, each named in its own language.
 
@@ -152,10 +166,11 @@ APP: the application."
   "Return the choices of the menu KIND, with NIL between groups.
 
 APP: the application.
-KIND: :draw, :modify, :language or :more."
+KIND: :draw, :modify, :measure, :language or :more."
   (ecase kind
     (:draw (draw-menu-items app))
     (:modify (modify-menu-items app))
+    (:measure (measure-menu-items app))
     (:language (language-menu-items app))
     (:more (more-menu-items app))))
 

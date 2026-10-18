@@ -76,6 +76,8 @@ No screen, pixel or rendering concepts appear here.")
    #:rectangle-area
    #:rectangle-perimeter
    #:polyline-length
+   #:contour-area
+   #:angle-between-rays
    #:polyline-vertex-count
    #:polyline-bounds
    #:circle-bounds
