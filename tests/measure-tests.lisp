@@ -63,7 +63,7 @@
   (let ((text (find :text (preview-of application) :key #'dom:entity-kind)))
     (and text (dom:text-string text))))
 
-(defun entity-count-of (application)
+(defun measured-drawing-count (application)
   "Return how many entities the drawing of APPLICATION holds."
   (dom:drawing-entity-count (app:app-drawing application)))
 
@@ -108,7 +108,7 @@
     (is (search "36.87" (message-text application)) "the direction, in degrees")
     (is (search "1500" (preview-label application)) "the result stays on the canvas")
     (is (not (app:tool-in-progress-p (app:app-tool application))) "Esc would leave, not cancel")
-    (is (= 1 (entity-count-of application)) "nothing was drawn into the drawing")))
+    (is (= 1 (measured-drawing-count application)) "nothing was drawn into the drawing")))
 
 (test the-next-click-after-a-distance-starts-another
   (let ((application (measuring-app)))
@@ -177,7 +177,7 @@
     (is (search "90.00" (message-text application)))
     (is (search "270.00" (message-text application)) "and the other side")
     (is (search "90.00" (preview-label application)) "the result stays")
-    (is (= 1 (entity-count-of application)))))
+    (is (= 1 (measured-drawing-count application)))))
 
 (test an-angle-is-the-smaller-whichever-way-the-arms-turn
   (loop for (first-x first-y second-x second-y expected) in '((1000 0 0 1000 "Angle: 90.00")
@@ -223,7 +223,7 @@
     (is (search "1000000" (message-text application)))
     (is (search "4000" (message-text application)) "the perimeter")
     (is (search "1000000" (preview-label application)) "the result stays")
-    (is (= 1 (entity-count-of application)))))
+    (is (= 1 (measured-drawing-count application)))))
 
 (test a-click-on-the-first-corner-closes-the-contour
   (let ((application (measuring-app)))
@@ -298,7 +298,7 @@
         (press application :escape))
       (is (equal before (mapcar #'the-entity-signature (entities-of application))))
       (app:operation-undo application)
-      (is (= 0 (entity-count-of application)) "one undo takes back the line: measuring left nothing to undo"))))
+      (is (= 0 (measured-drawing-count application)) "one undo takes back the line: measuring left nothing to undo"))))
 
 ;;; Languages
 
