@@ -195,6 +195,11 @@ are scripts to read and run.
 
 Exports end with a message in the middle of the window that says the file was saved or why it was not.
 
+**Autosave.** While a drawing has changes that are not saved, a copy is written to the state directory every
+minute (only when something changed) and taken away once the drawing is saved or closed. If the program
+closes any other way, a crash or a power cut, the next start asks whether to recover it: **Recover** opens it
+as work not yet saved, **Discard** throws it away, **Not now** keeps it for next time.
+
 **The file dialog** lists folders first, then drawings with their size and date, with places (home,
 documents, desktop, downloads, the sample drawings) and your recent drawings on the left. Click a step of the
 path to go there, `Ctrl+L` to type a path, `Alt+Up` to go up; typing finds files as you type. The recent list

@@ -443,4 +443,10 @@
    "Файл ~a сохранён (~a). На нём то, что видно в области чертежа, ~d x ~d пикселей.")
   ("cannot be made: this window cannot make pictures" "нельзя создать: это окно не умеет делать изображения")
   ("cannot be made: there is nothing on the canvas to take a picture of"
-   "нельзя создать: в области чертежа нечего снимать")))
+   "нельзя создать: в области чертежа нечего снимать")
+  ("The work that was not saved is back." "Несохранённая работа восстановлена.")
+  ("Recover unsaved work?" "Восстановить несохранённую работу?")
+  ("The program closed before ~a was saved. Recover what was kept at ~a?" "Программа закрылась до сохранения: ~a. Восстановить то, что было сохранено в ~a?")
+  ("a new drawing" "новый чертёж")
+  ("Recover" "Восстановить")
+  ("Not now" "Не сейчас")))

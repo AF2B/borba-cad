@@ -437,4 +437,10 @@
    "~a foi salvo (~a). Mostra o que está na área de desenho, ~d x ~d pixels.")
   ("cannot be made: this window cannot make pictures" "não pôde ser feito: esta janela não consegue fazer imagens")
   ("cannot be made: there is nothing on the canvas to take a picture of"
-   "não pôde ser feito: não há nada na área de desenho para fotografar")))
+   "não pôde ser feito: não há nada na área de desenho para fotografar")
+  ("The work that was not saved is back." "O trabalho que não foi salvo voltou.")
+  ("Recover unsaved work?" "Recuperar o trabalho não salvo?")
+  ("The program closed before ~a was saved. Recover what was kept at ~a?" "O programa fechou antes de ~a ser salvo. Recuperar o que foi guardado em ~a?")
+  ("a new drawing" "um desenho novo")
+  ("Recover" "Recuperar")
+  ("Not now" "Agora não")))

@@ -137,6 +137,12 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:app-welcome
    #:welcome-recents
    #:welcome-highlight
+   #:autosave-tick
+   #:autosave-exists-p
+   #:discard-autosave
+   #:offer-autosave-recovery
+   #:recover-autosave
+   #:+autosave-interval-nanoseconds+
    #:app-image-capturer
    #:operation-export-image
    #:export-image-from-app

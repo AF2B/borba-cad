@@ -596,6 +596,7 @@ DRAW: function of the session that draws and presents a frame (DRAW-FRAME in the
   (setf (session-cpu-start session) (sbcl:monotonic-nanoseconds))
   (run-due-demo-step session)
   (app:expire-message (session-app session))
+  (app:autosave-tick (session-app session))
   (sync-text-input session)
   (sync-window-title session)
   (when (frame-due-p session)
@@ -632,7 +633,10 @@ CONFIG: the configuration, which may name a file to open at startup."
            (app:load-drawing-into-app app (base:config-initial-file config)))
           ((not (session-demo session))
            (app:open-welcome app)))
+    (unless (session-demo session)
+      (app:offer-autosave-recovery app))
     (run-event-loop session)
+    (app:discard-autosave app)
     (when (session-demo session)
       (app:save-app-drawing app (app:demo-save-path app)))))
 

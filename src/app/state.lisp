@@ -144,6 +144,9 @@ WELCOME: the start screen, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
 GRIP-DRAG: the grip being dragged, or NIL.
 CONSOLE: the console.
+AUTOSAVE-TIME: monotonic time of the last look of the autosave, or NIL before the first.
+AUTOSAVE-REVISION: the revision of the drawing in the copy written last, or -1.
+AUTOSAVE-WRITTEN: true when this session has written a copy that is still in the state directory.
 IMAGE-CAPTURER: function of no arguments that returns what the canvas shows as a picture, as three values: the
 pixels (bytes, row by row from the top, red, green and blue of each), the width and the height; or NIL when this
 window cannot make one.
@@ -189,6 +192,9 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   (polygon-sides 6 :type (integer 3))
   grip-drag
   (console (make-console))
+  autosave-time
+  (autosave-revision -1 :type fixnum)
+  autosave-written
   image-capturer
   clipboard-reader
   clipboard-writer

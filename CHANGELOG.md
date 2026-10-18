@@ -2,6 +2,15 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/). The project follows semantic versioning.
 
+## [Unreleased]
+
+### Added
+
+- **Autosave and recovery.** A drawing with unsaved changes is copied to the state directory every minute
+  (only when it changed since the last copy), and the copy is removed when the drawing is saved or closed in
+  the usual ways. After a crash the next start asks whether to recover the work: Recover, Discard or Not now.
+  A copy that cannot be written is logged and never interrupts the user.
+
 ## [1.2.0] - 2026-10-15
 
 ### Fixed
