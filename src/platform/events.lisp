@@ -13,6 +13,40 @@
 (defconstant +keymod-alt+ #x0300
   "SDL modifier mask bits for the left and right alt keys.")
 
+(defconstant +reference-window-width+ 1100d0
+  "Width, in logical pixels, that the layout is designed to: a window narrower than this has the interface drawn
+smaller, so that the layout still has this much room.")
+
+(defconstant +reference-window-height+ 640d0
+  "Height, in logical pixels, that the layout is designed to.")
+
+(defconstant +minimum-interface-scale+ 0.6d0
+  "Smallest the interface is ever drawn, as a fraction of its size: below it the text would be too small to read.")
+
+(defvar *interface-zoom* 1d0
+  "The zoom of the interface the user asked for, as the application keeps it.")
+
+(defvar *interface-scale* 1d0
+  "How much the interface is drawn larger (above 1) or smaller (below 1) than the layout is designed to, as
+INTERFACE-SCALE-FOR worked it out for the window as it is now. Positions of the pointer are divided by it, and the
+size of the window is divided by it to give the size the application lays out.")
+
+(defun interface-scale-for (width
+                            height
+                            zoom)
+  "Return how large to draw the interface in a window: normally as designed, smaller when the window is smaller than
+the layout is designed to (so that nothing is cut off or overlaps), and larger by ZOOM when the window has room for it.
+Never below +MINIMUM-INTERFACE-SCALE+.
+
+WIDTH: window width in logical pixels.
+HEIGHT: window height in logical pixels.
+ZOOM: the zoom the user asked for; 1 is as designed."
+  (let* ((fit (min (/ (float width 1d0) +reference-window-width+)
+                   (/ (float height 1d0) +reference-window-height+)))
+         (asked (* zoom (min fit 1d0))))
+    (max +minimum-interface-scale+
+         (min fit asked))))
+
 (defconstant +windowevent-exposed+ 3
   "SDL window event id: part of the window needs redrawing.")
 
@@ -40,6 +74,14 @@ receiver of the event must free that pointer.")
 (defconstant +sdl-key-tab+ 9 "SDL keycode of the tab key.")
 (defconstant +sdl-key-space+ 32 "SDL keycode of the space bar.")
 (defconstant +sdl-scancode-mask+ #x40000000 "Bit set in the SDL keycode of non-character keys.")
+
+(defconstant +sdl-key-minus+ 45 "SDL keycode of the minus key.")
+(defconstant +sdl-key-plus+ 43 "SDL keycode of the plus character.")
+(defconstant +sdl-key-equals+ 61 "SDL keycode of the equals key, which shares a key with the plus on many layouts.")
+(defconstant +sdl-key-zero+ 48 "SDL keycode of the zero key.")
+(defconstant +sdl-scancode-keypad-minus+ 86 "SDL scancode of the minus of the numeric keypad.")
+(defconstant +sdl-scancode-keypad-plus+ 87 "SDL scancode of the plus of the numeric keypad.")
+(defconstant +sdl-scancode-keypad-zero+ 98 "SDL scancode of the zero of the numeric keypad.")
 
 (defconstant +sdl-scancode-home+ 74 "SDL scancode of the home key.")
 (defconstant +sdl-scancode-page-up+ 75 "SDL scancode of the page up key.")
@@ -80,6 +122,18 @@ KEYCODE: an SDL keycode (layout-aware, so shortcuts follow the printed letters).
                  (t nil))))
         (t nil)))
 
+(defun zoom-keycode->key (keycode)
+  "Return :minus, :plus or :zero for the SDL keycode of a key that zooms the interface when Control is held, or NIL.
+
+KEYCODE: an SDL keycode."
+  (flet ((keypad (scancode)
+           (and (logtest keycode +sdl-scancode-mask+)
+                (= scancode (logxor keycode +sdl-scancode-mask+)))))
+    (cond ((or (= keycode +sdl-key-minus+) (keypad +sdl-scancode-keypad-minus+)) :minus)
+          ((or (= keycode +sdl-key-plus+) (= keycode +sdl-key-equals+) (keypad +sdl-scancode-keypad-plus+)) :plus)
+          ((or (= keycode +sdl-key-zero+) (keypad +sdl-scancode-keypad-zero+)) :zero)
+          (t nil))))
+
 (defun modifier-keywords (mask)
   "Return the modifier keywords held according to an SDL modifier mask.
 
@@ -99,10 +153,11 @@ BUTTON: SDL button number (1 left, 2 middle, 3 right)."
   (case button (1 :left) (2 :middle) (3 :right) (t nil)))
 
 (defun current-pointer-position ()
-  "Return the pointer position in window coordinates as two double-float values."
+  "Return the pointer position in the coordinates the application lays out, as two double-float values."
   (cffi:with-foreign-objects ((x :int) (y :int))
     (sdl2-ffi.functions:sdl-get-mouse-state x y)
-    (values (float (cffi:mem-ref x :int) 1d0) (float (cffi:mem-ref y :int) 1d0))))
+    (values (/ (float (cffi:mem-ref x :int) 1d0) *interface-scale*)
+            (/ (float (cffi:mem-ref y :int) 1d0) *interface-scale*))))
 
 (defun drawable-size (window)
   "Return the OpenGL drawable size of WINDOW in physical pixels as two values.
@@ -112,14 +167,27 @@ WINDOW: an SDL window."
     (sdl2-ffi.functions:sdl-gl-get-drawable-size window w h)
     (values (cffi:mem-ref w :int) (cffi:mem-ref h :int))))
 
-(defun resize-event-for (window)
-  "Build a resize event from the current size and display scale of WINDOW.
+(defun logical-window-size (window)
+  "Return the size of WINDOW in the coordinates the application lays out, as two double-float values: the size of the
+window divided by the scale of the interface, which is worked out again here.
 
 WINDOW: an SDL window."
   (multiple-value-bind (width height) (sdl2:get-window-size window)
+    (setf *interface-scale* (interface-scale-for width
+                                                 height
+                                                 *interface-zoom*))
+    (values (/ (float width 1d0) *interface-scale*)
+            (/ (float height 1d0) *interface-scale*))))
+
+(defun resize-event-for (window)
+  "Build a resize event from the current size of WINDOW, in the coordinates the application lays out, and the number
+of physical pixels there are to each of those.
+
+WINDOW: an SDL window."
+  (multiple-value-bind (width height) (logical-window-size window)
     (multiple-value-bind (drawable-width) (drawable-size window)
-      (app:make-resize-event (float width 1d0)
-                             (float height 1d0)
+      (app:make-resize-event width
+                             height
                              (if (plusp width) (/ (float drawable-width 1d0) width) 1d0)))))
 
 (defun translate-sdl-event (event
@@ -132,16 +200,20 @@ WINDOW: the window, used to read the size on resize events."
     (:mousemotion
      (list (app:make-pointer-event :move
                                    nil
-                                   (float (plus-c:c-ref event sdl2-ffi:sdl-event :motion :x) 1d0)
-                                   (float (plus-c:c-ref event sdl2-ffi:sdl-event :motion :y) 1d0)
+                                   (/ (float (plus-c:c-ref event sdl2-ffi:sdl-event :motion :x) 1d0)
+                                      *interface-scale*)
+                                   (/ (float (plus-c:c-ref event sdl2-ffi:sdl-event :motion :y) 1d0)
+                                      *interface-scale*)
                                    (current-modifiers))))
     ((:mousebuttondown :mousebuttonup)
      (let ((button (mouse-button-keyword (plus-c:c-ref event sdl2-ffi:sdl-event :button :button))))
        (and button
             (list (app:make-pointer-event (if (eq (sdl2:get-event-type event) :mousebuttondown) :down :up)
                                           button
-                                          (float (plus-c:c-ref event sdl2-ffi:sdl-event :button :x) 1d0)
-                                          (float (plus-c:c-ref event sdl2-ffi:sdl-event :button :y) 1d0)
+                                          (/ (float (plus-c:c-ref event sdl2-ffi:sdl-event :button :x) 1d0)
+                                             *interface-scale*)
+                                          (/ (float (plus-c:c-ref event sdl2-ffi:sdl-event :button :y) 1d0)
+                                             *interface-scale*)
                                           (current-modifiers))))))
     (:mousewheel
      (multiple-value-bind (x y) (current-pointer-position)
@@ -152,8 +224,11 @@ WINDOW: the window, used to read the size on resize events."
                                           y
                                           (current-modifiers)))))))
     ((:keydown :keyup)
-     (let ((key (keycode->key (plus-c:c-ref event sdl2-ffi:sdl-event :key :keysym :sym)))
-           (repeat (/= 0 (plus-c:c-ref event sdl2-ffi:sdl-event :key :repeat))))
+     (let* ((keycode (plus-c:c-ref event sdl2-ffi:sdl-event :key :keysym :sym))
+            (key (or (keycode->key keycode)
+                     (and (member :control (current-modifiers))
+                          (zoom-keycode->key keycode))))
+            (repeat (/= 0 (plus-c:c-ref event sdl2-ffi:sdl-event :key :repeat))))
        (and key
             (not (and repeat (not (member key '(:backspace :delete :left :right :up :down)))))
             (list (app:make-key-event key

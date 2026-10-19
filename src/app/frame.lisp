@@ -33,6 +33,7 @@ THEME: the color theme, or NIL for the one kept from the last run, and the dark 
     (let ((language (or (base:config-language config) (saved-language config))))
       (when language
         (setf i18n:*language* language)))
+    (setf (app-interface-zoom app) (or (saved-interface-zoom config) 1d0))
     (setf (app-tool app) (make-tool :select)
           (app-viewport app) (fit-viewport-to-window app (view:default-viewport 1000d0 600d0)))
     (operation-zoom-extents app)

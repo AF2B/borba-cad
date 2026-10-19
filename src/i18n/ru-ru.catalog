@@ -650,4 +650,5 @@
   ("Select what you want to explode first." "Сначала выберите, что нужно разбить.")
   ("That cannot be exploded: use a block, rectangle, polygon or polyline." "Это нельзя разбить: используйте блок, прямоугольник, многоугольник или полилинию.")
   ("Exploded ~d ~:*~[entities~;entity~:;entities~]." "Разбито объектов: ~d~:*~[~;~:;~].")
-  ("Spread ~d ~:*~[entities~;entity~:;entities~]." "Раздвинуто объектов: ~d~:*~[~;~:;~].")))
+  ("Spread ~d ~:*~[entities~;entity~:;entities~]." "Раздвинуто объектов: ~d~:*~[~;~:;~].")
+  ("Interface zoom: ~d%" "Масштаб интерфейса: ~d%")))

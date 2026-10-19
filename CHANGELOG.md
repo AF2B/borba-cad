@@ -26,6 +26,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
   choice is kept for the next run; `--theme dark|light` and `BORBA_CAD_THEME` override it. On the white canvas
   the colors of the layers are darkened where they would be too pale to see (a near-white layer is near-black),
   in the canvas and in the layer swatches; the file keeps the colors the layers were given.
+- **A window for every screen.** The window opens no bigger than 92% of the usable area of the screen (it used to
+  open at 1440 x 900 whatever the screen, and could not be smaller than 1200 x 700, so it did not fit a laptop or a
+  display scaled to 150%) and can be as small as 640 x 400: the layout is designed for 1100 x 640, and a smaller
+  window draws the whole interface smaller, down to 60%, instead of cutting it off. `Ctrl` with `+`, `-` and `0`
+  zoom the interface between 75% and 200% when the window has room, and the choice is kept for the next run.
 - **Zoom buttons.** + and - buttons in the top right corner of the canvas zoom by one notch of the wheel about
   the center of the canvas.
 - **Blocks.** Make block (`Shift+B`) turns the selection into a named block and one placement of it, Insert block
@@ -88,6 +93,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Changed
 
+- **The program starts on Windows.** It refused to start without the `WAYLAND_DISPLAY` or `DISPLAY` variable, which a
+  Windows machine never has, with a message about Wayland; Windows now needs neither.
 - **Explode works on shapes.** Explode (`Shift+X`) used to take only blocks apart and answered "Select a block to
   explode" to anything else; it now also takes a rectangle, polygon or polyline apart into lines, where they were.
 - **A version is a tag.** Every tag that reads `vMAJOR.MINOR.PATCH` is a version, and `make version` and the names

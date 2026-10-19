@@ -206,6 +206,7 @@ points work as they do when drawing.
 | `Ctrl+Shift+I`, `Ctrl+Shift+E` | Import DXF, export DXF |
 | `F2`, `F3` | Console, performance overlay |
 | `F8`, `F9`, `F10` | Ortho, record what you do as a script, polar |
+| `Ctrl` + `+`, `Ctrl` + `-`, `Ctrl` + `0` | Make the interface larger, smaller, as designed (75% to 200%, remembered) |
 
 </details>
 
@@ -332,6 +333,14 @@ English (US) is always the default. The globe in the title bar switches to **Por
 **Русский (Россия)**, and the choice is kept for the next run; `--language pt-BR` or `BORBA_CAD_LANGUAGE`
 override it. Each language is a data file in [`src/i18n/`](src/i18n), and the lint fails when a text of the
 program has no translation.
+
+## Window sizes
+
+The window opens no bigger than 92% of the usable area of the screen, and can be as small as 640 x 400. The
+layout is designed for 1100 x 640: in a window smaller than that the whole interface is drawn smaller (down to
+60%) instead of being cut off, so every button stays in reach on a laptop screen or a high-DPI display at 150%.
+`Ctrl` and `+`, `-` or `0` make the interface larger, smaller or as designed when the window has room, and the
+choice is kept for the next run.
 
 ## Themes
 

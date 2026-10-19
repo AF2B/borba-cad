@@ -715,6 +715,69 @@ APP: the application."
                            (scene:default-theme)
                            (scene:light-theme))))
 
+;;; Interface zoom
+
+(defparameter *interface-zoom-setting-name* "interface-zoom"
+  "Name under which the zoom of the interface is kept between runs, in percent.")
+
+(defun saved-interface-zoom (config)
+  "Return the zoom of the interface kept from the last run, as a number where 1 is the interface as designed, or NIL
+when there is none or it is not one of the zooms that the keys give.
+
+CONFIG: the application configuration."
+  (let* ((text (persist:load-setting (base:config-state-directory config) *interface-zoom-setting-name*))
+         (percent (and text (parse-integer text :junk-allowed t))))
+    (and percent
+         (member percent *interface-zoom-percentages*)
+         (/ percent 100d0))))
+
+(defun operation-set-interface-zoom (app
+                                     percent)
+  "Draw the interface PERCENT per cent as large as designed, and keep the choice for the next run. The window lays
+itself out again when the loop next looks.
+
+APP: the application.
+PERCENT: one of *INTERFACE-ZOOM-PERCENTAGES*."
+  (setf (app-interface-zoom app) (/ percent 100d0))
+  (persist:save-setting (base:config-state-directory (app-config app))
+                        *interface-zoom-setting-name*
+                        (format nil "~d" percent))
+  (set-message app (i18n:trf "Interface zoom: ~d%" percent))
+  (app-request-redraw app))
+
+(defun operation-interface-zoom-step (app
+                                      direction)
+  "Make the interface one step larger or smaller.
+
+APP: the application.
+DIRECTION: 1 for larger, -1 for smaller."
+  (let* ((current (round (* 100 (app-interface-zoom app))))
+         (candidates (if (plusp direction)
+                         (remove-if-not (lambda (percent) (> percent current)) *interface-zoom-percentages*)
+                         (reverse (remove-if-not (lambda (percent) (< percent current))
+                                                 *interface-zoom-percentages*)))))
+    (if candidates
+        (operation-set-interface-zoom app (first candidates))
+        (set-message app (i18n:trf "Interface zoom: ~d%" current)))))
+
+(defun operation-interface-zoom-in (app)
+  "Make the interface one step larger.
+
+APP: the application."
+  (operation-interface-zoom-step app 1))
+
+(defun operation-interface-zoom-out (app)
+  "Make the interface one step smaller.
+
+APP: the application."
+  (operation-interface-zoom-step app -1))
+
+(defun operation-interface-zoom-reset (app)
+  "Draw the interface as designed.
+
+APP: the application."
+  (operation-set-interface-zoom app 100))
+
 ;;; Language
 
 (defparameter *language-setting-name* "language"

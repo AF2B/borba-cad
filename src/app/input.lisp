@@ -382,6 +382,9 @@ MODIFIERS: modifier keys held."
       (:e (when shift (operation-export-dxf app)) t)
       (:n (operation-new app) t)
       (:q (operation-quit app) t)
+      (:plus (operation-interface-zoom-in app) t)
+      (:minus (operation-interface-zoom-out app) t)
+      (:zero (operation-interface-zoom-reset app) t)
       (t nil))))
 
 (defun handle-plain-shortcut (app

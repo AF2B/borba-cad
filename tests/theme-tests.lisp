@@ -183,3 +183,45 @@ APPLICATION: the application."
     (is (eq :select (app:tool-kind (app:app-tool application))))
     (is (zerop (length (entities-of application))))
     (is (null (app:app-window application)))))
+
+;;; The zoom of the interface
+
+(test the-interface-zoom-steps-through-the-zooms-and-stops-at-the-ends
+  (let ((application (make-test-app)))
+    (is (= 1d0 (app:app-interface-zoom application)))
+    (app:operation-interface-zoom-in application)
+    (is (= 1.1d0 (app:app-interface-zoom application)))
+    (app:operation-interface-zoom-in application)
+    (is (= 1.25d0 (app:app-interface-zoom application)))
+    (is (search "125%" (message-text application)))
+    (dotimes (n 10)
+      (app:operation-interface-zoom-in application))
+    (is (= 2d0 (app:app-interface-zoom application)) "it stops at the largest")
+    (app:operation-interface-zoom-reset application)
+    (is (= 1d0 (app:app-interface-zoom application)))
+    (dotimes (n 10)
+      (app:operation-interface-zoom-out application))
+    (is (= 0.75d0 (app:app-interface-zoom application)) "and at the smallest")))
+
+(test the-zoom-of-the-interface-is-remembered-for-the-next-run
+  (with-temporary-directory (directory)
+    (let ((application (theme-app directory)))
+      (app:operation-interface-zoom-in application)
+      (is (equal "110" (persist:load-setting directory "interface-zoom")))
+      (is (= 1.1d0 (app:app-interface-zoom (theme-app directory)))))
+    (persist:save-setting directory "interface-zoom" "137")
+    (is (= 1d0 (app:app-interface-zoom (theme-app directory))) "a zoom the keys do not give is ignored")
+    (persist:save-setting directory "interface-zoom" "big")
+    (is (= 1d0 (app:app-interface-zoom (theme-app directory))))))
+
+(test control-and-plus-minus-or-zero-zoom-the-interface
+  (let ((application (make-test-app)))
+    (press application :plus :control)
+    (is (= 1.1d0 (app:app-interface-zoom application)))
+    (press application :minus :control)
+    (is (= 1d0 (app:app-interface-zoom application)))
+    (press application :plus :control)
+    (press application :zero :control)
+    (is (= 1d0 (app:app-interface-zoom application)))
+    (press application :plus)
+    (is (= 1d0 (app:app-interface-zoom application)) "without Control the key is not a shortcut")))

@@ -183,6 +183,11 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-toggle-recording
    #:operation-toggle-theme
    #:operation-zoom-in
+   #:app-interface-zoom
+   #:operation-interface-zoom-in
+   #:operation-interface-zoom-out
+   #:operation-interface-zoom-reset
+   #:*interface-zoom-percentages*
    #:operation-zoom-out
    #:operation-zoom-by
    #:operation-set-theme

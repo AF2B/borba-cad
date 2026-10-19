@@ -644,4 +644,5 @@
   ("Select what you want to explode first." "Selecione primeiro o que você quer explodir.")
   ("That cannot be exploded: use a block, rectangle, polygon or polyline." "Isso não pode ser explodido: use um bloco, retângulo, polígono ou polilinha.")
   ("Exploded ~d ~:*~[entities~;entity~:;entities~]." "~d ~:*~[entidades explodidas~;entidade explodida~:;entidades explodidas~].")
-  ("Spread ~d ~:*~[entities~;entity~:;entities~]." "~d ~:*~[entidades afastadas~;entidade afastada~:;entidades afastadas~].")))
+  ("Spread ~d ~:*~[entities~;entity~:;entities~]." "~d ~:*~[entidades afastadas~;entidade afastada~:;entidades afastadas~].")
+  ("Interface zoom: ~d%" "Zoom da interface: ~d%")))

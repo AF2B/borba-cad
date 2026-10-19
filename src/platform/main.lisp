@@ -8,11 +8,16 @@
 (defconstant +gl-minor-version+ 3
   "Minor part of the requested OpenGL version.")
 
-(defconstant +minimum-window-width+ 1200
-  "Smallest window width, so the toolbar always fits.")
+(defconstant +minimum-window-width+ 640
+  "Smallest window width: the interface is drawn smaller in a window that is narrower than its layout (see
+INTERFACE-SCALE-FOR), and this is as small as it can be drawn.")
 
-(defconstant +minimum-window-height+ 700
+(defconstant +minimum-window-height+ 400
   "Smallest window height.")
+
+(defconstant +window-screen-fraction+ 0.92d0
+  "Largest share of the usable area of the screen that a window opens with, so that it never opens bigger than the
+screen, with its edges and its title bar out of reach.")
 
 (defconstant +idle-wait-milliseconds+ 100
   "How long the loop sleeps waiting for an event when nothing needs redrawing.")
@@ -122,6 +127,34 @@ START: reading at the beginning of the phase, in nanoseconds.
 END: reading at its end, in nanoseconds."
   (obs:nanoseconds->milliseconds (- end start)))
 
+(defun usable-display-size ()
+  "Return the width and the height, in logical pixels, of the usable area of the first display (what the task bar and
+the docks leave), as two values, or NIL when the system does not say."
+  (cffi:with-foreign-object (rectangle :int 4)
+    (when (zerop (sdl2-ffi.functions:sdl-get-display-usable-bounds 0 rectangle))
+      (values (cffi:mem-aref rectangle :int 2)
+              (cffi:mem-aref rectangle :int 3)))))
+
+(defun fit-window-size (width
+                        height
+                        usable-width
+                        usable-height)
+  "Return the width and the height that a window asked for with WIDTH x HEIGHT opens with: as asked, but no larger than
++WINDOW-SCREEN-FRACTION+ of the usable area of the screen, and no smaller than the smallest window. Without the size
+of the screen they are as asked.
+
+WIDTH: the width asked for.
+HEIGHT: the height asked for.
+USABLE-WIDTH: the width of the usable area of the screen, or NIL.
+USABLE-HEIGHT: its height, or NIL."
+  (flet ((fitted (asked usable minimum)
+           (max minimum
+                (if usable
+                    (min asked (floor (* usable +window-screen-fraction+)))
+                    asked))))
+    (values (fitted width usable-width +minimum-window-width+)
+            (fitted height usable-height +minimum-window-height+))))
+
 (defun call-with-gl-window (config
                             width
                             height
@@ -158,8 +191,13 @@ SWAP-INTERVAL: 1 to wait for the display refresh at each buffer swap, 0 to swap 
             (labels ((open-window (multisample)
                        (sdl2:gl-set-attr :multisamplebuffers (if multisample 1 0))
                        (sdl2:gl-set-attr :multisamplesamples (if multisample +multisample-count+ 0))
-                       (sdl2:create-window :title title :w width :h height
-                                           :flags '(:shown :opengl :resizable :allow-highdpi))))
+                       (multiple-value-bind (window-width window-height)
+                           (multiple-value-call #'fit-window-size
+                             width
+                             height
+                             (usable-display-size))
+                         (sdl2:create-window :title title :w window-width :h window-height
+                                             :flags '(:shown :opengl :resizable :allow-highdpi)))))
               (let ((window (handler-case (open-window t)
                               (error () (open-window nil)))))
                 (unwind-protect
@@ -207,14 +245,14 @@ SWAP-INTERVAL: 1 to wait for the display refresh at each buffer swap, 0 to swap 
                       renderer
                       list
                       background)
-  "Render the draw list into the window's back buffer; returns the logical size and the display
-scale as three values.
+  "Render the draw list into the window's back buffer; returns the logical size, as the application lays it out, and
+the display scale as three values, then the size of the framebuffer.
 
 WINDOW: the SDL window.
 RENDERER: the renderer.
 LIST: the draw list.
 BACKGROUND: an RGBA clear color."
-  (multiple-value-bind (logical-width logical-height) (sdl2:get-window-size window)
+  (multiple-value-bind (logical-width logical-height) (logical-window-size window)
     (multiple-value-bind (framebuffer-width framebuffer-height) (drawable-size window)
       (let ((scale (if (plusp logical-width) (/ (float framebuffer-width 1d0) logical-width) 1d0)))
         (render-draw-list renderer
@@ -609,6 +647,17 @@ DRAW: function of the session that draws and presents a frame (DRAW-FRAME in the
     (draw-guarded session draw))
   (obs:telemetry-tick (session-telemetry session)))
 
+(defun sync-interface-zoom (session)
+  "Lay the interface out again when the user has changed its zoom since the last pass.
+
+SESSION: the session."
+  (let* ((app (session-app session))
+         (zoom (app:app-interface-zoom app)))
+    (unless (= zoom *interface-zoom*)
+      (setf *interface-zoom* zoom)
+      (app:app-handle-event app (resize-event-for (session-window session)))
+      (app:app-request-redraw app))))
+
 (defun run-event-loop (session)
   "Run the window loop until the application asks to quit: handle the events, then step the
 session.
@@ -617,7 +666,8 @@ SESSION: the session."
   (let ((app (session-app session)))
     (sdl2:with-sdl-event (event)
       (loop until (app:app-quit-requested app)
-            do (dispatch-sdl-events app
+            do (sync-interface-zoom session)
+               (dispatch-sdl-events app
                                     (session-window session)
                                     event
                                     (wait-milliseconds session))
@@ -633,7 +683,8 @@ CONFIG: the configuration, which may name a file to open at startup."
   (let* ((app (session-app session))
          (list (app:app-draw-list app)))
     (setf (scene:draw-list-white-u list) (atlas-white-uv)
-          (scene:draw-list-white-v list) (atlas-white-uv))
+          (scene:draw-list-white-v list) (atlas-white-uv)
+          *interface-zoom* (app:app-interface-zoom app))
     (app:app-handle-event app (resize-event-for (session-window session)))
     (cond ((base:config-initial-file config)
            (app:load-drawing-into-app app (base:config-initial-file config)))

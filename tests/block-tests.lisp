@@ -484,7 +484,7 @@
 
 (test the-help-lists-the-block-commands-and-a-script-of-a-drawing-makes-its-blocks-again
   (let ((overview (script:script-result-output (run-script (script-env) "(help)"))))
-    (is (search "with-block make-block insert explode blocks" overview)))
+    (is (search "with-block make-block insert explode spread blocks" overview)))
   (let* ((drawing (block-file-drawing))
          (again (dom:make-drawing))
          (result (run-script (script-env again) (script:drawing-script drawing))))
