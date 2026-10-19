@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-19
+
 ### Added
 
 - **Recording what you do as a script.** `F9`, a **Rec** chip in the status bar and More > Record actions start a
