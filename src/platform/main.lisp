@@ -45,6 +45,9 @@ screen, with its edges and its title bar out of reach.")
   --file PATH            open a drawing at startup (a bare path does the same)
   --log-dir DIR          directory of the rotating log (default: var/log in the project)
   --state-dir DIR        directory of what is remembered between runs (default: var/state)
+  --config-dir DIR       folder of your own configuration: init.lisp and recorded commands
+                         (default: ~/.config/borba-cad, %APPDATA%\\BorbaCAD on Windows)
+  --no-init              do not run init.lisp
   --drawings-dir DIR     folder where the file dialogs start (default: your documents folder)
   --log-level LEVEL      error, warn, info, debug or trace (default: info)
   --log-stderr           also print log lines on standard error
@@ -57,8 +60,8 @@ screen, with its edges and its title bar out of reach.")
   --exit-after-demo      close the window when the demonstration ends
   --screenshot FILE      save the last frame of the demonstration as a PNG, then exit
   --help                 show this help
-Environment: BORBA_CAD_ROOT, BORBA_CAD_LOG_DIR, BORBA_CAD_STATE_DIR,
-BORBA_CAD_DRAWINGS_DIR, BORBA_CAD_LOG_LEVEL, BORBA_CAD_LOG_MAX_BYTES,
+Environment: BORBA_CAD_ROOT, BORBA_CAD_LOG_DIR, BORBA_CAD_STATE_DIR, BORBA_CAD_CONFIG_DIR,
+BORBA_CAD_NO_INIT, BORBA_CAD_DRAWINGS_DIR, BORBA_CAD_LOG_LEVEL, BORBA_CAD_LOG_MAX_BYTES,
 BORBA_CAD_LOG_MAX_FILES, BORBA_CAD_LOG_STDERR, BORBA_CAD_LOG_SAMPLING, BORBA_CAD_FONT,
 BORBA_CAD_LANGUAGE, BORBA_CAD_THEME,
 BORBA_CAD_DEBUG (1: do not catch unexpected errors, for use with a debugger)."
@@ -741,6 +744,7 @@ SCREENSHOT: file name to save the last demonstration frame to, or NIL."
                                                              :width (float width 1d0)
                                                              :height (float height 1d0))))
                                       (install-system-clipboard app)
+                                      (app:start-customizations app)
                                       (install-image-capturer app
                                                               window
                                                               renderer)

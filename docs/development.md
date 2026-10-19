@@ -58,6 +58,8 @@ All compiled output goes to `build/fasl/`, logs to `var/log/`, benchmark reports
 | `--log-sample EVENT=N` | `BORBA_CAD_LOG_SAMPLING` | Write only one in N entries of an event |
 | | `BORBA_CAD_LOG_MAX_BYTES`, `BORBA_CAD_LOG_MAX_FILES` | Rotation: 5 MiB and 5 files by default (at most 25 MiB on disk) |
 | `--state-dir DIR` | `BORBA_CAD_STATE_DIR` | Where the program remembers things between runs: the recent files (default `var/state` in the project) |
+| `--config-dir DIR` | `BORBA_CAD_CONFIG_DIR` | The folder of your own configuration: `init.lisp`, which defines commands, key bindings and hooks, and `commands/`, where recorded actions are kept as commands (default `~/.config/borba-cad`, `%APPDATA%\BorbaCAD` on Windows) |
+| `--no-init` | `BORBA_CAD_NO_INIT` | Do not run `init.lisp` (use it when a mistake in it stops the program from being useful) |
 | `--drawings-dir DIR` | `BORBA_CAD_DRAWINGS_DIR` | Folder where the file dialogs start when no drawing is open (default: the user's documents folder) |
 | `--font FILE` | `BORBA_CAD_FONT` | Monospace TrueType font |
 | `--theme NAME` | `BORBA_CAD_THEME` | Color theme: `dark` (the default) or `light`. The sun and moon button in the title bar switches it and keeps the choice in `settings.txt` in the state directory, used next time unless an option or the variable says otherwise |

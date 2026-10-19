@@ -397,13 +397,90 @@ APP: the application."
                             (+ x width)
                             buttons-y))))
 
+(defun command-palette-widgets (app)
+  "Build the command palette: a veil over the window, a card near the top, the field that is searched in and the
+commands that answer it, the chosen one marked.
+
+APP: the application."
+  (let* ((prompt (app-prompt app))
+         (theme (app-theme app))
+         (matches (palette-prompt-matches prompt))
+         (capacity (palette-capacity app))
+         (scroll (max 0 (min (prompt-scroll prompt) (max 0 (- (length matches) capacity)))))
+         (visible (subseq matches scroll (min (length matches) (+ scroll capacity))))
+         (window-width (float (app-window-width app) 1f0))
+         (window-height (float (app-window-height app) 1f0))
+         (width (min +prompt-width+ (- window-width (* 2 +dialog-padding+))))
+         (rows (max 1 (length visible)))
+         (height (+ +palette-padding+
+                    +palette-field-height+
+                    +palette-gap+
+                    (* rows +palette-row-height+)
+                    +palette-padding+))
+         (x (/ (- window-width width) 2))
+         (y (max +palette-window-margin+ (/ (- window-height height) 6)))
+         (content-x (+ x +palette-padding+))
+         (inner (- width (* 2 +palette-padding+)))
+         (rows-y (+ y +palette-padding+ +palette-field-height+ +palette-gap+)))
+    (append (list (ui:make-widget :scrim
+                                  :scrim
+                                  0f0
+                                  0f0
+                                  window-width
+                                  window-height)
+                  (ui:make-widget :card
+                                  :prompt
+                                  x
+                                  y
+                                  width
+                                  height)
+                  (ui:make-widget :field
+                                  :palette-field
+                                  content-x
+                                  (+ y +palette-padding+)
+                                  inner
+                                  +palette-field-height+
+                                  :label (ui:edit-state-text (prompt-edit prompt))
+                                  :edit (prompt-edit prompt)
+                                  :align :left
+                                  :icon :search))
+            (if visible
+                (loop for entry in visible
+                      for index from 0
+                      collect (let ((entry entry))
+                                (ui:make-widget :row
+                                                (list :palette-row index)
+                                                content-x
+                                                (+ rows-y (* index +palette-row-height+))
+                                                inner
+                                                +palette-row-height+
+                                                :label (palette-entry-label entry)
+                                                :align :left
+                                                :shortcut (palette-entry-shortcut entry)
+                                                :hint (palette-entry-hint entry)
+                                                :active (= (+ scroll index) (prompt-active prompt))
+                                                :action (lambda () (run-palette-entry app entry))
+                                                :trailing (if (palette-entry-shortcut entry)
+                                                              (+ +palette-shortcut-gap+
+                                                                 (ui:text-width-pixels (palette-entry-shortcut entry)
+                                                                                       ui:+small-font-pixels+))
+                                                              0f0))))
+                (list (make-label :palette-empty
+                                  (i18n:tr "No command answers that.")
+                                  content-x
+                                  rows-y
+                                  inner
+                                  +palette-row-height+
+                                  :color (scene:theme-text-faint theme)))))))
+
 (defun prompt-widgets (app)
   "Build the modal prompt: a veil over the window, the dialog card, its message, its field, form or table and its
 buttons.
 
 APP: the application."
-  (when (eq (prompt-kind (app-prompt app)) :report)
-    (return-from prompt-widgets (report-widgets app)))
+  (case (prompt-kind (app-prompt app))
+    (:report (return-from prompt-widgets (report-widgets app)))
+    (:palette (return-from prompt-widgets (command-palette-widgets app))))
   (let* ((prompt (app-prompt app))
          (theme (app-theme app))
          (window-width (float (app-window-width app) 1f0))

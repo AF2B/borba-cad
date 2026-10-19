@@ -156,12 +156,12 @@ PROMPT: a :form prompt."
                       (form-field-value field))))
 
 (defun prompt-current-edit (prompt)
-  "Return the edit state that typing goes to: that of a :text prompt, or of the active line of a :form; NIL for a
-prompt that takes no text.
+  "Return the edit state that typing goes to: that of a :text prompt or of the search of a :palette, or of the active
+line of a :form; NIL for a prompt that takes no text.
 
 PROMPT: the prompt."
   (case (prompt-kind prompt)
-    (:text (prompt-edit prompt))
+    ((:text :palette) (prompt-edit prompt))
     (:form (form-field-edit (nth (prompt-active prompt) (prompt-fields prompt))))))
 
 (defun (setf prompt-current-edit) (edit
@@ -172,6 +172,9 @@ EDIT: the new edit state.
 PROMPT: the prompt."
   (ecase (prompt-kind prompt)
     (:text (setf (prompt-edit prompt) edit))
+    (:palette (setf (prompt-edit prompt) edit
+                    (prompt-active prompt) 0
+                    (prompt-scroll prompt) 0))
     (:form (setf (form-field-edit (nth (prompt-active prompt) (prompt-fields prompt))) edit
                  (prompt-problem prompt) nil)))
   edit)
@@ -309,7 +312,10 @@ APP: the application."
   (choose-prompt-button app 0))
 
 (defun cancel-prompt (app)
-  "Press the last button of the prompt (Cancel); close it when that button does nothing.
+  "Press the last button of the prompt (Cancel); close it when that button does nothing or there are none.
 
 APP: the application."
-  (choose-prompt-button app (1- (length (prompt-choices (app-prompt app))))))
+  (let ((count (length (prompt-choices (app-prompt app)))))
+    (if (zerop count)
+        (close-prompt app)
+        (choose-prompt-button app (1- count)))))

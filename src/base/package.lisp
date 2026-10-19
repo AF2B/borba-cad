@@ -72,6 +72,9 @@
    #:config-project-root
    #:config-log-directory
    #:config-state-directory
+   #:config-config-directory
+   #:config-load-init
+   #:user-config-directory
    #:config-drawings-directory
    #:config-log-level
    #:config-log-max-bytes

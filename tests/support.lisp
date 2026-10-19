@@ -52,6 +52,7 @@ types a name and saves does not write into the real documents folder.
 PROJECT-ROOT: the project root the configuration is made for."
   (let ((config (base:default-config :project-root project-root)))
     (setf (base:config-state-directory config) nil
+          (base:config-config-directory config) nil
           (base:config-drawings-directory config) (scratch-drawings-directory))
     config))
 

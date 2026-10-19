@@ -166,21 +166,27 @@ TEXT: the source of the script."
                                                                text)))
                             (cons (i18n:tr "Cancel") nil))))
 
+(defun read-script-text (path)
+  "Return the text of a script file, signaling a file error that says why it cannot be read: it is too large or
+cannot be read.
+
+PATH: the script file."
+  (let ((size (if (eq :file (sbcl:file-kind path))
+                  (sbcl:file-size-bytes path)
+                  0)))
+    (when (> size +maximum-script-bytes+)
+      (error 'base:drawing-file-io-error
+             :path (uiop:native-namestring path)
+             :reason (i18n:trf "is larger than the ~d MiB limit for a script"
+                               (floor +maximum-script-bytes+ (* 1024 1024)))))
+    (persist:read-file-text path)))
+
 (defun read-script-file (path)
   "Return the text of a script file, signaling a file error that says why it cannot be run: it is too large,
 cannot be read, is not made of complete expressions, or has none.
 
 PATH: the script file."
-  (let* ((size (if (eq :file (sbcl:file-kind path))
-                   (sbcl:file-size-bytes path)
-                   0))
-         (text (progn
-                 (when (> size +maximum-script-bytes+)
-                   (error 'base:drawing-file-io-error
-                          :path (uiop:native-namestring path)
-                          :reason (i18n:trf "is larger than the ~d MiB limit for a script"
-                                            (floor +maximum-script-bytes+ (* 1024 1024)))))
-                 (persist:read-file-text path)))
+  (let* ((text (read-script-text path))
          (count (script:count-source-forms text)))
     (cond ((null count)
            (error 'base:drawing-file-io-error

@@ -175,6 +175,8 @@ EVENT: a pointer event."
                                       y) nil)
           ((app-menu app)
            (close-menu app))
+          ((and (app-prompt app) (eq (prompt-kind (app-prompt app)) :palette))
+           (close-prompt app))
           ((or (app-prompt app) (app-dialog app) (app-welcome app)) nil)
           ((and (canvas-contains-p app
                                    x
@@ -269,8 +271,9 @@ EVENT: a wheel event."
     (setf (app-pointer-x app) x
           (app-pointer-y app) y)
     (cond ((app-prompt app)
-           (when (eq (prompt-kind (app-prompt app)) :report)
-             (scroll-report app (- (round delta)))))
+           (case (prompt-kind (app-prompt app))
+             (:report (scroll-report app (- (round delta))))
+             (:palette (scroll-palette app (- (round delta))))))
           ((shapes-popover-contains-p app
                                       x
                                       y)
@@ -339,21 +342,32 @@ MODIFIERS: modifier keys held."
   (let* ((prompt (app-prompt app))
          (form-p (eq (prompt-kind prompt) :form))
          (report-p (eq (prompt-kind prompt) :report))
+         (palette-p (eq (prompt-kind prompt) :palette))
          (options-p (and form-p
                          (form-field-options (nth (prompt-active prompt) (prompt-fields prompt))))))
     (case key
-      (:enter (accept-prompt app))
+      (:enter (if palette-p
+                  (run-palette-selection app)
+                  (accept-prompt app)))
       (:escape (cancel-prompt app))
       (:tab (when form-p
               (move-form-focus app (if (modifier-p modifiers :shift) -1 1))))
       (:up (cond (form-p (move-form-focus app -1))
+                 (palette-p (move-palette-selection app
+                                                    -1
+                                                    :wrap
+                                                    t))
                  (report-p (scroll-report app -1))))
       (:down (cond (form-p (move-form-focus app 1))
+                   (palette-p (move-palette-selection app
+                                                      1
+                                                      :wrap
+                                                      t))
                    (report-p (scroll-report app 1))))
-      (:page-up (when report-p
-                  (scroll-report app (- +report-maximum-rows+))))
-      (:page-down (when report-p
-                    (scroll-report app +report-maximum-rows+)))
+      (:page-up (cond (palette-p (move-palette-selection app (- +palette-visible-rows+)))
+                      (report-p (scroll-report app (- +report-maximum-rows+)))))
+      (:page-down (cond (palette-p (move-palette-selection app +palette-visible-rows+))
+                        (report-p (scroll-report app +report-maximum-rows+))))
       (:home (when report-p
                (scroll-report app (- (length (dom:quantity-report-rows (prompt-report prompt)))))))
       (:end (when report-p
@@ -413,6 +427,7 @@ MODIFIERS: modifier keys held."
       (:e (when shift (operation-export-dxf app)) t)
       (:n (operation-new app) t)
       (:q (operation-quit app) t)
+      (:k (operation-command-palette app) t)
       (:plus (operation-interface-zoom-in app) t)
       (:minus (operation-interface-zoom-out app) t)
       (:zero (operation-interface-zoom-reset app) t)
@@ -480,6 +495,9 @@ EVENT: a key event."
           ((app-coordinate-edit app) (handle-coordinate-key app
                                                             key
                                                             modifiers))
+          ((run-user-key app
+                         key
+                         modifiers))
           ((eq key :space) (setf (app-space-down app) t))
           ((modifier-p modifiers :control) (handle-control-shortcut app
                                                                     key

@@ -140,22 +140,21 @@ APP: the application."
                               :selection-writer (lambda (ids) (select-ids app ids))
                               :view-fitter (lambda () (operation-zoom-extents app))))
 
-(defun run-source (app
-                   text
-                   &key (timeout script:+default-timeout-seconds+)
-                        (event "console.eval"))
-  "Run TEXT as a single command on the drawing. What it changed is recorded as one step of undo; if it
-failed, ran out of time or ends inside an expression, nothing was changed. Returns the SCRIPT-RESULT.
+(defun run-evaluation (app
+                       evaluate
+                       event)
+  "Run something against the drawing as a single command. What it changed is recorded as one step of undo; if it
+failed, ran out of time or ends inside an expression, nothing was changed. The definitions that it makes (commands,
+key bindings, hooks) go to the customizations of the application. Returns the SCRIPT-RESULT and, as a second value, how
+many entities it changed.
 
 APP: the application.
-TEXT: Lisp source.
-TIMEOUT: the longest time to run, in seconds.
+EVALUATE: function of the script context that runs what is to be run and returns the SCRIPT-RESULT.
 EVENT: the name the operation is timed and logged under."
   (let* ((context (console-context app))
          (started (sbcl:monotonic-nanoseconds))
-         (result (script:evaluate-source context
-                                         text
-                                         :timeout timeout))
+         (result (let ((script:*customizations* (app-customizations app)))
+                   (funcall evaluate context)))
          (changes (script:context-changes context)))
     (when changes
       (dom:history-record (app-history app) changes))
@@ -173,7 +172,43 @@ EVENT: the name the operation is timed and logged under."
       (set-message app
                    (i18n:trf "~d ~:*~[changes~;change~:;changes~] made; Ctrl+Z takes them all back." (length changes))))
     (app-request-redraw app)
-    result))
+    (values result (length changes))))
+
+(defun run-source (app
+                   text
+                   &key (timeout script:+default-timeout-seconds+)
+                        (event "console.eval"))
+  "Run TEXT as a single command on the drawing. What it changed is recorded as one step of undo; if it
+failed, ran out of time or ends inside an expression, nothing was changed. Returns the SCRIPT-RESULT.
+
+APP: the application.
+TEXT: Lisp source.
+TIMEOUT: the longest time to run, in seconds.
+EVENT: the name the operation is timed and logged under."
+  (run-evaluation app
+                  (lambda (context)
+                    (script:evaluate-source context
+                                            text
+                                            :timeout timeout))
+                  event))
+
+(defun run-function (app
+                     function
+                     &key (timeout script:+default-timeout-seconds+)
+                          (event "command.run"))
+  "Call a function as a single command on the drawing, as RUN-SOURCE does with a text. Returns the SCRIPT-RESULT and how
+many entities it changed.
+
+APP: the application.
+FUNCTION: function of no arguments, such as a command that the init file defined.
+TIMEOUT: the longest time to run, in seconds.
+EVENT: the name the operation is timed and logged under."
+  (run-evaluation app
+                  (lambda (context)
+                    (script:evaluate-function context
+                                              function
+                                              :timeout timeout))
+                  event))
 
 (defun show-source-result (app
                            result)
@@ -407,6 +442,7 @@ MODIFIERS: modifier keys held."
           ((eq key :page-up) (console-scroll-by app page))
           ((eq key :page-down) (console-scroll-by app (- page)))
           ((and control (eq key :l)) (console-clear app))
+          ((and control (eq key :k)) (operation-command-palette app))
           ((and control (eq key :v)) (console-paste app))
           (t
            (let ((edited (edit-with-clipboard app

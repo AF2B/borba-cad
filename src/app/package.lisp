@@ -333,6 +333,22 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:prompt-scroll
    #:open-report-prompt
    #:operation-quantities
+   #:operation-command-palette
+   #:operation-reload-init
+   #:start-customizations
+   #:run-user-key
+   #:run-hooks
+   #:run-command-by-name
+   #:palette-entries
+   #:palette-entry-label
+   #:palette-entry-shortcut
+   #:palette-prompt-matches
+   #:app-customizations
+   #:app-recorded-commands
+   #:init-file-path
+   #:commands-directory
+   #:command-file-name
+   #:+palette-visible-rows+
    #:operation-export-quantities
    #:file-dialog-purpose
    #:form-field-key

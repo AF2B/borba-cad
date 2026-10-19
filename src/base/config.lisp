@@ -36,6 +36,9 @@ PROJECT-ROOT: directory containing the project (logs and examples are relative t
 LOG-DIRECTORY: directory receiving the rotating log file.
 STATE-DIRECTORY: directory for what the program remembers between runs (the recent files), or NIL
 to remember nothing.
+CONFIG-DIRECTORY: directory of the user's own configuration, which holds the init file and the commands that were
+recorded, or NIL to have none.
+LOAD-INIT: true to run the init file at startup.
 DRAWINGS-DIRECTORY: folder where the file dialogs start when no drawing is being edited, or NIL for
 the user's documents folder.
 LOG-LEVEL: least severe level that is written.
@@ -56,6 +59,8 @@ time and, failing that, the dark one."
   (project-root nil :type (or null pathname))
   (log-directory nil :type (or null pathname))
   (state-directory nil :type (or null pathname))
+  (config-directory nil :type (or null pathname))
+  (load-init t :type boolean)
   (drawings-directory nil :type (or null pathname))
   (log-level :info :type keyword)
   (log-max-bytes +default-log-max-bytes+ :type integer)
@@ -165,7 +170,8 @@ PROJECT-ROOT: the project directory; logs default to var/log/ and remembered sta
 below it."
   (make-config :project-root project-root
                :log-directory (merge-pathnames "var/log/" project-root)
-               :state-directory (merge-pathnames "var/state/" project-root)))
+               :state-directory (merge-pathnames "var/state/" project-root)
+               :config-directory (user-config-directory)))
 
 (defparameter *windows-state-folder-name* "BorbaCAD"
   "Name of the folder, in the user's local application data, where the installed program keeps its
@@ -197,6 +203,27 @@ READER: function from variable name to string or NIL; defaults to the process en
                                (directory-pathname state)
                                (merge-pathnames ".local/state/" (user-homedir-pathname))))))))
 
+(defun user-config-directory (&optional (reader #'environment-variable))
+  "Return the folder of the user's own configuration, where the init file is: %APPDATA%\\BorbaCAD on Windows,
+$XDG_CONFIG_HOME/borba-cad (by default ~/.config/borba-cad) elsewhere, and a folder in the home directory when the
+system does not say where.
+
+READER: function from variable name to string or NIL; defaults to the process environment."
+  (flet ((value-of (name)
+           (let ((value (funcall reader name)))
+             (and value (plusp (length value)) value))))
+    (if (uiop:os-windows-p)
+        (merge-pathnames (concatenate 'string *windows-state-folder-name* "/")
+                         (let ((roaming (value-of "APPDATA")))
+                           (if roaming
+                               (directory-pathname roaming)
+                               (user-homedir-pathname))))
+        (merge-pathnames (concatenate 'string *unix-state-folder-name* "/")
+                         (let ((config (value-of "XDG_CONFIG_HOME")))
+                           (if config
+                               (directory-pathname config)
+                               (merge-pathnames ".config/" (user-homedir-pathname))))))))
+
 (defun installed-config (application-directory
                          &optional (reader #'environment-variable))
   "Return the configuration of the program running from an installed folder: the folder holds the
@@ -208,7 +235,8 @@ READER: function from variable name to string or NIL; defaults to the process en
   (let ((state (user-state-directory reader)))
     (make-config :project-root application-directory
                  :log-directory (merge-pathnames "log/" state)
-                 :state-directory state)))
+                 :state-directory state
+                 :config-directory (user-config-directory reader))))
 
 (defun config-with-environment (config
                                 &optional (reader #'environment-variable))
@@ -224,6 +252,8 @@ READER: function from variable name to string or NIL; defaults to the process en
       (let ((log-dir (value-of "BORBA_CAD_LOG_DIR"))
             (state-dir (value-of "BORBA_CAD_STATE_DIR"))
             (drawings-dir (value-of "BORBA_CAD_DRAWINGS_DIR"))
+            (config-dir (value-of "BORBA_CAD_CONFIG_DIR"))
+            (no-init (value-of "BORBA_CAD_NO_INIT"))
             (log-level (value-of "BORBA_CAD_LOG_LEVEL"))
             (max-bytes (value-of "BORBA_CAD_LOG_MAX_BYTES"))
             (max-files (value-of "BORBA_CAD_LOG_MAX_FILES"))
@@ -238,6 +268,10 @@ READER: function from variable name to string or NIL; defaults to the process en
           (setf (config-state-directory result) (directory-pathname state-dir)))
         (when drawings-dir
           (setf (config-drawings-directory result) (directory-pathname drawings-dir)))
+        (when config-dir
+          (setf (config-config-directory result) (directory-pathname config-dir)))
+        (when no-init
+          (setf (config-load-init result) (not (parse-boolean-option no-init))))
         (when log-level
           (setf (config-log-level result) (parse-log-level log-level)))
         (when max-bytes
@@ -264,8 +298,8 @@ READER: function from variable name to string or NIL; defaults to the process en
                               arguments)
   "Apply core command-line options to a copy of CONFIG.
 Returns two values: the new configuration and the arguments that were not recognized, in order.
-Recognized: --log-dir DIR, --state-dir DIR, --drawings-dir DIR, --log-level LEVEL, --log-stderr,
---log-sample EVENT=N, --font PATH, --language TAG, --theme NAME, --file PATH, --width N, --height N.
+Recognized: --log-dir DIR, --state-dir DIR, --config-dir DIR, --no-init, --drawings-dir DIR, --log-level LEVEL,
+--log-stderr, --log-sample EVENT=N, --font PATH, --language TAG, --theme NAME, --file PATH, --width N, --height N.
 
 CONFIG: the configuration to start from.
 ARGUMENTS: list of argument strings."
@@ -283,6 +317,10 @@ ARGUMENTS: list of argument strings."
                         (setf (config-log-directory result) (directory-pathname (next-value option))))
                        ((string= option "--state-dir")
                         (setf (config-state-directory result) (directory-pathname (next-value option))))
+                       ((string= option "--config-dir")
+                        (setf (config-config-directory result) (directory-pathname (next-value option))))
+                       ((string= option "--no-init")
+                        (setf (config-load-init result) nil))
                        ((string= option "--drawings-dir")
                         (setf (config-drawings-directory result) (directory-pathname (next-value option))))
                        ((string= option "--log-level")

@@ -41,6 +41,103 @@ APP: the application."
   (set-message app (i18n:tr "Recording: what you draw and change is being written as a script."))
   (app-request-redraw app))
 
+(defun recording-touches-existing-p (steps)
+  "Return true when the steps of a recording change or erase an entity that was in the drawing before it began, which a
+script that is run on another drawing can only do if that drawing has an entity with the same number.
+
+STEPS: the steps of the recording, oldest first, each a list of changes."
+  (let ((made (make-hash-table)))
+    (dolist (step steps nil)
+      (dolist (change step)
+        (cond ((null (dom:change-before change))
+               (setf (gethash (dom:change-entity-id change) made) t))
+              ((not (gethash (dom:change-entity-id change) made))
+               (return-from recording-touches-existing-p t)))))))
+
+(defun command-saved-message (name
+                              touches-existing)
+  "Return what the user is told when a recording has been kept as a command.
+
+NAME: the name of the command.
+TOUCHES-EXISTING: true when the recording changes what was in the drawing before it began."
+  (format nil "~a~@[ ~a~]"
+          (i18n:trf "Kept as the command ~a. Run it from the command palette, Ctrl+K." name)
+          (and touches-existing
+               (i18n:tr "It changes entities already in the drawing, by number, so it needs the same ones there."))))
+
+(defun save-recording-as-command (app
+                                  name
+                                  steps)
+  "Keep the recorded script as a command in the folder of commands, so that the command palette lists it. Returns NIL
+when it was saved, or the sentence that says why it was not.
+
+APP: the application.
+NAME: what the command is called.
+STEPS: the steps of the recording, to tell whether it changes what was already there."
+  (handler-case
+      (let* ((file-name (command-file-name name))
+             (path (and (commands-directory app)
+                        (recorded-command-path app file-name))))
+        (cond ((null path)
+               (i18n:tr "There is no folder for commands."))
+              ((find-recorded-command app file-name)
+               (i18n:tr "A command with that name already exists."))
+              (t
+               (ensure-directories-exist path)
+               (persist:save-text-file path
+                                       (lambda (stream)
+                                         (write-string (app-recorded-script app) stream)))
+               (scan-recorded-commands app)
+               (show-notice app
+                            (i18n:tr "Command saved")
+                            (command-saved-message file-name
+                                                   (recording-touches-existing-p steps)))
+               nil)))
+    ((or base:edit-refused base:drawing-file-error) (condition)
+      (remove #\Newline (princ-to-string condition)))))
+
+(defun ask-recording-command-name (app
+                                   steps
+                                   &optional problem)
+  "Ask the name of the command that a recording is kept as; a name that cannot be used is said and asked again.
+
+APP: the application.
+STEPS: the steps of the recording.
+PROBLEM: what was wrong with the last answer, or NIL."
+  (open-text-prompt app
+                    (i18n:tr "Keep as a command")
+                    (if problem
+                        (format nil "~a ~a" problem (i18n:tr "Type the name of the command."))
+                        (i18n:tr "Type the name of the command."))
+                    (i18n:tr "My command")
+                    (lambda (text)
+                      (let ((again (save-recording-as-command app
+                                                              text
+                                                              steps)))
+                        (when again
+                          (ask-recording-command-name app
+                                                      steps
+                                                      again))))))
+
+(defun ask-what-to-do-with-recording (app
+                                      steps)
+  "Ask whether the recording is to be kept as a command, which the command palette runs, or saved as a script file.
+
+APP: the application.
+STEPS: the steps of the recording."
+  (open-choice-prompt app
+                      (i18n:tr "Recording ready")
+                      (i18n:tr "Keep it as a command to run from the command palette, or save it as a script file.")
+                      (list (cons (i18n:tr "Keep as a command")
+                                  (lambda () (ask-recording-command-name app steps)))
+                            (cons (i18n:tr "Save as a script...")
+                                  (lambda ()
+                                    (open-file-dialog app
+                                                      :save
+                                                      nil
+                                                      :recording)))
+                            (cons (i18n:tr "Discard") nil))))
+
 (defun operation-stop-recording (app)
   "End the recording and ask where to save the script that it made; say so when there is nothing to save or the
 recording cannot be told.
@@ -59,10 +156,7 @@ APP: the application."
                         (i18n:tr "Draw or change something while recording, then stop.")))
           (t
            (setf (app-recorded-script app) (script:steps-script steps (app-drawing app)))
-           (open-file-dialog app
-                             :save
-                             nil
-                             :recording)))))
+           (ask-what-to-do-with-recording app steps)))))
 
 (defun operation-toggle-recording (app)
   "Begin recording when nothing is recorded, and end the recording when it is.

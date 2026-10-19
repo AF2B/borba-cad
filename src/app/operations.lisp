@@ -434,7 +434,8 @@ PATH: its file, or NIL for a new drawing."
   (clrhash (app-selection app))
   (operation-set-tool app :select)
   (operation-zoom-extents app)
-  (app-request-redraw app))
+  (app-request-redraw app)
+  (run-hooks app :drawing-opened))
 
 (defun log-failed-operation (app
                              event
@@ -578,6 +579,7 @@ previous file is untouched and the reason is shown. Returns true on success.
 APP: the application.
 PATH-TEXT: file name as typed by the user."
   (let ((started (sbcl:monotonic-nanoseconds)))
+    (run-hooks app :before-save)
     (handler-case
         (let ((path (persist:drawing-file-path path-text)))
           (multiple-value-bind (saved stats)
@@ -601,6 +603,7 @@ PATH-TEXT: file name as typed by the user."
                          (i18n:trf "Saved ~a (~a)."
                                  (file-namestring path)
                                  (base:format-byte-size (getf stats :bytes))))
+            (run-hooks app :after-save)
             t))
       ((or base:drawing-file-error base:invalid-input) (condition)
         (fail-file-operation app

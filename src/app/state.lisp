@@ -89,21 +89,23 @@ CHOICE: for a line of options, the position of the one that is chosen."
   "A modal question.
 
 KIND: :text (a text field with OK and Cancel), :choice (a row of buttons), :form (several text fields, with OK
-and Cancel) or :report (a table to read, with a row of buttons).
+and Cancel), :report (a table to read, with a row of buttons) or :palette (a field to search a list of commands in,
+and the list).
 TITLE: heading.
 MESSAGE: explanation shown under the heading.
-EDIT: the EDIT-STATE of the text field, for :text prompts.
+EDIT: the EDIT-STATE of the text field, for :text prompts, or of what is typed to search a :palette.
 CHOICES: for :text and :form, a list of (label . function) with the accept function first; for :choice, the buttons.
 The accept function of a :text prompt receives the typed string; that of a :form receives an alist of the key and
 the typed string of each line, and returns a sentence when it refuses them, which keeps the form open.
 MESSAGE-LINES: how many lines the message may take before it is cut, or NIL for the usual three.
-FIELDS: for :form, the FORM-FIELDs, top to bottom.
-ACTIVE: for :form, the position of the field that has the keyboard.
+FIELDS: for :form, the FORM-FIELDs, top to bottom; for :palette, the PALETTE-ENTRYs that can be chosen.
+ACTIVE: for :form, the position of the field that has the keyboard; for :palette, the position of the command chosen
+among those that match what was typed.
 INFO: for :form, a function of the alist of typed values that returns a line that says what OK would do, and true as
 a second value when the values cannot be used; or NIL.
 PROBLEM: for :form, the sentence the last OK was refused with, or NIL.
 REPORT: for :report, the QUANTITY-REPORT that is shown.
-SCROLL: for :report, how many rows of the table are scrolled past."
+SCROLL: for :report and :palette, how many rows of the table or of the list are scrolled past."
   kind title message edit choices message-lines
   (fields nil :type list)
   (active 0 :type fixnum)
@@ -197,6 +199,8 @@ FORM-SETTINGS: what was chosen or typed in the forms that were last accepted, as
 its value.
 QUANTITY-EXPORT: the report of quantities that is to be written as a CSV file and how, as a cons of the report and
 :standard or :excel, or NIL.
+CUSTOMIZATIONS: the commands, key bindings and hooks that the init file and the console defined.
+RECORDED-COMMANDS: the names of the commands that were saved from recordings, which the folder of commands holds.
 INTERFACE-ZOOM: how much larger than designed the user asked the interface to be drawn; 1 is as designed.
 PLOT-SETTINGS: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 LAST-BLOCK-NAME: the name of the block that was last made or placed, or NIL.
@@ -261,6 +265,8 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   (spread-distance +default-spread-distance+ :type double-float)
   (form-settings '() :type list)
   quantity-export
+  (customizations (script:make-customizations))
+  (recorded-commands '() :type list)
   (interface-zoom 1d0 :type double-float)
   plot-settings
   last-block-name

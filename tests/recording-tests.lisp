@@ -236,6 +236,9 @@ LAYER-ID: the id of the layer."
     (run-command application "(line 0 0 100 0)")
     (app:operation-toggle-recording application)
     (is (not (app:app-recording-p application)))
+    (is (string= "Recording ready" (prompt-title-of application)))
+    (is (equal '("Keep as a command" "Save as a script..." "Discard") (prompt-labels application)))
+    (choose-in-prompt application 1)
     (is (string= "Save the recorded actions as a script" (dialog-title-text application)))))
 
 (test the-recording-is-the-steps-made-while-it-lasted

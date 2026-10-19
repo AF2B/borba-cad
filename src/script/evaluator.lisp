@@ -138,6 +138,49 @@ FORMS: Lisp forms, read."
 CONDITION: the condition that stopped a command."
   (substitute #\Space #\Newline (princ-to-string condition)))
 
+(defun evaluate-thunk (context
+                       thunk
+                       forms
+                       timeout)
+  "Run THUNK as a single command against the drawing of CONTEXT: if it fails, or the time runs out, the entities it
+changed are put back as they were. Returns a SCRIPT-RESULT, whose values are what THUNK returns, a list of strings.
+The context begins by forgetting what the command before it did, and ends holding what this one did.
+
+CONTEXT: the script context to run in.
+THUNK: function of no arguments that returns the printed value of each form it runs, as a list of strings.
+FORMS: how many forms it stands for.
+TIMEOUT: the longest time to run, in seconds."
+  (context-reset context)
+  (let ((output (sbcl:make-limited-output-stream +maximum-output-characters+)))
+    (flet ((failed (status message)
+             (context-rollback context)
+             (make-script-result status
+                                 :forms forms
+                                 :output (limited-output output)
+                                 :message message)))
+      (handler-case
+          (let ((values
+                  (let ((*context* context)
+                        (*standard-output* output)
+                        (*error-output* output)
+                        (*standard-input* (make-string-input-stream ""))
+                        (*package* (user-package))
+                        (*read-default-float-format* 'double-float)
+                        (*read-eval* nil))
+                    (sbcl:call-with-timeout timeout thunk))))
+            (make-script-result :ok
+                                :forms forms
+                                :values values
+                                :output (limited-output output)))
+        (sbcl:timeout ()
+          (failed :timeout
+                  (i18n:trf "It took more than ~d seconds, so it was stopped and nothing was changed."
+                            (round timeout))))
+        (storage-condition ()
+          (failed :error (i18n:tr "It ran out of memory, so it was stopped and nothing was changed.")))
+        (error (condition)
+          (failed :error (failure-message condition)))))))
+
 (defun evaluate-source (context
                         text
                         &key (timeout +default-timeout-seconds+))
@@ -159,34 +202,22 @@ TIMEOUT: the longest time to run, in seconds."
                    (return-from evaluate-source
                      (make-script-result :error
                                          :message (failure-message condition)))))))
-    (context-reset context)
-    (let ((output (sbcl:make-limited-output-stream +maximum-output-characters+)))
-      (flet ((failed (status message)
-               (context-rollback context)
-               (make-script-result status
-                                   :forms (length forms)
-                                   :output (limited-output output)
-                                   :message message)))
-        (handler-case
-            (let ((values
-                    (let ((*context* context)
-                          (*standard-output* output)
-                          (*error-output* output)
-                          (*standard-input* (make-string-input-stream ""))
-                          (*package* (user-package))
-                          (*read-default-float-format* 'double-float)
-                          (*read-eval* nil))
-                      (sbcl:call-with-timeout timeout
-                                              (lambda () (run-forms forms))))))
-              (make-script-result :ok
-                                  :forms (length forms)
-                                  :values values
-                                  :output (limited-output output)))
-          (sbcl:timeout ()
-            (failed :timeout
-                    (i18n:trf "It took more than ~d seconds, so it was stopped and nothing was changed."
-                              (round timeout))))
-          (storage-condition ()
-            (failed :error (i18n:tr "It ran out of memory, so it was stopped and nothing was changed.")))
-          (error (condition)
-            (failed :error (failure-message condition))))))))
+    (evaluate-thunk context
+                    (lambda () (run-forms forms))
+                    (length forms)
+                    timeout)))
+
+(defun evaluate-function (context
+                          function
+                          &key (timeout +default-timeout-seconds+))
+  "Call a function as a single command against the drawing of CONTEXT, with the guarantees of EVALUATE-SOURCE: what it
+changes is put back when it fails or takes too long, and what it prints is kept. Returns a SCRIPT-RESULT.
+
+CONTEXT: the script context to run in.
+FUNCTION: function of no arguments, such as the one that a command defined in the init file stands for.
+TIMEOUT: the longest time to run, in seconds."
+  (evaluate-thunk context
+                  (lambda ()
+                    (list (format nil "~{~a~^ ~}" (mapcar #'printed (multiple-value-list (funcall function))))))
+                  1
+                  timeout))

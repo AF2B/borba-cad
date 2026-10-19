@@ -37,6 +37,10 @@ typed: one centimetre.
 
 Pointer travel, in pixels, before a press becomes a drag; below it a release is a click.
 
+### `+palette-visible-rows+` (constant)
+
+Most commands the palette lists at once; the arrows and the wheel bring the others.
+
 ### `+pick-radius-pixels+` (constant)
 
 How close, in pixels, the pointer must be to an entity to pick it: about 1.6 mm on screen,
@@ -99,6 +103,8 @@ NIL when it selects only what it holds (dragged from left to right).
 its value.
 - `QUANTITY-EXPORT`: the report of quantities that is to be written as a CSV file and how, as a cons of the report and
 :standard or :excel, or NIL.
+- `CUSTOMIZATIONS`: the commands, key bindings and hooks that the init file and the console defined.
+- `RECORDED-COMMANDS`: the names of the commands that were saved from recordings, which the folder of commands holds.
 - `INTERFACE-ZOOM`: how much larger than designed the user asked the interface to be drawn; 1 is as designed.
 - `PLOT-SETTINGS`: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 - `LAST-BLOCK-NAME`: the name of the block that was last made or placed, or NIL.
@@ -191,6 +197,14 @@ new one.
 
 ```lisp
 (app-cursor instance)
+```
+
+(undocumented)
+
+### `app-customizations` (function)
+
+```lisp
+(app-customizations instance)
 ```
 
 (undocumented)
@@ -422,6 +436,14 @@ Return the regions of the window as they are now: the console takes its strip fr
 
 ```lisp
 (app-quit-requested instance)
+```
+
+(undocumented)
+
+### `app-recorded-commands` (function)
+
+```lisp
+(app-recorded-commands instance)
 ```
 
 (undocumented)
@@ -766,6 +788,28 @@ Close the modal prompt without running anything.
 ```
 
 Close the start screen, if it is open, and go on with the drawing as it is.
+
+- `APP`: the application.
+
+### `command-file-name` (function)
+
+```lisp
+(command-file-name name)
+```
+
+Return the name of the file that a command called NAME is kept in, without the extension: the name, trimmed and
+with the characters that a file name may not have turned into hyphens. Signals EDIT-REFUSED when nothing is left or
+it is too long.
+
+- `NAME`: what the user typed.
+
+### `commands-directory` (function)
+
+```lisp
+(commands-directory app)
+```
+
+Return the folder of the commands saved from recordings, or NIL when there is no configuration directory.
 
 - `APP`: the application.
 
@@ -1421,6 +1465,16 @@ and the popover opens on it. On failure the reason is shown. Returns true on suc
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
 
+### `init-file-path` (function)
+
+```lisp
+(init-file-path app)
+```
+
+Return the path of the init file, or NIL when there is no configuration directory.
+
+- `APP`: the application.
+
 ### `insert-tool` (type)
 
 Places a block: a click for the point its base point goes to, then a click that turns it toward the
@@ -1809,6 +1863,16 @@ Move the selected entities to another layer.
 - `APP`: the application.
 - `LAYER-ID`: id of the destination layer.
 
+### `operation-command-palette` (function)
+
+```lisp
+(operation-command-palette app)
+```
+
+Open the command palette.
+
+- `APP`: the application.
+
 ### `operation-copy` (function)
 
 ```lisp
@@ -2089,6 +2153,17 @@ Close the application, after offering to save unsaved changes.
 ```
 
 Redo the last undone change.
+
+- `APP`: the application.
+
+### `operation-reload-init` (function)
+
+```lisp
+(operation-reload-init app)
+```
+
+Forget what the init file defined and run it again, and read the folder of commands again, so that a change to
+either is in force without leaving the program.
 
 - `APP`: the application.
 
@@ -2412,6 +2487,43 @@ Zoom out by one notch of the wheel, about the center of the canvas.
 
 - `APP`: the application.
 
+### `palette-entries` (function)
+
+```lisp
+(palette-entries app)
+```
+
+Return everything the palette lists, in the order it lists it when nothing is typed: the commands that the user
+defined, those saved from recordings, then the choices of the menus and the rest of what the program does.
+
+- `APP`: the application.
+
+### `palette-entry-label` (function)
+
+```lisp
+(palette-entry-label instance)
+```
+
+(undocumented)
+
+### `palette-entry-shortcut` (function)
+
+```lisp
+(palette-entry-shortcut instance)
+```
+
+(undocumented)
+
+### `palette-prompt-matches` (function)
+
+```lisp
+(palette-prompt-matches prompt)
+```
+
+Return the entries of an open palette that answer what is typed in it.
+
+- `PROMPT`: the :palette prompt.
+
 ### `parse-point-input` (function)
 
 ```lisp
@@ -2504,21 +2616,23 @@ Collects vertices; Enter finishes an open polyline, clicking the first vertex cl
 A modal question.
 
 - `KIND`: :text (a text field with OK and Cancel), :choice (a row of buttons), :form (several text fields, with OK
-and Cancel) or :report (a table to read, with a row of buttons).
+and Cancel), :report (a table to read, with a row of buttons) or :palette (a field to search a list of commands in,
+and the list).
 - `TITLE`: heading.
 - `MESSAGE`: explanation shown under the heading.
-- `EDIT`: the EDIT-STATE of the text field, for :text prompts.
+- `EDIT`: the EDIT-STATE of the text field, for :text prompts, or of what is typed to search a :palette.
 - `CHOICES`: for :text and :form, a list of (label . function) with the accept function first; for :choice, the buttons.
 The accept function of a :text prompt receives the typed string; that of a :form receives an alist of the key and
 the typed string of each line, and returns a sentence when it refuses them, which keeps the form open.
 - `MESSAGE-LINES`: how many lines the message may take before it is cut, or NIL for the usual three.
-- `FIELDS`: for :form, the FORM-FIELDs, top to bottom.
-- `ACTIVE`: for :form, the position of the field that has the keyboard.
+- `FIELDS`: for :form, the FORM-FIELDs, top to bottom; for :palette, the PALETTE-ENTRYs that can be chosen.
+- `ACTIVE`: for :form, the position of the field that has the keyboard; for :palette, the position of the command chosen
+among those that match what was typed.
 - `INFO`: for :form, a function of the alist of typed values that returns a line that says what OK would do, and true as
 a second value when the values cannot be used; or NIL.
 - `PROBLEM`: for :form, the sentence the last OK was refused with, or NIL.
 - `REPORT`: for :report, the QUANTITY-REPORT that is shown.
-- `SCROLL`: for :report, how many rows of the table are scrolled past.
+- `SCROLL`: for :report and :palette, how many rows of the table or of the list are scrolled past.
 
 ### `prompt-active` (function)
 
@@ -2678,6 +2792,30 @@ The window changed size.
 
 (undocumented)
 
+### `run-command-by-name` (function)
+
+```lisp
+(run-command-by-name app name)
+```
+
+Run the command called NAME: one that was defined, one saved from a recording, or one of the program as the command
+palette lists it. Returns true when there is one, and says so when there is not.
+
+- `APP`: the application.
+- `NAME`: what it is called, in any case.
+
+### `run-hooks` (function)
+
+```lisp
+(run-hooks app event)
+```
+
+Run what was added to an event, each as a command of its own. A hook that fails is said in the console and the
+status bar, and the others still run.
+
+- `APP`: the application.
+- `EVENT`: :startup, :drawing-opened, :before-save or :after-save.
+
 ### `run-script-file-in-app` (function)
 
 ```lisp
@@ -2689,6 +2827,18 @@ the reason is shown. Returns true when the question was asked.
 
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
+
+### `run-user-key` (function)
+
+```lisp
+(run-user-key app key modifiers)
+```
+
+Run what the user bound a key to. Returns true when the key was bound.
+
+- `APP`: the application.
+- `KEY`: the key keyword.
+- `MODIFIERS`: the modifier keys held.
 
 ### `save-app-drawing` (function)
 
@@ -2965,6 +3115,17 @@ Return TEXT as a line to paste into a one-line field: line breaks and tabs becom
 of them becomes one, and the ends are trimmed.
 
 - `TEXT`: a string that may have several lines.
+
+### `start-customizations` (function)
+
+```lisp
+(start-customizations app)
+```
+
+Read the user's own configuration at startup: the commands saved from recordings, the init file, and then what was
+added to :startup.
+
+- `APP`: the application.
 
 ### `step-shape-group` (function)
 
@@ -3270,6 +3431,9 @@ Central application configuration; every default lives here.
 - `LOG-DIRECTORY`: directory receiving the rotating log file.
 - `STATE-DIRECTORY`: directory for what the program remembers between runs (the recent files), or NIL
 to remember nothing.
+- `CONFIG-DIRECTORY`: directory of the user's own configuration, which holds the init file and the commands that were
+recorded, or NIL to have none.
+- `LOAD-INIT`: true to run the init file at startup.
 - `DRAWINGS-DIRECTORY`: folder where the file dialogs start when no drawing is being edited, or NIL for
 the user's documents folder.
 - `LOG-LEVEL`: least severe level that is written.
@@ -3287,6 +3451,14 @@ the user's documents folder.
 one saved last time and, failing that, English (US).
 - `THEME`: :dark or :light, as asked for with an option or the environment, or NIL to use the one saved last
 time and, failing that, the dark one.
+
+### `config-config-directory` (function)
+
+```lisp
+(config-config-directory instance)
+```
+
+(undocumented)
 
 ### `config-drawings-directory` (function)
 
@@ -3324,6 +3496,14 @@ time and, failing that, the dark one.
 
 ```lisp
 (config-language instance)
+```
+
+(undocumented)
+
+### `config-load-init` (function)
+
+```lisp
+(config-load-init instance)
 ```
 
 (undocumented)
@@ -3432,8 +3612,8 @@ time and, failing that, the dark one.
 
 Apply core command-line options to a copy of CONFIG.
 Returns two values: the new configuration and the arguments that were not recognized, in order.
-Recognized: --log-dir DIR, --state-dir DIR, --drawings-dir DIR, --log-level LEVEL, --log-stderr,
---log-sample EVENT=N, --font PATH, --language TAG, --theme NAME, --file PATH, --width N, --height N.
+Recognized: --log-dir DIR, --state-dir DIR, --config-dir DIR, --no-init, --drawings-dir DIR, --log-level LEVEL,
+--log-stderr, --log-sample EVENT=N, --font PATH, --language TAG, --theme NAME, --file PATH, --width N, --height N.
 
 - `CONFIG`: the configuration to start from.
 - `ARGUMENTS`: list of argument strings.
@@ -3750,7 +3930,7 @@ Return the list of log level keywords, from most to least severe.
 ### `make-config` (function)
 
 ```lisp
-(make-config &key ((project-root project-root) nil) ((log-directory log-directory) nil) ((state-directory state-directory) nil) ((drawings-directory drawings-directory) nil) ((log-level log-level) info) ((log-max-bytes log-max-bytes) +default-log-max-bytes+) ((log-max-files log-max-files) +default-log-max-files+) ((log-to-stderr log-to-stderr) nil) ((log-sampling log-sampling) nil) ((frame-summary-interval-seconds frame-summary-interval-seconds)
+(make-config &key ((project-root project-root) nil) ((log-directory log-directory) nil) ((state-directory state-directory) nil) ((config-directory config-directory) nil) ((load-init load-init) t) ((drawings-directory drawings-directory) nil) ((log-level log-level) info) ((log-max-bytes log-max-bytes) +default-log-max-bytes+) ((log-max-files log-max-files) +default-log-max-files+) ((log-to-stderr log-to-stderr) nil) ((log-sampling log-sampling) nil) ((frame-summary-interval-seconds frame-summary-interval-seconds)
  +default-frame-summary-interval-seconds+) ((memory-sample-interval-seconds memory-sample-interval-seconds)
  +default-memory-sample-interval-seconds+) ((font-path font-path) nil) ((window-width window-width) +default-window-width+) ((window-height window-height) +default-window-height+) ((initial-file initial-file) nil) ((language language) nil) ((theme theme) nil))
 ```
@@ -3902,6 +4082,18 @@ Return the area abbreviation of UNIT, for example "m2" with a superscript two.
 Return the unit keyword whose abbreviation equals TEXT (case-insensitive), or NIL.
 
 - `TEXT`: an abbreviation such as "cm".
+
+### `user-config-directory` (function)
+
+```lisp
+(user-config-directory &optional (reader #'environment-variable))
+```
+
+Return the folder of the user's own configuration, where the init file is: %APPDATA%\BorbaCAD on Windows,
+$XDG_CONFIG_HOME/borba-cad (by default ~/.config/borba-cad) elsewhere, and a folder in the home directory when the
+system does not say where.
+
+- `READER`: function from variable name to string or NIL; defaults to the process environment.
 
 ### `user-state-directory` (function)
 
@@ -12925,6 +13117,15 @@ commands that draw it.
 
 The context of the command that is running.
 
+### `*customizations*` (variable)
+
+The customizations that the definitions being run are added to.
+
+### `*hook-events*` (variable)
+
+What a hook can be added to, and when it runs: when the program has started, after a drawing is opened or a new one
+is made, before a drawing is saved and after it is saved.
+
 ### `*maximum-changes*` (variable)
 
 Most entities a single command may create, change or erase: well beyond what a drawing is meant to hold,
@@ -12937,6 +13138,20 @@ Longest time a command typed in the console may run.
 ### `+script-timeout-seconds+` (constant)
 
 Longest time a script file may run.
+
+### `add-hook` (function)
+
+```lisp
+(add-hook event function)
+```
+
+Make a function run when something happens: :startup, when the program has started; :drawing-opened, after a drawing
+is opened or a new one is made; :before-save, before a drawing is saved; :after-save, after it is saved. Each runs as
+a command of its own, so what it changes is a step of undo, and a hook that fails says so and does no harm. Returns
+the event.
+
+- `EVENT`: one of :startup, :drawing-opened, :before-save and :after-save.
+- `FUNCTION`: function of no arguments, or the name of a command.
 
 ### `angle-dimension` (function)
 
@@ -13018,6 +13233,28 @@ round the whole circle; a smaller angle ends with the last item. Returns the ids
 - `ANGLE`: the angle to fill in degrees, or (rad x); negative goes clockwise.
 - `TURN`: true to turn each copy as it goes round, false to keep it as drawn.
 
+### `bind-key` (function)
+
+```lisp
+(bind-key chord target)
+```
+
+Bind a key to a command, replacing what it was bound to. The command may be defined after the binding. Returns the
+binding as it is written.
+
+- `CHORD`: the key and its modifiers written with +, such as "Ctrl+Alt+H" or "F7".
+- `TARGET`: the name of a command that was defined with DEFCOMMAND, or one of the program (as the command palette lists
+it), or a function of no arguments.
+
+### `bindings` (function)
+
+```lisp
+(bindings)
+```
+
+Return the key bindings that were made, as a list of (key command): the key as it is written, and the name of the
+command or a function.
+
 ### `blocks` (function)
 
 ```lisp
@@ -13025,6 +13262,17 @@ round the whole circle; a smaller angle ends with the last item. Returns the ids
 ```
 
 Return the names of the blocks, in alphabetical order.
+
+### `chord-text` (function)
+
+```lisp
+(chord-text key modifiers)
+```
+
+Return a key binding as it is written: Ctrl+Alt+H.
+
+- `KEY`: the keyword of the key.
+- `MODIFIERS`: the list of :control, :shift and :alt held with it.
 
 ### `circle` (function)
 
@@ -13047,6 +13295,14 @@ Draw a circle centered on (X, Y). Returns its id.
 Return VALUE centimetres as millimetres: (cm 20) is 200.
 
 - `VALUE`: a number.
+
+### `commands` (function)
+
+```lisp
+(commands)
+```
+
+Return the names of the commands that were defined with DEFCOMMAND, in the order they were defined.
 
 ### `context-change-count` (symbol)
 
@@ -13106,6 +13362,51 @@ Make copies of entities, moved by (DX, DY) from the originals. Returns the ids o
 Return how many forms TEXT holds, or NIL when it cannot be read.
 
 - `TEXT`: Lisp source.
+
+### `customizations` (type)
+
+What the user's own files defined.
+
+- `COMMANDS`: the USER-COMMANDs, in the order they were defined.
+- `KEYS`: list of (key modifiers target), the target being the name of a command or a function.
+- `HOOKS`: list of (event . functions), each function being a function of no arguments or the name of a command.
+
+### `customizations-commands` (function)
+
+```lisp
+(customizations-commands instance)
+```
+
+(undocumented)
+
+### `customizations-hooks` (function)
+
+```lisp
+(customizations-hooks instance)
+```
+
+(undocumented)
+
+### `customizations-keys` (function)
+
+```lisp
+(customizations-keys instance)
+```
+
+(undocumented)
+
+### `defcommand` (macro)
+
+```lisp
+(defcommand name description &body body)
+```
+
+Define a command that is run from the command palette (Ctrl+K) or from a key bound to it. It takes no arguments, does
+what BODY does, which can draw and edit with any command, and is one step of undo. Returns its name.
+
+- `NAME`: what it is called, a string.
+- `DESCRIPTION`: what it does, a string.
+- `BODY`: the forms it runs.
 
 ### `deselect` (function)
 
@@ -13231,6 +13532,19 @@ Erase entities. Entities on a locked layer are left. Returns how many were erase
 
 - `IDS`: an id or a list of ids.
 
+### `evaluate-function` (function)
+
+```lisp
+(evaluate-function context function &key (timeout +default-timeout-seconds+))
+```
+
+Call a function as a single command against the drawing of CONTEXT, with the guarantees of EVALUATE-SOURCE: what it
+changes is put back when it fails or takes too long, and what it prints is kept. Returns a SCRIPT-RESULT.
+
+- `CONTEXT`: the script context to run in.
+- `FUNCTION`: function of no arguments, such as the one that a command defined in the init file stands for.
+- `TIMEOUT`: the longest time to run, in seconds.
+
 ### `evaluate-source` (function)
 
 ```lisp
@@ -13266,6 +13580,29 @@ stands for, and the sides of a shape. Returns how many were exploded.
 
 Return the smallest rectangle that holds the drawing, as the list (min-x min-y max-x max-y), or NIL when
 it is empty.
+
+### `find-key-binding` (function)
+
+```lisp
+(find-key-binding customizations key modifiers)
+```
+
+Return the command or function that a key is bound to, or NIL.
+
+- `CUSTOMIZATIONS`: what the user defined.
+- `KEY`: the keyword of the key that was pressed.
+- `MODIFIERS`: the modifier keywords that were held.
+
+### `find-user-command` (function)
+
+```lisp
+(find-user-command customizations name)
+```
+
+Return the command with a name, or NIL.
+
+- `CUSTOMIZATIONS`: what the user defined.
+- `NAME`: the name of the command, in any case.
 
 ### `fit` (function)
 
@@ -13333,6 +13670,17 @@ Hatch the polygon through POINTS, leaving holes. Returns its id.
 List the commands, or say what one of them does when COMMAND, a symbol, is given.
 
 - `COMMAND`: the name of a command, such as 'line.
+
+### `hook-functions` (function)
+
+```lisp
+(hook-functions customizations event)
+```
+
+Return what has been added to an event, in the order it was added.
+
+- `CUSTOMIZATIONS`: what the user defined.
+- `EVENT`: the event.
 
 ### `inch` (function)
 
@@ -13428,6 +13776,14 @@ Returns the id of the placement.
 - `BASE-X`: x of the point that is the base point of the block.
 - `BASE-Y`: y of that point.
 
+### `make-customizations` (function)
+
+```lisp
+(make-customizations)
+```
+
+(undocumented)
+
 ### `make-script-context` (function)
 
 ```lisp
@@ -13485,6 +13841,20 @@ Move entities to the layer called NAME. Returns how many moved.
 
 - `IDS`: an id or a list of ids.
 - `NAME`: the name of the layer.
+
+### `parse-chord` (function)
+
+```lisp
+(parse-chord text)
+```
+
+Return the key and the modifiers that a key binding names, as two values: the keyword of the key and the list of
+:control, :shift and :alt. The text is the modifiers and then the key, joined by +, in any case: Ctrl+Alt+H,
+Shift+F5, F7, Ctrl+Up. A key may be a letter, F1 to F12, Delete, Home, End, PageUp, PageDown or an arrow; the keys
+that the program needs as they are (Escape, Enter, Tab, Space, Backspace) may not be bound. A letter needs Ctrl or
+Alt, because it is what the user types otherwise. Signals an error when the text is none of that.
+
+- `TEXT`: a key binding as it is written, such as "Ctrl+Shift+K".
 
 ### `pline` (function)
 
@@ -13837,6 +14207,38 @@ Write STRING with its baseline starting at (X, Y). Returns its id.
 - `STRING`: the text.
 - `HEIGHT`: the text height, or the one the drawing uses for new text.
 - `ANGLE`: the direction of the baseline, in degrees.
+
+### `user-command` (type)
+
+A command that the user defined.
+
+- `NAME`: what it is called, with the case the user gave it.
+- `DESCRIPTION`: what it does, in a sentence.
+- `FUNCTION`: function of no arguments that does it.
+
+### `user-command-description` (function)
+
+```lisp
+(user-command-description instance)
+```
+
+(undocumented)
+
+### `user-command-function` (function)
+
+```lisp
+(user-command-function instance)
+```
+
+(undocumented)
+
+### `user-command-name` (function)
+
+```lisp
+(user-command-name instance)
+```
+
+(undocumented)
 
 ### `with-block` (macro)
 

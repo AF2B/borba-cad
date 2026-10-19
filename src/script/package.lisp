@@ -38,6 +38,28 @@ commands that draw it.")
    #:context-reset
    #:*maximum-changes*
    #:*context*
+   ;; What the user defines in the init file
+   #:*customizations*
+   #:customizations
+   #:make-customizations
+   #:customizations-commands
+   #:customizations-keys
+   #:customizations-hooks
+   #:user-command
+   #:user-command-name
+   #:user-command-description
+   #:user-command-function
+   #:find-user-command
+   #:find-key-binding
+   #:hook-functions
+   #:parse-chord
+   #:chord-text
+   #:*hook-events*
+   #:defcommand
+   #:bind-key
+   #:add-hook
+   #:commands
+   #:bindings
    ;; Evaluating
    #:script-result
    #:script-result-status
@@ -46,6 +68,7 @@ commands that draw it.")
    #:script-result-message
    #:script-result-forms
    #:evaluate-source
+   #:evaluate-function
    #:read-source-forms
    #:count-source-forms
    #:strip-comments

@@ -1276,6 +1276,7 @@ THINGS: anything."
     ("Changing entities" move copy erase edit redraw move-to-layer rotate mirror scale)
     ("Finding entities" entities entity-count extents info quantities)
     ("Selection and view" select select-all deselect selected fit)
+    ("Customizing" defcommand bind-key add-hook commands bindings)
     ("Settings" display-unit grid-spacing)
     ("Units, angles, colors" mm cm m inch foot rad rgb)
     ("Talking" say help))
