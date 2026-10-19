@@ -102,12 +102,17 @@ ARGUMENTS: list of argument strings."
                                :reason (format nil "unknown option ~s" argument))))))
     options))
 
-(defun display-available-p ()
-  "Return true when a graphical session is available (Wayland or X11)."
+(defun display-available-p (&key (windows-p #+win32 t #-win32 nil))
+  "Return true when a graphical session is available: always on Windows, whose windows need no variable of the
+environment, and on the other systems when Wayland or X11 is there.
+
+WINDOWS-P: true when the program runs on Windows."
   (flet ((set-p (name)
            (let ((value (sbcl:environment-variable name)))
              (and value (plusp (length value))))))
-    (or (set-p "WAYLAND_DISPLAY") (set-p "DISPLAY"))))
+    (or windows-p
+        (set-p "WAYLAND_DISPLAY")
+        (set-p "DISPLAY"))))
 
 (defun phase-milliseconds (start
                            end)

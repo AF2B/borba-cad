@@ -46,3 +46,19 @@
     (is (equal (merge-pathnames "log/" (base:user-state-directory)) (base:config-log-directory installed)))
     (is (equal (merge-pathnames "var/log/" (base:config-project-root source)) (base:config-log-directory source))
         "run from its source, the program keeps using var/ in the project")))
+
+(test windows-needs-no-variable-to-have-a-graphical-session
+  (is (platform:display-available-p :windows-p t) "a Windows machine has a window system whatever the environment says")
+  #-win32
+  (let ((wayland (sbcl:environment-variable "WAYLAND_DISPLAY"))
+        (x11 (sbcl:environment-variable "DISPLAY")))
+    (unwind-protect
+         (progn
+           (sb-posix:unsetenv "WAYLAND_DISPLAY")
+           (sb-posix:unsetenv "DISPLAY")
+           (is (platform:display-available-p :windows-p t))
+           (is (not (platform:display-available-p :windows-p nil)) "on the other systems the variables say"))
+      (when wayland
+        (sb-posix:setenv "WAYLAND_DISPLAY" wayland 1))
+      (when x11
+        (sb-posix:setenv "DISPLAY" x11 1)))))
