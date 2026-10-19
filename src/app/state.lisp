@@ -66,6 +66,20 @@ MODIFIERS: modifier keys held."
 (defconstant +report-message-lines+ 8
   "Lines of the message of a prompt that carries a report to read, which is longer than a question.")
 
+(defstruct (form-field (:constructor make-form-field (key
+                                                      label
+                                                      edit
+                                                      &optional options
+                                                                (choice 0))))
+  "One line of a form: a label and either a text field or a choice among a few options.
+
+KEY: the keyword the value is given under.
+LABEL: what the line asks for.
+EDIT: the EDIT-STATE of its field, or NIL for a line of options.
+OPTIONS: for a line of options, a list of (key . label); clicking it, or Space and the side arrows, go to the next.
+CHOICE: for a line of options, the position of the one that is chosen."
+  key label edit options (choice 0 :type fixnum))
+
 (defstruct (prompt (:constructor make-prompt (kind
                                               title
                                               message
@@ -74,14 +88,25 @@ MODIFIERS: modifier keys held."
                                               &optional message-lines)))
   "A modal question.
 
-KIND: :text (a text field with OK and Cancel) or :choice (a row of buttons).
+KIND: :text (a text field with OK and Cancel), :choice (a row of buttons) or :form (several text fields, with OK
+and Cancel).
 TITLE: heading.
 MESSAGE: explanation shown under the heading.
 EDIT: the EDIT-STATE of the text field, for :text prompts.
-CHOICES: for :text, a list of (label . function) with the accept function first; for :choice, the buttons.
-The accept function of a :text prompt receives the typed string.
-MESSAGE-LINES: how many lines the message may take before it is cut, or NIL for the usual three."
-  kind title message edit choices message-lines)
+CHOICES: for :text and :form, a list of (label . function) with the accept function first; for :choice, the buttons.
+The accept function of a :text prompt receives the typed string; that of a :form receives an alist of the key and
+the typed string of each line, and returns a sentence when it refuses them, which keeps the form open.
+MESSAGE-LINES: how many lines the message may take before it is cut, or NIL for the usual three.
+FIELDS: for :form, the FORM-FIELDs, top to bottom.
+ACTIVE: for :form, the position of the field that has the keyboard.
+INFO: for :form, a function of the alist of typed values that returns a line that says what OK would do, and true as
+a second value when the values cannot be used; or NIL.
+PROBLEM: for :form, the sentence the last OK was refused with, or NIL."
+  kind title message edit choices message-lines
+  (fields nil :type list)
+  (active 0 :type fixnum)
+  (info nil)
+  (problem nil))
 
 (defstruct (menu (:constructor make-menu (kind
                                           anchor
@@ -164,6 +189,7 @@ WELCOME: the start screen, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
 FILLET-RADIUS: the radius, in millimetres, the fillet tool gives the next arc.
 SPREAD-DISTANCE: the distance, in millimetres, the spread tool moves each piece of a shape from the others.
+ARRAY-SETTINGS: what was typed in the last array forms, as an alist of the key of each line and its value.
 INTERFACE-ZOOM: how much larger than designed the user asked the interface to be drawn; 1 is as designed.
 PLOT-SETTINGS: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 LAST-BLOCK-NAME: the name of the block that was last made or placed, or NIL.
@@ -226,6 +252,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   (polygon-sides 6 :type (integer 3))
   (fillet-radius +default-fillet-radius+ :type double-float)
   (spread-distance +default-spread-distance+ :type double-float)
+  (array-settings '() :type list)
   (interface-zoom 1d0 :type double-float)
   plot-settings
   last-block-name

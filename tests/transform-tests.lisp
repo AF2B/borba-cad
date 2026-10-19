@@ -266,11 +266,11 @@
     (click-widget application :modify)
     (is (equal '((:menu-item :rotate) (:menu-item :mirror) (:menu-item :scale)
                  (:menu-item :trim) (:menu-item :extend) (:menu-item :offset) (:menu-item :fillet)
-                 (:menu-item :spread) (:menu-item :union) (:menu-item :subtract) (:menu-item :intersect)
-                 (:menu-item :make-block) (:menu-item :explode))
+                 (:menu-item :spread) (:menu-item :array) (:menu-item :union) (:menu-item :subtract)
+                 (:menu-item :intersect) (:menu-item :make-block) (:menu-item :explode))
                (mapcar #'ui:widget-id (menu-rows application))))
-    (is (equal '("Shift+R" "Shift+M" "Shift+S" "Shift+T" "Shift+E" "Shift+O" "Shift+F" "Shift+P" "Shift+U"
-                 "Shift+D" "Shift+I" "Shift+B" "Shift+X")
+    (is (equal '("Shift+R" "Shift+M" "Shift+S" "Shift+T" "Shift+E" "Shift+O" "Shift+F" "Shift+P" "Shift+Y"
+                 "Shift+U" "Shift+D" "Shift+I" "Shift+B" "Shift+X")
                (mapcar #'ui:widget-shortcut (menu-rows application))))
     (click-widget application '(:menu-item :mirror))
     (is (eq :mirror (app:tool-kind (app:app-tool application))))

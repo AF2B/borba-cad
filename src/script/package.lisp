@@ -82,6 +82,9 @@ commands that draw it.")
    #:insert
    #:explode
    #:spread
+   #:array-grid
+   #:array-polar
+   #:array-path
    #:region-union
    #:region-subtract
    #:region-intersect

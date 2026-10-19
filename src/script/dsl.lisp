@@ -764,6 +764,88 @@ CUTTERS: an id or a list of ids of the shapes to cut away."
                           :difference
                           :base-id base))
 
+(defun apply-array (changes-function)
+  "Add the copies that an array makes, and return their ids.
+
+CHANGES-FUNCTION: function of no arguments that returns the change set of the array."
+  (let ((changes (handler-case (funcall changes-function)
+                   (base:edit-refused (condition)
+                     (error "~a" condition))))
+        (made '()))
+    (dolist (change changes)
+      (push (emit-change nil (dom:change-after change)) made))
+    (nreverse made)))
+
+(defun array-grid (ids
+                   rows
+                   columns
+                   row-spacing
+                   column-spacing
+                   &key (angle 0))
+  "Lay copies of entities in a grid, the originals being its first item: ROWS go up from them and COLUMNS to their
+right, or turned by ANGLE. A negative spacing goes the other way. Returns the ids of the copies, row by row.
+
+IDS: an id or a list of ids.
+ROWS: how many rows, at least 1.
+COLUMNS: how many columns, at least 1.
+ROW-SPACING: distance from one row to the next.
+COLUMN-SPACING: distance from one column to the next.
+ANGLE: the direction of the columns in degrees, or (rad x)."
+  (apply-array (lambda ()
+                 (dom:rectangular-array-changes (the-drawing)
+                                                (entity-ids-of ids)
+                                                rows
+                                                columns
+                                                (number-of row-spacing)
+                                                (number-of column-spacing)
+                                                :angle (angle-radians angle)))))
+
+(defun array-polar (ids
+                    center-x
+                    center-y
+                    count
+                    &key (angle 360)
+                         (turn t))
+  "Lay copies of entities round a point, the originals being the first of COUNT items. A full turn spreads the items
+round the whole circle; a smaller angle ends with the last item. Returns the ids of the copies.
+
+IDS: an id or a list of ids.
+CENTER-X: x of the center.
+CENTER-Y: y of the center.
+COUNT: how many items in all, the originals included, at least 2.
+ANGLE: the angle to fill in degrees, or (rad x); negative goes clockwise.
+TURN: true to turn each copy as it goes round, false to keep it as drawn."
+  (apply-array (lambda ()
+                 (dom:polar-array-changes (the-drawing)
+                                          (entity-ids-of ids)
+                                          (number-of center-x)
+                                          (number-of center-y)
+                                          count
+                                          (angle-radians angle)
+                                          :rotate-items turn))))
+
+(defun array-path (ids
+                   path
+                   &key count
+                        spacing
+                        (turn t))
+  "Lay copies of entities along a line, polyline, arc, circle, ellipse, rectangle or polygon, the originals being the
+item at its start. With COUNT the items are at equal steps from the start to the end (round a closed path); with
+SPACING there is one every that distance, as many as fit. Returns the ids of the copies.
+
+IDS: an id or a list of ids.
+PATH: the id of the entity the items follow.
+COUNT: how many items in all, the originals included.
+SPACING: the distance from one item to the next.
+TURN: true to turn each copy to follow the direction of the path, false to keep it as drawn."
+  (apply-array (lambda ()
+                 (dom:path-array-changes (the-drawing)
+                                         (entity-ids-of ids)
+                                         path
+                                         :count count
+                                         :spacing (and spacing (number-of spacing))
+                                         :align turn))))
+
 (defun blocks ()
   "Return the names of the blocks, in alphabetical order."
   (dom:block-names (the-drawing)))
@@ -1173,6 +1255,7 @@ THINGS: anything."
     ("Layers" layer with-layer layers)
     ("Blocks" with-block make-block insert explode spread blocks)
     ("Closed shapes" region-union region-subtract region-intersect)
+    ("Repeating" array-grid array-polar array-path)
     ("Changing entities" move copy erase edit redraw move-to-layer rotate mirror scale)
     ("Finding entities" entities entity-count extents info)
     ("Selection and view" select select-all deselect selected fit)

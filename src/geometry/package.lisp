@@ -128,4 +128,10 @@ No screen, pixel or rendering concepts appear here.")
    #:compute-angular-dimension-layout
    #:annotation-pick-distance
    #:annotation-touches-bounds-p
-   #:compute-dimension-layout))
+   #:compute-dimension-layout
+   ;; Paths
+   #:path-segment-lengths
+   #:path-length
+   #:path-points-at
+   #:path-even-distances
+   #:path-spaced-distances))

@@ -334,17 +334,30 @@ APP: the application."
 APP: the application.
 KEY: key keyword.
 MODIFIERS: modifier keys held."
-  (let ((prompt (app-prompt app)))
+  (let* ((prompt (app-prompt app))
+         (form-p (eq (prompt-kind prompt) :form))
+         (options-p (and form-p
+                         (form-field-options (nth (prompt-active prompt) (prompt-fields prompt))))))
     (case key
       (:enter (accept-prompt app))
       (:escape (cancel-prompt app))
-      (t (when (eq (prompt-kind prompt) :text)
-           (let ((edited (edit-with-clipboard app
-                                              (prompt-edit prompt)
-                                              key
-                                              modifiers)))
-             (when edited
-               (setf (prompt-edit prompt) edited))))))
+      (:tab (when form-p
+              (move-form-focus app (if (modifier-p modifiers :shift) -1 1))))
+      (:up (when form-p
+             (move-form-focus app -1)))
+      (:down (when form-p
+               (move-form-focus app 1)))
+      (t (cond ((and options-p (member key '(:space :left :right)))
+                (cycle-form-option app
+                                   (prompt-active prompt)
+                                   (if (eq key :left) -1 1)))
+               ((prompt-current-edit prompt)
+                (let ((edited (edit-with-clipboard app
+                                                   (prompt-current-edit prompt)
+                                                   key
+                                                   modifiers)))
+                  (when edited
+                    (setf (prompt-current-edit prompt) edited)))))))
     (app-request-redraw app)))
 
 (defun handle-field-key (app
@@ -476,8 +489,8 @@ EVENT: a key event."
 APP: the application.
 EVENT: a text event."
   (let ((prompt (app-prompt app)))
-    (cond ((and prompt (eq (prompt-kind prompt) :text))
-           (setf (prompt-edit prompt) (ui:edit-insert (prompt-edit prompt) (text-event-text event))))
+    (cond ((and prompt (prompt-current-edit prompt))
+           (setf (prompt-current-edit prompt) (ui:edit-insert (prompt-current-edit prompt) (text-event-text event))))
           (prompt nil)
           ((app-dialog app)
            (handle-dialog-text app (text-event-text event)))

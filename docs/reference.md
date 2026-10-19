@@ -95,6 +95,7 @@ NIL when it selects only what it holds (dragged from left to right).
 - `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
 - `FILLET-RADIUS`: the radius, in millimetres, the fillet tool gives the next arc.
 - `SPREAD-DISTANCE`: the distance, in millimetres, the spread tool moves each piece of a shape from the others.
+- `ARRAY-SETTINGS`: what was typed in the last array forms, as an alist of the key of each line and its value.
 - `INTERFACE-ZOOM`: how much larger than designed the user asked the interface to be drawn; 1 is as designed.
 - `PLOT-SETTINGS`: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 - `LAST-BLOCK-NAME`: the name of the block that was last made or placed, or NIL.
@@ -134,6 +135,14 @@ new one.
 - `QUIT-REQUESTED`: true when the application should close.
 - `LAST-SCENE-RESULT`: statistics of the last scene build.
 - `LAST-ERROR`: the last error condition reported, for tests and diagnostics.
+
+### `app-array-settings` (function)
+
+```lisp
+(app-array-settings instance)
+```
+
+(undocumented)
 
 ### `app-clipboard-reader` (function)
 
@@ -1295,6 +1304,33 @@ One line of a folder listing.
 
 (undocumented)
 
+### `form-field-edit` (function)
+
+```lisp
+(form-field-edit instance)
+```
+
+(undocumented)
+
+### `form-field-key` (function)
+
+```lisp
+(form-field-key instance)
+```
+
+(undocumented)
+
+### `form-values` (function)
+
+```lisp
+(form-values prompt)
+```
+
+Return what a form holds, as an alist of the key of each line and its value, top to bottom: the typed text of a line
+with a text field, the key of the chosen option of a line of options.
+
+- `PROMPT`: a :form prompt.
+
 ### `format-entry-size` (function)
 
 ```lisp
@@ -1648,6 +1684,27 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 or export one, :recording to save the script of a recording, :shape to choose an SVG file to add as a shape,
 :image to export a picture, or :pdf or :svg to export a sheet.
 
+### `open-form-prompt` (function)
+
+```lisp
+(open-form-prompt app title message fields on-accept &key info)
+```
+
+Open a modal form: a line for each of FIELDS, with a text field or a few options, then OK and Cancel. Tab and
+Shift+Tab (or the up and down arrows) move between the lines, Enter is OK. ON-ACCEPT runs when OK is pressed; when it
+returns a sentence the form stays open and shows it.
+
+- `APP`: the application.
+- `TITLE`: heading.
+- `MESSAGE`: explanation under the heading.
+- `FIELDS`: list of (key label initial) for a text field, or (key label initial-key options) for a choice, where OPTIONS
+is a list of (key . label); the key is what the value is given under, the label what the line asks for, and the
+initial value the text the field starts with or the key of the option that starts chosen.
+- `ON-ACCEPT`: function of an alist of (key . value), in the order of the fields, where the value is the typed string or
+the key of the chosen option; it returns NIL to close the form or a sentence to keep it open.
+- `INFO`: function of the same alist that returns a line saying what OK would do, and true as a second value when the
+values cannot be used; or NIL.
+
 ### `open-menu` (function)
 
 ```lisp
@@ -1705,6 +1762,16 @@ Create a layer, make it current and tell the user.
 
 - `APP`: the application.
 - `NAME`: the layer name.
+
+### `operation-array` (function)
+
+```lisp
+(operation-array app)
+```
+
+Repeat the selection: ask whether in a grid, round a point or along a path, and go on from there.
+
+- `APP`: the application.
 
 ### `operation-assign-selection-layer` (function)
 
@@ -2391,13 +2458,28 @@ Collects vertices; Enter finishes an open polyline, clicking the first vertex cl
 
 A modal question.
 
-- `KIND`: :text (a text field with OK and Cancel) or :choice (a row of buttons).
+- `KIND`: :text (a text field with OK and Cancel), :choice (a row of buttons) or :form (several text fields, with OK
+and Cancel).
 - `TITLE`: heading.
 - `MESSAGE`: explanation shown under the heading.
 - `EDIT`: the EDIT-STATE of the text field, for :text prompts.
-- `CHOICES`: for :text, a list of (label . function) with the accept function first; for :choice, the buttons.
-The accept function of a :text prompt receives the typed string.
+- `CHOICES`: for :text and :form, a list of (label . function) with the accept function first; for :choice, the buttons.
+The accept function of a :text prompt receives the typed string; that of a :form receives an alist of the key and
+the typed string of each line, and returns a sentence when it refuses them, which keeps the form open.
 - `MESSAGE-LINES`: how many lines the message may take before it is cut, or NIL for the usual three.
+- `FIELDS`: for :form, the FORM-FIELDs, top to bottom.
+- `ACTIVE`: for :form, the position of the field that has the keyboard.
+- `INFO`: for :form, a function of the alist of typed values that returns a line that says what OK would do, and true as
+a second value when the values cannot be used; or NIL.
+- `PROBLEM`: for :form, the sentence the last OK was refused with, or NIL.
+
+### `prompt-active` (function)
+
+```lisp
+(prompt-active instance)
+```
+
+(undocumented)
 
 ### `prompt-choices` (function)
 
@@ -2415,6 +2497,14 @@ The accept function of a :text prompt receives the typed string.
 
 (undocumented)
 
+### `prompt-fields` (function)
+
+```lisp
+(prompt-fields instance)
+```
+
+(undocumented)
+
 ### `prompt-kind` (function)
 
 ```lisp
@@ -2427,6 +2517,14 @@ The accept function of a :text prompt receives the typed string.
 
 ```lisp
 (prompt-message instance)
+```
+
+(undocumented)
+
+### `prompt-problem` (function)
+
+```lisp
+(prompt-problem instance)
 ```
 
 (undocumented)
@@ -4056,6 +4154,10 @@ Most change sets kept for undo. Bounds the memory used by history (NFR-6).
 
 Number of polyline vertices that the inspector lists for numeric editing.
 
+### `+maximum-array-entities+` (constant)
+
+Most entities one array may add.
+
 ### `+maximum-block-entities+` (constant)
 
 Most entities one block may hold.
@@ -4281,6 +4383,21 @@ An arc: the part of a circle that is swept counter-clockwise from a start angle 
 ```
 
 (undocumented)
+
+### `array-changes` (function)
+
+```lisp
+(array-changes drawing ids transforms)
+```
+
+Return the change set that adds, for each of TRANSFORMS, a copy of every entity with IDS made by it, as new entities
+on the layer of the original, and how many were skipped because they are missing or on a locked layer. Signals
+EDIT-REFUSED when nothing can be copied or the array would add too many entities, and INVALID-ENTITY when a copy would
+leave the drawing limits.
+
+- `DRAWING`: the drawing.
+- `IDS`: list of entity ids.
+- `TRANSFORMS`: list of functions of an entity that return the copy, one for each item but the first.
 
 ### `assign-layer-changes` (function)
 
@@ -5032,6 +5149,18 @@ segments it is the distance to the line of the nearest segment.
 
 (undocumented)
 
+### `entity-path` (function)
+
+```lisp
+(entity-path entity)
+```
+
+Return the path that an entity makes, as two values: a flat array of its vertices, and true when the path is
+closed. A curve is cut into many short segments. Returns NIL for an entity that is not a line, a polyline, an arc, a
+circle, an ellipse, a rectangle or a polygon.
+
+- `ENTITY`: an entity.
+
 ### `entity-pick-distance` (generic function)
 
 ```lisp
@@ -5177,6 +5306,18 @@ constructor. Signals INVALID-ENTITY when the result would be invalid.
 - `ENTITY`: an entity.
 - `KEY`: a PROPERTY-KEY returned by ENTITY-PROPERTIES.
 - `VALUE`: new value (double-float, string, boolean or unit keyword according to the kind).
+
+### `existing-editable-entities` (function)
+
+```lisp
+(existing-editable-entities drawing ids)
+```
+
+Return two values: the entities among IDS that exist and are editable, and how many were
+skipped because they are missing or on a locked layer.
+
+- `DRAWING`: the drawing.
+- `IDS`: list of entity ids.
 
 ### `explode-changes` (function)
 
@@ -6232,6 +6373,24 @@ placement of a block that it has uses its block, whatever the copy said.
 - `DX`: displacement along x.
 - `DY`: displacement along y.
 
+### `path-array-changes` (function)
+
+```lisp
+(path-array-changes drawing ids path-id &key count spacing align)
+```
+
+Return the change set that lays copies of the entities with IDS along the path that another entity makes, the
+originals being the item at the start of the path, and how many were skipped. With COUNT the items are at equal steps
+from the start to the end of the path (round a closed one); with SPACING there is one every that distance, as many as
+fit. Signals EDIT-REFUSED when the entity is missing or not a path, or when there are fewer than two items.
+
+- `DRAWING`: the drawing.
+- `IDS`: list of entity ids; the path itself is left out of them.
+- `PATH-ID`: id of the line, polyline, arc, circle, ellipse, rectangle or polygon the items follow.
+- `COUNT`: how many items in all, the originals included, or NIL to use SPACING.
+- `SPACING`: distance between one item and the next along the path, in millimetres, or NIL to use COUNT.
+- `ALIGN`: true to turn each copy to follow the direction of the path.
+
 ### `pick-entity` (function)
 
 ```lisp
@@ -6267,6 +6426,25 @@ Return true when ENTITY may be selected: its layer exists, is visible and is not
 
 - `DRAWING`: the drawing.
 - `ENTITY`: an entity.
+
+### `polar-array-changes` (function)
+
+```lisp
+(polar-array-changes drawing ids center-x center-y count total-angle &key (rotate-items t))
+```
+
+Return the change set that lays copies of the entities with IDS round a point, the originals being the first of COUNT
+items, and how many were skipped. A total angle of a full turn or more puts the items at equal steps round the whole
+circle; a smaller one puts the last item at the end of the angle. Signals EDIT-REFUSED when there are fewer than two
+items or the angle is zero.
+
+- `DRAWING`: the drawing.
+- `IDS`: list of entity ids.
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `COUNT`: how many items in all, the originals included, at least 2.
+- `TOTAL-ANGLE`: the angle the items are spread over, in radians, counter-clockwise when positive.
+- `ROTATE-ITEMS`: true to turn each copy as it goes round; false to keep it as it was drawn, only moved.
 
 ### `polygon-center-x` (function)
 
@@ -6561,6 +6739,24 @@ An axis-aligned rectangle.
 ```
 
 (undocumented)
+
+### `rectangular-array-changes` (function)
+
+```lisp
+(rectangular-array-changes drawing ids rows columns row-spacing column-spacing &key (angle 0.0d0))
+```
+
+Return the change set that lays copies of the entities with IDS in a grid, the originals being its first item, and
+how many were skipped. Signals EDIT-REFUSED when the grid has one item or the spacing of a direction that has more is
+zero.
+
+- `DRAWING`: the drawing.
+- `IDS`: list of entity ids.
+- `ROWS`: how many rows, at least 1.
+- `COLUMNS`: how many columns, at least 1.
+- `ROW-SPACING`: distance from one row to the next, in millimetres.
+- `COLUMN-SPACING`: distance from one column to the next, in millimetres.
+- `ANGLE`: direction of the columns, in radians; the rows are 90 degrees from it.
 
 ### `region-changes` (function)
 
@@ -8610,6 +8806,70 @@ ORIENTED-BOX-BOUNDS describes.
 - `DESCENT`: extent on the right of the direction.
 - `ANGLE`: direction in radians, counter-clockwise from +x.
 - `BOUNDS`: the window.
+
+### `path-even-distances` (function)
+
+```lisp
+(path-even-distances length closed count)
+```
+
+Return COUNT distances along a path of the given length, the first at its start, at equal steps: the last at its
+end when the path is open, and a step short of it when it is closed, where the end is the start.
+
+- `LENGTH`: the length of the path.
+- `CLOSED`: true for a closed path.
+- `COUNT`: how many distances, at least one.
+
+### `path-length` (function)
+
+```lisp
+(path-length coordinates closed)
+```
+
+Return the length of a path.
+
+- `COORDINATES`: flat array of the vertices.
+- `CLOSED`: true when a segment joins the last vertex back to the first.
+
+### `path-points-at` (function)
+
+```lisp
+(path-points-at coordinates closed distances)
+```
+
+Return the points of a path at some distances from its start, as a list of (x y angle) lists, where the angle is the
+direction of the path there, in radians. A vertex is given the direction of the segment that leaves it, and the end of
+an open path that of its last segment. A distance past the end is taken to be the end.
+
+- `COORDINATES`: flat array of the vertices, with at least two apart.
+- `CLOSED`: true when a segment joins the last vertex back to the first.
+- `DISTANCES`: ascending list of distances from the start.
+
+### `path-segment-lengths` (function)
+
+```lisp
+(path-segment-lengths coordinates closed)
+```
+
+Return the lengths of the segments of a path as a vector, in order; a closed path has one more, from the last vertex
+back to the first.
+
+- `COORDINATES`: flat array of the vertices.
+- `CLOSED`: true when a segment joins the last vertex back to the first.
+
+### `path-spaced-distances` (function)
+
+```lisp
+(path-spaced-distances length closed spacing)
+```
+
+Return the distances along a path of the given length at which something is put every SPACING from its start: as
+many as fit, the one at the end of an open path included when the spacing divides the length, and for a closed path
+none at the end, where it would sit on the first.
+
+- `LENGTH`: the length of the path.
+- `CLOSED`: true for a closed path.
+- `SPACING`: the distance between one and the next, above zero.
 
 ### `point-arc-distance` (function)
 
@@ -12516,6 +12776,54 @@ angle END. Returns its id.
 - `RADIUS`: its radius.
 - `START`: the angle it starts at, in degrees.
 - `END`: the angle it ends at, in degrees.
+
+### `array-grid` (function)
+
+```lisp
+(array-grid ids rows columns row-spacing column-spacing &key (angle 0))
+```
+
+Lay copies of entities in a grid, the originals being its first item: ROWS go up from them and COLUMNS to their
+right, or turned by ANGLE. A negative spacing goes the other way. Returns the ids of the copies, row by row.
+
+- `IDS`: an id or a list of ids.
+- `ROWS`: how many rows, at least 1.
+- `COLUMNS`: how many columns, at least 1.
+- `ROW-SPACING`: distance from one row to the next.
+- `COLUMN-SPACING`: distance from one column to the next.
+- `ANGLE`: the direction of the columns in degrees, or (rad x).
+
+### `array-path` (function)
+
+```lisp
+(array-path ids path &key count spacing (turn t))
+```
+
+Lay copies of entities along a line, polyline, arc, circle, ellipse, rectangle or polygon, the originals being the
+item at its start. With COUNT the items are at equal steps from the start to the end (round a closed path); with
+SPACING there is one every that distance, as many as fit. Returns the ids of the copies.
+
+- `IDS`: an id or a list of ids.
+- `PATH`: the id of the entity the items follow.
+- `COUNT`: how many items in all, the originals included.
+- `SPACING`: the distance from one item to the next.
+- `TURN`: true to turn each copy to follow the direction of the path, false to keep it as drawn.
+
+### `array-polar` (function)
+
+```lisp
+(array-polar ids center-x center-y count &key (angle 360) (turn t))
+```
+
+Lay copies of entities round a point, the originals being the first of COUNT items. A full turn spreads the items
+round the whole circle; a smaller angle ends with the last item. Returns the ids of the copies.
+
+- `IDS`: an id or a list of ids.
+- `CENTER-X`: x of the center.
+- `CENTER-Y`: y of the center.
+- `COUNT`: how many items in all, the originals included, at least 2.
+- `ANGLE`: the angle to fill in degrees, or (rad x); negative goes clockwise.
+- `TURN`: true to turn each copy as it goes round, false to keep it as drawn.
 
 ### `blocks` (function)
 

@@ -233,6 +233,13 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:hatch-changes
    #:region-changes
    #:region-target
+   #:existing-editable-entities
+   #:+maximum-array-entities+
+   #:entity-path
+   #:array-changes
+   #:rectangular-array-changes
+   #:polar-array-changes
+   #:path-array-changes
    #:spread-changes
    #:spread-selection-changes
    #:entity-explode-pieces
