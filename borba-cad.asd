@@ -75,6 +75,7 @@
                              (:file "commands")
                              (:file "reshaping")
                              (:file "block-commands")
+                             (:file "spreading")
                              (:file "transfer")))
                (:module "viewport"
                 :serial t
@@ -299,6 +300,7 @@
                (:file "plot-tests")
                (:file "hatch-tests")
                (:file "block-tests")
+               (:file "spreading-tests")
                (:file "recording-tests")
                (:file "theme-tests")
                (:file "i18n-tests")

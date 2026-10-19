@@ -87,6 +87,8 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:app-window-crossing
    #:app-polygon-sides
    #:app-fillet-radius
+   #:app-spread-distance
+   #:+default-spread-distance+
    #:app-window-width
    #:app-window-height
    #:app-dirty-p

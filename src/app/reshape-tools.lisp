@@ -2,8 +2,9 @@
 
 ;;;; The tools that change what exists by what is around it, and need no selection: trim and extend, which are
 ;;;; given the part of a line, an arc or a circle to work on by a click, offset, which copies an entity at a
-;;;; distance, and fillet, which rounds the corner of two lines. Each commits one change set, so each is one step
-;;;; of undo, and says in a sentence why it could not do what was asked.
+;;;; distance, fillet, which rounds the corner of two lines, and spread, which takes a shape apart and moves its
+;;;; pieces a little from each other. Each commits one change set, so each is one step of undo, and says in a
+;;;; sentence why it could not do what was asked.
 
 (defun reshape-pick (app
                      cursor
@@ -257,3 +258,68 @@ each line, on the part of it that stays. A number typed sets the radius."))
 
 (defmethod tool-in-progress-p ((tool fillet-tool))
   (and (fillet-first-line tool) t))
+
+;;; Spread
+
+(defclass spread-tool (tool) ()
+  (:documentation "Takes a shape apart and moves each piece the distance the application remembers from the others:
+a click inside a rectangle, a polygon, a closed polyline, a circle or a block. A number typed sets the distance."))
+
+(defmethod tool-kind ((tool spread-tool)) :spread)
+
+(defmethod tool-prompt ((tool spread-tool) app)
+  (i18n:trf "Spread, distance ~a: click inside the shape to take apart, or type another distance"
+            (length-text app (app-spread-distance app))))
+
+(defun spread-target-under (app
+                            cursor)
+  "Return the entity that a click at the pointer would spread, or NIL.
+
+APP: the application.
+CURSOR: the pointer position."
+  (dom:spread-target (app-drawing app)
+                     (cursor-raw-x cursor)
+                     (cursor-raw-y cursor)
+                     (pick-radius-in-world app)))
+
+(defmethod tool-pointer-down ((tool spread-tool) app cursor)
+  (let ((target (or (spread-target-under app cursor)
+                    (reshape-pick app cursor))))
+    (if target
+        (commit-reshaping app
+                          (lambda ()
+                            (dom:spread-changes (app-drawing app)
+                                                (dom:entity-id target)
+                                                (app-spread-distance app)))
+                          "entity.spread")
+        (set-message app
+                     (i18n:tr "Click inside a rectangle, polygon, polyline, circle or block.")
+                     :error))
+    (app-request-redraw app)))
+
+(defmethod tool-pointer-move ((tool spread-tool) app cursor)
+  (declare (ignore cursor))
+  (app-request-redraw app))
+
+(defmethod tool-typed-number ((tool spread-tool) app number)
+  (if (plusp number)
+      (progn (setf (app-spread-distance app) (base:unit->millimeters (float number 1d0) (display-unit-of app)))
+             (set-message app
+                          (i18n:trf "Spread distance: ~a"
+                                    (length-text app (app-spread-distance app)))))
+      (set-message app
+                   (i18n:tr "The distance must be above zero.")
+                   :error))
+  t)
+
+(defmethod tool-preview-entities ((tool spread-tool) app)
+  (let* ((cursor (app-cursor app))
+         (target (and cursor (spread-target-under app cursor))))
+    (when target
+      (handler-case (loop for change in (dom:spread-changes (app-drawing app)
+                                                            (dom:entity-id target)
+                                                            (app-spread-distance app))
+                          when (dom:change-after change)
+                            collect (dom:change-after change))
+        (base:borba-cad-error ()
+          nil)))))

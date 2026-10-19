@@ -228,6 +228,9 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:default-hatch-spacing
    #:hatch-region-at
    #:hatch-changes
+   #:spread-changes
+   #:spread-target
+   #:*spreadable-kinds*
    ;; Reshaping
    #:entity-offset
    #:entity-offset-through

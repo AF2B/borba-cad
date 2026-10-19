@@ -22,6 +22,10 @@ enough for a steady hand and small enough not to grab distant entities.")
 (defconstant +default-fillet-radius+ 100d0
   "Radius, in millimetres, of the arc the fillet tool makes until another is typed.")
 
+(defconstant +default-spread-distance+ 10d0
+  "How far, in millimetres, the spread tool moves each piece of a shape from the others until another distance is
+typed: one centimetre.")
+
 (defconstant +maximum-message-length+ 400
   "Longest status message kept, in characters.")
 
@@ -150,6 +154,7 @@ MENU: the open drop-down menu, or NIL.
 WELCOME: the start screen, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
 FILLET-RADIUS: the radius, in millimetres, the fillet tool gives the next arc.
+SPREAD-DISTANCE: the distance, in millimetres, the spread tool moves each piece of a shape from the others.
 PLOT-SETTINGS: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 LAST-BLOCK-NAME: the name of the block that was last made or placed, or NIL.
 RECORDING: the recording of what the user does that is under way, or NIL.
@@ -205,6 +210,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   welcome
   (polygon-sides 6 :type (integer 3))
   (fillet-radius +default-fillet-radius+ :type double-float)
+  (spread-distance +default-spread-distance+ :type double-float)
   plot-settings
   last-block-name
   recording

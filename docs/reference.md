@@ -24,6 +24,11 @@ The tools that change what is selected as a whole, and so need a selection.
 
 How long a drawing with unsaved changes goes without a copy being written.
 
+### `+default-spread-distance+` (constant)
+
+How far, in millimetres, the spread tool moves each piece of a shape from the others until another distance is
+typed: one centimetre.
+
 ### `+drag-threshold-pixels+` (constant)
 
 Pointer travel, in pixels, before a press becomes a drag; below it a release is a click.
@@ -77,6 +82,7 @@ NIL when it selects only what it holds (dragged from left to right).
 - `WELCOME`: the start screen, or NIL.
 - `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
 - `FILLET-RADIUS`: the radius, in millimetres, the fillet tool gives the next arc.
+- `SPREAD-DISTANCE`: the distance, in millimetres, the spread tool moves each piece of a shape from the others.
 - `PLOT-SETTINGS`: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 - `LAST-BLOCK-NAME`: the name of the block that was last made or placed, or NIL.
 - `RECORDING`: the recording of what the user does that is under way, or NIL.
@@ -438,6 +444,14 @@ Handle a window size change: the canvas follows the layout and keeps its center 
 
 ```lisp
 (app-selection instance)
+```
+
+(undocumented)
+
+### `app-spread-distance` (function)
+
+```lisp
+(app-spread-distance instance)
 ```
 
 (undocumented)
@@ -1433,7 +1447,7 @@ Create the tool named by KIND.
 
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
 :mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension, :diameter-dimension,
-:angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset or :fillet.
+:angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset, :fillet or :spread.
 
 ### `make-wheel-event` (function)
 
@@ -1942,7 +1956,7 @@ Activate a tool, cancelling whatever the previous one was doing.
 - `APP`: the application.
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
 :mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension,
-:diameter-dimension, :angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset or :fillet. A tool that
+:diameter-dimension, :angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset, :fillet or :spread. A tool that
 changes the selection (rotate, mirror, scale) is not activated when nothing is selected.
 
 ### `operation-start-recording` (function)
@@ -3763,6 +3777,10 @@ The ways a hatch fills its region: solid, with parallel lines, or with two sets 
 ### `*layer-palette*` (variable)
 
 The palette as RGB values.
+
+### `*spreadable-kinds*` (variable)
+
+The kinds of entity that can be spread.
 
 ### `+default-grid-spacing+` (constant)
 
@@ -6543,6 +6561,35 @@ Return the grid point nearest to (X, Y) as two values.
 - `DRAWING`: the drawing, which supplies the grid spacing.
 - `X`: point x in millimetres.
 - `Y`: point y in millimetres.
+
+### `spread-changes` (function)
+
+```lisp
+(spread-changes drawing id distance)
+```
+
+Return the change set that takes the entity with ID apart and moves each piece DISTANCE away from the others,
+the pieces on its layer. Signals EDIT-REFUSED when the entity is missing, on a locked layer or of a kind that
+cannot be spread, when it is a single piece, or when the distance is not above zero, and INVALID-ENTITY when a
+piece would not be valid.
+
+- `DRAWING`: the drawing.
+- `ID`: id of the entity to spread.
+- `DISTANCE`: millimetres.
+
+### `spread-target` (function)
+
+```lisp
+(spread-target drawing x y radius)
+```
+
+Return the entity that a click spreads, or NIL: the smallest closed shape, or block, that holds the point, and
+when none does, the entity that can be spread nearest to it within RADIUS.
+
+- `DRAWING`: the drawing.
+- `X`: world x of the click.
+- `Y`: world y of the click.
+- `RADIUS`: how far from the point, in millimetres, an entity may be and still be picked.
 
 ### `store-add` (function)
 
