@@ -247,7 +247,7 @@ WIDGET: a button."
 WIDGET: a button."
   (case (widget-variant widget)
     (:tool +tool-icon-size+)
-    (:icon +icon-size+)
+    ((:icon :floating) +icon-size+)
     (t +small-icon-size+)))
 
 (defun toggle-fill (widget

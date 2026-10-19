@@ -177,6 +177,11 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-toggle-console
    #:operation-run-script
    #:operation-toggle-recording
+   #:operation-toggle-theme
+   #:operation-zoom-in
+   #:operation-zoom-out
+   #:operation-zoom-by
+   #:operation-set-theme
    #:operation-start-recording
    #:operation-stop-recording
    #:app-recording-p

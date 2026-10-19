@@ -200,6 +200,32 @@ APP: the application."
                                        :origin-y (view:viewport-origin-y viewport)))))
     (app-request-redraw app)))
 
+(defun operation-zoom-by (app
+                          factor)
+  "Zoom the view by FACTOR about the center of the canvas, as a turn of the wheel does about the pointer.
+
+APP: the application.
+FACTOR: what the scale is multiplied by; above 1 zooms in."
+  (let ((canvas (canvas-rect app)))
+    (setf (app-viewport app)
+          (view:zoom-viewport-at (app-viewport app)
+                                 factor
+                                 (float (+ (ui:rect-x canvas) (/ (ui:rect-width canvas) 2)) 1d0)
+                                 (float (+ (ui:rect-y canvas) (/ (ui:rect-height canvas) 2)) 1d0)))
+    (app-request-redraw app)))
+
+(defun operation-zoom-in (app)
+  "Zoom in by one notch of the wheel, about the center of the canvas.
+
+APP: the application."
+  (operation-zoom-by app +zoom-step-per-notch+))
+
+(defun operation-zoom-out (app)
+  "Zoom out by one notch of the wheel, about the center of the canvas.
+
+APP: the application."
+  (operation-zoom-by app (/ 1d0 +zoom-step-per-notch+)))
+
 (defun operation-toggle-grid (app)
   "Show or hide the grid.
 
@@ -652,6 +678,42 @@ APP: the application."
 
 APP: the application."
   (confirm-discard app (lambda () (setf (app-quit-requested app) t))))
+
+;;; Theme
+
+(defparameter *theme-setting-name* "theme"
+  "Name under which the chosen theme is kept between runs.")
+
+(defun saved-theme (config)
+  "Return the theme kept from the last run, or NIL when there is none.
+
+CONFIG: the application configuration."
+  (let ((name (persist:load-setting (base:config-state-directory config) *theme-setting-name*)))
+    (and name (scene:theme-named name))))
+
+(defun operation-set-theme (app
+                            theme)
+  "Draw the window with THEME now and keep the choice for the next run.
+
+APP: the application.
+THEME: a theme."
+  (setf (app-theme app) theme)
+  (persist:save-setting (base:config-state-directory (app-config app))
+                        *theme-setting-name*
+                        (scene:theme-name theme))
+  (set-message app (if (eq (scene:theme-kind theme) :light)
+                       (i18n:tr "Light theme.")
+                       (i18n:tr "Dark theme.")))
+  (app-request-redraw app))
+
+(defun operation-toggle-theme (app)
+  "Change from the dark theme to the light one, or back.
+
+APP: the application."
+  (operation-set-theme app
+                       (if (eq (scene:theme-kind (app-theme app)) :light)
+                           (scene:default-theme)
+                           (scene:light-theme))))
 
 ;;; Language
 

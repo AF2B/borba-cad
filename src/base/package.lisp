@@ -85,6 +85,7 @@
    #:config-window-height
    #:config-initial-file
    #:config-language
+   #:config-theme
    #:parse-positive-integer-option
    #:detect-project-root
    #:default-config

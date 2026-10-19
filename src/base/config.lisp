@@ -50,7 +50,9 @@ WINDOW-WIDTH: initial window width in logical pixels.
 WINDOW-HEIGHT: initial window height in logical pixels.
 INITIAL-FILE: drawing file to open at startup, or NIL.
 LANGUAGE: the language keyword the user asked for with an option or the environment, or NIL to use the
-one saved last time and, failing that, English (US)."
+one saved last time and, failing that, English (US).
+THEME: :dark or :light, as asked for with an option or the environment, or NIL to use the one saved last
+time and, failing that, the dark one."
   (project-root nil :type (or null pathname))
   (log-directory nil :type (or null pathname))
   (state-directory nil :type (or null pathname))
@@ -66,7 +68,8 @@ one saved last time and, failing that, English (US)."
   (window-width +default-window-width+ :type integer)
   (window-height +default-window-height+ :type integer)
   (initial-file nil :type (or null string))
-  (language nil :type (or null keyword)))
+  (language nil :type (or null keyword))
+  (theme nil :type (or null keyword)))
 
 (defun configuration-failure (control
                               &rest arguments)
@@ -95,6 +98,14 @@ TEXT: a language tag such as \"pt-BR\" or \"ru-RU\" (any case; a hyphen or an un
       (configuration-failure "unknown language ~s; use one of ~{~a~^, ~}"
                              text
                              (mapcar #'i18n:language-tag (i18n:supported-languages)))))
+
+(defun parse-theme-option (text)
+  "Return the theme keyword named by TEXT, signaling CONFIGURATION-ERROR when there is no such theme.
+
+TEXT: \"dark\" or \"light\" (any case)."
+  (cond ((string-equal text "dark") :dark)
+        ((string-equal text "light") :light)
+        (t (configuration-failure "unknown theme ~s; use dark or light" text))))
 
 (defun parse-positive-integer-option (text
                                       option-name)
@@ -219,7 +230,8 @@ READER: function from variable name to string or NIL; defaults to the process en
             (to-stderr (value-of "BORBA_CAD_LOG_STDERR"))
             (sampling (value-of "BORBA_CAD_LOG_SAMPLING"))
             (font (value-of "BORBA_CAD_FONT"))
-            (language (value-of "BORBA_CAD_LANGUAGE")))
+            (language (value-of "BORBA_CAD_LANGUAGE"))
+            (theme (value-of "BORBA_CAD_THEME")))
         (when log-dir
           (setf (config-log-directory result) (directory-pathname log-dir)))
         (when state-dir
@@ -243,7 +255,9 @@ READER: function from variable name to string or NIL; defaults to the process en
         (when font
           (setf (config-font-path result) font))
         (when language
-          (setf (config-language result) (parse-language-option language)))))
+          (setf (config-language result) (parse-language-option language)))
+        (when theme
+          (setf (config-theme result) (parse-theme-option theme)))))
     result))
 
 (defun config-with-arguments (config
@@ -251,7 +265,7 @@ READER: function from variable name to string or NIL; defaults to the process en
   "Apply core command-line options to a copy of CONFIG.
 Returns two values: the new configuration and the arguments that were not recognized, in order.
 Recognized: --log-dir DIR, --state-dir DIR, --drawings-dir DIR, --log-level LEVEL, --log-stderr,
---log-sample EVENT=N, --font PATH, --language TAG, --file PATH, --width N, --height N.
+--log-sample EVENT=N, --font PATH, --language TAG, --theme NAME, --file PATH, --width N, --height N.
 
 CONFIG: the configuration to start from.
 ARGUMENTS: list of argument strings."
@@ -282,6 +296,8 @@ ARGUMENTS: list of argument strings."
                         (setf (config-font-path result) (next-value option)))
                        ((string= option "--language")
                         (setf (config-language result) (parse-language-option (next-value option))))
+                       ((string= option "--theme")
+                        (setf (config-theme result) (parse-theme-option (next-value option))))
                        ((string= option "--file")
                         (setf (config-initial-file result) (next-value option)))
                        ((string= option "--width")

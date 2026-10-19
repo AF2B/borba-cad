@@ -60,6 +60,7 @@ All compiled output goes to `build/fasl/`, logs to `var/log/`, benchmark reports
 | `--state-dir DIR` | `BORBA_CAD_STATE_DIR` | Where the program remembers things between runs: the recent files (default `var/state` in the project) |
 | `--drawings-dir DIR` | `BORBA_CAD_DRAWINGS_DIR` | Folder where the file dialogs start when no drawing is open (default: the user's documents folder) |
 | `--font FILE` | `BORBA_CAD_FONT` | Monospace TrueType font |
+| `--theme NAME` | `BORBA_CAD_THEME` | Color theme: `dark` (the default) or `light`. The sun and moon button in the title bar switches it and keeps the choice in `settings.txt` in the state directory, used next time unless an option or the variable says otherwise |
 | `--language TAG` | `BORBA_CAD_LANGUAGE` | Interface language: `en-US` (the default, always), `pt-BR` or `ru-RU`. The language chosen with the globe button in the title bar is kept in `settings.txt` in the state directory and used next time unless an option or the variable says otherwise |
 | `--width N`, `--height N` | | Initial window size in logical pixels (1440 × 900) |
 | `--demo`, `--exit-after-demo`, `--screenshot FILE` | | Run the scripted demonstration, close when done, save the last frame as a PNG |

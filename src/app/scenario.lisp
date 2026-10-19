@@ -5,8 +5,9 @@
 ;;;; frames, so a demo produces the same measurements as a person drawing; tests and benchmarks
 ;;;; run the same steps without a window.
 
-(defconstant +demo-scale+ 0.1d0
-  "Zoom of the demo view in pixels per millimetre: a 10 m wide plan fills 1000 pixels.")
+(defconstant +demo-scale+ 0.09d0
+  "Zoom of the demo view in pixels per millimetre: a 10 m wide plan fills 900 pixels, which leaves the corner of
+the canvas, where the buttons that zoom are, free of the plan.")
 
 (defconstant +demo-wheel-notches+ 3d0
   "Wheel notches the demo zooms in and out by.")

@@ -1,5 +1,5 @@
 (drawing
- (format-version 1)
+ (format-version 5)
  (unit millimeter)
  (display-unit millimeter)
  (grid (spacing 100.0) (visible t) (snap t) (object-snap t))
@@ -13,6 +13,8 @@
   (layer (id 2) (name "furniture") (color 120 200 255) (visible t) (locked nil))
   (layer (id 3) (name "annotations") (color 160 220 120) (visible t) (locked nil))
  )
+ (blocks
+ )
  (entities
   (rectangle (id 1) (layer 1) (min-x 0.0) (min-y 0.0) (width 10000.0) (height 7000.0))
   (line (id 2) (layer 1) (x1 6000.0) (y1 0.0) (x2 6000.0) (y2 7000.0))
@@ -21,7 +23,7 @@
   (circle (id 5) (layer 2) (center-x 9000.0) (center-y 6000.0) (radius 300.0))
   (polyline (id 6) (layer 2) (closed t) (vertices 7000.0 1000.0 9000.0 1000.0 9000.0 2500.0 7000.0 2500.0))
   (polyline (id 7) (layer 2) (closed nil) (vertices 1500.0 4500.0 3500.0 4500.0 3500.0 6000.0))
-  (text (id 8) (layer 3) (x 500.0) (y 3000.0) (height 250.0) (string "Living room"))
-  (text (id 9) (layer 3) (x 6500.0) (y 3000.0) (height 250.0) (string "Kitchen"))
+  (text (id 8) (layer 3) (x 500.0) (y 3000.0) (height 250.0) (string "Living room") (angle 0.0))
+  (text (id 9) (layer 3) (x 6500.0) (y 3000.0) (height 250.0) (string "Kitchen") (angle 0.0))
   (dimension (id 10) (layer 3) (x1 0.0) (y1 0.0) (x2 10000.0) (y2 0.0) (offset -700.0) (text-height 250.0) (unit millimeter) (precision 0))
  ))

@@ -1357,7 +1357,7 @@ untouched and the reason is shown. Returns true on success.
 ### `make-app` (function)
 
 ```lisp
-(make-app config &key telemetry drawing file-path (width 1440.0d0) (height 900.0d0) (theme (default-theme)))
+(make-app config &key telemetry drawing file-path (width 1440.0d0) (height 900.0d0) theme)
 ```
 
 Create the application around a drawing (a new empty one by default).
@@ -1368,7 +1368,7 @@ Create the application around a drawing (a new empty one by default).
 - `FILE-PATH`: the file it came from, or NIL.
 - `WIDTH`: initial logical window width.
 - `HEIGHT`: initial logical window height.
-- `THEME`: the color theme.
+- `THEME`: the color theme, or NIL for the one kept from the last run, and the dark one when there is none.
 
 ### `make-block-tool` (type)
 
@@ -1920,6 +1920,17 @@ Make the interface speak LANGUAGE now and keep the choice for the next run.
 - `APP`: the application.
 - `LANGUAGE`: a language keyword.
 
+### `operation-set-theme` (function)
+
+```lisp
+(operation-set-theme app theme)
+```
+
+Draw the window with THEME now and keep the choice for the next run.
+
+- `APP`: the application.
+- `THEME`: a theme.
+
 ### `operation-set-tool` (function)
 
 ```lisp
@@ -2060,6 +2071,16 @@ Turn snapping to the grid on or off.
 
 - `APP`: the application.
 
+### `operation-toggle-theme` (function)
+
+```lisp
+(operation-toggle-theme app)
+```
+
+Change from the dark theme to the light one, or back.
+
+- `APP`: the application.
+
 ### `operation-undo` (function)
 
 ```lisp
@@ -2070,6 +2091,17 @@ Undo the last change.
 
 - `APP`: the application.
 
+### `operation-zoom-by` (function)
+
+```lisp
+(operation-zoom-by app factor)
+```
+
+Zoom the view by FACTOR about the center of the canvas, as a turn of the wheel does about the pointer.
+
+- `APP`: the application.
+- `FACTOR`: what the scale is multiplied by; above 1 zooms in.
+
 ### `operation-zoom-extents` (function)
 
 ```lisp
@@ -2077,6 +2109,26 @@ Undo the last change.
 ```
 
 Fit the view to every visible entity.
+
+- `APP`: the application.
+
+### `operation-zoom-in` (function)
+
+```lisp
+(operation-zoom-in app)
+```
+
+Zoom in by one notch of the wheel, about the center of the canvas.
+
+- `APP`: the application.
+
+### `operation-zoom-out` (function)
+
+```lisp
+(operation-zoom-out app)
+```
+
+Zoom out by one notch of the wheel, about the center of the canvas.
 
 - `APP`: the application.
 
@@ -2812,6 +2864,8 @@ the user's documents folder.
 - `INITIAL-FILE`: drawing file to open at startup, or NIL.
 - `LANGUAGE`: the language keyword the user asked for with an option or the environment, or NIL to use the
 one saved last time and, failing that, English (US).
+- `THEME`: :dark or :light, as asked for with an option or the environment, or NIL to use the one saved last
+time and, failing that, the dark one.
 
 ### `config-drawings-directory` (function)
 
@@ -2925,6 +2979,14 @@ one saved last time and, failing that, English (US).
 
 (undocumented)
 
+### `config-theme` (function)
+
+```lisp
+(config-theme instance)
+```
+
+(undocumented)
+
 ### `config-window-height` (function)
 
 ```lisp
@@ -2950,7 +3012,7 @@ one saved last time and, failing that, English (US).
 Apply core command-line options to a copy of CONFIG.
 Returns two values: the new configuration and the arguments that were not recognized, in order.
 Recognized: --log-dir DIR, --state-dir DIR, --drawings-dir DIR, --log-level LEVEL, --log-stderr,
---log-sample EVENT=N, --font PATH, --language TAG, --file PATH, --width N, --height N.
+--log-sample EVENT=N, --font PATH, --language TAG, --theme NAME, --file PATH, --width N, --height N.
 
 - `CONFIG`: the configuration to start from.
 - `ARGUMENTS`: list of argument strings.
@@ -3269,7 +3331,7 @@ Return the list of log level keywords, from most to least severe.
 ```lisp
 (make-config &key ((project-root project-root) nil) ((log-directory log-directory) nil) ((state-directory state-directory) nil) ((drawings-directory drawings-directory) nil) ((log-level log-level) info) ((log-max-bytes log-max-bytes) +default-log-max-bytes+) ((log-max-files log-max-files) +default-log-max-files+) ((log-to-stderr log-to-stderr) nil) ((log-sampling log-sampling) nil) ((frame-summary-interval-seconds frame-summary-interval-seconds)
  +default-frame-summary-interval-seconds+) ((memory-sample-interval-seconds memory-sample-interval-seconds)
- +default-memory-sample-interval-seconds+) ((font-path font-path) nil) ((window-width window-width) +default-window-width+) ((window-height window-height) +default-window-height+) ((initial-file initial-file) nil) ((language language) nil))
+ +default-memory-sample-interval-seconds+) ((font-path font-path) nil) ((window-width window-width) +default-window-width+) ((window-height window-height) +default-window-height+) ((initial-file initial-file) nil) ((language language) nil) ((theme theme) nil))
 ```
 
 (undocumented)
@@ -11242,7 +11304,7 @@ under +CIRCLE-CHORDAL-ERROR-PIXELS+, between the minimum and the maximum.
 (default-theme)
 ```
 
-Return the dark theme used by the application.
+Return the dark theme, the one the application starts with.
 
 ### `draw-command` (type)
 
@@ -11364,6 +11426,14 @@ Return the number of triangles in LIST.
 ```
 
 (undocumented)
+
+### `light-theme` (function)
+
+```lisp
+(light-theme)
+```
+
+Return the light theme: a white canvas and panels, and the same accents darkened to read on white.
 
 ### `make-draw-list` (function)
 
@@ -11617,6 +11687,7 @@ the proportional faces of the user interface, whose widths the renderer measures
 
 Every color the application draws with.
 
+- `KIND`: :dark or :light, which says how the colors of the layers are drawn on this canvas.
 - `CANVAS-BACKGROUND`: drawing area.
 - `GRID-MINOR`: minor grid lines.
 - `GRID-MAJOR`: major grid lines.
@@ -11758,6 +11829,46 @@ Every color the application draws with.
 ```
 
 (undocumented)
+
+### `theme-ink` (function)
+
+```lisp
+(theme-ink theme color)
+```
+
+Return the color a layer color is drawn in on the canvas of a theme: as it is on the dark canvas, and darkened
+on the light one when it would be too pale to see, a gray going to near-black.
+
+- `THEME`: the theme.
+- `COLOR`: an RGBA, the color of a layer.
+
+### `theme-kind` (function)
+
+```lisp
+(theme-kind instance)
+```
+
+(undocumented)
+
+### `theme-name` (function)
+
+```lisp
+(theme-name theme)
+```
+
+Return the name under which a theme is kept between runs.
+
+- `THEME`: a theme.
+
+### `theme-named` (function)
+
+```lisp
+(theme-named name)
+```
+
+Return the theme called NAME, or NIL when there is none.
+
+- `NAME`: :dark or :light, or their names as text.
 
 ### `theme-overlay-background` (function)
 
@@ -13568,7 +13679,8 @@ One user-interface element.
 - `HINT`: what the widget does, shown as a tooltip and in the status bar while hovering.
 - `SHORTCUT`: the keys that do the same, shown beside the hint, or NIL.
 - `ICON`: the name of the icon drawn in a button, row or on its own.
-- `VARIANT`: for buttons, :default, :primary, :ghost, :tool (palette), :icon (title bar) or :chip
+- `VARIANT`: for buttons, :default, :primary, :ghost, :tool (palette), :icon (title bar), :floating (an icon
+with a body, over the canvas) or :chip
 (a pill that toggles); for panels, :default, :title-bar, :status-bar, :palette, :side or :console.
 - `FONT`: :ui, :ui-strong or :mono.
 - `SIZE`: em size of the text in pixels.

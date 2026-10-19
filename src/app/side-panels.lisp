@@ -313,7 +313,8 @@ BLOCKED: true while a modal covers the card."
                                         inner-width
                                         ui:+row-height+
                                         :label (dom:layer-name layer)
-                                        :swatch (scene:rgb->rgba (dom:layer-color layer))
+                                        :swatch (scene:theme-ink (app-theme app)
+                                                                 (scene:rgb->rgba (dom:layer-color layer)))
                                         :active (= id current)
                                         :align :left
                                         :blocked blocked
@@ -677,7 +678,9 @@ BLOCKED: true while a modal covers the panel."
                           (- width column)
                           ui:+row-height+
                           :label (if layer (dom:layer-name layer) (i18n:tr "(several)"))
-                          :swatch (and layer (scene:rgb->rgba (dom:layer-color layer)))
+                          :swatch (and layer
+                                       (scene:theme-ink (app-theme app)
+                                                        (scene:rgb->rgba (dom:layer-color layer))))
                           :blocked blocked
                           :align :left
                           :action (lambda ()

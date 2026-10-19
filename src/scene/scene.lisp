@@ -612,14 +612,18 @@ COLOR: an RGBA."
                    entity
                    color)))
 
-(defun layer-styles (drawing)
-  "Return a hash table from layer id to (visible . RGBA), computed once per frame.
+(defun layer-styles (drawing
+                     theme)
+  "Return a hash table from layer id to (visible . RGBA), computed once per frame, with each color as the
+theme draws it.
 
-DRAWING: the drawing."
+DRAWING: the drawing.
+THEME: the theme."
   (let ((table (make-hash-table)))
     (dolist (layer (dom:layers-in-order drawing) table)
       (setf (gethash (dom:layer-id layer) table)
-            (cons (dom:layer-visible layer) (rgb->rgba (dom:layer-color layer)))))))
+            (cons (dom:layer-visible layer)
+                  (theme-ink theme (rgb->rgba (dom:layer-color layer))))))))
 
 (defun add-drawing-entities (frame
                              drawing
@@ -632,9 +636,9 @@ DRAWING: the drawing.
 STATE: the scene state."
   (let* ((viewport (frame-viewport frame))
          (visible (view:viewport-visible-bounds viewport +culling-margin-pixels+))
-         (styles (layer-styles drawing))
-         (selected (scene-state-selected-ids state))
          (theme (frame-theme frame))
+         (styles (layer-styles drawing theme))
+         (selected (scene-state-selected-ids state))
          (drawn 0)
          (culled 0))
     (declare (type fixnum drawn culled))

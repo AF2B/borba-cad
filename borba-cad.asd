@@ -300,6 +300,7 @@
                (:file "hatch-tests")
                (:file "block-tests")
                (:file "recording-tests")
+               (:file "theme-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

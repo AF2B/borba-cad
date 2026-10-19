@@ -6,7 +6,7 @@
                       file-path
                       (width 1440d0)
                       (height 900d0)
-                      (theme (scene:default-theme)))
+                      theme)
   "Create the application around a drawing (a new empty one by default).
 
 CONFIG: the configuration.
@@ -15,11 +15,15 @@ DRAWING: the drawing to edit, or NIL for a new one.
 FILE-PATH: the file it came from, or NIL.
 WIDTH: initial logical window width.
 HEIGHT: initial logical window height.
-THEME: the color theme."
+THEME: the color theme, or NIL for the one kept from the last run, and the dark one when there is none."
   (let* ((drawing (or drawing (dom:make-drawing)))
          (app (%make-app :config config
                          :telemetry telemetry
-                         :theme theme
+                         :theme (or theme
+                                    (and (base:config-theme config)
+                                         (scene:theme-named (base:config-theme config)))
+                                    (saved-theme config)
+                                    (scene:default-theme))
                          :drawing drawing
                          :history (dom:make-history)
                          :file-path file-path

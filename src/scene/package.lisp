@@ -18,6 +18,11 @@ viewport and the interaction state into a draw list.")
    #:rgb->rgba
    #:theme
    #:default-theme
+   #:light-theme
+   #:theme-named
+   #:theme-name
+   #:theme-kind
+   #:theme-ink
    #:theme-canvas-background
    #:theme-grid-minor
    #:theme-grid-major

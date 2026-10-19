@@ -7,6 +7,15 @@
 (defconstant +title-margin+ 14f0
   "Space between the window edge and the first element of the title bar, in pixels.")
 
+(defconstant +zoom-button-size+ 32f0
+  "Side of a button that zooms, in pixels.")
+
+(defconstant +zoom-margin+ 12f0
+  "Space between the corner of the canvas and the buttons that zoom, in pixels.")
+
+(defconstant +zoom-button-gap+ 4f0
+  "Space between the button that zooms in and the one that zooms out, in pixels.")
+
 (defconstant +logo-size+ 28f0
   "Side of the brand mark in the title bar, in pixels.")
 
@@ -365,7 +374,8 @@ BLOCKED: true while a modal covers the title bar."
                                     :shortcut shortcut)
                   widgets)
             (incf x (+ ui:+icon-button-size+ +title-button-gap+)))))
-    (let* ((perf-x (- width +title-margin+ ui:+icon-button-size+))
+    (let* ((theme-x (- width +title-margin+ ui:+icon-button-size+))
+           (perf-x (- theme-x +title-button-gap+ ui:+icon-button-size+))
            (language-x (- perf-x +title-button-gap+ ui:+icon-button-size+))
            (more-x (- language-x +title-button-gap+ ui:+icon-button-size+)))
       (push (make-icon-button :more
@@ -392,6 +402,18 @@ BLOCKED: true while a modal covers the title bar."
                               :blocked blocked
                               :hint (i18n:tr "Language"))
             widgets)
+      (push (make-icon-button :theme
+                              (if (eq (scene:theme-kind theme) :light)
+                                  :moon
+                                  :sun)
+                              theme-x
+                              button-y
+                              :action (lambda () (operation-toggle-theme app))
+                              :blocked blocked
+                              :hint (if (eq (scene:theme-kind theme) :light)
+                                        (i18n:tr "Switch to the dark theme")
+                                        (i18n:tr "Switch to the light theme")))
+            widgets)
       (push (make-icon-button :perf
                               :perf
                               perf-x
@@ -409,6 +431,35 @@ BLOCKED: true while a modal covers the title bar."
     (nreverse widgets)))
 
 ;;; Tool palette
+
+(defun zoom-widgets (app
+                     canvas
+                     blocked)
+  "Build the buttons that zoom in and out, as the wheel of the mouse does, in the top right corner of the canvas.
+
+APP: the application.
+CANVAS: the canvas rectangle.
+BLOCKED: true while a modal covers them."
+  (let ((x (- (+ (ui:rect-x canvas) (ui:rect-width canvas)) +zoom-margin+ +zoom-button-size+))
+        (y (+ (ui:rect-y canvas) +zoom-margin+)))
+    (list (make-icon-button :zoom-in
+                            :plus
+                            x
+                            y
+                            :action (lambda () (operation-zoom-in app))
+                            :blocked blocked
+                            :hint (i18n:tr "Zoom in")
+                            :variant :floating
+                            :size +zoom-button-size+)
+          (make-icon-button :zoom-out
+                            :minus
+                            x
+                            (+ y +zoom-button-size+ +zoom-button-gap+)
+                            :action (lambda () (operation-zoom-out app))
+                            :blocked blocked
+                            :hint (i18n:tr "Zoom out")
+                            :variant :floating
+                            :size +zoom-button-size+))))
 
 (defun empty-hint-widgets (app
                            canvas)

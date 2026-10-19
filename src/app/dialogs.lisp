@@ -163,6 +163,9 @@ APP: the application."
                                (inspector-widgets app
                                                   (ui:layout-inspector-panel layout)
                                                   blocked)
+                               (zoom-widgets app
+                                             (ui:layout-canvas layout)
+                                             blocked)
                                (palette-widgets app
                                                 (ui:layout-tool-palette layout)
                                                 blocked)
