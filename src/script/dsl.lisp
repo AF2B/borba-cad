@@ -173,21 +173,36 @@ BODY: the commands to run."
 (defvar *block-collector* nil
   "While a block is being made, a cons whose car is the list of the entities drawn into it so far, newest first.")
 
+(defvar *redraw* nil
+  "While REDRAW runs, a cons whose car is the entity being replaced and whose cdr is true once the replacement has
+been drawn.")
+
 (defun add-entity (builder)
   "Make an entity with BUILDER, add it to the drawing, and return its id. While a block is being made the entity goes
-into the block instead, with the next id of the block, on the default layer.
+into the block instead, with the next id of the block, on the default layer. While REDRAW runs it takes the place of
+the entity being replaced, with its id and its layer.
 
 BUILDER: function of the id and the layer id that returns the entity."
-  (if *block-collector*
-      (let ((entity (funcall builder
-                             (1+ (length (car *block-collector*)))
-                             dom:+default-layer-id+)))
-        (push entity (car *block-collector*))
-        (dom:entity-id entity))
-      (let* ((drawing (the-drawing))
-             (layer-id (creation-layer-id))
-             (entity (funcall builder (dom:drawing-next-entity-id drawing) layer-id)))
-        (emit-change nil entity))))
+  (cond (*block-collector*
+         (let ((entity (funcall builder
+                                (1+ (length (car *block-collector*)))
+                                dom:+default-layer-id+)))
+           (push entity (car *block-collector*))
+           (dom:entity-id entity)))
+        (*redraw*
+         (when (cdr *redraw*)
+           (error "REDRAW replaces an entity by one entity, but the command drew another."))
+         (let* ((target (car *redraw*))
+                (entity (funcall builder
+                                 (dom:entity-id target)
+                                 (dom:entity-layer-id target))))
+           (setf (cdr *redraw*) t)
+           (emit-change target entity)))
+        (t
+         (let* ((drawing (the-drawing))
+                (layer-id (creation-layer-id))
+                (entity (funcall builder (dom:drawing-next-entity-id drawing) layer-id)))
+           (emit-change nil entity)))))
 
 (defun line (x1
              y1
@@ -953,6 +968,27 @@ NAME: the name of the layer."
         (incf moved)))
     moved))
 
+(defun call-with-redraw (id
+                         thunk)
+  "Run THUNK, a command that draws one entity, so that what it draws takes the place of the entity with ID instead
+of being added: the replacement keeps the id, the layer and the place in the drawing order. Returns the id.
+
+ID: the id of the entity to replace.
+THUNK: function of no arguments that draws."
+  (let ((*redraw* (list (editable-entity id))))
+    (funcall thunk)
+    (unless (cdr *redraw*)
+      (error "REDRAW needs a command that draws an entity, such as LINE or PLINE."))
+    id))
+
+(defmacro redraw (id command)
+  "Replace the entity with ID by the entity that COMMAND draws, keeping its id, its layer and its place in the
+drawing order. Returns the id.
+
+ID: the id of the entity.
+COMMAND: a command that draws one entity, such as (line 0 0 100 0); it does not add one."
+  `(call-with-redraw ,id (lambda () ,command)))
+
 ;;; Selection and view
 
 (defun select (ids)
@@ -1055,7 +1091,7 @@ THINGS: anything."
      diameter-dimension angle-dimension hatch hatch-polygon)
     ("Layers" layer with-layer layers)
     ("Blocks" with-block make-block insert explode blocks)
-    ("Changing entities" move copy erase edit move-to-layer rotate mirror scale)
+    ("Changing entities" move copy erase edit redraw move-to-layer rotate mirror scale)
     ("Finding entities" entities entity-count extents info)
     ("Selection and view" select select-all deselect selected fit)
     ("Settings" display-unit grid-spacing)

@@ -176,6 +176,12 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:+polar-increment-degrees+
    #:operation-toggle-console
    #:operation-run-script
+   #:operation-toggle-recording
+   #:operation-start-recording
+   #:operation-stop-recording
+   #:app-recording-p
+   #:app-recorded-script
+   #:save-recording-from-app
    #:operation-export-script
    #:run-script-file-in-app
    #:export-script-from-app

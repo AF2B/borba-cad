@@ -164,6 +164,17 @@ LAYER: a layer."
                (boolean-text (dom:layer-visible layer))
                (boolean-text (dom:layer-locked layer)))))
 
+(defun write-block-definition (definition
+                               stream)
+  "Write the command that makes a block, with the commands that draw what is in it.
+
+DEFINITION: a block definition.
+STREAM: the stream to write to."
+  (format stream "(with-block ~a~%" (string-text (dom:block-definition-name definition)))
+  (dolist (entity (dom:block-definition-entities definition))
+    (format stream "  ~a~%" (entity-command entity)))
+  (format stream ")~%"))
+
 (defun drawing-script (drawing)
   "Return the text of a script that makes DRAWING again when it is run on an empty drawing: its settings, its
 layers, its entities in the order they are drawn, each on the layer it is on, and last the layers that are
@@ -181,10 +192,7 @@ DRAWING: the drawing."
       (write-line (layer-command layer) stream))
     (terpri stream)
     (dolist (definition (dom:block-definitions drawing))
-      (format stream "(with-block ~a~%" (string-text (dom:block-definition-name definition)))
-      (dolist (entity (dom:block-definition-entities definition))
-        (format stream "  ~a~%" (entity-command entity)))
-      (format stream ")~%"))
+      (write-block-definition definition stream))
     (let ((current nil))
       (dom:map-entities (lambda (entity)
                           (unless (eql current (dom:entity-layer-id entity))

@@ -301,6 +301,8 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:history-undo
    #:history-redo
    #:history-clear
+   #:history-latest-step
+   #:history-steps-since
    #:history-can-undo-p
    #:history-can-redo-p
    #:history-undo-depth

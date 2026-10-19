@@ -166,6 +166,28 @@ how it was before the command to how it is now."
         (setf (cdr (nthcdr (1- limit) (history-undo-stack history))) nil)))
     t))
 
+(defun history-latest-step (history)
+  "Return the change set done most recently and not undone, or NIL when there is none.
+
+HISTORY: the history."
+  (first (history-undo-stack history)))
+
+(defun history-steps-since (history
+                            step)
+  "Return the change sets done after STEP, oldest first, as undo has left them: one that was undone is not in
+them, and one that was done again is. The second value is true when they can be told, and NIL when STEP was
+undone or forgotten, so that what came after it is not known.
+
+HISTORY: the history.
+STEP: a change set that was the latest at some time, or NIL for the beginning."
+  (let* ((stack (history-undo-stack history))
+         (position (if step
+                       (position step stack :test #'eq)
+                       (length stack))))
+    (if position
+        (values (reverse (subseq stack 0 position)) t)
+        (values '() nil))))
+
 (defun history-undo (history
                      drawing)
   "Undo the most recent change set; return true, or NIL when there is nothing to undo.

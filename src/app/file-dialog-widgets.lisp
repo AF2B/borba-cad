@@ -549,6 +549,7 @@ DIALOG: the file dialog."
     (ecase (file-dialog-purpose dialog)
       (:dxf (if opening (i18n:tr "Import a DXF file") (i18n:tr "Export as a DXF file")))
       (:script (if opening (i18n:tr "Run a script") (i18n:tr "Export the drawing as a script")))
+      (:recording (i18n:tr "Save the recorded actions as a script"))
       (:image (i18n:tr "Export as a JPEG image"))
       (:pdf (i18n:tr "Export as a PDF file"))
       (:svg (i18n:tr "Export as an SVG file"))

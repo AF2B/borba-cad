@@ -666,6 +666,9 @@ APP: the application."
                 (lambda () (operation-toggle-polar app))
                 (i18n:tr "Hold the next point to multiples of 15 degrees") "F10"
                 (eq :polar (app-constraint app)))
+          (list :record (i18n:tr "Rec") nil
+                (lambda () (operation-toggle-recording app))
+                (i18n:tr "Record what you do as a script") "F9" (app-recording-p app))
           (list :unit
                 (i18n:trf "Unit: ~a" (base:unit-abbreviation (dom:drawing-display-unit drawing)))
                 :unit

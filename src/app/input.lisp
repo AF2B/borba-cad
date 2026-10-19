@@ -409,6 +409,7 @@ MODIFIERS: modifier keys held."
                (:home (operation-zoom-extents app) t)
                (:f2 (operation-toggle-console app) t)
                (:f8 (operation-toggle-ortho app) t)
+               (:f9 (operation-toggle-recording app) t)
                (:f10 (operation-toggle-polar app) t)
                (:f3 (operation-toggle-overlay app) t)
                (t nil))))))

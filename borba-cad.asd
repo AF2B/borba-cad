@@ -118,7 +118,8 @@
                              (:file "context")
                              (:file "dsl")
                              (:file "evaluator")
-                             (:file "export")))
+                             (:file "export")
+                             (:file "recording")))
                (:module "observability"
                 :serial t
                 :components ((:file "package")
@@ -156,6 +157,7 @@
                              (:file "dxf-operations")
                              (:file "console")
                              (:file "script-operations")
+                             (:file "recording-operations")
                              (:file "image-operations")
                              (:file "plot-operations")
                              (:file "autosave")
@@ -297,6 +299,7 @@
                (:file "plot-tests")
                (:file "hatch-tests")
                (:file "block-tests")
+               (:file "recording-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")
                (:file "packaging-tests")

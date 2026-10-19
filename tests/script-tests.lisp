@@ -576,3 +576,44 @@ RADIANS: an angle in radians."
     (i18n:with-language (:pt-br)
       (is (eq :ok (script:script-result-status (run-script (script-env again) (script:drawing-script drawing))))))
     (is (equal (entity-shapes drawing) (entity-shapes again)))))
+
+;;; Redrawing
+
+(test redraw-puts-the-drawn-entity-in-the-place-of-another
+  (let* ((drawing (dom:make-drawing))
+         (context (script-env drawing)))
+    (ran-ok context "(layer \"Walls\") (line 0 0 100 0) (circle 5 5 3) (line 0 9 9 9)")
+    (is (equal '("1") (ran-ok context "(redraw 1 (circle 50 60 7))")))
+    (is (equal '(1 2 3) (mapcar #'dom:entity-id (dom:drawing-entities drawing))))
+    (is (equal '(:circle :circle :line) (mapcar #'dom:entity-kind (dom:drawing-entities drawing))))
+    (let ((replacement (stored context 1)))
+      (is (equal '(50d0 60d0 7d0)
+                 (list (dom:circle-center-x replacement)
+                       (dom:circle-center-y replacement)
+                       (dom:circle-radius replacement))))
+      (is (string= "Walls" (dom:layer-name (dom:find-layer drawing (dom:entity-layer-id replacement))))))))
+
+(test redraw-is-one-step-of-undo
+  (let* ((drawing (dom:make-drawing))
+         (context (script-env drawing)))
+    (ran-ok context "(line 0 0 100 0)")
+    (ran-ok context "(redraw 1 (circle 0 0 5))")
+    (is (= 1 (length (script:context-changes context))))
+    (let ((change (first (script:context-changes context))))
+      (is (eq :line (dom:entity-kind (dom:change-before change))))
+      (is (eq :circle (dom:entity-kind (dom:change-after change)))))))
+
+(test redraw-needs-an-entity-that-exists-and-a-command-that-draws-one
+  (let ((context (context-with-three-entities)))
+    (is (search "no entity 99" (failure-of context "(redraw 99 (circle 0 0 5))")))
+    (is (search "REDRAW needs a command" (failure-of context "(redraw 1 (+ 1 2))")))
+    (is (search "one entity" (failure-of context "(redraw 1 (progn (circle 0 0 5) (circle 1 1 5)))")))
+    (is (eq :line (dom:entity-kind (stored context 1))))
+    (is (= 3 (dom:drawing-entity-count (script:script-context-drawing context))))))
+
+(test redraw-leaves-an-entity-on-a-locked-layer-alone
+  (let* ((drawing (dom:make-drawing))
+         (context (script-env drawing)))
+    (ran-ok context "(layer \"Walls\") (line 0 0 100 0) (layer \"Walls\" :locked t)")
+    (is (search "locked" (failure-of context "(redraw 1 (circle 0 0 5))")))
+    (is (eq :line (dom:entity-kind (stored context 1))))))

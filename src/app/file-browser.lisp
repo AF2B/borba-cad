@@ -184,7 +184,7 @@ DIALOG: the file dialog."
   (ecase (file-dialog-purpose dialog)
     (:drawing persist:*known-drawing-extensions*)
     (:dxf *dxf-extensions*)
-    (:script *script-extensions*)
+    ((:script :recording) *script-extensions*)
     (:image *image-extensions*)
     (:pdf *pdf-extensions*)
     (:svg *svg-extensions*)))
@@ -490,7 +490,7 @@ MODE: :open or :save.
 PURPOSE: :drawing, :dxf, :script, :image, :pdf or :svg; a DXF file, a script, a picture or a sheet is offered the
 name of the drawing with its own extension."
   (cond ((eq mode :open) "")
-        ((member purpose '(:dxf :script :image :pdf :svg))
+        ((member purpose '(:dxf :script :recording :image :pdf :svg))
          (concatenate 'string
                       (if (app-file-path app)
                           (pathname-name (app-file-path app))
@@ -498,7 +498,7 @@ name of the drawing with its own extension."
                       "."
                       (first (ecase purpose
                                (:dxf *dxf-extensions*)
-                               (:script *script-extensions*)
+                               ((:script :recording) *script-extensions*)
                                (:image *image-extensions*)
                                (:pdf *pdf-extensions*)
                                (:svg *svg-extensions*)))))

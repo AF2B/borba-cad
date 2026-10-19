@@ -185,7 +185,11 @@ APP: the application."
           nil
           (choice :console (i18n:tr "Console") :console "F2" #'operation-toggle-console)
           (choice :run-script (i18n:tr "Run script...") :open nil #'operation-run-script)
-          (choice :export-script (i18n:tr "Export as script...") :export nil #'operation-export-script))))
+          (choice :export-script (i18n:tr "Export as script...") :export nil #'operation-export-script)
+          (choice :record (if (app-recording-p app)
+                              (i18n:tr "Stop recording...")
+                              (i18n:tr "Record actions"))
+                  :console "F9" #'operation-toggle-recording))))
 
 (defun menu-items (app
                    kind)

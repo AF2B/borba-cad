@@ -51,8 +51,9 @@ commands that draw it.")
    #:strip-comments
    #:+default-timeout-seconds+
    #:+script-timeout-seconds+
-   ;; Writing a drawing as commands
+   ;; Writing a drawing, or a session, as commands
    #:drawing-script
+   #:steps-script
    ;; Units, angles, colors
    #:mm
    #:cm
@@ -94,6 +95,7 @@ commands that draw it.")
    #:scale
    #:erase
    #:edit
+   #:redraw
    #:move-to-layer
    ;; Asking
    #:entities

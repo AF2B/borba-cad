@@ -152,6 +152,8 @@ POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
 FILLET-RADIUS: the radius, in millimetres, the fillet tool gives the next arc.
 PLOT-SETTINGS: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 LAST-BLOCK-NAME: the name of the block that was last made or placed, or NIL.
+RECORDING: the recording of what the user does that is under way, or NIL.
+RECORDED-SCRIPT: the script that the last recording made, kept until it is saved, or NIL.
 GRIP-DRAG: the grip being dragged, or NIL.
 CONSOLE: the console.
 CONSTRAINT: :ortho, :polar or NIL, how the next point is held to the last one.
@@ -205,6 +207,8 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   (fillet-radius +default-fillet-radius+ :type double-float)
   plot-settings
   last-block-name
+  recording
+  recorded-script
   grip-drag
   (console (make-console))
   constraint

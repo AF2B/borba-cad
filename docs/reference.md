@@ -79,6 +79,8 @@ NIL when it selects only what it holds (dragged from left to right).
 - `FILLET-RADIUS`: the radius, in millimetres, the fillet tool gives the next arc.
 - `PLOT-SETTINGS`: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 - `LAST-BLOCK-NAME`: the name of the block that was last made or placed, or NIL.
+- `RECORDING`: the recording of what the user does that is under way, or NIL.
+- `RECORDED-SCRIPT`: the script that the last recording made, kept until it is saved, or NIL.
 - `GRIP-DRAG`: the grip being dragged, or NIL.
 - `CONSOLE`: the console.
 - `CONSTRAINT`: :ortho, :polar or NIL, how the next point is held to the last one.
@@ -379,6 +381,24 @@ Return the regions of the window as they are now: the console takes its strip fr
 ```
 
 (undocumented)
+
+### `app-recorded-script` (function)
+
+```lisp
+(app-recorded-script instance)
+```
+
+(undocumented)
+
+### `app-recording-p` (function)
+
+```lisp
+(app-recording-p app)
+```
+
+Return true while what the user does is being recorded.
+
+- `APP`: the application.
 
 ### `app-render` (function)
 
@@ -1529,7 +1549,8 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 - `MODE`: :open or :save.
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
 - `PURPOSE`: :drawing for a drawing of the program, :dxf to import or export a DXF file, :script to run a script
-or export one, :image to export a picture, or :pdf or :svg to export a sheet.
+or export one, :recording to save the script of a recording, :image to export a picture, or :pdf or :svg to
+export a sheet.
 
 ### `open-menu` (function)
 
@@ -1913,6 +1934,27 @@ Activate a tool, cancelling whatever the previous one was doing.
 :diameter-dimension, :angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset or :fillet. A tool that
 changes the selection (rotate, mirror, scale) is not activated when nothing is selected.
 
+### `operation-start-recording` (function)
+
+```lisp
+(operation-start-recording app)
+```
+
+Begin recording what the user does, from the drawing as it is now.
+
+- `APP`: the application.
+
+### `operation-stop-recording` (function)
+
+```lisp
+(operation-stop-recording app)
+```
+
+End the recording and ask where to save the script that it made; say so when there is nothing to save or the
+recording cannot be told.
+
+- `APP`: the application.
+
 ### `operation-toggle-console` (function)
 
 ```lisp
@@ -1995,6 +2037,16 @@ Show or hide the performance overlay.
 
 Turn polar on, which holds the next point to the nearest multiple of 15 degrees from the last one, or off. It
 replaces ortho.
+
+- `APP`: the application.
+
+### `operation-toggle-recording` (function)
+
+```lisp
+(operation-toggle-recording app)
+```
+
+Begin recording when nothing is recorded, and end the recording when it is.
 
 - `APP`: the application.
 
@@ -2253,6 +2305,18 @@ the reason is shown. Returns true when the question was asked.
 
 Save the drawing to PATH-TEXT; a name without an extension gets .bcad. On failure the
 previous file is untouched and the reason is shown. Returns true on success.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
+
+### `save-recording-from-app` (function)
+
+```lisp
+(save-recording-from-app app path-text)
+```
+
+Save the recorded script at PATH-TEXT (.lisp is added to a name without an extension) and tell the user how it
+went in a modal. On failure the previous file is untouched. Returns true on success.
 
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
@@ -5087,6 +5151,16 @@ change set is ignored and returns NIL.
 - `DRAWING`: the drawing to change.
 - `CHANGES`: list of CHANGE records.
 
+### `history-latest-step` (function)
+
+```lisp
+(history-latest-step history)
+```
+
+Return the change set done most recently and not undone, or NIL when there is none.
+
+- `HISTORY`: the history.
+
 ### `history-record` (function)
 
 ```lisp
@@ -5121,6 +5195,19 @@ Redo the most recently undone change set; return true, or NIL when there is noth
 Return the number of change sets that can be redone.
 
 - `HISTORY`: a history.
+
+### `history-steps-since` (function)
+
+```lisp
+(history-steps-since history step)
+```
+
+Return the change sets done after STEP, oldest first, as undo has left them: one that was undone is not in
+them, and one that was done again is. The second value is true when they can be told, and NIL when STEP was
+undone or forgotten, so that what came after it is not known.
+
+- `HISTORY`: the history.
+- `STEP`: a change set that was the latest at some time, or NIL for the beginning.
 
 ### `history-undo` (function)
 
@@ -12417,6 +12504,18 @@ Returns its id.
 - `WIDTH`: its width.
 - `HEIGHT`: its height.
 
+### `redraw` (macro)
+
+```lisp
+(redraw id command)
+```
+
+Replace the entity with ID by the entity that COMMAND draws, keeping its id, its layer and its place in the
+drawing order. Returns the id.
+
+- `ID`: the id of the entity.
+- `COMMAND`: a command that draws one entity, such as (line 0 0 100 0); it does not add one.
+
 ### `rgb` (function)
 
 ```lisp
@@ -12566,6 +12665,18 @@ Select every entity that can be selected. Returns how many are selected.
 ```
 
 Return the ids of the entities selected in the window.
+
+### `steps-script` (function)
+
+```lisp
+(steps-script steps drawing)
+```
+
+Return the text of a script that makes STEPS again: the commands of each step, a blank line between steps,
+after the blocks that the steps place.
+
+- `STEPS`: lists of changes, oldest first, as undo keeps them.
+- `DRAWING`: the drawing the steps ended in.
 
 ### `strip-comments` (function)
 
