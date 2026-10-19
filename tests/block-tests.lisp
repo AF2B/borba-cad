@@ -400,6 +400,18 @@
     (is (null (dom:block-names drawing)))
     (is (string= (as-newest-version fixture 4) written))))
 
+(test a-version-5-file-is-read-and-saved-as-the-newest-version
+  (let* ((fixture (fixture-text "v5-plan.bcad"))
+         (drawing (persist:parse-drawing-text fixture))
+         (written (persist:drawing-to-string drawing)))
+    (is (search "(format-version 5)" fixture))
+    (is (= 9 (dom:drawing-entity-count drawing)))
+    (is (equal '("door") (dom:block-names drawing)) "the blocks of version 5 are still there")
+    (is (string= (as-newest-version fixture 5) written))
+    (is (every (lambda (hatch) (null (dom:hatch-holes hatch)))
+               (remove :hatch (dom:drawing-entities drawing) :key #'dom:entity-kind :test-not #'eq))
+        "a hatch of version 5 has no holes")))
+
 ;;; Drawing, plotting and exporting
 
 (test a-placement-is-drawn-with-the-entities-it-places

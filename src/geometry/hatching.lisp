@@ -76,46 +76,52 @@ ORIGIN-Y: y of that point."
                        angle
                        spacing
                        origin-x
-                       origin-y)
+                       origin-y
+                       &optional holes)
   "Return the segments of the parallel lines that hatch a polygon, as a simple array of double-float holding x1 y1 x2 y2
 for each. The lines are SPACING apart in the direction ANGLE, one of them through the origin, and are cut where they
-leave the polygon, so a concave polygon is hatched only inside.
+leave the polygon, so a concave polygon is hatched only inside, and where they enter a hole.
 
 COORDINATES: simple-array of double-float holding x0 y0 x1 y1 ...
 ANGLE: direction of the lines, in radians.
 SPACING: distance between two lines, above zero.
 ORIGIN-X: x of the point one of the lines passes through.
-ORIGIN-Y: y of that point."
+ORIGIN-Y: y of that point.
+HOLES: a list of polygons, each such an array, that are left unhatched."
   (declare (type (simple-array double-float (*)) coordinates)
            (type double-float angle spacing origin-x origin-y))
-  (let* ((count (polyline-vertex-count coordinates))
-         (direction-x (cos angle))
+  (let* ((direction-x (cos angle))
          (direction-y (sin angle))
          (normal-x (- direction-y))
          (normal-y direction-x)
-         (along (make-array count :element-type 'double-float))
-         (across (make-array count :element-type 'double-float))
+         (rings (loop for ring in (cons coordinates holes)
+                      collect (let* ((count (polyline-vertex-count ring))
+                                     (along (make-array count :element-type 'double-float))
+                                     (across (make-array count :element-type 'double-float)))
+                                (dotimes (index count)
+                                  (let ((dx (- (aref ring (* 2 index)) origin-x))
+                                        (dy (- (aref ring (1+ (* 2 index))) origin-y)))
+                                    (setf (aref along index) (+ (* dx direction-x) (* dy direction-y))
+                                          (aref across index) (+ (* dx normal-x) (* dy normal-y)))))
+                                (list count along across))))
          (result '()))
-    (dotimes (index count)
-      (let ((dx (- (aref coordinates (* 2 index)) origin-x))
-            (dy (- (aref coordinates (1+ (* 2 index))) origin-y)))
-        (setf (aref along index) (+ (* dx direction-x) (* dy direction-y))
-              (aref across index) (+ (* dx normal-x) (* dy normal-y)))))
-    (let ((low (reduce #'min across))
-          (high (reduce #'max across)))
+    (let ((low (reduce #'min (third (first rings))))
+          (high (reduce #'max (third (first rings)))))
       (loop for line from (ceiling low spacing) to (floor high spacing)
             for level = (* line spacing)
             do (when (< (+ low +length-tolerance+) level (- high +length-tolerance+))
                  (let ((crossings '()))
-                   (dotimes (index count)
-                     (let* ((next (mod (1+ index) count))
-                            (level-1 (aref across index))
-                            (level-2 (aref across next)))
-                       (when (not (eq (> level-1 level) (> level-2 level)))
-                         (push (+ (aref along index)
-                                  (* (- (aref along next) (aref along index))
-                                     (/ (- level level-1) (- level-2 level-1))))
-                               crossings))))
+                   (dolist (ring rings)
+                     (destructuring-bind (count along across) ring
+                       (dotimes (index count)
+                         (let* ((next (mod (1+ index) count))
+                                (level-1 (aref across index))
+                                (level-2 (aref across next)))
+                           (when (not (eq (> level-1 level) (> level-2 level)))
+                             (push (+ (aref along index)
+                                      (* (- (aref along next) (aref along index))
+                                         (/ (- level level-1) (- level-2 level-1))))
+                                   crossings))))))
                    (loop for (start end) on (sort crossings #'<) by #'cddr
                          while end
                          do (when (> (- end start) +length-tolerance+)
@@ -128,6 +134,23 @@ ORIGIN-Y: y of that point."
                 :element-type 'double-float
                 :initial-contents (loop for segment in (nreverse result)
                                         append segment))))
+
+(defun point-in-rings-p (x
+                         y
+                         coordinates
+                         holes)
+  "Return true when a point is inside a polygon and not inside any of its holes.
+
+X: x of the point.
+Y: y of the point.
+COORDINATES: the polygon, a simple-array of double-float holding x0 y0 x1 y1 ...
+HOLES: a list of polygons, each such an array."
+  (and (point-in-polygon-p x
+                           y
+                           coordinates)
+       (notany (lambda (hole) (point-in-polygon-p x
+                                                  y
+                                                  hole)) holes)))
 
 (defun corner-turn (x1
                     y1
@@ -269,6 +292,55 @@ COORDINATES: simple-array of double-float holding x0 y0 x1 y1 ..."
                                        (x next)
                                        (y next)) 0d0)
                    (push (triangle previous current next) triangles)))))))
+    (make-array (* 6 (length triangles))
+                :element-type 'double-float
+                :initial-contents (loop for triangle in (nreverse triangles)
+                                        append triangle))))
+
+(defun region-triangles (coordinates
+                         holes)
+  "Return the triangles that cover a polygon without its holes, as a simple array of double-float holding the six
+coordinates of each, by cutting the region into slabs at the height of every vertex and each slab, between the edges
+that cross it, into trapezoids of two triangles. It does not matter how the holes lie in the polygon.
+
+COORDINATES: the polygon, a simple-array of double-float holding x0 y0 x1 y1 ...
+HOLES: a list of polygons, each such an array."
+  (let* ((rings (cons coordinates holes))
+         (heights (sort (remove-duplicates
+                         (loop for ring in rings
+                               append (loop for index from 1 below (length ring) by 2
+                                            collect (aref ring index)))
+                         :test (lambda (a b) (< (abs (- a b)) 1d-9)))
+                        #'<))
+         (triangles '()))
+    (loop for (low high) on heights
+          while high
+          do (let ((edges '()))
+               (dolist (ring rings)
+                 (let ((count (polyline-vertex-count ring)))
+                   (dotimes (index count)
+                     (let* ((next (mod (1+ index) count))
+                            (x1 (aref ring (* 2 index)))
+                            (y1 (aref ring (1+ (* 2 index))))
+                            (x2 (aref ring (* 2 next)))
+                            (y2 (aref ring (1+ (* 2 next)))))
+                       (when (and (/= y1 y2)
+                                  (<= (min y1 y2) (+ low 1d-9))
+                                  (>= (max y1 y2) (- high 1d-9)))
+                         (push (list x1 y1 x2 y2) edges))))))
+               (flet ((x-at (edge y)
+                        (destructuring-bind (x1 y1 x2 y2) edge
+                          (+ x1 (* (- x2 x1) (/ (- y y1) (- y2 y1)))))))
+                 (let ((sorted (sort edges #'< :key (lambda (edge) (x-at edge (/ (+ low high) 2))))))
+                   (loop for (left right) on sorted by #'cddr
+                         while right
+                         do (let ((bottom-left (x-at left low))
+                                  (bottom-right (x-at right low))
+                                  (top-left (x-at left high))
+                                  (top-right (x-at right high)))
+                              (when (> (+ (- bottom-right bottom-left) (- top-right top-left)) 1d-9)
+                                (push (list bottom-left low bottom-right low top-right high) triangles)
+                                (push (list bottom-left low top-right high top-left high) triangles))))))))
     (make-array (* 6 (length triangles))
                 :element-type 'double-float
                 :initial-contents (loop for triangle in (nreverse triangles)

@@ -82,6 +82,12 @@ No screen, pixel or rendering concepts appear here.")
    #:point-in-polygon-p
    #:hatch-line-count
    #:hatch-segments
+   #:point-in-rings-p
+   #:region-triangles
+   #:region-boolean
+   #:polygon-region
+   #:region-area
+   #:region-winding-number
    #:triangulate-polygon
    #:angle-between-rays
    #:polyline-vertex-count

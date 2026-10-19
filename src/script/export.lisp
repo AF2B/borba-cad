@@ -53,6 +53,15 @@ COLOR: a color of the domain."
 VALUE: a generalized boolean."
   (if value "t" "nil"))
 
+(defun ring-points-text (coordinates)
+  "Return the points of a polygon as a list of the (x y) texts that a script writes them as.
+
+COORDINATES: a flat array of vertices."
+  (loop for index from 0 below (length coordinates) by 2
+        collect (format nil "(~a ~a)"
+                        (number-text (aref coordinates index))
+                        (number-text (aref coordinates (1+ index))))))
+
 (defun entity-command (entity)
   "Return the command that draws ENTITY, as a line of source.
 
@@ -113,15 +122,15 @@ ENTITY: an entity."
              (angle-text (dom:insert-rotation entity))
              (dom:insert-flipped entity)))
     (dom:hatch-entity
-     (let ((coordinates (dom:hatch-coordinates entity)))
-       (format nil "(hatch-polygon '(~{~a~^ ~}) :pattern ~a :angle ~a :spacing ~a)"
-               (loop for index from 0 below (length coordinates) by 2
-                     collect (format nil "(~a ~a)"
-                                     (number-text (aref coordinates index))
-                                     (number-text (aref coordinates (1+ index)))))
-               (keyword-text (dom:hatch-pattern entity))
-               (angle-text (dom:hatch-angle entity))
-               (number-text (dom:hatch-spacing entity)))))
+     (format nil "(hatch-polygon '(~{~a~^ ~}) :pattern ~a :angle ~a :spacing ~a~@[ :holes '(~{~a~^ ~})~])"
+             (ring-points-text (dom:hatch-coordinates entity))
+             (keyword-text (dom:hatch-pattern entity))
+             (angle-text (dom:hatch-angle entity))
+             (number-text (dom:hatch-spacing entity))
+             (and (dom:hatch-holes entity)
+                  (mapcar (lambda (ring)
+                            (format nil "(~{~a~^ ~})" (ring-points-text ring)))
+                          (dom:hatch-holes entity)))))
     (dom:radial-dimension-entity
      (format nil "(~:[radius~;diameter~]-dimension ~a ~a ~a :angle ~a :height ~a :unit ~a :decimals ~d)"
              (dom:radial-dimension-diameter entity)

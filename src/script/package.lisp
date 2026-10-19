@@ -82,6 +82,9 @@ commands that draw it.")
    #:insert
    #:explode
    #:spread
+   #:region-union
+   #:region-subtract
+   #:region-intersect
    #:blocks
    #:hatch
    #:hatch-polygon

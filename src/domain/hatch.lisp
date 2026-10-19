@@ -22,6 +22,7 @@ of millions of segments.")
                                                     layer-id
                                                     bounds
                                                     coordinates
+                                                    holes
                                                     pattern
                                                     angle
                                                     spacing
@@ -33,6 +34,7 @@ lines are cut by the boundary, and one of them passes through the first vertex, 
 region.
 
 COORDINATES: flat array x0 y0 x1 y1 ... of the vertices of the boundary, a simple polygon; owned by the entity.
+HOLES: a list of such arrays, polygons inside the boundary that the pattern leaves unfilled; owned by the entity.
 PATTERN: :solid, :lines or :cross.
 ANGLE: direction of the lines, in radians, kept in [0, pi) since a line has no sense.
 SPACING: distance between two lines, in millimetres.
@@ -42,6 +44,7 @@ unless the hatch is solid."
   (coordinates (make-array 0 :element-type 'double-float)
    :type (simple-array double-float (*))
    :read-only t)
+  (holes '() :type list :read-only t)
   (pattern :lines :type keyword :read-only t)
   (angle 0d0 :type double-float :read-only t)
   (spacing 1d0 :type double-float :read-only t)
@@ -60,12 +63,14 @@ PATTERN: :solid, :lines or :cross."
     (:cross (list angle (+ angle (/ geo:+pi+ 2))))))
 
 (defun hatch-pattern-segments (coordinates
+                               holes
                                pattern
                                angle
                                spacing)
   "Return the lines of a pattern in a region, as a flat array of segments.
 
 COORDINATES: the boundary.
+HOLES: the polygons left unfilled inside it.
 PATTERN: :solid, :lines or :cross.
 ANGLE: the direction of the lines, in radians.
 SPACING: the distance between two lines."
@@ -77,22 +82,56 @@ SPACING: the distance between two lines."
                                                  direction
                                                  spacing
                                                  (aref coordinates 0)
-                                                 (aref coordinates 1)))
+                                                 (aref coordinates 1)
+                                                 holes))
                (list (make-array 0 :element-type 'double-float))))))
+
+(defun hatch-hole-rings (holes
+                         hole-coordinates
+                         hole-sizes)
+  "Return the holes of a hatch as a list of validated arrays: those that were given as a list, or, when the sizes are
+given, those that the concatenated coordinates hold, as a file stores them.
+
+HOLES: a list of sequences of doubles x0 y0 x1 y1 ..., or NIL.
+HOLE-COORDINATES: the vertices of all the holes one after the other, or NIL.
+HOLE-SIZES: how many vertices each hole has, as numbers, or NIL."
+  (let ((rings (if (and hole-sizes (plusp (length hole-sizes)))
+                   (let ((start 0))
+                     (loop for size across hole-sizes
+                           collect (let ((end (+ start (* 2 (round size)))))
+                                     (prog1 (subseq hole-coordinates start (min end (length hole-coordinates)))
+                                       (setf start end)))))
+                   holes)))
+    (loop for ring in rings
+          collect (let ((copy (copy-validated-coordinates ring :hatch)))
+                    (when (< (geo:polyline-vertex-count copy) 3)
+                      (invalid-entity-failure :hatch
+                                              "a hole has ~d vertices; it needs at least 3"
+                                              (geo:polyline-vertex-count copy)))
+                    (unless (> (geo:contour-area copy) (* base:+length-tolerance+ base:+length-tolerance+))
+                      (invalid-entity-failure :hatch "a hole encloses no area"))
+                    copy))))
 
 (defun make-hatch (&key id
                         layer-id
                         coordinates
+                        holes
+                        hole-coordinates
+                        hole-sizes
                         (pattern :lines)
                         (angle +default-hatch-angle+)
                         spacing)
   "Create a validated hatch. Signals INVALID-ENTITY when an invariant is violated: a boundary of at least three and at
-most +MAXIMUM-HATCH-VERTICES+ vertices, in range, that encloses an area; a known pattern; and a spacing that is
-above the tolerance and does not make more than +MAXIMUM-HATCH-LINES+ lines.
+most +MAXIMUM-HATCH-VERTICES+ vertices, in range, that encloses an area, and holes of the same kind, all of them with
+at most that many vertices together; a known pattern; and a spacing that is above the tolerance and does not make
+more than +MAXIMUM-HATCH-LINES+ lines.
 
 ID: positive entity id.
 LAYER-ID: id of the layer.
 COORDINATES: sequence of doubles x0 y0 x1 y1 ... of the boundary; copied.
+HOLES: a list of such sequences, polygons the pattern leaves unfilled; copied.
+HOLE-COORDINATES: instead of HOLES, the vertices of all the holes one after the other, as a file stores them.
+HOLE-SIZES: with HOLE-COORDINATES, how many vertices each hole has.
 PATTERN: :solid, :lines or :cross.
 ANGLE: direction of the lines in radians; any finite angle, kept in [0, pi).
 SPACING: distance between two lines, in millimetres."
@@ -100,14 +139,19 @@ SPACING: distance between two lines, in millimetres."
                        id
                        layer-id)
   (let* ((copy (copy-validated-coordinates coordinates :hatch))
-         (count (geo:polyline-vertex-count copy)))
-    (when (< count 3)
+         (rings (hatch-hole-rings holes
+                                  hole-coordinates
+                                  hole-sizes))
+         (count (+ (geo:polyline-vertex-count copy)
+                   (loop for ring in rings
+                         sum (geo:polyline-vertex-count ring)))))
+    (when (< (geo:polyline-vertex-count copy) 3)
       (invalid-entity-failure :hatch
                               "its boundary has ~d vertices; it needs at least 3"
-                              count))
+                              (geo:polyline-vertex-count copy)))
     (when (> count +maximum-hatch-vertices+)
       (invalid-entity-failure :hatch
-                              "its boundary has ~d vertices; the limit is ~d"
+                              "its boundary and holes have ~d vertices; the limit is ~d"
                               count
                               +maximum-hatch-vertices+))
     (unless (member pattern *hatch-patterns*)
@@ -141,21 +185,27 @@ SPACING: distance between two lines, in millimetres."
                      layer-id
                      bounds
                      copy
+                     rings
                      pattern
                      direction
                      spacing
                      (hatch-pattern-segments copy
+                                             rings
                                              pattern
                                              direction
                                              spacing)
-                     (if (eq pattern :solid)
-                         (geo:triangulate-polygon copy)
-                         (make-array 0 :element-type 'double-float)))))))
+                     (cond ((not (eq pattern :solid))
+                            (make-array 0 :element-type 'double-float))
+                           (rings
+                            (geo:region-triangles copy rings))
+                           (t
+                            (geo:triangulate-polygon copy))))))))
 
 (defun update-hatch (hatch
                      &key (id (entity-id hatch))
                           (layer-id (entity-layer-id hatch))
                           (coordinates (hatch-coordinates hatch))
+                          (holes (hatch-holes hatch))
                           (pattern (hatch-pattern hatch))
                           (angle (hatch-angle hatch))
                           (spacing (hatch-spacing hatch)))
@@ -165,12 +215,14 @@ HATCH: the hatch to copy.
 ID: replacement id.
 LAYER-ID: replacement layer id.
 COORDINATES: replacement boundary.
+HOLES: replacement holes.
 PATTERN: replacement pattern.
 ANGLE: replacement direction of the lines.
 SPACING: replacement spacing."
   (make-hatch :id id
               :layer-id layer-id
               :coordinates coordinates
+              :holes holes
               :pattern pattern
               :angle angle
               :spacing spacing))
@@ -193,18 +245,37 @@ TEXT-HEIGHT: the default text height of the drawing."
 (defmethod entity-kind ((hatch hatch-entity))
   :hatch)
 
+(defun hatch-hole-coordinates (hatch)
+  "Return the vertices of all the holes of a hatch one after the other, as a file stores them.
+
+HATCH: a hatch entity."
+  (apply #'concatenate
+         '(simple-array double-float (*))
+         (or (hatch-holes hatch)
+             (list (make-array 0 :element-type 'double-float)))))
+
+(defun hatch-hole-sizes (hatch)
+  "Return how many vertices each hole of a hatch has, as an array of numbers.
+
+HATCH: a hatch entity."
+  (make-array (length (hatch-holes hatch))
+              :element-type 'double-float
+              :initial-contents (mapcar (lambda (ring) (float (geo:polyline-vertex-count ring) 1d0))
+                                        (hatch-holes hatch))))
+
 (defun hatch-boundary-distance (hatch
                                 x
                                 y)
-  "Return the distance from a point to the boundary of a hatch.
+  "Return the distance from a point to the boundary of a hatch, or of one of its holes.
 
 HATCH: a hatch entity.
 X: point x.
 Y: point y."
-  (geo:point-polyline-distance x
-                               y
-                               (hatch-coordinates hatch)
-                               t))
+  (loop for ring in (cons (hatch-coordinates hatch) (hatch-holes hatch))
+        minimize (geo:point-polyline-distance x
+                                              y
+                                              ring
+                                              t)))
 
 (defmethod entity-pick-distance ((hatch hatch-entity)
                                  x
@@ -214,9 +285,10 @@ Y: point y."
                                           x
                                           y)))
     (if (and (eq :solid (hatch-pattern hatch))
-             (geo:point-in-polygon-p x
-                                     y
-                                     (hatch-coordinates hatch)))
+             (geo:point-in-rings-p x
+                                   y
+                                   (hatch-coordinates hatch)
+                                   (hatch-holes hatch)))
         0d0
         (progn
           (loop for index from 0 below (length segments) by 4
@@ -229,14 +301,31 @@ Y: point y."
                                                                   (aref segments (+ index 3))))))
           nearest))))
 
-(defmethod entity-translated ((hatch hatch-entity)
-                              dx
-                              dy)
-  (let ((moved (copy-seq (hatch-coordinates hatch))))
+(defun translated-ring (coordinates
+                        dx
+                        dy)
+  "Return a polygon moved by a distance along x and a distance along y.
+
+COORDINATES: a flat array of vertices.
+DX: the distance along x.
+DY: the distance along y."
+  (let ((moved (copy-seq coordinates)))
     (loop for index from 0 below (length moved) by 2
           do (incf (aref moved index) dx)
              (incf (aref moved (1+ index)) dy))
-    (update-hatch hatch :coordinates moved)))
+    moved))
+
+(defmethod entity-translated ((hatch hatch-entity)
+                              dx
+                              dy)
+  (update-hatch hatch
+                :coordinates (translated-ring (hatch-coordinates hatch)
+                                              dx
+                                              dy)
+                :holes (mapcar (lambda (ring) (translated-ring ring
+                                                               dx
+                                                               dy))
+                               (hatch-holes hatch))))
 
 (defmethod entity-snap-points ((hatch hatch-entity))
   nil)
@@ -261,10 +350,13 @@ Y: point y."
 (defmethod entity-derived-values ((hatch hatch-entity))
   (list (make-derived-value (i18n:tr "Area")
                             :area
-                            (geo:contour-area (hatch-coordinates hatch)))
+                            (- (geo:contour-area (hatch-coordinates hatch))
+                               (loop for ring in (hatch-holes hatch)
+                                     sum (geo:contour-area ring))))
         (make-derived-value (i18n:tr "Perimeter")
                             :length
-                            (geo:polyline-length (hatch-coordinates hatch) t))
+                            (loop for ring in (cons (hatch-coordinates hatch) (hatch-holes hatch))
+                                  sum (geo:polyline-length ring t)))
         (make-derived-value (i18n:tr "Vertices")
                             :count
                             (geo:polyline-vertex-count (hatch-coordinates hatch)))))
@@ -293,9 +385,10 @@ Y: point y."
   (or (geo:polyline-touches-bounds-p (hatch-coordinates hatch)
                                      t
                                      bounds)
-      (geo:point-in-polygon-p (geo:bounds-center-x bounds)
-                              (geo:bounds-center-y bounds)
-                              (hatch-coordinates hatch))))
+      (geo:point-in-rings-p (geo:bounds-center-x bounds)
+                            (geo:bounds-center-y bounds)
+                            (hatch-coordinates hatch)
+                            (hatch-holes hatch))))
 
 (defmethod entity-grips ((hatch hatch-entity))
   (let ((coordinates (hatch-coordinates hatch)))

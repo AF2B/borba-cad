@@ -871,35 +871,68 @@ ENTITY: an entity."
                                         +circle-boundary-vertices+))
     (t nil)))
 
+(defun island-in-p (boundary
+                    x
+                    y
+                    candidate)
+  "Return true when a closed shape lies wholly inside a boundary and does not hold the point: a shape that a region
+leaves out, as a hole.
+
+BOUNDARY: the vertices of the boundary of the region, a flat array.
+X: world x of the point that is being hatched.
+Y: world y of that point.
+CANDIDATE: the vertices of the boundary of the shape."
+  (and (< (geo:contour-area candidate) (geo:contour-area boundary))
+       (loop for index from 0 below (length candidate) by 2
+             always (geo:point-in-polygon-p (aref candidate index)
+                                            (aref candidate (1+ index))
+                                            boundary))
+       (not (geo:point-in-polygon-p x
+                                    y
+                                    candidate))))
+
 (defun hatch-region-at (drawing
                         x
                         y)
   "Return the boundary of the smallest closed shape on a visible layer that holds a point, as a flat array of
-vertices, or NIL when none does.
+vertices, or NIL when none does, and as a second value the boundaries of the closed shapes inside it that do not hold
+the point, which are holes in what is hatched.
 
 DRAWING: the drawing.
 X: world x of the point.
 Y: world y of the point."
   (let ((best nil)
-        (best-area nil))
+        (best-area nil)
+        (best-entity nil)
+        (candidates '()))
     (map-entities (lambda (entity)
                     (let ((layer (find-layer drawing (entity-layer-id entity)))
                           (boundary (entity-region-boundary entity)))
                       (when (and boundary
                                  layer
-                                 (layer-visible layer)
-                                 (geo:bounds-contains-point-p (entity-bounds entity)
-                                                              x
-                                                              y)
-                                 (geo:point-in-polygon-p x
-                                                         y
-                                                         boundary))
-                        (let ((area (geo:contour-area boundary)))
-                          (when (or (null best-area) (< area best-area))
-                            (setf best boundary
-                                  best-area area))))))
+                                 (layer-visible layer))
+                        (push (cons entity boundary) candidates)
+                        (when (and (geo:bounds-contains-point-p (entity-bounds entity)
+                                                                x
+                                                                y)
+                                   (geo:point-in-polygon-p x
+                                                           y
+                                                           boundary))
+                          (let ((area (geo:contour-area boundary)))
+                            (when (or (null best-area) (< area best-area))
+                              (setf best boundary
+                                    best-area area
+                                    best-entity entity)))))))
                   (drawing-store drawing))
-    best))
+    (values best
+            (and best
+                 (loop for (entity . boundary) in (reverse candidates)
+                       when (and (not (eq entity best-entity))
+                                 (island-in-p best
+                                              x
+                                              y
+                                              boundary))
+                         collect boundary)))))
 
 (defun hatch-changes (drawing
                       x
@@ -916,14 +949,15 @@ Y: world y of the point.
 PATTERN: :solid, :lines or :cross.
 ANGLE: direction of the lines, in radians.
 SPACING: distance between two lines, or NIL for the default of the region."
-  (let ((boundary (hatch-region-at drawing
-                                   x
-                                   y)))
+  (multiple-value-bind (boundary holes) (hatch-region-at drawing
+                                                         x
+                                                         y)
     (unless boundary
       (refuse-edit "No closed shape holds that point: use a rectangle, circle, ellipse, polygon or closed polyline."))
     (create-entity-changes (make-hatch :id (drawing-next-entity-id drawing)
                                        :layer-id (drawing-current-layer-id drawing)
                                        :coordinates boundary
+                                       :holes holes
                                        :pattern pattern
                                        :angle angle
                                        :spacing (or spacing

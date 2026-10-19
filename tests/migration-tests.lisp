@@ -88,32 +88,70 @@
   (loop for version from persist:+oldest-supported-format-version+ to persist:+supported-format-version+
         do (is (typep version '(integer 1)))))
 
+(defparameter *empty-hatch-holes* " (hole-vertices ) (hole-sizes )"
+  "What the writer says of the holes of a hatch that has none, which version 6 added.")
+
+(defun hatch-lines-with-holes (text)
+  "Return TEXT, a file, with the empty holes that version 6 says added to every hatch.
+
+TEXT: the text of a file without them."
+  (with-output-to-string (stream)
+    (with-input-from-string (input text)
+      (loop for line = (read-line input nil nil)
+            while line
+            do (if (search "(hatch (id" line)
+                   (write-line (concatenate 'string
+                                            (subseq line 0 (1- (length line)))
+                                            *empty-hatch-holes*
+                                            ")")
+                               stream)
+                   (write-line line stream))))))
+
+(defun hatch-lines-without-holes (text)
+  "Return TEXT, a file, without the empty holes that version 6 says in every hatch.
+
+TEXT: the text of a file with them."
+  (let ((result text))
+    (loop for found = (search *empty-hatch-holes* result)
+          while found
+          do (setf result (concatenate 'string
+                                       (subseq result 0 found)
+                                       (subseq result (+ found (length *empty-hatch-holes*))))))
+    result))
+
 (defun as-newest-version (text version)
   "Return the text of a file of an older VERSION as the writer writes it in the newest version: the version line,
-and the section of blocks that version 5 added, which is empty.
+the section of blocks that version 5 added, which is empty, and the holes of the hatches that version 6 added.
 
 TEXT: the text of the old file.
 VERSION: its format version."
-  (let ((renumbered (replace-once-text text
-                                       (format nil "(format-version ~d)" version)
-                                       (format nil "(format-version ~d)" persist:+supported-format-version+))))
-    (if (< version 5)
-        (replace-once-text renumbered
-                           (format nil " )~% (entities")
-                           (format nil " )~% (blocks~% )~% (entities"))
-        renumbered)))
+  (let* ((renumbered (replace-once-text text
+                                        (format nil "(format-version ~d)" version)
+                                        (format nil "(format-version ~d)" persist:+supported-format-version+)))
+         (with-blocks (if (< version 5)
+                          (replace-once-text renumbered
+                                             (format nil " )~% (entities")
+                                             (format nil " )~% (blocks~% )~% (entities"))
+                          renumbered)))
+    (if (< version 6)
+        (hatch-lines-with-holes with-blocks)
+        with-blocks)))
 
 (defun as-older-version (text version)
   "Return the text of a file of the newest version as the file of an older VERSION would read: with that version
-line, and without the section of blocks when the version predates it.
+line, without the section of blocks when the version predates it, and without the holes of the hatches when it
+predates them.
 
-TEXT: the text of a file of the newest version, with an empty section of blocks.
+TEXT: the text of a file of the newest version, with an empty section of blocks and no holes in its hatches.
 VERSION: the format version to say."
-  (let ((renumbered (replace-once-text text
-                                       (format nil "(format-version ~d)" persist:+supported-format-version+)
-                                       (format nil "(format-version ~d)" version))))
-    (if (< version 5)
-        (replace-once-text renumbered
-                           (format nil " (blocks~% )~%")
-                           "")
-        renumbered)))
+  (let* ((renumbered (replace-once-text text
+                                        (format nil "(format-version ~d)" persist:+supported-format-version+)
+                                        (format nil "(format-version ~d)" version)))
+         (without-blocks (if (< version 5)
+                             (replace-once-text renumbered
+                                                (format nil " (blocks~% )~%")
+                                                "")
+                             renumbered)))
+    (if (< version 6)
+        (hatch-lines-without-holes without-blocks)
+        without-blocks)))

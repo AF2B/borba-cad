@@ -110,11 +110,13 @@ APP: the application."
   "Do what a choice of the modify menu, or its key, asks: make a tool the active one, or do the thing at once.
 
 APP: the application.
-KIND: a tool kind, or :make-block, :explode or :spread."
+KIND: a tool kind, or :make-block, :explode, :spread, :union or :intersect."
   (case kind
     (:make-block (operation-make-block app))
     (:explode (operation-explode-selection app))
     (:spread (operation-spread app))
+    (:union (operation-region app :union))
+    (:intersect (operation-region app :intersection))
     (t (operation-set-tool app kind))))
 
 (defun modify-menu-items (app)

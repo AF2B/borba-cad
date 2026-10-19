@@ -217,6 +217,9 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:make-hatch
    #:update-hatch
    #:hatch-coordinates
+   #:hatch-holes
+   #:hatch-hole-coordinates
+   #:hatch-hole-sizes
    #:hatch-pattern
    #:hatch-angle
    #:hatch-spacing
@@ -228,6 +231,8 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:default-hatch-spacing
    #:hatch-region-at
    #:hatch-changes
+   #:region-changes
+   #:region-target
    #:spread-changes
    #:spread-selection-changes
    #:entity-explode-pieces

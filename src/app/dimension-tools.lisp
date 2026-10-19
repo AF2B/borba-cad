@@ -296,16 +296,19 @@ hatch gets; the inspector changes them afterwards."))
 
 (defun hatch-of-region (tool
                         app
-                        boundary)
+                        boundary
+                        holes)
   "Return the hatch of a region, with the pattern of the tool and the angle and spacing a new hatch gets. Signals
 INVALID-ENTITY when it would not be valid.
 
 TOOL: the hatch tool.
 APP: the application.
-BOUNDARY: the vertices of the region, as a flat array."
+BOUNDARY: the vertices of the region, as a flat array.
+HOLES: the boundaries of the shapes inside it that are left unfilled."
   (dom:make-hatch :id (creation-id app)
                   :layer-id (creation-layer-id app)
                   :coordinates boundary
+                  :holes holes
                   :pattern (hatch-tool-pattern tool)
                   :spacing (dom:default-hatch-spacing boundary
                                                       (dom:drawing-default-text-height (app-drawing app)))))
@@ -321,13 +324,14 @@ CURSOR: the pointer position."
                        (cursor-raw-y cursor)))
 
 (defmethod tool-pointer-down ((tool hatch-tool) app cursor)
-  (let ((boundary (region-under-pointer app cursor)))
+  (multiple-value-bind (boundary holes) (region-under-pointer app cursor)
     (if boundary
         (create-entity app
                        (lambda ()
                          (hatch-of-region tool
                                           app
-                                          boundary)))
+                                          boundary
+                                          holes)))
         (set-message app
                      (i18n:tr "Click inside a rectangle, circle, ellipse, polygon or closed polyline.")
                      :error)))
@@ -338,11 +342,13 @@ CURSOR: the pointer position."
   (app-request-redraw app))
 
 (defmethod tool-preview-entities ((tool hatch-tool) app)
-  (let* ((cursor (app-cursor app))
-         (boundary (and cursor (region-under-pointer app cursor)))
-         (hatch (and boundary
-                     (try-entity (lambda ()
-                                   (hatch-of-region tool
-                                                    app
-                                                    boundary))))))
-    (and hatch (list hatch))))
+  (let ((cursor (app-cursor app)))
+    (when cursor
+      (multiple-value-bind (boundary holes) (region-under-pointer app cursor)
+        (let ((hatch (and boundary
+                          (try-entity (lambda ()
+                                        (hatch-of-region tool
+                                                         app
+                                                         boundary
+                                                         holes))))))
+          (and hatch (list hatch)))))))

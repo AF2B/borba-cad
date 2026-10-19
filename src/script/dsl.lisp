@@ -545,16 +545,11 @@ PATTERN: :solid, :lines or :cross."
     (error "A hatch pattern is one of ~{~(:~a~)~^, ~}, but ~s was given." dom:*hatch-patterns* pattern))
   pattern)
 
-(defun hatch-polygon (points
-                      &key (pattern :lines)
-                           (angle 45)
-                           spacing)
-  "Hatch the polygon through POINTS. Returns its id.
+(defun points-coordinates (points)
+  "Return the points of a polygon as the flat array of numbers that entities hold, or signal an error saying what a
+polygon is given as.
 
-POINTS: a list of (x y) lists, three or more, the last joined to the first.
-PATTERN: :solid, :lines or :cross.
-ANGLE: the direction of the lines, in degrees.
-SPACING: the distance between two lines, or the usual one for the size of the polygon."
+POINTS: a list of (x y) lists."
   (unless (and (listp points) (every (lambda (point) (and (listp point) (= 2 (length point)))) points))
     (error "A hatch takes a list of points, each (x y), but ~s was given." points))
   (let ((coordinates (make-array (* 2 (length points)) :element-type 'double-float)))
@@ -562,10 +557,27 @@ SPACING: the distance between two lines, or the usual one for the size of the po
           for index from 0 by 2
           do (setf (aref coordinates index) (number-of x)
                    (aref coordinates (1+ index)) (number-of y)))
+    coordinates))
+
+(defun hatch-polygon (points
+                      &key (pattern :lines)
+                           (angle 45)
+                           spacing
+                           holes)
+  "Hatch the polygon through POINTS, leaving holes. Returns its id.
+
+POINTS: a list of (x y) lists, three or more, the last joined to the first.
+PATTERN: :solid, :lines or :cross.
+ANGLE: the direction of the lines, in degrees.
+SPACING: the distance between two lines, or the usual one for the size of the polygon.
+HOLES: a list of polygons, each a list of (x y) lists, that the hatch leaves unfilled."
+  (let ((coordinates (points-coordinates points))
+        (rings (mapcar #'points-coordinates holes)))
     (add-entity (lambda (id layer-id)
                   (dom:make-hatch :id id
                                   :layer-id layer-id
                                   :coordinates coordinates
+                                  :holes rings
                                   :pattern (hatch-pattern-of pattern)
                                   :angle (angle-radians angle)
                                   :spacing (if spacing
@@ -704,6 +716,53 @@ DISTANCE: how far each piece moves, 10 mm (one centimetre) unless given."
         (when (null (dom:change-before change))
           (push (dom:entity-id (dom:change-after change)) pieces)))
       (nreverse pieces))))
+
+(defun apply-region-operation (ids
+                               operation
+                               &key base-id)
+  "Join, overlap or cut the closed shapes among IDS, replacing them by the polylines of what results. Returns the ids
+of the polylines: the outlines, and the holes.
+
+IDS: an id or a list of ids.
+OPERATION: :union, :intersection or :difference.
+BASE-ID: for :difference, the shape the others are cut from."
+  (let ((changes (handler-case (dom:region-changes (the-drawing)
+                                                   (entity-ids-of ids)
+                                                   operation
+                                                   :base-id base-id)
+                   (base:edit-refused (condition)
+                     (error "~a" condition))))
+        (made '()))
+    (dolist (change changes)
+      (emit-change (dom:change-before change) (dom:change-after change))
+      (when (null (dom:change-before change))
+        (push (dom:entity-id (dom:change-after change)) made)))
+    (nreverse made)))
+
+(defun region-union (ids)
+  "Join the closed shapes among IDS (rectangles, circles, ellipses, polygons and closed polylines) into one outline
+that replaces them. Returns the ids of the polylines that result.
+
+IDS: a list of ids, two or more."
+  (apply-region-operation ids :union))
+
+(defun region-intersect (ids)
+  "Keep only where the closed shapes among IDS all overlap, as a polyline that replaces them. Returns the ids of the
+polylines that result.
+
+IDS: a list of ids, two or more."
+  (apply-region-operation ids :intersection))
+
+(defun region-subtract (base
+                        cutters)
+  "Cut the closed shapes among CUTTERS away from the closed shape BASE: the polylines that result, outlines and holes,
+replace them all. Returns their ids.
+
+BASE: the id of the shape to cut from.
+CUTTERS: an id or a list of ids of the shapes to cut away."
+  (apply-region-operation (cons base (entity-ids-of cutters))
+                          :difference
+                          :base-id base))
 
 (defun blocks ()
   "Return the names of the blocks, in alphabetical order."
@@ -1113,6 +1172,7 @@ THINGS: anything."
      diameter-dimension angle-dimension hatch hatch-polygon)
     ("Layers" layer with-layer layers)
     ("Blocks" with-block make-block insert explode spread blocks)
+    ("Closed shapes" region-union region-subtract region-intersect)
     ("Changing entities" move copy erase edit redraw move-to-layer rotate mirror scale)
     ("Finding entities" entities entity-count extents info)
     ("Selection and view" select select-all deselect selected fit)

@@ -9,9 +9,9 @@
 ;;;; that table is the migration, and a file of an older version is read as the newer one with the
 ;;;; defaults filled in. Version 2 added the angle of a text, the arc, the ellipse and the polygon. Version 3 added
 ;;;; the radius, diameter and angle dimensions. Version 4 added the hatch. Version 5 added the blocks
-;;;; section and the placement of a block.
+;;;; section and the placement of a block. Version 6 added the holes of a hatch.
 
-(defconstant +supported-format-version+ 5
+(defconstant +supported-format-version+ 6
   "The newest format version: the one this program writes, and the newest it reads.")
 
 (defconstant +oldest-supported-format-version+ 1
@@ -259,7 +259,19 @@ NAMES-AND-ACCESSORS: alternating field names and accessor symbols."
                                   (make-field-spec :spacing
                                                    "spacing"
                                                    :real
-                                                   'dom:hatch-spacing))
+                                                   'dom:hatch-spacing)
+                                  (make-field-spec :hole-coordinates
+                                                   "hole-vertices"
+                                                   :reals
+                                                   'dom:hatch-hole-coordinates
+                                                   :since 6
+                                                   :default (make-array 0 :element-type 'double-float))
+                                  (make-field-spec :hole-sizes
+                                                   "hole-sizes"
+                                                   :reals
+                                                   'dom:hatch-hole-sizes
+                                                   :since 6
+                                                   :default (make-array 0 :element-type 'double-float)))
                             :since 4)
         (make-entity-format :insert
                             "insert"

@@ -1529,7 +1529,7 @@ Create the tool named by KIND.
 
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
 :mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension, :diameter-dimension,
-:angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset, :fillet or :spread.
+:angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset, :fillet, :spread or :subtract.
 
 ### `make-wheel-event` (function)
 
@@ -2079,7 +2079,8 @@ Activate a tool, cancelling whatever the previous one was doing.
 - `APP`: the application.
 - `KIND`: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :ellipse, :polygon, :rotate,
 :mirror, :scale, :measure-distance, :measure-angle, :measure-area, :radius-dimension,
-:diameter-dimension, :angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset, :fillet or :spread. A tool that
+:diameter-dimension, :angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset, :fillet, :spread or
+:subtract. A tool that
 changes the selection (rotate, mirror, scale) is not activated when nothing is selected.
 
 ### `operation-spread` (function)
@@ -5385,12 +5386,41 @@ lines are cut by the boundary, and one of them passes through the first vertex, 
 region.
 
 - `COORDINATES`: flat array x0 y0 x1 y1 ... of the vertices of the boundary, a simple polygon; owned by the entity.
+- `HOLES`: a list of such arrays, polygons inside the boundary that the pattern leaves unfilled; owned by the entity.
 - `PATTERN`: :solid, :lines or :cross.
 - `ANGLE`: direction of the lines, in radians, kept in [0, pi) since a line has no sense.
 - `SPACING`: distance between two lines, in millimetres.
 - `SEGMENTS`: the lines, as a flat array x1 y1 x2 y2 ..., computed at construction; empty for a solid hatch.
 - `TRIANGLES`: the triangles that cover the region, as a flat array of six numbers each, computed at construction; empty
 unless the hatch is solid.
+
+### `hatch-hole-coordinates` (function)
+
+```lisp
+(hatch-hole-coordinates hatch)
+```
+
+Return the vertices of all the holes of a hatch one after the other, as a file stores them.
+
+- `HATCH`: a hatch entity.
+
+### `hatch-hole-sizes` (function)
+
+```lisp
+(hatch-hole-sizes hatch)
+```
+
+Return how many vertices each hole of a hatch has, as an array of numbers.
+
+- `HATCH`: a hatch entity.
+
+### `hatch-holes` (function)
+
+```lisp
+(hatch-holes instance)
+```
+
+(undocumented)
 
 ### `hatch-pattern` (function)
 
@@ -5407,7 +5437,8 @@ unless the hatch is solid.
 ```
 
 Return the boundary of the smallest closed shape on a visible layer that holds a point, as a flat array of
-vertices, or NIL when none does.
+vertices, or NIL when none does, and as a second value the boundaries of the closed shapes inside it that do not hold
+the point, which are holes in what is hatched.
 
 - `DRAWING`: the drawing.
 - `X`: world x of the point.
@@ -5936,16 +5967,20 @@ Create a validated ellipse. Signals INVALID-ENTITY when an invariant is violated
 ### `make-hatch` (function)
 
 ```lisp
-(make-hatch &key id layer-id coordinates (pattern lines) (angle +default-hatch-angle+) spacing)
+(make-hatch &key id layer-id coordinates holes hole-coordinates hole-sizes (pattern lines) (angle +default-hatch-angle+) spacing)
 ```
 
 Create a validated hatch. Signals INVALID-ENTITY when an invariant is violated: a boundary of at least three and at
-most +MAXIMUM-HATCH-VERTICES+ vertices, in range, that encloses an area; a known pattern; and a spacing that is
-above the tolerance and does not make more than +MAXIMUM-HATCH-LINES+ lines.
+most +MAXIMUM-HATCH-VERTICES+ vertices, in range, that encloses an area, and holes of the same kind, all of them with
+at most that many vertices together; a known pattern; and a spacing that is above the tolerance and does not make
+more than +MAXIMUM-HATCH-LINES+ lines.
 
 - `ID`: positive entity id.
 - `LAYER-ID`: id of the layer.
 - `COORDINATES`: sequence of doubles x0 y0 x1 y1 ... of the boundary; copied.
+- `HOLES`: a list of such sequences, polygons the pattern leaves unfilled; copied.
+- `HOLE-COORDINATES`: instead of HOLES, the vertices of all the holes one after the other, as a file stores them.
+- `HOLE-SIZES`: with HOLE-COORDINATES, how many vertices each hole has.
 - `PATTERN`: :solid, :lines or :cross.
 - `ANGLE`: direction of the lines in radians; any finite angle, kept in [0, pi).
 - `SPACING`: distance between two lines, in millimetres.
@@ -6526,6 +6561,35 @@ An axis-aligned rectangle.
 ```
 
 (undocumented)
+
+### `region-changes` (function)
+
+```lisp
+(region-changes drawing ids operation &key base-id)
+```
+
+Return the change set that joins, overlaps or cuts the closed shapes with IDS, replacing them by the polylines of
+what results, on the layer of the first, and how many shapes were used and how many of IDS were skipped. Signals
+EDIT-REFUSED when fewer than two shapes can be used, or when nothing is left of the result.
+
+- `DRAWING`: the drawing.
+- `IDS`: list of entity ids.
+- `OPERATION`: :union, :intersection or :difference.
+- `BASE-ID`: for :difference, the id of the shape the others are cut from, or NIL for the first.
+
+### `region-target` (function)
+
+```lisp
+(region-target drawing x y radius)
+```
+
+Return the closed shape that a click picks: the smallest that holds the point, and when none does, the nearest within
+RADIUS of it, or NIL.
+
+- `DRAWING`: the drawing.
+- `X`: world x of the click.
+- `Y`: world y of the click.
+- `RADIUS`: how far from the point, in millimetres, a shape may be and still be picked.
 
 ### `remove-block` (function)
 
@@ -7134,7 +7198,7 @@ Return a validated copy of ELLIPSE with the given fields replaced.
 ### `update-hatch` (function)
 
 ```lisp
-(update-hatch hatch &key (id (entity-id hatch)) (layer-id (entity-layer-id hatch)) (coordinates (hatch-coordinates hatch)) (pattern (hatch-pattern hatch)) (angle (hatch-angle hatch)) (spacing (hatch-spacing hatch)))
+(update-hatch hatch &key (id (entity-id hatch)) (layer-id (entity-layer-id hatch)) (coordinates (hatch-coordinates hatch)) (holes (hatch-holes hatch)) (pattern (hatch-pattern hatch)) (angle (hatch-angle hatch)) (spacing (hatch-spacing hatch)))
 ```
 
 Return a validated copy of HATCH with the given fields replaced.
@@ -7143,6 +7207,7 @@ Return a validated copy of HATCH with the given fields replaced.
 - `ID`: replacement id.
 - `LAYER-ID`: replacement layer id.
 - `COORDINATES`: replacement boundary.
+- `HOLES`: replacement holes.
 - `PATTERN`: replacement pattern.
 - `ANGLE`: replacement direction of the lines.
 - `SPACING`: replacement spacing.
@@ -8479,18 +8544,19 @@ Return how many parallel lines, SPACING apart and in the direction ANGLE, cross 
 ### `hatch-segments` (function)
 
 ```lisp
-(hatch-segments coordinates angle spacing origin-x origin-y)
+(hatch-segments coordinates angle spacing origin-x origin-y &optional holes)
 ```
 
 Return the segments of the parallel lines that hatch a polygon, as a simple array of double-float holding x1 y1 x2 y2
 for each. The lines are SPACING apart in the direction ANGLE, one of them through the origin, and are cut where they
-leave the polygon, so a concave polygon is hatched only inside.
+leave the polygon, so a concave polygon is hatched only inside, and where they enter a hole.
 
 - `COORDINATES`: simple-array of double-float holding x0 y0 x1 y1 ...
 - `ANGLE`: direction of the lines, in radians.
 - `SPACING`: distance between two lines, above zero.
 - `ORIGIN-X`: x of the point one of the lines passes through.
 - `ORIGIN-Y`: y of that point.
+- `HOLES`: a list of polygons, each such an array, that are left unhatched.
 
 ### `make-bounds` (function)
 
@@ -8617,6 +8683,19 @@ Return true when a point is inside a polygon, by the even-odd rule. A point on t
 - `Y`: y of the point.
 - `COORDINATES`: simple-array of double-float holding x0 y0 x1 y1 ...
 
+### `point-in-rings-p` (function)
+
+```lisp
+(point-in-rings-p x y coordinates holes)
+```
+
+Return true when a point is inside a polygon and not inside any of its holes.
+
+- `X`: x of the point.
+- `Y`: y of the point.
+- `COORDINATES`: the polygon, a simple-array of double-float holding x0 y0 x1 y1 ...
+- `HOLES`: a list of polygons, each such an array.
+
 ### `point-oriented-box-distance` (function)
 
 ```lisp
@@ -8694,6 +8773,16 @@ beyond an end of the segment.
 - `X2`: x of its end.
 - `Y2`: y of its end.
 
+### `polygon-region` (function)
+
+```lisp
+(polygon-region coordinates)
+```
+
+Return the region that a polygon makes: its loop going counter-clockwise, whichever way the polygon was given.
+
+- `COORDINATES`: a flat array of vertices.
+
 ### `polyline-bounds` (function)
 
 ```lisp
@@ -8758,6 +8847,56 @@ Return the perimeter of a rectangle.
 
 - `WIDTH`: extent along x.
 - `HEIGHT`: extent along y.
+
+### `region-area` (function)
+
+```lisp
+(region-area loops)
+```
+
+Return the area of a region: its outer boundaries minus its holes.
+
+- `LOOPS`: a list of flat arrays of vertices, with the inside on their left.
+
+### `region-boolean` (function)
+
+```lisp
+(region-boolean operation a b)
+```
+
+Return the region that results from joining two regions, from what they have in common, or from taking the second
+from the first, as a list of loops: the outer boundaries go counter-clockwise and the holes clockwise. The result is
+empty, NIL, when nothing is left.
+
+- `OPERATION`: :union, :intersection or :difference.
+- `A`: the first region, a list of loops with the inside on their left.
+- `B`: the second region.
+
+### `region-triangles` (function)
+
+```lisp
+(region-triangles coordinates holes)
+```
+
+Return the triangles that cover a polygon without its holes, as a simple array of double-float holding the six
+coordinates of each, by cutting the region into slabs at the height of every vertex and each slab, between the edges
+that cross it, into trapezoids of two triangles. It does not matter how the holes lie in the polygon.
+
+- `COORDINATES`: the polygon, a simple-array of double-float holding x0 y0 x1 y1 ...
+- `HOLES`: a list of polygons, each such an array.
+
+### `region-winding-number` (function)
+
+```lisp
+(region-winding-number x y loops)
+```
+
+Return how many times the loops of a region go around a point, counter-clockwise ones counting plus one: the point is
+inside the region when this is not zero.
+
+- `X`: x of the point.
+- `Y`: y of the point.
+- `LOOPS`: a list of flat arrays of vertices.
 
 ### `regular-polygon-area` (function)
 
@@ -12673,15 +12812,16 @@ polyline. Returns its id.
 ### `hatch-polygon` (function)
 
 ```lisp
-(hatch-polygon points &key (pattern lines) (angle 45) spacing)
+(hatch-polygon points &key (pattern lines) (angle 45) spacing holes)
 ```
 
-Hatch the polygon through POINTS. Returns its id.
+Hatch the polygon through POINTS, leaving holes. Returns its id.
 
 - `POINTS`: a list of (x y) lists, three or more, the last joined to the first.
 - `PATTERN`: :solid, :lines or :cross.
 - `ANGLE`: the direction of the lines, in degrees.
 - `SPACING`: the distance between two lines, or the usual one for the size of the polygon.
+- `HOLES`: a list of polygons, each a list of (x y) lists, that the hatch leaves unfilled.
 
 ### `help` (function)
 
@@ -12948,6 +13088,40 @@ drawing order. Returns the id.
 
 - `ID`: the id of the entity.
 - `COMMAND`: a command that draws one entity, such as (line 0 0 100 0); it does not add one.
+
+### `region-intersect` (function)
+
+```lisp
+(region-intersect ids)
+```
+
+Keep only where the closed shapes among IDS all overlap, as a polyline that replaces them. Returns the ids of the
+polylines that result.
+
+- `IDS`: a list of ids, two or more.
+
+### `region-subtract` (function)
+
+```lisp
+(region-subtract base cutters)
+```
+
+Cut the closed shapes among CUTTERS away from the closed shape BASE: the polylines that result, outlines and holes,
+replace them all. Returns their ids.
+
+- `BASE`: the id of the shape to cut from.
+- `CUTTERS`: an id or a list of ids of the shapes to cut away.
+
+### `region-union` (function)
+
+```lisp
+(region-union ids)
+```
+
+Join the closed shapes among IDS (rectangles, circles, ellipses, polygons and closed polylines) into one outline
+that replaces them. Returns the ids of the polylines that result.
+
+- `IDS`: a list of ids, two or more.
 
 ### `rgb` (function)
 
