@@ -185,9 +185,9 @@ DIALOG: the file dialog."
     (:drawing persist:*known-drawing-extensions*)
     (:dxf *dxf-extensions*)
     ((:script :recording) *script-extensions*)
+    ((:svg :shape) *svg-extensions*)
     (:image *image-extensions*)
-    (:pdf *pdf-extensions*)
-    (:svg *svg-extensions*)))
+    (:pdf *pdf-extensions*)))
 
 (defun compute-visible-entries (entries
                                 show-all

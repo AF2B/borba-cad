@@ -112,6 +112,14 @@
                 :serial t
                 :components ((:file "package")
                              (:file "jpeg")))
+               (:module "shapes"
+                :serial t
+                :components ((:file "package")
+                             (:file "curves")
+                             (:file "shape")
+                             (:file "acanthus")
+                             (:file "catalog")
+                             (:file "svg")))
                (:module "script"
                 :serial t
                 :components ((:file "package")
@@ -175,6 +183,7 @@
                              (:file "panels")
                              (:file "side-panels")
                              (:file "menus")
+                             (:file "shape-tools")
                              (:file "welcome")
                              (:file "file-dialog")
                              (:file "file-dialog-widgets")
@@ -302,6 +311,7 @@
                (:file "block-tests")
                (:file "spreading-tests")
                (:file "recording-tests")
+               (:file "shape-library-tests")
                (:file "theme-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")

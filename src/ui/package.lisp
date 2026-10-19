@@ -81,6 +81,7 @@ editing, and the performance overlay. No input device and no renderer appear her
    #:widget-shortcut
    #:widget-icon
    #:widget-variant
+   #:widget-data
    #:widget-font
    #:widget-size
    #:widget-trailing

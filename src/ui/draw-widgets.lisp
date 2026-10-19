@@ -417,6 +417,59 @@ COLOR: an RGBA."
                icon-size
                color)))
 
+(defconstant +tile-padding+ 9f0
+  "Space between the edge of a tile and the picture of the shape in it, in pixels.")
+
+(defun draw-tile-preview (list
+                          widget
+                          color)
+  "Draw the picture of a shape in a tile: its polylines, scaled to fit the tile with their middle in the middle of it.
+
+LIST: the draw list.
+WIDGET: a :tile button whose data is a list of polylines.
+COLOR: an RGBA."
+  (let ((polylines (widget-data widget)))
+    (when polylines
+      (let ((left most-positive-single-float)
+            (right most-negative-single-float)
+            (low most-positive-single-float)
+            (high most-negative-single-float))
+        (dolist (polyline polylines)
+          (let ((points (car polyline)))
+            (loop for index from 0 below (length points) by 2
+                  do (setf left (min left (aref points index))
+                           right (max right (aref points index))
+                           low (min low (aref points (1+ index)))
+                           high (max high (aref points (1+ index)))))))
+        (let* ((room (- (min (widget-width widget) (widget-height widget)) (* 2 +tile-padding+)))
+               (largest (max (- right left) (- high low) 1f-6))
+               (factor (/ room largest))
+               (center-x (+ (widget-x widget) (/ (widget-width widget) 2)))
+               (center-y (+ (widget-y widget) (/ (widget-height widget) 2)))
+               (middle-x (/ (+ left right) 2))
+               (middle-y (/ (+ low high) 2)))
+          (flet ((screen-x (x)
+                   (+ center-x (* factor (- x middle-x))))
+                 (screen-y (y)
+                   (- center-y (* factor (- y middle-y)))))
+            (dolist (polyline polylines)
+              (let* ((points (car polyline))
+                     (count (floor (length points) 2)))
+                (loop for index from 0 below (1- count)
+                      do (scene:add-line list
+                                         (screen-x (aref points (* 2 index)))
+                                         (screen-y (aref points (1+ (* 2 index))))
+                                         (screen-x (aref points (* 2 (1+ index))))
+                                         (screen-y (aref points (1+ (* 2 (1+ index)))))
+                                         color))
+                (when (and (cdr polyline) (> count 2))
+                  (scene:add-line list
+                                  (screen-x (aref points (* 2 (1- count))))
+                                  (screen-y (aref points (1+ (* 2 (1- count)))))
+                                  (screen-x (aref points 0))
+                                  (screen-y (aref points 1))
+                                  color))))))))))
+
 (defun draw-button-widget (list
                            widget
                            theme
@@ -433,7 +486,13 @@ HOVER: true when the pointer is over it."
                                  hover))
         (color (widget-text-color widget theme))
         (icon-size (button-icon-size widget)))
-    (cond ((and (widget-icon widget) (widget-label widget))
+    (cond ((eq (widget-variant widget) :tile)
+           (draw-tile-preview list
+                              widget
+                              (if (or hover (widget-active widget))
+                                  (scene:theme-accent theme)
+                                  (scene:theme-text theme))))
+          ((and (widget-icon widget) (widget-label widget))
            (draw-icon-with-label list
                                  widget
                                  color))

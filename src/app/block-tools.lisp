@@ -102,10 +102,11 @@ APP: the application."
 (defclass insert-tool (tool)
   ((block-name :initarg :block-name :reader insert-block-name)
    (point :initform nil :accessor insert-point)
-   (scale :initform 1d0 :accessor insert-scale-factor))
+   (scale :initform 1d0 :accessor insert-scale-factor)
+   (flipped :initform nil :accessor insert-flipped))
   (:documentation "Places a block: a click for the point its base point goes to, then a click that turns it toward the
 pointer, or Enter to leave it as it is. A number typed before the first click is the scale, and one typed after it is
-the turn in degrees."))
+the turn in degrees. F flips it across its vertical axis."))
 
 (defmethod tool-kind ((tool insert-tool)) :insert)
 
@@ -134,7 +135,8 @@ ROTATION: the turn in radians."
                    :x (car point)
                    :y (cdr point)
                    :scale (insert-scale-factor tool)
-                   :rotation rotation))
+                   :rotation rotation
+                   :flipped (insert-flipped tool)))
 
 (defun place-block (tool
                     app
@@ -171,12 +173,16 @@ ROTATION: the turn in radians."
 
 (defmethod tool-key ((tool insert-tool) app key modifiers)
   (declare (ignore modifiers))
-  (when (and (eq key :enter) (insert-point tool))
-    (place-block tool
-                 app
-                 0d0)
-    (app-request-redraw app)
-    t))
+  (cond ((and (eq key :enter) (insert-point tool))
+         (place-block tool
+                      app
+                      0d0)
+         (app-request-redraw app)
+         t)
+        ((eq key :f)
+         (setf (insert-flipped tool) (not (insert-flipped tool)))
+         (app-request-redraw app)
+         t)))
 
 (defmethod tool-typed-number ((tool insert-tool) app number)
   (cond ((insert-point tool)

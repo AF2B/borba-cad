@@ -25,6 +25,12 @@ enough for a steady hand and small enough not to grab distant entities.")
 (defparameter *interface-zoom-percentages* '(75 90 100 110 125 150 175 200)
   "The zooms of the interface that the keys step through, in percent: 100 is the interface as designed.")
 
+(defconstant +shape-columns+ 4
+  "How many tiles of shapes there are across the popover of the shapes.")
+
+(defconstant +shape-visible-rows+ 4
+  "How many rows of tiles the popover of the shapes shows at once; the wheel brings the others.")
+
 (defconstant +default-spread-distance+ 10d0
   "How far, in millimetres, the spread tool moves each piece of a shape from the others until another distance is
 typed: one centimetre.")
@@ -163,6 +169,11 @@ PLOT-SETTINGS: how the drawing was put on the sheet the last time it was exporte
 LAST-BLOCK-NAME: the name of the block that was last made or placed, or NIL.
 RECORDING: the recording of what the user does that is under way, or NIL.
 RECORDED-SCRIPT: the script that the last recording made, kept until it is saved, or NIL.
+SHAPES-GROUP: which group of shapes the popover of the shapes shows, counting all of them from 0.
+SHAPE-SCROLL: how many rows of tiles the popover has scrolled past.
+USER-AREAS: the areas of shapes that the user added, as last read from the folder of shapes.
+SHAPE-PROBLEMS: the files of that folder that could not be read, as conses of a name and a sentence.
+USER-AREAS-LOADED: true once the folder of shapes has been read.
 GRIP-DRAG: the grip being dragged, or NIL.
 CONSOLE: the console.
 CONSTRAINT: :ortho, :polar or NIL, how the next point is held to the last one.
@@ -220,6 +231,11 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   last-block-name
   recording
   recorded-script
+  (shapes-group 0 :type fixnum)
+  (shape-scroll 0 :type fixnum)
+  user-areas
+  shape-problems
+  user-areas-loaded
   grip-drag
   (console (make-console))
   constraint

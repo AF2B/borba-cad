@@ -520,7 +520,7 @@ select tool is.
 
 APP: the application."
   (let ((kind (tool-kind (app-tool app))))
-    (if (or (eq kind :select) (modify-tool-kind-p kind) (measure-tool-kind-p kind))
+    (if (or (eq kind :select) (eq kind :shape) (modify-tool-kind-p kind) (measure-tool-kind-p kind))
         :pencil
         kind)))
 
@@ -542,7 +542,10 @@ BLOCKED: true while a modal covers the palette."
          (modify-y (+ draw-y +palette-button-size+ +palette-button-gap+))
          (modifying (modify-tool-kind-p (tool-kind (app-tool app))))
          (measure-y (+ modify-y +palette-button-size+ +palette-button-gap+))
-         (measuring (measure-tool-kind-p (tool-kind (app-tool app)))))
+         (measuring (measure-tool-kind-p (tool-kind (app-tool app))))
+         (shapes-y (+ measure-y +palette-button-size+ +palette-button-gap+))
+         (shaping (or (eq :shape (tool-kind (app-tool app)))
+                      (and (app-menu app) (eq :shapes (menu-kind (app-menu app)))))))
     (list (ui:make-widget :panel
                           :palette
                           (ui:rect-x rect)
@@ -574,7 +577,7 @@ BLOCKED: true while a modal covers the palette."
                                       (toggle-menu app
                                                    :draw
                                                    :draw))
-                            :active (not (or selecting modifying measuring))
+                            :active (not (or selecting modifying measuring shaping))
                             :blocked blocked
                             :hint (i18n:tr "Drawing tools")
                             :variant :tool
@@ -630,7 +633,17 @@ BLOCKED: true while a modal covers the palette."
                           +caret-size+
                           +caret-size+
                           :icon :caret
-                          :color (scene:theme-text-faint theme)))))
+                          :color (scene:theme-text-faint theme))
+          (make-icon-button :shapes
+                            :shapes
+                            button-x
+                            shapes-y
+                            :action (lambda () (operation-toggle-shapes app))
+                            :active shaping
+                            :blocked blocked
+                            :hint (i18n:tr "Shapes: ironwork, acanthus leaves and more")
+                            :variant :tool
+                            :size +palette-button-size+))))
 
 ;;; Status bar
 

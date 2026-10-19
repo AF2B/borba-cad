@@ -197,13 +197,14 @@ APP: the application."
   "Return the choices of the menu KIND, with NIL between groups.
 
 APP: the application.
-KIND: :draw, :modify, :measure, :language or :more."
+KIND: :draw, :modify, :measure, :language, :more or :shapes, which has no choices of its own."
   (ecase kind
     (:draw (draw-menu-items app))
     (:modify (modify-menu-items app))
     (:measure (measure-menu-items app))
     (:language (language-menu-items app))
-    (:more (more-menu-items app))))
+    (:more (more-menu-items app))
+    (:shapes '())))
 
 (defun selectable-items (items)
   "Return the choices among ITEMS, without the NILs that separate groups.
@@ -276,6 +277,16 @@ APP: the application.
 KEY: key keyword."
   (let* ((menu (app-menu app))
          (tool (cdr (assoc key *tool-shortcuts*))))
+    (when (eq (menu-kind menu) :shapes)
+      (case key
+        (:escape (close-menu app))
+        (:up (scroll-shapes app -1))
+        (:down (scroll-shapes app 1))
+        (:page-up (scroll-shapes app (- +shape-visible-rows+)))
+        (:page-down (scroll-shapes app +shape-visible-rows+))
+        (:left (step-shape-group app -1))
+        (:right (step-shape-group app 1)))
+      (return-from handle-menu-key nil))
     (cond ((eq key :escape) (close-menu app))
           ((eq key :up) (move-menu-highlight app :previous))
           ((eq key :down) (move-menu-highlight app :next))
@@ -346,6 +357,8 @@ APP: the application.
 WIDGETS: the widgets of the window, in which the button the menu hangs from is looked for."
   (let* ((menu (app-menu app))
          (anchor (and menu (find (menu-anchor menu) widgets :key #'ui:widget-id :test #'equal))))
+    (when (and menu (eq (menu-kind menu) :shapes))
+      (return-from menu-widgets (shapes-popover-widgets app)))
     (when anchor
       (let* ((items (menu-items app (menu-kind menu)))
              (selectable (selectable-items items))

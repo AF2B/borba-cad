@@ -25,7 +25,8 @@
                                                    (variant :default)
                                                    (font :ui)
                                                    (size +font-pixels+)
-                                                   (trailing 0f0))))
+                                                   (trailing 0f0)
+                                                   data)))
   "One user-interface element.
 
 KIND: :panel, :card, :button, :label, :row, :field, :swatch, :scrim, :separator, :icon, :logo or
@@ -48,12 +49,15 @@ HINT: what the widget does, shown as a tooltip and in the status bar while hover
 SHORTCUT: the keys that do the same, shown beside the hint, or NIL.
 ICON: the name of the icon drawn in a button, row or on its own.
 VARIANT: for buttons, :default, :primary, :ghost, :tool (palette), :icon (title bar), :floating (an icon
-with a body, over the canvas) or :chip
+with a body, over the canvas), :tile (a picture of a shape) or :chip
 (a pill that toggles); for panels, :default, :title-bar, :status-bar, :palette, :side or :console.
 FONT: :ui, :ui-strong or :mono.
 SIZE: em size of the text in pixels.
 TRAILING: pixels at the right edge that the text must stay clear of, where other widgets sit
-over the widget."
+over the widget.
+DATA: what a widget draws that is not text or an icon: for a :tile button, a list of polylines, each a cons of a
+vector of single-floats (x and y, point after point, in the coordinates of the shape, y pointing up) and true when
+the polyline is closed."
   kind
   id
   (x 0f0 :type single-float)
@@ -75,7 +79,8 @@ over the widget."
   variant
   font
   size
-  trailing)
+  trailing
+  data)
 
 (defun interactive-widget-p (widget)
   "Return true for widgets that react to the pointer.

@@ -170,6 +170,9 @@ EVENT: a pointer event."
                               y)))
     (cond ((and hit (eq button :left))
            (handle-widget-click app hit))
+          ((shapes-popover-contains-p app
+                                      x
+                                      y) nil)
           ((app-menu app)
            (close-menu app))
           ((or (app-prompt app) (app-dialog app) (app-welcome app)) nil)
@@ -266,6 +269,10 @@ EVENT: a wheel event."
     (setf (app-pointer-x app) x
           (app-pointer-y app) y)
     (cond ((app-prompt app) nil)
+          ((shapes-popover-contains-p app
+                                      x
+                                      y)
+           (scroll-shapes app (- (round delta))))
           ((app-menu app) nil)
           ((app-welcome app) nil)
           ((app-dialog app)

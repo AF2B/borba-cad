@@ -6,6 +6,7 @@
                     (#:script #:borba-cad/script)
                     (#:image #:borba-cad/image)
                     (#:plot #:borba-cad/plot)
+                    (#:shapes #:borba-cad/shapes)
                     (#:sbcl #:borba-cad/sbcl-support)
                     (#:geo #:borba-cad/geometry)
                     (#:dom #:borba-cad/domain)
@@ -179,6 +180,25 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:tool-anchor
    #:+polar-increment-degrees+
    #:operation-toggle-console
+   #:operation-toggle-shapes
+   #:operation-import-shape
+   #:import-shape-into-app
+   #:place-shape
+   #:shape-tool
+   #:shapes-popover-rect
+   #:shapes-popover-contains-p
+   #:scroll-shapes
+   #:step-shape-group
+   #:current-shape-group
+   #:shape-groups
+   #:shape-areas
+   #:user-shapes-directory
+   #:load-user-shapes
+   #:app-shapes-group
+   #:app-shape-scroll
+   #:app-shape-problems
+   #:+shape-columns+
+   #:+shape-visible-rows+
    #:operation-run-script
    #:operation-toggle-recording
    #:operation-toggle-theme

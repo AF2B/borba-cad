@@ -15,6 +15,7 @@
                     (#:script #:borba-cad/script)
                     (#:image #:borba-cad/image)
                     (#:plot #:borba-cad/plot)
+                    (#:shapes #:borba-cad/shapes)
                     (#:obs #:borba-cad/observability)
                     (#:scene #:borba-cad/scene)
                     (#:ui #:borba-cad/ui)

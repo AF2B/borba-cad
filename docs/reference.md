@@ -46,6 +46,14 @@ enough for a steady hand and small enough not to grab distant entities.
 
 The angle, in degrees, whose multiples polar holds the next point to.
 
+### `+shape-columns+` (constant)
+
+How many tiles of shapes there are across the popover of the shapes.
+
+### `+shape-visible-rows+` (constant)
+
+How many rows of tiles the popover of the shapes shows at once; the wheel brings the others.
+
 ### `+snap-radius-pixels+` (constant)
 
 How close, in pixels, the pointer must be to an endpoint or center for object snap to grab it.
@@ -92,6 +100,11 @@ NIL when it selects only what it holds (dragged from left to right).
 - `LAST-BLOCK-NAME`: the name of the block that was last made or placed, or NIL.
 - `RECORDING`: the recording of what the user does that is under way, or NIL.
 - `RECORDED-SCRIPT`: the script that the last recording made, kept until it is saved, or NIL.
+- `SHAPES-GROUP`: which group of shapes the popover of the shapes shows, counting all of them from 0.
+- `SHAPE-SCROLL`: how many rows of tiles the popover has scrolled past.
+- `USER-AREAS`: the areas of shapes that the user added, as last read from the folder of shapes.
+- `SHAPE-PROBLEMS`: the files of that folder that could not be read, as conses of a name and a sentence.
+- `USER-AREAS-LOADED`: true once the folder of shapes has been read.
 - `GRIP-DRAG`: the grip being dragged, or NIL.
 - `CONSOLE`: the console.
 - `CONSTRAINT`: :ortho, :polar or NIL, how the next point is held to the last one.
@@ -457,6 +470,30 @@ Handle a window size change: the canvas follows the layout and keeps its center 
 
 ```lisp
 (app-selection instance)
+```
+
+(undocumented)
+
+### `app-shape-problems` (function)
+
+```lisp
+(app-shape-problems instance)
+```
+
+(undocumented)
+
+### `app-shape-scroll` (function)
+
+```lisp
+(app-shape-scroll instance)
+```
+
+(undocumented)
+
+### `app-shapes-group` (function)
+
+```lisp
+(app-shapes-group instance)
 ```
 
 (undocumented)
@@ -835,6 +872,16 @@ Returns true when the folder was created.
 
 - `DIALOG`: the file dialog.
 - `NAME`: the new folder's name.
+
+### `current-shape-group` (function)
+
+```lisp
+(current-shape-group app)
+```
+
+Return the group that the popover shows, as a cons of its area and itself, or NIL when there is none.
+
+- `APP`: the application.
 
 ### `cursor` (type)
 
@@ -1315,11 +1362,23 @@ drawing is untouched and the reason is shown. Returns true on success, or when t
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
 
+### `import-shape-into-app` (function)
+
+```lisp
+(import-shape-into-app app path-text)
+```
+
+Add the SVG file at PATH-TEXT to the shapes of the user: it is read and checked, copied into the folder of shapes,
+and the popover opens on it. On failure the reason is shown. Returns true on success.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
+
 ### `insert-tool` (type)
 
 Places a block: a click for the point its base point goes to, then a click that turns it toward the
 pointer, or Enter to leave it as it is. A number typed before the first click is the scale, and one typed after it is
-the turn in degrees.
+the turn in degrees. F flips it across its vertical axis.
 
 ### `key-event` (type)
 
@@ -1380,6 +1439,16 @@ untouched and the reason is shown. Returns true on success.
 
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
+
+### `load-user-shapes` (function)
+
+```lisp
+(load-user-shapes app)
+```
+
+Read the folder of the shapes of the user again, and remember what is in it.
+
+- `APP`: the application.
 
 ### `make-app` (function)
 
@@ -1576,8 +1645,8 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 - `MODE`: :open or :save.
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
 - `PURPOSE`: :drawing for a drawing of the program, :dxf to import or export a DXF file, :script to run a script
-or export one, :recording to save the script of a recording, :image to export a picture, or :pdf or :svg to
-export a sheet.
+or export one, :recording to save the script of a recording, :shape to choose an SVG file to add as a shape,
+:image to export a picture, or :pdf or :svg to export a sheet.
 
 ### `open-menu` (function)
 
@@ -1794,6 +1863,16 @@ export it there as an SVG file.
 
 Open the dialog where the user finds a DXF file to import as a new drawing, after offering to save the
 current one.
+
+- `APP`: the application.
+
+### `operation-import-shape` (function)
+
+```lisp
+(operation-import-shape app)
+```
+
+Open the dialog where the user picks an SVG file to add as a shape.
 
 - `APP`: the application.
 
@@ -2139,6 +2218,16 @@ Begin recording when nothing is recorded, and end the recording when it is.
 
 - `APP`: the application.
 
+### `operation-toggle-shapes` (function)
+
+```lisp
+(operation-toggle-shapes app)
+```
+
+Open the popover of the shapes, or close it when it is open.
+
+- `APP`: the application.
+
 ### `operation-toggle-snap` (function)
 
 ```lisp
@@ -2225,6 +2314,18 @@ that direction in degrees (with the @ or without it). Without an anchor the orig
 - `ANCHOR`: an (x . y) cons, the last point, or NIL for the first.
 - `POINTER`: an (x . y) cons, where the pointer is, or NIL.
 - `UNIT`: the display unit, assumed for numbers without a unit.
+
+### `place-shape` (function)
+
+```lisp
+(place-shape app shape)
+```
+
+Make the shape the one to place: the drawing defines its block when it has none, the popover closes and the tool that
+places it takes over.
+
+- `APP`: the application.
+- `SHAPE`: a shape of the library.
 
 ### `pointer-event` (type)
 
@@ -2517,6 +2618,17 @@ Turn the mouse wheel with the pointer over a world position.
 - `WORLD-Y`: world y under the pointer.
 - `NOTCHES`: positive to zoom in.
 
+### `scroll-shapes` (function)
+
+```lisp
+(scroll-shapes app rows)
+```
+
+Scroll the grid of the popover by a number of rows.
+
+- `APP`: the application.
+- `ROWS`: how many rows, positive for later ones.
+
 ### `select-entry` (function)
 
 ```lisp
@@ -2619,6 +2731,54 @@ Show TEXT in the status bar.
 - `TEXT`: the message.
 - `SEVERITY`: :info or :error.
 
+### `shape-areas` (function)
+
+```lisp
+(shape-areas app)
+```
+
+Return the areas of shapes: those that come with the program and those the user added.
+
+- `APP`: the application.
+
+### `shape-groups` (function)
+
+```lisp
+(shape-groups app)
+```
+
+Return every group of shapes, as conses of its area and itself, in the order they are shown.
+
+- `APP`: the application.
+
+### `shape-tool` (type)
+
+Places a shape of the library, as the insert tool places a block: a click for where, a second click
+or a typed angle for the turn, F to flip it. A number typed before the first click is the size, which is how large the
+larger side of the shape is, in the display unit.
+
+### `shapes-popover-contains-p` (function)
+
+```lisp
+(shapes-popover-contains-p app x y)
+```
+
+Return true when the popover is open and the point is on it.
+
+- `APP`: the application.
+- `X`: window x.
+- `Y`: window y.
+
+### `shapes-popover-rect` (function)
+
+```lisp
+(shapes-popover-rect app)
+```
+
+Return where the popover is, as x, y, width and height: beside the palette, under the title bar.
+
+- `APP`: the application.
+
 ### `show-notice` (function)
 
 ```lisp
@@ -2643,6 +2803,17 @@ Return TEXT as a line to paste into a one-line field: line breaks and tabs becom
 of them becomes one, and the ends are trimmed.
 
 - `TEXT`: a string that may have several lines.
+
+### `step-shape-group` (function)
+
+```lisp
+(step-shape-group app direction)
+```
+
+Show the next group of shapes, or the one before, going round, from the first row.
+
+- `APP`: the application.
+- `DIRECTION`: 1 for the next, -1 for the one before.
 
 ### `text-event` (type)
 
@@ -2757,6 +2928,16 @@ shown, unless it is absolute or starts with ~.
 
 - `DIALOG`: the file dialog.
 - `TEXT`: what the user typed or pasted.
+
+### `user-shapes-directory` (function)
+
+```lisp
+(user-shapes-directory app)
+```
+
+Return the folder where the shapes that the user added are kept, in the state directory, or NIL when there is none.
+
+- `APP`: the application.
 
 ### `visible-entries` (function)
 
@@ -13126,6 +13307,351 @@ make it current, so that an interactive session starts ready to explore the prog
 
 - `SYSTEMS`: names of the systems to load.
 
+## BORBA-CAD/SHAPES
+
+The library of shapes that can be placed in a drawing: ornaments such as the acanthus leaves of
+ironwork, kept by the trade they belong to and the group they are in, made by procedures or read from SVG files, and
+turned into the blocks that the drawing places.
+
+### `+curve-tolerance+` (constant)
+
+The most that the points of a flattened curve may stray from the curve, in the units of the shape (a shape is 100
+units high, which is 100 millimetres as it comes).
+
+### `all-areas` (function)
+
+```lisp
+(all-areas &optional user-areas)
+```
+
+Return the areas of the catalog: those that come with the program and then those the user added, with the shapes of
+an area of the same name added to it.
+
+- `USER-AREAS`: areas read from the user's folder of shapes, or NIL.
+
+### `area` (type)
+
+A trade or a field that has shapes, such as ironwork.
+
+- `ID`: a string that identifies the area.
+- `TITLE`: the English title of the area, translated when shown.
+- `GROUPS`: the groups, in the order they are shown.
+
+### `area-groups` (function)
+
+```lisp
+(area-groups instance)
+```
+
+(undocumented)
+
+### `area-id` (function)
+
+```lisp
+(area-id instance)
+```
+
+(undocumented)
+
+### `area-title` (function)
+
+```lisp
+(area-title instance)
+```
+
+(undocumented)
+
+### `built-in-areas` (function)
+
+```lisp
+(built-in-areas)
+```
+
+Return the areas that come with the program: ironwork, with its acanthus leaves.
+
+### `contour` (type)
+
+One polyline of a shape.
+
+- `POINTS`: a list of conses of x and y.
+- `CLOSED`: true when the last point joins the first.
+
+### `contour-closed` (function)
+
+```lisp
+(contour-closed instance)
+```
+
+(undocumented)
+
+### `contour-points` (function)
+
+```lisp
+(contour-points instance)
+```
+
+(undocumented)
+
+### `find-shape` (function)
+
+```lisp
+(find-shape areas area-id group-id shape-id)
+```
+
+Return the shape with an id, in the group and area with theirs, or NIL.
+
+- `AREAS`: a list of areas.
+- `AREA-ID`: the id of the area.
+- `GROUP-ID`: the id of the group.
+- `SHAPE-ID`: the id of the shape.
+
+### `flatten-cubic` (function)
+
+```lisp
+(flatten-cubic p0 p1 p2 p3 &optional (tolerance +curve-tolerance+))
+```
+
+Return the points of a polyline that follows a cubic Bezier curve, after its start and up to and including its end,
+as a list of conses of x and y.
+
+- `P0`: the start, a cons of x and y.
+- `P1`: the first control point.
+- `P2`: the second control point.
+- `P3`: the end.
+- `TOLERANCE`: the most that the polyline may stray from the curve.
+
+### `flatten-quadratic` (function)
+
+```lisp
+(flatten-quadratic p0 p1 p2 &optional (tolerance +curve-tolerance+))
+```
+
+Return the points of a polyline that follows a quadratic Bezier curve, after its start and up to and including its
+end, as a list of conses of x and y.
+
+- `P0`: the start, a cons of x and y.
+- `P1`: the control point.
+- `P2`: the end.
+- `TOLERANCE`: the most that the polyline may stray from the curve.
+
+### `group` (type)
+
+Shapes that belong together, such as the acanthus leaves.
+
+- `ID`: a string that identifies the group inside its area.
+- `TITLE`: the English title of the group, translated when shown.
+- `SHAPES`: the shapes, in the order they are shown.
+
+### `group-id` (function)
+
+```lisp
+(group-id instance)
+```
+
+(undocumented)
+
+### `group-shapes` (function)
+
+```lisp
+(group-shapes instance)
+```
+
+(undocumented)
+
+### `group-title` (function)
+
+```lisp
+(group-title instance)
+```
+
+(undocumented)
+
+### `load-user-areas` (function)
+
+```lisp
+(load-user-areas directory)
+```
+
+Return the areas that the user's folder of shapes holds, and the problems that came up as a second value. A folder
+inside it is an area, a folder inside that a group, and the SVG files in a group are its shapes; the SVG files that are
+directly in an area make a group of that name, and those directly in the folder make the area My shapes. A file that
+cannot be read is left out and listed among the problems, as a cons of its name and a sentence.
+
+- `DIRECTORY`: the folder of shapes, or NIL for none.
+
+### `make-area` (function)
+
+```lisp
+(make-area id title groups)
+```
+
+(undocumented)
+
+### `make-contour` (function)
+
+```lisp
+(make-contour points &optional closed)
+```
+
+(undocumented)
+
+### `make-group` (function)
+
+```lisp
+(make-group id title shapes)
+```
+
+(undocumented)
+
+### `make-shape` (function)
+
+```lisp
+(make-shape id name contours &optional name-argument)
+```
+
+(undocumented)
+
+### `parse-svg-path` (function)
+
+```lisp
+(parse-svg-path text)
+```
+
+Return the contours that the data of an SVG path draws, in the coordinates of the file: open ones for the subpaths
+that are not closed and closed ones for those that are, with the curves cut into segments. Signals INVALID-INPUT when
+the data is not made of commands and numbers.
+
+- `TEXT`: the value of the d attribute of a path.
+
+### `read-svg-contours` (function)
+
+```lisp
+(read-svg-contours text)
+```
+
+Return the contours that an SVG file draws, in the coordinates of the file with y pointing up, as a list. Signals
+INVALID-INPUT when the file is too large or draws too many points.
+
+- `TEXT`: the text of the file.
+
+### `read-svg-shape` (function)
+
+```lisp
+(read-svg-shape text id name)
+```
+
+Return the shape that an SVG file draws, 100 units across its larger side with its base at the origin. Signals
+INVALID-INPUT when the file is too large, draws too much, or draws none of the elements that are read.
+
+- `TEXT`: the text of the file.
+- `ID`: the id to give the shape.
+- `NAME`: the name to give the shape.
+
+### `shape` (type)
+
+A shape of the library.
+
+- `ID`: a string that identifies the shape inside its group.
+- `NAME`: the English name of the shape, translated when shown; it may have a ~d for the NAME-ARGUMENT.
+- `CONTOURS`: a list of contours.
+- `NAME-ARGUMENT`: the number that the name asks for, or NIL.
+- `PREVIEW`: the contours cut down to the few points that a small picture needs, made the first time they are asked for.
+
+### `shape-block-definition` (function)
+
+```lisp
+(shape-block-definition shape)
+```
+
+Return the definition of the block that a shape is placed as: a polyline for each contour of the shape, on the
+default layer, with the base point at the origin. Contours with fewer than two points are left out.
+
+- `SHAPE`: a shape.
+
+### `shape-block-name` (function)
+
+```lisp
+(shape-block-name shape)
+```
+
+Return the name of the block that a shape is placed as: the English name of the shape, which does not change with the
+language of the interface.
+
+- `SHAPE`: a shape.
+
+### `shape-contours` (function)
+
+```lisp
+(shape-contours instance)
+```
+
+(undocumented)
+
+### `shape-height` (function)
+
+```lisp
+(shape-height shape)
+```
+
+Return the height of a shape, from its lowest point to its highest.
+
+- `SHAPE`: a shape.
+
+### `shape-id` (function)
+
+```lisp
+(shape-id instance)
+```
+
+(undocumented)
+
+### `shape-name` (function)
+
+```lisp
+(shape-name instance)
+```
+
+(undocumented)
+
+### `shape-name-argument` (function)
+
+```lisp
+(shape-name-argument instance)
+```
+
+(undocumented)
+
+### `shape-preview-polylines` (function)
+
+```lisp
+(shape-preview-polylines shape)
+```
+
+Return the picture of a shape as a list of polylines, each a cons of a vector of single-floats (x and y, point after
+point) and true when the polyline is closed.
+
+- `SHAPE`: a shape.
+
+### `shape-title` (function)
+
+```lisp
+(shape-title shape)
+```
+
+Return the name of a shape as it is shown, in the language of the interface.
+
+- `SHAPE`: a shape.
+
+### `shape-width` (function)
+
+```lisp
+(shape-width shape)
+```
+
+Return the width of a shape, from its leftmost point to its rightmost.
+
+- `SHAPE`: a shape.
+
 ## BORBA-CAD/TEST-SUPPORT
 
 Seeded PRNG and deterministic workload generation for tests and benchmarks.
@@ -13712,7 +14238,7 @@ The regions of the window. They tile it without gaps.
 ### `make-widget` (function)
 
 ```lisp
-(make-widget kind id x y width height &key label active (enabled t) blocked swatch action edit (align center) color hint shortcut icon (variant default) (font ui) (size +font-pixels+) (trailing 0.0))
+(make-widget kind id x y width height &key label active (enabled t) blocked swatch action edit (align center) color hint shortcut icon (variant default) (font ui) (size +font-pixels+) (trailing 0.0) data)
 ```
 
 (undocumented)
@@ -13834,12 +14360,15 @@ One user-interface element.
 - `SHORTCUT`: the keys that do the same, shown beside the hint, or NIL.
 - `ICON`: the name of the icon drawn in a button, row or on its own.
 - `VARIANT`: for buttons, :default, :primary, :ghost, :tool (palette), :icon (title bar), :floating (an icon
-with a body, over the canvas) or :chip
+with a body, over the canvas), :tile (a picture of a shape) or :chip
 (a pill that toggles); for panels, :default, :title-bar, :status-bar, :palette, :side or :console.
 - `FONT`: :ui, :ui-strong or :mono.
 - `SIZE`: em size of the text in pixels.
 - `TRAILING`: pixels at the right edge that the text must stay clear of, where other widgets sit
 over the widget.
+- `DATA`: what a widget draws that is not text or an icon: for a :tile button, a list of polylines, each a cons of a
+vector of single-floats (x and y, point after point, in the coordinates of the shape, y pointing up) and true when
+the polyline is closed.
 
 ### `widget-action` (function)
 
@@ -13905,6 +14434,14 @@ Return true when the point lies inside WIDGET.
 - `WIDGET`: a widget.
 - `X`: point x in pixels.
 - `Y`: point y in pixels.
+
+### `widget-data` (function)
+
+```lisp
+(widget-data instance)
+```
+
+(undocumented)
 
 ### `widget-edit` (function)
 
