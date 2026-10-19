@@ -256,3 +256,143 @@ COORDINATES: a list of x and y, vertex after vertex."
         (is (null (untranslated-texts (remove nil (mapcar #'ui:widget-label (app:build-widgets application)))
                                       language))
             "the menu in ~a" language)))))
+
+;;; Exploding a shape
+
+(test exploding-a-shape-leaves-its-pieces-where-they-were
+  (let ((drawing (reshaping-drawing (spread-rectangle 1 0 0 200 100)
+                                    (cut-circle 2 500 0 50)
+                                    (cut-line 3 0 500 100 500)
+                                    (dom:make-polyline :id 4
+                                                       :layer-id 0
+                                                       :closed nil
+                                                       :coordinates (coerce '(0d0 900d0 100d0 900d0 100d0 1000d0)
+                                                                            '(simple-array double-float (*)))))))
+    (multiple-value-bind (changes exploded skipped) (dom:explode-changes drawing '(1 2 3 4))
+      (is (= 2 exploded) "the rectangle and the polyline")
+      (is (= 2 skipped) "the circle and the line have no pieces")
+      (dom:apply-changes drawing changes)
+      (let ((lines (remove-if-not (lambda (entity) (eq :line (dom:entity-kind entity)))
+                                  (dom:drawing-entities drawing))))
+        (is (= 7 (length lines)) "the line that was there, four sides and two segments")
+        (is (some (lambda (line) (numbers-close-p '(0 0 200 0) (piece-ends line))) lines)
+            "the bottom side is where the bottom of the rectangle was")
+        (is (some (lambda (line) (numbers-close-p '(100 900 100 1000) (piece-ends line))) lines))))))
+
+(test a-polygon-explodes-into-its-sides
+  (let ((drawing (reshaping-drawing (dom:make-polygon :id 1 :layer-id 0 :center-x 0d0 :center-y 0d0
+                                                      :radius 100d0 :sides 5 :rotation 0d0))))
+    (dom:apply-changes drawing (dom:explode-changes drawing '(1)))
+    (is (= 5 (dom:drawing-entity-count drawing)))
+    (is (every (lambda (entity) (eq :line (dom:entity-kind entity))) (dom:drawing-entities drawing)))))
+
+;;; Spreading what is selected
+
+(test several-shapes-are-spread-together-with-ids-that-do-not-meet
+  (let ((drawing (reshaping-drawing (spread-rectangle 1 0 0 200 100)
+                                    (spread-rectangle 2 1000 0 200 100)
+                                    (cut-line 3 0 500 100 500))))
+    (multiple-value-bind (changes spread skipped) (dom:spread-selection-changes drawing '(1 2 3) 10d0)
+      (is (= 2 spread))
+      (is (= 1 skipped) "the line has no pieces")
+      (let ((new-ids (loop for change in changes
+                           when (null (dom:change-before change))
+                             collect (dom:entity-id (dom:change-after change)))))
+        (is (= 8 (length new-ids)))
+        (is (= 8 (length (remove-duplicates new-ids))) "every piece has an id of its own"))
+      (dom:apply-changes drawing changes)
+      (is (= 9 (dom:drawing-entity-count drawing))))))
+
+(test spreading-a-selection-needs-a-distance-above-zero
+  (let ((drawing (reshaping-drawing (spread-rectangle 1 0 0 200 100))))
+    (refused-with ("above zero") (dom:spread-selection-changes drawing '(1) 0d0))))
+
+;;; The commands of the Modify menu, with and without a selection
+
+(defun select-by-clicking (application
+                           world-x
+                           world-y)
+  "Select the entity at a point with the Select tool.
+
+APPLICATION: the application.
+WORLD-X: world x.
+WORLD-Y: world y."
+  (app:operation-set-tool application :select)
+  (click application world-x world-y))
+
+(test explode-takes-apart-the-selected-shape-and-selects-the-pieces
+  (let ((application (reshaping-app (spread-rectangle 1 -500 -500 1000 1000))))
+    (select-by-clicking application -500 0)
+    (choose-modify-tool-by-menu application :explode)
+    (is (equal '(:line :line :line :line) (mapcar #'dom:entity-kind (entities-of application))))
+    (is (= 4 (hash-table-count (app:app-selection application))) "the pieces are selected")
+    (is (search "Exploded 1 entity" (message-text application)))
+    (is (eq :select (app:tool-kind (app:app-tool application))))
+    (app:operation-undo application)
+    (is (equal '(:rectangle) (mapcar #'dom:entity-kind (entities-of application))))))
+
+(test explode-says-what-to-do-when-nothing-is-selected-or-it-cannot-be-done
+  (let ((application (reshaping-app (spread-rectangle 1 -500 -500 1000 1000)
+                                    (cut-line 2 2000 0 3000 0))))
+    (choose-modify-tool-by-menu application :explode)
+    (is (search "Select what you want to explode first" (message-text application)))
+    (select-by-clicking application 2500 0)
+    (choose-modify-tool-by-menu application :explode)
+    (is (search "That cannot be exploded" (message-text application)))
+    (is (= 2 (dom:drawing-entity-count (app:app-drawing application))) "nothing changed")))
+
+(test spread-acts-at-once-on-the-selection-and-leaves-the-select-tool-active
+  (let ((application (reshaping-app (spread-rectangle 1 -500 -500 1000 1000))))
+    (select-by-clicking application -500 0)
+    (choose-modify-tool-by-menu application :spread)
+    (is (= 4 (dom:drawing-entity-count (app:app-drawing application))))
+    (is (every (lambda (entity) (eq :line (dom:entity-kind entity))) (entities-of application)))
+    (is (= 4 (hash-table-count (app:app-selection application))) "the pieces are selected")
+    (is (eq :select (app:tool-kind (app:app-tool application))) "no tool is left waiting for a click")
+    (is (search "Spread 1 entity" (message-text application)))
+    (app:operation-undo application)
+    (is (equal '(:rectangle) (mapcar #'dom:entity-kind (entities-of application))))))
+
+(test shift-p-spreads-the-selection-too
+  (let ((application (reshaping-app (spread-rectangle 1 -500 -500 1000 1000))))
+    (select-by-clicking application -500 0)
+    (press application :p :shift)
+    (is (= 4 (dom:drawing-entity-count (app:app-drawing application))))
+    (is (eq :select (app:tool-kind (app:app-tool application))))))
+
+(test spread-with-nothing-selected-waits-for-one-click-and-then-lets-go
+  (let ((application (reshaping-app (spread-rectangle 1 -500 -500 1000 1000)
+                                    (cut-circle 2 1500 0 200))))
+    (choose-modify-tool-by-menu application :spread)
+    (is (eq :spread (app:tool-kind (app:app-tool application))))
+    (click application 0 0)
+    (is (= 5 (dom:drawing-entity-count (app:app-drawing application))))
+    (is (eq :select (app:tool-kind (app:app-tool application))) "after one spread the tool gives way to Select")
+    (click application 1500 -200)
+    (is (= 1 (hash-table-count (app:app-selection application))) "the next click selects, as it should")
+    (is (eq :circle (dom:entity-kind (first (selected-entities application)))))))
+
+(defun selected-entities (application)
+  "Return the selected entities of an application.
+
+APPLICATION: the application."
+  (mapcar (lambda (id) (dom:store-find (dom:drawing-store (app:app-drawing application)) id))
+          (app:selection-ids application)))
+
+(test spread-says-what-cannot-be-spread-in-a-selection
+  (let ((application (reshaping-app (cut-line 1 2000 0 3000 0))))
+    (select-by-clicking application 2500 0)
+    (choose-modify-tool-by-menu application :spread)
+    (is (search "That cannot be spread" (message-text application)))
+    (is (eq :error (cdr (app:app-message application))))
+    (is (= 1 (dom:drawing-entity-count (app:app-drawing application))))))
+
+(test the-console-spreads-and-explodes
+  (let* ((drawing (dom:make-drawing))
+         (context (script-env drawing)))
+    (ran-ok context "(rect-size 0 0 200 100) (circle 500 0 50)")
+    (is (equal '("(3 4 5 6)") (ran-ok context "(spread 1 20)")) "the ids of the pieces")
+    (is (equal '("0") (ran-ok context "(explode 2)")) "a circle has nothing to explode")
+    (is (equal '("(7 8 9 10)") (ran-ok context "(spread 2)")) "a circle comes apart into four arcs")
+    (is (search "above zero" (failure-of context "(spread 3 0)")))
+    (is (equal '("0") (ran-ok context "(explode 3)")) "a side is a line, which has no pieces")))

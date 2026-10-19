@@ -664,10 +664,10 @@
     (press application :x :shift)
     (is (equal '(4 5) (mapcar #'dom:entity-id (entities-of application))))
     (is (equal '(4 5) (app:selection-ids application)))
-    (is (search "Exploded 1 block" (message-text application)))
+    (is (search "Exploded 1 entity" (message-text application)))
     (press application :x :shift)
-    (is (eq :error (cdr (app:app-message application))) "no placement is selected now")
-    (is (search "Select a block to explode" (message-text application)))
+    (is (eq :error (cdr (app:app-message application))) "no block is selected now")
+    (is (search "That cannot be exploded" (message-text application)))
     (app:operation-undo application)
     (is (equal '(3) (mapcar #'dom:entity-id (entities-of application))))))
 

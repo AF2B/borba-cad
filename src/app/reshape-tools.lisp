@@ -263,7 +263,8 @@ each line, on the part of it that stays. A number typed sets the radius."))
 
 (defclass spread-tool (tool) ()
   (:documentation "Takes a shape apart and moves each piece the distance the application remembers from the others:
-a click inside a rectangle, a polygon, a closed polyline, a circle or a block. A number typed sets the distance."))
+a click inside a rectangle, a polygon, a closed polyline, a circle or a block, once, and then the tool gives way to
+Select. A number typed sets the distance."))
 
 (defmethod tool-kind ((tool spread-tool)) :spread)
 
@@ -286,12 +287,15 @@ CURSOR: the pointer position."
   (let ((target (or (spread-target-under app cursor)
                     (reshape-pick app cursor))))
     (if target
-        (commit-reshaping app
-                          (lambda ()
-                            (dom:spread-changes (app-drawing app)
-                                                (dom:entity-id target)
-                                                (app-spread-distance app)))
-                          "entity.spread")
+        (when (commit-reshaping app
+                                (lambda ()
+                                  (dom:spread-changes (app-drawing app)
+                                                      (dom:entity-id target)
+                                                      (app-spread-distance app)))
+                                "entity.spread")
+          (operation-set-tool app :select)
+          (set-message app
+                       (i18n:trf "Spread ~d ~:*~[entities~;entity~:;entities~]." 1)))
         (set-message app
                      (i18n:tr "Click inside a rectangle, polygon, polyline, circle or block.")
                      :error))
@@ -323,3 +327,37 @@ CURSOR: the pointer position."
                             collect (dom:change-after change))
         (base:borba-cad-error ()
           nil)))))
+
+(defun operation-spread-selection (app)
+  "Take apart the selected shapes and move each piece the remembered distance from the others, and select the pieces.
+
+APP: the application."
+  (handler-case
+      (multiple-value-bind (changes spread) (dom:spread-selection-changes (app-drawing app)
+                                                                          (selection-ids app)
+                                                                          (app-spread-distance app))
+        (cond ((zerop spread)
+               (set-message app
+                            (i18n:tr "That cannot be spread: use a rectangle, polygon, polyline, circle or block.")
+                            :error))
+              ((commit-changes app
+                               changes
+                               "entity.spread")
+               (select-ids app
+                           (loop for change in changes
+                                 when (null (dom:change-before change))
+                                   collect (dom:entity-id (dom:change-after change))))
+               (set-message app
+                            (i18n:trf "Spread ~d ~:*~[entities~;entity~:;entities~]." spread)))))
+    (base:borba-cad-error (condition)
+      (report-error app
+                    condition
+                    "reshape"))))
+
+(defun operation-spread (app)
+  "Spread the selection, and when nothing is selected wait for a click inside the shape to spread.
+
+APP: the application."
+  (if (zerop (hash-table-count (app-selection app)))
+      (operation-set-tool app :spread)
+      (operation-spread-selection app)))

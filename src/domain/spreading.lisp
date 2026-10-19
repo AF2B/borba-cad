@@ -1,9 +1,10 @@
 (in-package #:borba-cad/domain)
 
-;;;; Spreading a shape: taking its pieces apart and moving each a little way from the others, as in the exploded
-;;;; drawing of an assembly. A rectangle, a polygon and a polyline come apart into their sides, a circle into
-;;;; arcs, a block into the entities it stands for. Every function here works out a change set and changes
-;;;; nothing; a shape that cannot be spread signals EDIT-REFUSED with the reason, in a sentence.
+;;;; Taking a shape apart: exploding it, which leaves the pieces where they were, and spreading it, which also moves
+;;;; each a little way from the others, as in the exploded drawing of an assembly. A rectangle, a polygon and a
+;;;; polyline come apart into their sides, a block into the entities it stands for, and a circle, when spread, into
+;;;; arcs. Every function here works out a change set and changes nothing; a shape that cannot be spread signals
+;;;; EDIT-REFUSED with the reason, in a sentence.
 
 (defconstant +circle-spread-parts+ 4
   "How many arcs a circle comes apart into when it is spread.")
@@ -123,6 +124,17 @@ ENTITY: an entity."
     (insert-entity (insert-spread-parts entity))
     (t nil)))
 
+(defun entity-explode-pieces (entity)
+  "Return the entities that ENTITY comes apart into when it is exploded, where they were, or NIL when this kind of
+entity cannot be exploded: a block, a rectangle, a polygon and a polyline can.
+
+ENTITY: an entity."
+  (typecase entity
+    (insert-entity (insert-entities entity))
+    ((or rectangle-entity polygon-entity polyline-entity)
+     (mapcar #'first (entity-spread-parts entity)))
+    (t nil)))
+
 (defun spread-target (drawing
                       x
                       y
@@ -164,6 +176,34 @@ RADIUS: how far from the point, in millimetres, an entity may be and still be pi
                      radius
                      *spreadable-kinds*))))
 
+(defun spread-pieces-changes (entity
+                              parts
+                              distance
+                              next-id)
+  "Return the change set that replaces ENTITY by its PARTS, each moved DISTANCE along its direction, and the first id
+that the change set did not use.
+
+ENTITY: the entity that comes apart.
+PARTS: what ENTITY-SPREAD-PARTS returned for it.
+DISTANCE: millimetres.
+NEXT-ID: the id that the first piece is given."
+  (let ((changes (list (make-change (entity-id entity)
+                                    entity
+                                    nil))))
+    (dolist (part parts)
+      (destructuring-bind (piece direction-x direction-y) part
+        (push (make-change next-id
+                           nil
+                           (entity-with-identity (entity-translated piece
+                                                                    (* distance direction-x)
+                                                                    (* distance direction-y))
+                                                 next-id
+                                                 (entity-layer-id entity)))
+              changes)
+        (incf next-id)))
+    (values (nreverse changes)
+            next-id)))
+
 (defun spread-changes (drawing
                        id
                        distance)
@@ -186,19 +226,39 @@ DISTANCE: millimetres."
         (refuse-edit "That cannot be spread: use a rectangle, polygon, polyline, circle or block."))
       (when (null (rest parts))
         (refuse-edit "That shape is a single piece, so there is nothing to spread."))
-      (let ((next-id (drawing-next-entity-id drawing))
-            (changes (list (make-change id
-                                        entity
-                                        nil))))
-        (dolist (part parts)
-          (destructuring-bind (piece direction-x direction-y) part
-            (push (make-change next-id
-                               nil
-                               (entity-with-identity (entity-translated piece
-                                                                        (* distance direction-x)
-                                                                        (* distance direction-y))
-                                                     next-id
-                                                     (entity-layer-id entity)))
-                  changes)
-            (incf next-id)))
-        (nreverse changes)))))
+      (values (spread-pieces-changes entity
+                                     parts
+                                     distance
+                                     (drawing-next-entity-id drawing))))))
+
+(defun spread-selection-changes (drawing
+                                 ids
+                                 distance)
+  "Return the change set that takes apart every entity among IDS that can be spread and moves its pieces DISTANCE from
+each other, how many entities were spread, and how many of IDS were skipped (missing, on a locked layer, or of a
+kind with no pieces). Signals EDIT-REFUSED when the distance is not above zero.
+
+DRAWING: the drawing.
+IDS: list of entity ids.
+DISTANCE: millimetres."
+  (unless (base:positive-length-p distance)
+    (refuse-edit "The distance must be above zero."))
+  (multiple-value-bind (entities missing) (existing-editable-entities drawing ids)
+    (let ((next-id (drawing-next-entity-id drawing))
+          (changes '())
+          (spread 0)
+          (skipped missing))
+      (dolist (entity entities)
+        (let ((parts (entity-spread-parts entity)))
+          (if (rest parts)
+              (multiple-value-bind (piece-changes following-id) (spread-pieces-changes entity
+                                                                                       parts
+                                                                                       distance
+                                                                                       next-id)
+                (setf changes (append changes piece-changes)
+                      next-id following-id)
+                (incf spread))
+              (incf skipped))))
+      (values changes
+              spread
+              skipped))))

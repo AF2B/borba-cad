@@ -675,13 +675,35 @@ FLIPPED: true to reflect the block across its vertical axis before it is turned.
     (emit-change nil (dom:change-after (first changes)))))
 
 (defun explode (ids)
-  "Replace the placements of blocks among IDS by the entities they stand for. Returns how many were exploded.
+  "Replace the blocks, rectangles, polygons and polylines among IDS by the entities they come apart into: what a block
+stands for, and the sides of a shape. Returns how many were exploded.
 
 IDS: an id or a list of ids."
   (multiple-value-bind (changes exploded) (dom:explode-changes (the-drawing) (entity-ids-of ids))
     (dolist (change changes)
       (emit-change (dom:change-before change) (dom:change-after change)))
     exploded))
+
+(defun spread (ids
+               &optional (distance 10))
+  "Take apart the rectangles, polygons, polylines, circles and blocks among IDS, and move each piece DISTANCE
+millimetres from the others: a shape comes apart into its sides, a circle into four arcs, a block into its entities.
+Returns the ids of the pieces.
+
+IDS: an id or a list of ids.
+DISTANCE: how far each piece moves, 10 mm (one centimetre) unless given."
+  (multiple-value-bind (changes spread) (handler-case (dom:spread-selection-changes (the-drawing)
+                                                                                    (entity-ids-of ids)
+                                                                                    (number-of distance))
+                                          (base:edit-refused (condition)
+                                            (error "~a" condition)))
+    (declare (ignore spread))
+    (let ((pieces '()))
+      (dolist (change changes)
+        (emit-change (dom:change-before change) (dom:change-after change))
+        (when (null (dom:change-before change))
+          (push (dom:entity-id (dom:change-after change)) pieces)))
+      (nreverse pieces))))
 
 (defun blocks ()
   "Return the names of the blocks, in alphabetical order."
@@ -1090,7 +1112,7 @@ THINGS: anything."
   '(("Making entities" line rect rect-size circle arc ellipse polygon pline text dimension radius-dimension
      diameter-dimension angle-dimension hatch hatch-polygon)
     ("Layers" layer with-layer layers)
-    ("Blocks" with-block make-block insert explode blocks)
+    ("Blocks" with-block make-block insert explode spread blocks)
     ("Changing entities" move copy erase edit redraw move-to-layer rotate mirror scale)
     ("Finding entities" entities entity-count extents info)
     ("Selection and view" select select-all deselect selected fit)

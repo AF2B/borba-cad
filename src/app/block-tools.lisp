@@ -263,21 +263,26 @@ APP: the application."
 ;;; Exploding
 
 (defun operation-explode-selection (app)
-  "Replace the selected placements of blocks by the entities they stand for.
+  "Replace the selected blocks, rectangles, polygons and polylines by the entities they come apart into: the entities a
+block stands for, and the sides of a shape.
 
 APP: the application."
-  (multiple-value-bind (changes exploded skipped) (dom:explode-changes (app-drawing app) (selection-ids app))
-    (declare (ignore skipped))
-    (cond ((zerop exploded)
-           (set-message app
-                        (i18n:tr "Select a block to explode.")
-                        :error))
-          ((commit-changes app
-                           changes
-                           "block.explode")
-           (select-ids app
-                       (loop for change in changes
-                             when (null (dom:change-before change))
-                               collect (dom:entity-id (dom:change-after change))))
-           (set-message app
-                        (i18n:trf "Exploded ~d ~:*~[blocks~;block~:;blocks~]." exploded))))))
+  (cond ((zerop (hash-table-count (app-selection app)))
+         (set-message app
+                      (i18n:tr "Select what you want to explode first.")
+                      :error))
+        (t
+         (multiple-value-bind (changes exploded) (dom:explode-changes (app-drawing app) (selection-ids app))
+           (cond ((zerop exploded)
+                  (set-message app
+                               (i18n:tr "That cannot be exploded: use a block, rectangle, polygon or polyline.")
+                               :error))
+                 ((commit-changes app
+                                  changes
+                                  "entity.explode")
+                  (select-ids app
+                              (loop for change in changes
+                                    when (null (dom:change-before change))
+                                      collect (dom:entity-id (dom:change-after change))))
+                  (set-message app
+                               (i18n:trf "Exploded ~d ~:*~[entities~;entity~:;entities~]." exploded))))))))

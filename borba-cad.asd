@@ -74,8 +74,8 @@
                              (:file "picking")
                              (:file "commands")
                              (:file "reshaping")
-                             (:file "block-commands")
                              (:file "spreading")
+                             (:file "block-commands")
                              (:file "transfer")))
                (:module "viewport"
                 :serial t

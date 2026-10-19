@@ -16,11 +16,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
   cannot be told (the drawing was replaced, or what came before it was undone) says so. The console gets
   `redraw`, which puts the entity that a drawing command makes in the place of another, keeping its number, its
   layer and its place in the drawing order.
-- **Spread.** A tool in the Modify menu (`Shift+P`) that needs no selection: click inside a rectangle, polygon,
-  closed polyline, circle or block and it comes apart, each piece moving 1 cm from the others (a number typed
-  before the click sets the distance). A rectangle, polygon or polyline becomes its sides, each moved straight out
-  of the shape; a circle becomes four arcs; a block becomes the entities it stands for. The result is shown under
-  the pointer before the click, it is one step of undo, and a shape with no pieces says so.
+- **Spread.** `Shift+P` in the Modify menu takes the selected shapes apart and moves each piece 1 cm from the
+  others; with nothing selected it waits for one click inside a shape (a number typed before the click sets the
+  distance), shows the result under the pointer, and then gives way to Select. A rectangle, polygon or polyline
+  becomes its sides, each moved straight out of the shape; a circle becomes four arcs; a block becomes the
+  entities it stands for. It is one step of undo, selects the pieces, and a shape with no pieces says so. The
+  console gets `spread`.
 - **Light theme.** A sun and moon button in the title bar switches between the dark and the light theme, and the
   choice is kept for the next run; `--theme dark|light` and `BORBA_CAD_THEME` override it. On the white canvas
   the colors of the layers are darkened where they would be too pale to see (a near-white layer is near-black),
@@ -87,6 +88,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Changed
 
+- **Explode works on shapes.** Explode (`Shift+X`) used to take only blocks apart and answered "Select a block to
+  explode" to anything else; it now also takes a rectangle, polygon or polyline apart into lines, where they were.
 - **A version is a tag.** Every tag that reads `vMAJOR.MINOR.PATCH` is a version, and `make version` and the names
   of the distributions come from the nearest version tag (`1.3.0`, or `1.3.0-4-g1a2b3c4` four commits past it, and
   `-dev` where there is no version tag) instead of from `borba-cad.asd`.

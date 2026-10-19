@@ -81,6 +81,7 @@ commands that draw it.")
    #:make-block
    #:insert
    #:explode
+   #:spread
    #:blocks
    #:hatch
    #:hatch-polygon

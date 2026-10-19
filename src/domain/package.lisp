@@ -229,6 +229,8 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:hatch-region-at
    #:hatch-changes
    #:spread-changes
+   #:spread-selection-changes
+   #:entity-explode-pieces
    #:spread-target
    #:*spreadable-kinds*
    ;; Reshaping

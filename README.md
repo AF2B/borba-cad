@@ -134,12 +134,15 @@ snaps like the entities it stands for, takes the layer of the placement, and has
 flip that the inspector edits. Rotate, mirror and scale work on placements, and copy and paste carry the block along.
 A block cannot hold a block. In the console: `with-block`, `make-block`, `insert`, `explode` and `blocks`.
 
-**Spread** is in the Modify menu (`Shift+P`) and needs no selection. Click inside a rectangle, polygon, closed
-polyline, circle or block and it comes apart and its pieces move 1 cm from each other: a rectangle, a polygon or a
-polyline into its sides, each moved straight out of the shape; a circle into four arcs; a block into the entities it
-stands for, each moved away from the center of the block. An open polyline moves its segments away from its center.
-A live preview shows the result under the pointer; a number typed before the click is the distance (in the display
-unit); it is one step of undo, and a line, an arc, a text or an ellipse, which have no pieces, say so.
+**Explode** (`Shift+X`) takes the selected blocks, rectangles, polygons and polylines apart where they are: a block
+into the entities it stands for, a shape into its sides, as lines. **Spread** (`Shift+P`) does the same and also
+moves each piece 1 cm from the others: a rectangle, a polygon or a polyline into its sides, each moved straight out
+of the shape; a circle into four arcs; a block into the entities it stands for, each moved away from the center of
+the block. An open polyline moves its segments away from its center. Both act at once on what is selected, and
+select the pieces. With nothing selected Spread waits for one click inside a shape, with a live preview under the
+pointer, spreads it and gives way to Select; a number typed before the click is the distance (in the display
+unit). Both are one step of undo, and a line, an arc, a text or an ellipse, which have no pieces, say so. In the
+console: `explode` and `(spread ids 10)`.
 
 **Hatch and Solid fill** are in the Draw menu. Click inside a closed shape (a rectangle, circle, ellipse,
 polygon or closed polyline: the smallest one that holds the point is used) and it is filled, with a live preview

@@ -73,9 +73,10 @@ FLIPPED: true to reflect the block across its vertical axis first."
 
 (defun explode-changes (drawing
                         ids)
-  "Return the change set that replaces each placement of a block among the entities with IDS by the entities it
-stands for, on its layer, and how many placements were exploded and how many of IDS were skipped (missing, on a
-locked layer, or not placements).
+  "Return the change set that replaces each block, rectangle, polygon and polyline among the entities with IDS by the
+entities it comes apart into (the sides of a shape, the entities of a placement of a block), where they were and on
+its layer, and how many entities were exploded and how many of IDS were skipped (missing, on a locked layer, or of
+a kind that does not come apart).
 
 DRAWING: the drawing.
 IDS: list of entity ids."
@@ -85,21 +86,22 @@ IDS: list of entity ids."
           (exploded 0)
           (skipped missing))
       (dolist (entity entities)
-        (cond ((eq :insert (entity-kind entity))
-               (push (make-change (entity-id entity)
-                                  entity
-                                  nil)
-                     changes)
-               (dolist (piece (insert-entities entity))
-                 (push (make-change next-id
-                                    nil
-                                    (entity-with-identity piece
-                                                          next-id
-                                                          (entity-layer-id entity)))
+        (let ((pieces (entity-explode-pieces entity)))
+          (cond (pieces
+                 (push (make-change (entity-id entity)
+                                    entity
+                                    nil)
                        changes)
-                 (incf next-id))
-               (incf exploded))
-              (t (incf skipped))))
+                 (dolist (piece pieces)
+                   (push (make-change next-id
+                                      nil
+                                      (entity-with-identity piece
+                                                            next-id
+                                                            (entity-layer-id entity)))
+                         changes)
+                   (incf next-id))
+                 (incf exploded))
+                (t (incf skipped)))))
       (values (nreverse changes)
               exploded
               skipped))))

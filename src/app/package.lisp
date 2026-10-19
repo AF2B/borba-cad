@@ -159,6 +159,8 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-insert-block
    #:operation-make-block
    #:operation-explode-selection
+   #:operation-spread
+   #:operation-spread-selection
    #:make-block-tool
    #:insert-tool
    #:modify-tool-kind-p
