@@ -554,6 +554,7 @@ DIALOG: the file dialog."
       (:image (i18n:tr "Export as a JPEG image"))
       (:pdf (i18n:tr "Export as a PDF file"))
       (:svg (i18n:tr "Export as an SVG file"))
+      (:quantities (i18n:tr "Export the quantities as a CSV file"))
       (:drawing (if opening (i18n:tr "Open a drawing") (i18n:tr "Save drawing as"))))))
 
 (defun dialog-accept-label (dialog)
@@ -566,7 +567,7 @@ DIALOG: the file dialog."
          (if (eq (file-dialog-mode dialog) :open) (i18n:tr "Choose") (i18n:tr "Export")))
         ((eq :shape (file-dialog-purpose dialog))
          (i18n:tr "Add"))
-        ((member (file-dialog-purpose dialog) '(:image :pdf :svg))
+        ((member (file-dialog-purpose dialog) '(:image :pdf :svg :quantities))
          (i18n:tr "Export"))
         ((eq (file-dialog-mode dialog) :open) (i18n:tr "Open"))
         (t (i18n:tr "Save"))))

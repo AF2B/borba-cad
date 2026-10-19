@@ -23,39 +23,7 @@
 (defparameter *path-entity-kinds* '(:line :polyline :arc :circle :ellipse :rectangle :polygon)
   "The kinds of entity that a path array can follow.")
 
-(defun array-setting (app
-                      key
-                      default)
-  "Return what was typed for a line of an array form the last time, or DEFAULT.
-
-APP: the application.
-KEY: the key of the line.
-DEFAULT: what to give when nothing was kept."
-  (let ((kept (assoc key (app-array-settings app))))
-    (if kept
-        (cdr kept)
-        default)))
-
-(defun remember-array-settings (app
-                                values)
-  "Keep what was typed in an array form, as the starting values of the next one.
-
-APP: the application.
-VALUES: the alist of the form."
-  (setf (app-array-settings app)
-        (append values
-                (remove-if (lambda (kept) (assoc (car kept) values))
-                           (app-array-settings app)))))
-
 ;;; Reading the form
-
-(defun form-value (values
-                   key)
-  "Return the value of one line of a form.
-
-VALUES: the alist of the form.
-KEY: the key of the line."
-  (cdr (assoc key values)))
 
 (defun form-whole-number (values
                           key
@@ -133,7 +101,7 @@ VALUES: the alist of the form."
           (cond ((commit-changes app
                                  changes
                                  "entity.array")
-                 (remember-array-settings app values)
+                 (remember-form-settings app values)
                  (select-ids app (append originals (result-polyline-ids changes)))
                  (operation-set-tool app :select)
                  (set-message app
@@ -206,27 +174,27 @@ APP: the application."
                       (i18n:tr "Rows go up from the original, columns to its right. A negative spacing reverses.")
                       (list (list :rows
                                   (i18n:tr "Rows")
-                                  (array-setting app
+                                  (form-setting app
                                                  :rows
                                                  (princ-to-string +default-array-items+)))
                             (list :columns
                                   (i18n:tr "Columns")
-                                  (array-setting app
+                                  (form-setting app
                                                  :columns
                                                  (princ-to-string +default-array-items+)))
                             (list :row-spacing
                                   (i18n:tr "Spacing of the rows")
-                                  (array-setting app
+                                  (form-setting app
                                                  :row-spacing
                                                  step))
                             (list :column-spacing
                                   (i18n:tr "Spacing of the columns")
-                                  (array-setting app
+                                  (form-setting app
                                                  :column-spacing
                                                  step))
                             (list :grid-angle
                                   (i18n:tr "Angle of the columns (degrees)")
-                                  (array-setting app
+                                  (form-setting app
                                                  :grid-angle
                                                  "0")))
                       (lambda (values) (make-rectangular-array app values))
@@ -282,17 +250,17 @@ CENTER-Y: y of the center."
                               (length-text app center-y))
                     (list (list :items
                                 (i18n:tr "Items, the original included")
-                                (array-setting app
+                                (form-setting app
                                                :items
                                                "6"))
                           (list :sweep
                                 (i18n:tr "Angle to fill (degrees)")
-                                (array-setting app
+                                (form-setting app
                                                :sweep
                                                (base:format-decimal +full-turn-degrees+ 0)))
                           (list :turn
                                 (i18n:tr "Copies")
-                                (array-setting app
+                                (form-setting app
                                                :turn
                                                :turn)
                                 (list (cons :turn (i18n:tr "Turn as they go round"))
@@ -400,24 +368,24 @@ PATH-ID: id of the path."
                                 (length-text app (geo:path-length coordinates closed)))
                       (list (list :measure
                                   (i18n:tr "Items")
-                                  (array-setting app
+                                  (form-setting app
                                                  :measure
                                                  :divide)
                                   (list (cons :divide (i18n:tr "A number, at equal steps"))
                                         (cons :measure (i18n:tr "A spacing, as many as fit"))))
                             (list :path-items
                                   (i18n:tr "Number of items")
-                                  (array-setting app
+                                  (form-setting app
                                                  :path-items
                                                  "6"))
                             (list :path-spacing
                                   (i18n:tr "Spacing")
-                                  (array-setting app
+                                  (form-setting app
                                                  :path-spacing
                                                  (length-text app (first-array-step app))))
                             (list :align
                                   (i18n:tr "Copies")
-                                  (array-setting app
+                                  (form-setting app
                                                  :align
                                                  :follow)
                                   (list (cons :follow (i18n:tr "Turn to follow the path"))

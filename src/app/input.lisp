@@ -268,7 +268,9 @@ EVENT: a wheel event."
          (layout (app-layout app)))
     (setf (app-pointer-x app) x
           (app-pointer-y app) y)
-    (cond ((app-prompt app) nil)
+    (cond ((app-prompt app)
+           (when (eq (prompt-kind (app-prompt app)) :report)
+             (scroll-report app (- (round delta)))))
           ((shapes-popover-contains-p app
                                       x
                                       y)
@@ -336,6 +338,7 @@ KEY: key keyword.
 MODIFIERS: modifier keys held."
   (let* ((prompt (app-prompt app))
          (form-p (eq (prompt-kind prompt) :form))
+         (report-p (eq (prompt-kind prompt) :report))
          (options-p (and form-p
                          (form-field-options (nth (prompt-active prompt) (prompt-fields prompt))))))
     (case key
@@ -343,10 +346,18 @@ MODIFIERS: modifier keys held."
       (:escape (cancel-prompt app))
       (:tab (when form-p
               (move-form-focus app (if (modifier-p modifiers :shift) -1 1))))
-      (:up (when form-p
-             (move-form-focus app -1)))
-      (:down (when form-p
-               (move-form-focus app 1)))
+      (:up (cond (form-p (move-form-focus app -1))
+                 (report-p (scroll-report app -1))))
+      (:down (cond (form-p (move-form-focus app 1))
+                   (report-p (scroll-report app 1))))
+      (:page-up (when report-p
+                  (scroll-report app (- +report-maximum-rows+))))
+      (:page-down (when report-p
+                    (scroll-report app +report-maximum-rows+)))
+      (:home (when report-p
+               (scroll-report app (- (length (dom:quantity-report-rows (prompt-report prompt)))))))
+      (:end (when report-p
+              (scroll-report app (length (dom:quantity-report-rows (prompt-report prompt))))))
       (t (cond ((and options-p (member key '(:space :left :right)))
                 (cycle-form-option app
                                    (prompt-active prompt)

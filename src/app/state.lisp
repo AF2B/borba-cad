@@ -88,8 +88,8 @@ CHOICE: for a line of options, the position of the one that is chosen."
                                               &optional message-lines)))
   "A modal question.
 
-KIND: :text (a text field with OK and Cancel), :choice (a row of buttons) or :form (several text fields, with OK
-and Cancel).
+KIND: :text (a text field with OK and Cancel), :choice (a row of buttons), :form (several text fields, with OK
+and Cancel) or :report (a table to read, with a row of buttons).
 TITLE: heading.
 MESSAGE: explanation shown under the heading.
 EDIT: the EDIT-STATE of the text field, for :text prompts.
@@ -101,12 +101,16 @@ FIELDS: for :form, the FORM-FIELDs, top to bottom.
 ACTIVE: for :form, the position of the field that has the keyboard.
 INFO: for :form, a function of the alist of typed values that returns a line that says what OK would do, and true as
 a second value when the values cannot be used; or NIL.
-PROBLEM: for :form, the sentence the last OK was refused with, or NIL."
+PROBLEM: for :form, the sentence the last OK was refused with, or NIL.
+REPORT: for :report, the QUANTITY-REPORT that is shown.
+SCROLL: for :report, how many rows of the table are scrolled past."
   kind title message edit choices message-lines
   (fields nil :type list)
   (active 0 :type fixnum)
   (info nil)
-  (problem nil))
+  (problem nil)
+  (report nil)
+  (scroll 0 :type fixnum))
 
 (defstruct (menu (:constructor make-menu (kind
                                           anchor
@@ -189,7 +193,10 @@ WELCOME: the start screen, or NIL.
 POLYGON-SIDES: the number of sides the polygon tool gives the next polygon.
 FILLET-RADIUS: the radius, in millimetres, the fillet tool gives the next arc.
 SPREAD-DISTANCE: the distance, in millimetres, the spread tool moves each piece of a shape from the others.
-ARRAY-SETTINGS: what was typed in the last array forms, as an alist of the key of each line and its value.
+FORM-SETTINGS: what was chosen or typed in the forms that were last accepted, as an alist of the key of each line and
+its value.
+QUANTITY-EXPORT: the report of quantities that is to be written as a CSV file and how, as a cons of the report and
+:standard or :excel, or NIL.
 INTERFACE-ZOOM: how much larger than designed the user asked the interface to be drawn; 1 is as designed.
 PLOT-SETTINGS: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 LAST-BLOCK-NAME: the name of the block that was last made or placed, or NIL.
@@ -252,7 +259,8 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   (polygon-sides 6 :type (integer 3))
   (fillet-radius +default-fillet-radius+ :type double-float)
   (spread-distance +default-spread-distance+ :type double-float)
-  (array-settings '() :type list)
+  (form-settings '() :type list)
+  quantity-export
   (interface-zoom 1d0 :type double-float)
   plot-settings
   last-block-name

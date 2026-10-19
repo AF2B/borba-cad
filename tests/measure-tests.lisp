@@ -70,9 +70,10 @@
 (test the-measure-button-opens-a-list-of-the-tools-that-measure
   (let ((application (measuring-app)))
     (click-widget application :measure)
-    (is (equal '((:menu-item :measure-distance) (:menu-item :measure-angle) (:menu-item :measure-area))
+    (is (equal '((:menu-item :measure-distance) (:menu-item :measure-angle) (:menu-item :measure-area)
+                 (:menu-item :quantities))
                (mapcar #'ui:widget-id (menu-rows application))))
-    (is (equal '("M" "Shift+A" "Shift+Q") (mapcar #'ui:widget-shortcut (menu-rows application))))
+    (is (equal '("M" "Shift+A" "Shift+Q" "Shift+L") (mapcar #'ui:widget-shortcut (menu-rows application))))
     (click-widget application '(:menu-item :measure-angle))
     (is (eq :measure-angle (app:tool-kind (app:app-tool application))))
     (is (ui:widget-active (find-widget application :measure)) "the Measure button lights up")

@@ -234,6 +234,18 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:region-changes
    #:region-target
    #:existing-editable-entities
+   #:quantity-report
+   #:quantity-report-kind
+   #:quantity-report-columns
+   #:quantity-report-rows
+   #:quantity-report-totals
+   #:counted-entity-count
+   #:quantity-heading
+   #:quantity-cell-text
+   #:quantity-report-csv
+   #:csv-field
+   #:entity-length
+   #:entity-area
    #:+maximum-array-entities+
    #:entity-path
    #:array-changes

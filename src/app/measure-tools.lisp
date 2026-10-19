@@ -571,7 +571,9 @@ POINTS: the corners, as (x . y) conses."
 (defparameter *measure-menu-tools*
   (list (list :measure-distance :ruler (i18n:mark "Distance") "M")
         (list :measure-angle :angle (i18n:mark "Angle") "Shift+A")
-        (list :measure-area :area (i18n:mark "Area") "Shift+Q"))
+        (list :measure-area :area (i18n:mark "Area") "Shift+Q")
+        nil
+        (list :quantities :quantities (i18n:mark "Quantities...") "Shift+L"))
   "The choices of the measure menu, top to bottom, as (tool-kind icon label shortcut). The labels are in English
 and are translated where the menu is built.")
 
@@ -579,5 +581,5 @@ and are translated where the menu is built.")
   '((:measure-distance . :ruler) (:measure-angle . :angle) (:measure-area . :area))
   "The icon the Measure button wears while each measuring tool is active.")
 
-(defparameter *measure-shortcuts* '((:a . :measure-angle) (:q . :measure-area))
+(defparameter *measure-shortcuts* '((:a . :measure-angle) (:q . :measure-area) (:l . :quantities))
   "Letter keys that activate the measuring tools when Shift is held; the plain M is the distance.")

@@ -148,7 +148,7 @@ MODE: :open or :save.
 CONTINUATION: function of no arguments run after a successful save, or NIL.
 PURPOSE: :drawing for a drawing of the program, :dxf to import or export a DXF file, :script to run a script
 or export one, :recording to save the script of a recording, :shape to choose an SVG file to add as a shape,
-:image to export a picture, or :pdf or :svg to export a sheet."
+:image to export a picture, :pdf or :svg to export a sheet, or :quantities to write a report as a CSV file."
   (setf (app-dialog app) (make-file-dialog app
                                            mode
                                            continuation
@@ -283,7 +283,8 @@ TEXT: a name or a path."
     (:shape (svg-file-path text))
     (:image (image-file-path text))
     (:pdf (pdf-file-path text))
-    (:svg (svg-file-path text))))
+    (:svg (svg-file-path text))
+    (:quantities (csv-file-path text))))
 
 (defun open-dialog-file (app
                          dialog
@@ -299,7 +300,7 @@ PATH-TEXT: the file name."
     (:dxf (import-dxf-into-app app path-text))
     (:script (run-script-file-in-app app path-text))
     (:shape (import-shape-into-app app path-text))
-    ((:image :pdf :svg :recording) nil)))
+    ((:image :pdf :svg :recording :quantities) nil)))
 
 (defun save-dialog-file (app
                          dialog
@@ -318,7 +319,8 @@ PATH-TEXT: the file name."
     (:shape nil)
     (:image (export-image-from-app app path-text))
     (:pdf (export-pdf-from-app app path-text))
-    (:svg (export-svg-from-app app path-text))))
+    (:svg (export-svg-from-app app path-text))
+    (:quantities (export-quantities-from-app app path-text))))
 
 (defun finish-save (app
                     dialog

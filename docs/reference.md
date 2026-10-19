@@ -95,7 +95,10 @@ NIL when it selects only what it holds (dragged from left to right).
 - `POLYGON-SIDES`: the number of sides the polygon tool gives the next polygon.
 - `FILLET-RADIUS`: the radius, in millimetres, the fillet tool gives the next arc.
 - `SPREAD-DISTANCE`: the distance, in millimetres, the spread tool moves each piece of a shape from the others.
-- `ARRAY-SETTINGS`: what was typed in the last array forms, as an alist of the key of each line and its value.
+- `FORM-SETTINGS`: what was chosen or typed in the forms that were last accepted, as an alist of the key of each line and
+its value.
+- `QUANTITY-EXPORT`: the report of quantities that is to be written as a CSV file and how, as a cons of the report and
+:standard or :excel, or NIL.
 - `INTERFACE-ZOOM`: how much larger than designed the user asked the interface to be drawn; 1 is as designed.
 - `PLOT-SETTINGS`: how the drawing was put on the sheet the last time it was exported as a PDF or an SVG, or NIL.
 - `LAST-BLOCK-NAME`: the name of the block that was last made or placed, or NIL.
@@ -135,14 +138,6 @@ new one.
 - `QUIT-REQUESTED`: true when the application should close.
 - `LAST-SCENE-RESULT`: statistics of the last scene build.
 - `LAST-ERROR`: the last error condition reported, for tests and diagnostics.
-
-### `app-array-settings` (function)
-
-```lisp
-(app-array-settings instance)
-```
-
-(undocumented)
 
 ### `app-clipboard-reader` (function)
 
@@ -262,6 +257,14 @@ Return true when the drawing has unsaved changes.
 
 ```lisp
 (app-focus instance)
+```
+
+(undocumented)
+
+### `app-form-settings` (function)
+
+```lisp
+(app-form-settings instance)
 ```
 
 (undocumented)
@@ -1207,6 +1210,14 @@ a folder of tens of thousands of files is not filtered again for every widget of
 
 (undocumented)
 
+### `file-dialog-purpose` (function)
+
+```lisp
+(file-dialog-purpose instance)
+```
+
+(undocumented)
+
 ### `file-dialog-recent` (function)
 
 ```lisp
@@ -1682,7 +1693,7 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
 - `PURPOSE`: :drawing for a drawing of the program, :dxf to import or export a DXF file, :script to run a script
 or export one, :recording to save the script of a recording, :shape to choose an SVG file to add as a shape,
-:image to export a picture, or :pdf or :svg to export a sheet.
+:image to export a picture, :pdf or :svg to export a sheet, or :quantities to write a report as a CSV file.
 
 ### `open-form-prompt` (function)
 
@@ -1727,6 +1738,20 @@ Show the folder that holds the one shown, and select the folder just left so tha
 down is one key press. Returns true when there was a parent.
 
 - `DIALOG`: the file dialog.
+
+### `open-report-prompt` (function)
+
+```lisp
+(open-report-prompt app title message report choices)
+```
+
+Open a modal that shows a table of quantities, to read and scroll, with a row of buttons.
+
+- `APP`: the application.
+- `TITLE`: heading.
+- `MESSAGE`: explanation under the heading.
+- `REPORT`: the QUANTITY-REPORT that is shown.
+- `CHOICES`: list of (label . function-or-nil), the buttons; the first is chosen by Enter and the last by Escape.
 
 ### `open-text-prompt` (function)
 
@@ -1901,6 +1926,16 @@ export it there as a PDF file.
 
 - `APP`: the application.
 
+### `operation-export-quantities` (function)
+
+```lisp
+(operation-export-quantities app)
+```
+
+Ask where to write the report that is shown, as a CSV file.
+
+- `APP`: the application.
+
 ### `operation-export-script` (function)
 
 ```lisp
@@ -2026,6 +2061,16 @@ otherwise.
 
 - `APP`: the application.
 - `IN-PLACE`: true to keep the coordinates they were copied with.
+
+### `operation-quantities` (function)
+
+```lisp
+(operation-quantities app)
+```
+
+Ask which report of the quantities of the drawing to make, and show it.
+
+- `APP`: the application.
 
 ### `operation-quit` (function)
 
@@ -2458,8 +2503,8 @@ Collects vertices; Enter finishes an open polyline, clicking the first vertex cl
 
 A modal question.
 
-- `KIND`: :text (a text field with OK and Cancel), :choice (a row of buttons) or :form (several text fields, with OK
-and Cancel).
+- `KIND`: :text (a text field with OK and Cancel), :choice (a row of buttons), :form (several text fields, with OK
+and Cancel) or :report (a table to read, with a row of buttons).
 - `TITLE`: heading.
 - `MESSAGE`: explanation shown under the heading.
 - `EDIT`: the EDIT-STATE of the text field, for :text prompts.
@@ -2472,6 +2517,8 @@ the typed string of each line, and returns a sentence when it refuses them, whic
 - `INFO`: for :form, a function of the alist of typed values that returns a line that says what OK would do, and true as
 a second value when the values cannot be used; or NIL.
 - `PROBLEM`: for :form, the sentence the last OK was refused with, or NIL.
+- `REPORT`: for :report, the QUANTITY-REPORT that is shown.
+- `SCROLL`: for :report, how many rows of the table are scrolled past.
 
 ### `prompt-active` (function)
 
@@ -2525,6 +2572,22 @@ a second value when the values cannot be used; or NIL.
 
 ```lisp
 (prompt-problem instance)
+```
+
+(undocumented)
+
+### `prompt-report` (function)
+
+```lisp
+(prompt-report instance)
+```
+
+(undocumented)
+
+### `prompt-scroll` (function)
+
+```lisp
+(prompt-scroll instance)
 ```
 
 (undocumented)
@@ -4559,6 +4622,17 @@ Return a block name trimmed, or signal EDIT-REFUSED when it is empty, too long o
 
 - `NAME`: what the user typed.
 
+### `counted-entity-count` (function)
+
+```lisp
+(counted-entity-count drawing ids)
+```
+
+Return how many entities a report would count, those inside the blocks that are placed included.
+
+- `DRAWING`: the drawing.
+- `IDS`: the ids of the entities to count, or NIL for everything on the layers that are not hidden.
+
 ### `create-entities-changes` (function)
 
 ```lisp
@@ -4578,6 +4652,18 @@ Return the change set that adds every entity in ENTITIES.
 Return the change set that adds ENTITY.
 
 - `ENTITY`: the entity to add; its id must be unused.
+
+### `csv-field` (function)
+
+```lisp
+(csv-field text separator)
+```
+
+Return TEXT as a field of a CSV file: in quotes, with the quotes in it doubled, when it holds the separator, a quote
+or a line break.
+
+- `TEXT`: the text.
+- `SEPARATOR`: the character between fields.
 
 ### `default-hatch-spacing` (function)
 
@@ -5023,6 +5109,17 @@ Base of every drawing entity.
 - `LAYER-ID`: id of the layer the entity belongs to.
 - `BOUNDS`: world-space bounds, computed once at construction.
 
+### `entity-area` (function)
+
+```lisp
+(entity-area entity)
+```
+
+Return the area that an entity encloses, in square millimetres: that of a closed shape, and what is left of a hatch
+once its holes are taken out; 0 for any other.
+
+- `ENTITY`: an entity.
+
 ### `entity-bounds` (function)
 
 ```lisp
@@ -5097,6 +5194,17 @@ Return the list of entity kind keywords.
 ```
 
 (undocumented)
+
+### `entity-length` (function)
+
+```lisp
+(entity-length entity)
+```
+
+Return the length of an entity that is a line, a curve, a polyline or a shape, in millimetres, the perimeter for a
+shape that is closed; 0 for any other.
+
+- `ENTITY`: an entity.
 
 ### `entity-mirrored` (generic function)
 
@@ -6576,6 +6684,91 @@ One row of the property inspector.
 
 ```lisp
 (property-value instance)
+```
+
+(undocumented)
+
+### `quantity-cell-text` (function)
+
+```lisp
+(quantity-cell-text value type unit &key (decimal-mark .))
+```
+
+Return a value of a report as text: a length or an area in the display unit, with one more decimal than is shown for
+a length elsewhere.
+
+- `VALUE`: the value, or NIL for a cell that is empty.
+- `TYPE`: the type of its column, :text, :count, :length or :area.
+- `UNIT`: the display unit.
+- `DECIMAL-MARK`: the character between the whole part and the decimals.
+
+### `quantity-heading` (function)
+
+```lisp
+(quantity-heading column unit)
+```
+
+Return the heading of a column of a report with the unit of its numbers.
+
+- `COLUMN`: a column of the report, (heading . type).
+- `UNIT`: the display unit, :millimeter, :centimeter or :meter.
+
+### `quantity-report` (function)
+
+```lisp
+(quantity-report drawing kind &key ids)
+```
+
+Return a report of what the drawing holds. Signals EDIT-REFUSED when there is nothing to count.
+
+- `DRAWING`: the drawing.
+- `KIND`: :layer for the totals by layer, :kind for those by kind of entity, :block for the blocks that are placed, or
+:cut for the cut list.
+- `IDS`: the ids of the entities to count, or NIL for everything on the layers that are not hidden.
+
+### `quantity-report-columns` (function)
+
+```lisp
+(quantity-report-columns instance)
+```
+
+(undocumented)
+
+### `quantity-report-csv` (function)
+
+```lisp
+(quantity-report-csv report unit &key (separator ,) (decimal-mark .))
+```
+
+Return a report as the text of a CSV file: a line of headings, a line for each row and one for the totals, with
+lines that end in a carriage return and a line feed, as RFC 4180 has it.
+
+- `REPORT`: the report.
+- `UNIT`: the display unit, which the lengths and areas are written in.
+- `SEPARATOR`: the character between fields; with a semicolon, and a comma as the decimal mark, Excel in Portuguese
+opens it.
+- `DECIMAL-MARK`: the character between the whole part and the decimals of a number.
+
+### `quantity-report-kind` (function)
+
+```lisp
+(quantity-report-kind instance)
+```
+
+(undocumented)
+
+### `quantity-report-rows` (function)
+
+```lisp
+(quantity-report-rows instance)
+```
+
+(undocumented)
+
+### `quantity-report-totals` (function)
+
+```lisp
+(quantity-report-totals instance)
 ```
 
 (undocumented)
@@ -13318,6 +13511,20 @@ ROTATION. Returns its id.
 - `RADIUS`: the radius of that circle.
 - `SIDES`: the number of sides, from 3 to 1000.
 - `ROTATION`: the direction of the first vertex, in degrees.
+
+### `quantities` (function)
+
+```lisp
+(quantities kind &key ids)
+```
+
+Count and measure what the drawing holds. Returns a list of rows, the totals last, each a list of what a column of
+the report has: with :layer, :kind and :block a name, a count, a length in millimetres and an area in square
+millimetres; with :cut a layer, the length of a bar, how many there are and their total length.
+
+- `KIND`: :layer for the totals by layer, :kind for those by kind of entity, :block for the blocks that are placed, or :cut
+for the cut list.
+- `IDS`: an id or a list of ids to count, or NIL for everything on the layers that are not hidden.
 
 ### `rad` (function)
 

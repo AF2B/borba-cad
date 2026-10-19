@@ -26,6 +26,38 @@ ON-ACCEPT: function of one argument, the typed string."
         (app-focus app) :prompt)
   (app-request-redraw app))
 
+(defun form-setting (app
+                     key
+                     default)
+  "Return what was last chosen or typed for a line of a form, or DEFAULT.
+
+APP: the application.
+KEY: the key of the line.
+DEFAULT: what to give when nothing was kept."
+  (let ((kept (assoc key (app-form-settings app))))
+    (if kept
+        (cdr kept)
+        default)))
+
+(defun remember-form-settings (app
+                               values)
+  "Keep what was chosen or typed in a form, as the starting values of the next one.
+
+APP: the application.
+VALUES: the alist of the form."
+  (setf (app-form-settings app)
+        (append values
+                (remove-if (lambda (kept) (assoc (car kept) values))
+                           (app-form-settings app)))))
+
+(defun form-value (values
+                   key)
+  "Return the value of one line of a form.
+
+VALUES: the alist of the form.
+KEY: the key of the line."
+  (cdr (assoc key values)))
+
 (defun make-form-line (spec
                        first-p)
   "Make the line of a form that SPEC describes.
@@ -90,6 +122,29 @@ FIELD: a form field."
   (if (form-field-options field)
       (car (nth (form-field-choice field) (form-field-options field)))
       (ui:edit-state-text (form-field-edit field))))
+
+(defun open-report-prompt (app
+                           title
+                           message
+                           report
+                           choices)
+  "Open a modal that shows a table of quantities, to read and scroll, with a row of buttons.
+
+APP: the application.
+TITLE: heading.
+MESSAGE: explanation under the heading.
+REPORT: the QUANTITY-REPORT that is shown.
+CHOICES: list of (label . function-or-nil), the buttons; the first is chosen by Enter and the last by Escape."
+  (let ((prompt (make-prompt :report
+                             title
+                             message
+                             nil
+                             choices)))
+    (setf (prompt-report prompt) report
+          (app-prompt app) prompt
+          (app-menu app) nil
+          (app-focus app) :prompt)
+    (app-request-redraw app)))
 
 (defun form-values (prompt)
   "Return what a form holds, as an alist of the key of each line and its value, top to bottom: the typed text of a line

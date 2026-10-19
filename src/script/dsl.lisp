@@ -846,6 +846,23 @@ TURN: true to turn each copy to follow the direction of the path, false to keep 
                                          :spacing (and spacing (number-of spacing))
                                          :align turn))))
 
+(defun quantities (kind
+                   &key ids)
+  "Count and measure what the drawing holds. Returns a list of rows, the totals last, each a list of what a column of
+the report has: with :layer, :kind and :block a name, a count, a length in millimetres and an area in square
+millimetres; with :cut a layer, the length of a bar, how many there are and their total length.
+
+KIND: :layer for the totals by layer, :kind for those by kind of entity, :block for the blocks that are placed, or :cut
+for the cut list.
+IDS: an id or a list of ids to count, or NIL for everything on the layers that are not hidden."
+  (let ((report (handler-case (dom:quantity-report (the-drawing)
+                                                   kind
+                                                   :ids (and ids (entity-ids-of ids)))
+                  (base:edit-refused (condition)
+                    (error "~a" condition)))))
+    (append (dom:quantity-report-rows report)
+            (list (dom:quantity-report-totals report)))))
+
 (defun blocks ()
   "Return the names of the blocks, in alphabetical order."
   (dom:block-names (the-drawing)))
@@ -1257,7 +1274,7 @@ THINGS: anything."
     ("Closed shapes" region-union region-subtract region-intersect)
     ("Repeating" array-grid array-polar array-path)
     ("Changing entities" move copy erase edit redraw move-to-layer rotate mirror scale)
-    ("Finding entities" entities entity-count extents info)
+    ("Finding entities" entities entity-count extents info quantities)
     ("Selection and view" select select-all deselect selected fit)
     ("Settings" display-unit grid-spacing)
     ("Units, angles, colors" mm cm m inch foot rad rgb)

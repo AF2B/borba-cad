@@ -79,6 +79,7 @@
                              (:file "spreading")
                              (:file "regions")
                              (:file "arrays")
+                             (:file "quantities")
                              (:file "block-commands")
                              (:file "transfer")))
                (:module "viewport"
@@ -173,6 +174,7 @@
                              (:file "recording-operations")
                              (:file "image-operations")
                              (:file "plot-operations")
+                             (:file "quantity-tools")
                              (:file "autosave")
                              (:file "constraints")
                              (:file "grips")
@@ -320,6 +322,7 @@
                (:file "shape-library-tests")
                (:file "region-tests")
                (:file "array-tests")
+               (:file "quantity-tests")
                (:file "theme-tests")
                (:file "i18n-tests")
                (:file "file-dialog-tests")

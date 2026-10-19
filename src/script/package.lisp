@@ -82,6 +82,7 @@ commands that draw it.")
    #:insert
    #:explode
    #:spread
+   #:quantities
    #:array-grid
    #:array-polar
    #:array-path

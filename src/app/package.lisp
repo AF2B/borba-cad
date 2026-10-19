@@ -161,7 +161,7 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:operation-make-block
    #:operation-explode-selection
    #:operation-array
-   #:app-array-settings
+   #:app-form-settings
    #:operation-spread
    #:operation-spread-selection
    #:make-block-tool
@@ -329,6 +329,12 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:prompt-fields
    #:prompt-active
    #:prompt-problem
+   #:prompt-report
+   #:prompt-scroll
+   #:open-report-prompt
+   #:operation-quantities
+   #:operation-export-quantities
+   #:file-dialog-purpose
    #:form-field-key
    #:form-field-edit
    #:form-values

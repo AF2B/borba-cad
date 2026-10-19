@@ -110,9 +110,10 @@ APP: the application."
   "Do what a choice of the modify menu, or its key, asks: make a tool the active one, or do the thing at once.
 
 APP: the application.
-KIND: a tool kind, or :make-block, :explode, :spread, :array, :union or :intersect."
+KIND: a tool kind, or :make-block, :explode, :spread, :array, :union, :intersect or :quantities."
   (case kind
     (:array (operation-array app))
+    (:quantities (operation-quantities app))
     (:make-block (operation-make-block app))
     (:explode (operation-explode-selection app))
     (:spread (operation-spread app))
@@ -140,18 +141,22 @@ APP: the application."
                                         (eq kind active))))))))
 
 (defun measure-menu-items (app)
-  "Return the choices of the measure menu: the tools that measure.
+  "Return the choices of the measure menu: the tools that measure, and the quantities, with NIL between the two groups.
 
 APP: the application."
   (let ((active (tool-kind (app-tool app))))
-    (loop for (kind icon label shortcut) in *measure-menu-tools*
-          collect (let ((kind kind))
-                    (make-menu-item kind
-                                    (i18n:tr label)
-                                    icon
-                                    shortcut
-                                    (lambda () (choose-menu-tool app kind))
-                                    (eq kind active))))))
+    (loop for spec in *measure-menu-tools*
+          collect (when spec
+                    (destructuring-bind (kind icon label shortcut) spec
+                      (let ((kind kind))
+                        (make-menu-item kind
+                                        (i18n:tr label)
+                                        icon
+                                        shortcut
+                                        (lambda ()
+                                          (close-menu app)
+                                          (run-modify-command app kind))
+                                        (eq kind active))))))))
 
 (defun language-menu-items (app)
   "Return the choices of the language menu: one per language, each named in its own language.
