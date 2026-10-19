@@ -160,7 +160,8 @@ USABLE-HEIGHT: its height, or NIL."
                             height
                             title
                             function
-                            &key (swap-interval 1))
+                            &key (swap-interval 1)
+                                 fit-to-screen)
   "Initialize SDL, create a window with an OpenGL 3.3 core context (4x multisampling when the
 driver offers it), vertical sync and the renderer, call FUNCTION, and clean up.
 FUNCTION receives the window, the renderer and a property list of startup phase durations.
@@ -170,7 +171,9 @@ WIDTH: initial window width in logical pixels.
 HEIGHT: initial window height in logical pixels.
 TITLE: initial window title.
 FUNCTION: function of the window, the renderer and the phase list.
-SWAP-INTERVAL: 1 to wait for the display refresh at each buffer swap, 0 to swap at once."
+SWAP-INTERVAL: 1 to wait for the display refresh at each buffer swap, 0 to swap at once.
+FIT-TO-SCREEN: true to open a window no bigger than the screen, as the program does; the tests ask for the size they
+say."
   (let ((font-paths (find-font-paths config))
         (begin (sbcl:monotonic-nanoseconds))
         (failure nil)
@@ -192,10 +195,12 @@ SWAP-INTERVAL: 1 to wait for the display refresh at each buffer swap, 0 to swap 
                        (sdl2:gl-set-attr :multisamplebuffers (if multisample 1 0))
                        (sdl2:gl-set-attr :multisamplesamples (if multisample +multisample-count+ 0))
                        (multiple-value-bind (window-width window-height)
-                           (multiple-value-call #'fit-window-size
-                             width
-                             height
-                             (usable-display-size))
+                           (if fit-to-screen
+                               (multiple-value-call #'fit-window-size
+                                 width
+                                 height
+                                 (usable-display-size))
+                               (values width height))
                          (sdl2:create-window :title title :w window-width :h window-height
                                              :flags '(:shown :opengl :resizable :allow-highdpi)))))
               (let ((window (handler-case (open-window t)
@@ -749,7 +754,8 @@ SCREENSHOT: file name to save the last demonstration frame to, or NIL."
                                                                  :screenshot screenshot
                                                                  :steps (and demo (app:demo-steps app))
                                                                  :begun begun)
-                                                   config))))
+                                                   config))
+                                  :fit-to-screen t))
            (error (condition)
              (obs:log-condition logger
                                 :error
