@@ -358,25 +358,55 @@ exists, and how far it was tried:
 | Piece | State |
 |---|---|
 | `scripts/dist-windows.sh`, `make dist-windows` | Written for an MSYS2 MINGW64 shell. Its one delicate step, turning the console program into a graphical one by writing 2 over the Subsystem field of the PE header, is tested on a fabricated header (`tests/packaging-tests.lisp`). The DLL collection and the zip are unproven |
-| `.github/workflows/dist.yml` | A Linux job (Arch container, the whole `make check`, then `dist` and `dist-check` under `xvfb`: it passes), a Windows job (MSYS2 with SBCL, SDL2, FreeType and gcc: it builds and packages, and does not run the program) and a job that publishes the Windows zip as a release |
+| `.github/workflows/ci.yml` | The pipeline (section 9): Linux jobs in an Arch container (lint; the strict build and both test suites under `xvfb`; `dist` and `dist-check`: they pass), a Windows job (MSYS2 with SBCL, SDL2, FreeType and gcc: it builds and packages, and does not run the program) and a release job that publishes both programs |
 | `src/sbcl-support/` | The POSIX calls (`sb-posix`: stat, access, chmod, folder listing, rename, fsync) are written for Linux and guarded with `#-win32`; on Windows `portable-filesystem.lisp` (standard Common Lisp and UIOP) answers instead. The tests hold the portable versions to the same answers as the POSIX ones on Linux, but the Windows branches were never compiled. The monotonic clock falls back to the coarser `get-internal-real-time`, the memory figure that reads `/proc` is reported as unavailable, and the atomic rename becomes delete-then-rename |
 | Fonts | The bundled Noto fonts, else Segoe UI and Consolas from `C:\Windows\Fonts` |
 | Not looked at | Whether `cl-sdl2` and `cl-freetype2` build under MSYS2's SBCL (`cl-freetype2` needs a C compiler and the FreeType headers when first loaded), whether `sdl2:with-init` and OpenGL 3.3 context creation behave the same, DPI scaling, the file dialog on drive letters and backslashes (`typed-path` handles `C:\...`, the tests only exercise Unix paths), and the console-less program's standard streams |
 
-The Windows job of the workflow ends by publishing the `.zip` as a release (`build-N` when the run was
-started by hand, the tag when it was started by a tag), whose file can be downloaded by anyone with the link,
-without a GitHub account; the artifact of the run needs a login. To try it on a Windows machine: install MSYS2, open its MINGW64 shell, `pacman -S make git zip curl
+The release job of the pipeline publishes the `.zip` next to the Linux `.tar.gz` as a release, whose files can
+be downloaded by anyone with the link, without a GitHub account; the artifact of a run needs a login. To try
+it on a Windows machine: install MSYS2, open its MINGW64 shell, `pacman -S make git zip curl
 mingw-w64-x86_64-gcc mingw-w64-x86_64-sbcl mingw-w64-x86_64-SDL2 mingw-w64-x86_64-freetype`, install
 Quicklisp, then `make dist-windows` in the repository. `dist/borba-cad-VERSION-windows-x86_64/`
 holds `borba-cad.exe` (no console window) and `borba-cad-console.exe` (with one, to see what the
 program prints when the first does not start).
 
-## 9. Releasing
+## 9. The pipeline, versions and releases
 
-1. `make check` and `make all` pass from a fresh copy of the repository (`git clone` or `cp -r`
-   without `build/` and `var/`).
-2. `make bench-baseline` on an idle machine; update `docs/performance.md` from the new reports.
-3. `make docs`, `make example`; update `CHANGELOG.md`; set the version in `borba-cad.asd`.
-4. The human reviews the acceptance criteria and the experiment report
-   ([experiment-report.md](experiment-report.md)) and chooses a license; no `LICENSE` file exists
-   until then.
+**A version is a tag of the repository.** A tag that reads `vMAJOR.MINOR.PATCH` (`v1.3.0`; `v1.3.0-rc.1` is a
+pre-release) is a version, every such tag is one, and a tag that does not read that way stops the pipeline at
+its first job. Nothing else names a version: `make version` (`scripts/version.sh`) prints the nearest version tag
+behind the commit, `1.3.0` on the tagged commit and `1.3.0-4-g1a2b3c4` four commits past it, and
+`1.2.0-dev-g1a2b3c4` (the version in `borba-cad.asd`, which only serves here) when there is no version tag yet,
+so that a build that is not a release never carries the name of one. `make dist VERSION=1.3.0` names one by
+hand.
+
+GitHub runs the whole pipeline (`.github/workflows/ci.yml`); nothing of it needs a person's machine or the
+assistant's time. It starts on every push to `main`, on every pull request, on every version tag and by hand
+(Actions > Pipeline > Run workflow):
+
+| Job | What it does | Runs |
+|---|---|---|
+| Version | Works out the version, and for a tag checks that `CHANGELOG.md` has the notes of it, so that a tag that cannot be released fails in seconds | always |
+| Lint | `make lint`: sources, docstrings of every exported symbol, translations, dependencies | always |
+| Test | `make compile test test-gui` under `xvfb`: the strict build, the headless tests and the window tests | always |
+| Build for Linux | `make dist dist-check`: the program, its folder and `.tar.gz`, and the package started in a clean environment | after Lint and Test |
+| Build for Windows | `make dist-windows` in MSYS2: the folder and `.zip` | after Lint and Test |
+| Deploy the documentation | Publishes `docs/` as a site with GitHub Pages | pushes to `main`; it fails, and nothing else does, until Pages is switched on (Settings > Pages > Source: GitHub Actions) |
+| Release | Makes the GitHub release of the tag, with the Linux and the Windows programs, `SHA256SUMS` and the notes of the version from `CHANGELOG.md` | version tags only, after everything above |
+
+A run that is not a version keeps the programs as artifacts of the run for two weeks (they need a login to be
+downloaded) and makes no tag and no release.
+
+To release a version:
+
+1. `make check` passes (the pipeline will say so again), and `make docs` and `make example` leave nothing new.
+2. In `CHANGELOG.md`, rename `[Unreleased]` to `[X.Y.Z] - date` and open a new `[Unreleased]` above it; the
+   release job takes these notes. Update the README if what the program does changed.
+3. Commit, push to `main`, wait for the pipeline to go green on that commit.
+4. Tag that commit and push the tag: `git tag -a vX.Y.Z -m "Borba CAD X.Y.Z" && git push origin vX.Y.Z`. The pipeline
+   builds both programs and makes the release; the Windows one is still unproven on a real machine.
+
+Before the first release of a new line also run `make bench-baseline` on an idle machine and update
+`docs/performance.md`, and have the human review the acceptance criteria and the experiment report
+([experiment-report.md](experiment-report.md)); no `LICENSE` file exists until the author chooses a license.

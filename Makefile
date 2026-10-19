@@ -17,7 +17,8 @@ LOG_DIR            ?= $(ROOT)/var/log
 # In an MSYS2 MINGW64 shell the program is a Windows one, and its file name ends in .exe.
 EXE_SUFFIX         := $(if $(findstring MINGW,$(shell uname -s)),.exe,)
 EXECUTABLE         := $(ROOT)/build/borba-cad$(EXE_SUFFIX)
-VERSION            := $(shell awk -F'"' '/:version/ {print $$2; exit}' $(ROOT)/borba-cad.asd)
+# The version is a tag of the repository (see scripts/version.sh); `make dist VERSION=1.3.0` names one by hand.
+VERSION            := $(shell $(ROOT)/scripts/version.sh)
 DIST_NAME          := borba-cad-$(VERSION)-linux-x86_64
 SCREENSHOT         ?= $(ROOT)/var/screenshots/demo.png
 REPL_SYSTEMS       ?= borba-cad borba-cad/platform borba-cad/tests borba-cad/bench
@@ -62,8 +63,8 @@ check-env: ## Check SBCL, Quicklisp, native libraries, fonts and the display ses
 deps: ensure-quicklisp ## Download and compile third-party dependencies, list the versions in use
 	$(LISP_BATCH) --eval '(borba-cad/scripts:install-dependencies)'
 
-version: ## Print the project version
-	@awk -F'"' '/:version/ {print $$2; exit}' $(ROOT)/borba-cad.asd
+version: ## Print the version: the nearest version tag (vMAJOR.MINOR.PATCH), as scripts/version.sh works it out
+	@$(ROOT)/scripts/version.sh
 
 ##@ Build and verify
 

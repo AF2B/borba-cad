@@ -1,0 +1,237 @@
+# The pipeline of Borba CAD. GitHub runs it, so that nothing of it needs a person's machine: on every push to main,
+# on every pull request, on every version tag, and by hand (Actions > Pipeline > Run workflow).
+#
+#   version  ->  lint  ->  test  ->  build (Linux, Windows)  ->  deploy (docs, from main)
+#                                                            ->  release (from a version tag)
+#
+# A version is a tag that reads vMAJOR.MINOR.PATCH (v1.3.0; v1.3.0-rc.1 is a pre-release): every such tag is a
+# version, and pushing one makes the release, with the Linux and the Windows programs and their checksums attached
+# and the notes of its section of CHANGELOG.md. Nothing else makes a tag or a release: a push to main, a pull
+# request and a run by hand build the same things and keep them as artifacts of the run, for two weeks.
+#
+# The Linux jobs run in an Arch Linux container, the system the program is developed on. The Windows job was written
+# without a Windows machine to try it on: if it fails, its log says where, and docs/development.md ("Windows") lists
+# what is known to be unproven.
+
+name: Pipeline
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+permissions:
+  contents: read
+
+env:
+  ARCH_PACKAGES: >-
+    base-devel git sbcl sdl2-compat freetype2 noto-fonts xorg-server-xvfb mesa curl
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.version.outputs.release }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Work out the version
+        id: version
+        run: |
+          version=$(scripts/version.sh)
+          release=false
+          prerelease=false
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            release=true
+            case "$version" in
+              *-*) prerelease=true ;;
+            esac
+            # A tag whose version has no notes in the changelog fails here, in seconds, not after the builds.
+            scripts/release-notes.sh "$version" > /dev/null
+          fi
+          {
+            echo "version=$version"
+            echo "release=$release"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version $version (release: $release, pre-release: $prerelease)"
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install the tools and libraries
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed $ARCH_PACKAGES
+      - uses: actions/checkout@v4
+      - name: Let git work in the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: ./.github/actions/quicklisp
+      - name: Lint the sources, the docstrings, the translations and the dependencies
+        run: make lint
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install the tools and libraries
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed $ARCH_PACKAGES
+      - uses: actions/checkout@v4
+      - name: Let git work in the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: ./.github/actions/quicklisp
+      - name: Run the strict build, the headless tests and the window tests
+        run: xvfb-run -a make compile test test-gui
+
+  build-linux:
+    name: Build for Linux
+    needs: [version, lint, test]
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install the tools and libraries
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed $ARCH_PACKAGES
+      - uses: actions/checkout@v4
+      - name: Let git work in the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: ./.github/actions/quicklisp
+      - name: Build the program, package it and start the package in a clean environment
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: xvfb-run -a make dist dist-check VERSION="$VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: borba-cad-linux
+          path: dist/*.tar.gz
+          retention-days: ${{ needs.version.outputs.release == 'true' && 90 || 14 }}
+
+  build-windows:
+    name: Build for Windows
+    needs: [version, lint, test]
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            make git zip curl
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-sbcl
+            mingw-w64-x86_64-SDL2
+            mingw-w64-x86_64-freetype
+      - name: Install Quicklisp at the version the project pins
+        run: |
+          dist_version=$(sed -n 's/^QL_DIST_VERSION[[:space:]]*:=[[:space:]]*//p' Makefile)
+          curl -fsSL -o /tmp/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp
+          sbcl --noinform --non-interactive --load /tmp/quicklisp.lisp \
+            --eval '(quicklisp-quickstart:install)' \
+            --eval "(ql-dist:install-dist \"http://beta.quicklisp.org/dist/quicklisp/${dist_version}/distinfo.txt\" :replace t :prompt nil)"
+      - name: Fetch the Noto fonts
+        run: |
+          mkdir -p "$RUNNER_TEMP/fonts"
+          base=https://github.com/notofonts/notofonts.github.io/raw/main/fonts
+          curl -fsSL -o "$RUNNER_TEMP/fonts/NotoSans-Regular.ttf" "$base/NotoSans/hinted/ttf/NotoSans-Regular.ttf"
+          curl -fsSL -o "$RUNNER_TEMP/fonts/NotoSans-Medium.ttf" "$base/NotoSans/hinted/ttf/NotoSans-Medium.ttf"
+          curl -fsSL -o "$RUNNER_TEMP/fonts/NotoSansMono-Regular.ttf" "$base/NotoSansMono/hinted/ttf/NotoSansMono-Regular.ttf"
+      - name: Build the program and package it
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          # The C compiler that Lisp calls is a Windows program: it does not know /mingw64, so it is told
+          # where the FreeType headers are in the form it understands.
+          export CPATH="$(cygpath -m /mingw64/include/freetype2);$(cygpath -m /mingw64/include/freetype2/freetype)"
+          FONT_DIRECTORY="$RUNNER_TEMP/fonts" make dist-windows VERSION="$VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: borba-cad-windows
+          path: dist/*.zip
+          retention-days: ${{ needs.version.outputs.release == 'true' && 90 || 14 }}
+
+  deploy:
+    name: Deploy the documentation
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    # The site needs GitHub Pages to be switched on for the repository (Settings > Pages > Source: GitHub Actions).
+    # Until it is, this job fails and nothing else does.
+    continue-on-error: true
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./_site
+      - uses: actions/upload-pages-artifact@v3
+      - name: Publish the site
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  release:
+    name: Release
+    if: needs.version.outputs.release == 'true'
+    needs: [version, lint, test, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}
+        run: |
+          (cd dist && sha256sum -- *.tar.gz *.zip > SHA256SUMS)
+          scripts/release-notes.sh "$VERSION" > notes.md
+          {
+            echo
+            echo "## Downloads"
+            echo
+            echo "- **Windows:** unzip the folder and double-click \`borba-cad.exe\`. If Windows warns about an unknown app, choose More info, then Run anyway. If it does not start, double-click \`borba-cad-console.exe\` to see why."
+            echo "- **Linux (x86_64):** unpack the \`.tar.gz\` and double-click \`Borba CAD\`, or run \`./borba-cad\`."
+            echo "- \`SHA256SUMS\` has the checksum of each file."
+          } >> notes.md
+          flags=()
+          if [ "$PRERELEASE" = "true" ]; then
+            flags+=(--prerelease)
+          fi
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "Borba CAD $VERSION" \
+            --notes-file notes.md \
+            "${flags[@]}"

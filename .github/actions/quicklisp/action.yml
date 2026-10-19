@@ -1,0 +1,14 @@
+name: Quicklisp on Linux
+description: Installs Quicklisp at the dist version that the Makefile pins (QL_DIST_VERSION), in a Linux job; the Windows job does the same in its own shell.
+
+runs:
+  using: composite
+  steps:
+    - name: Install Quicklisp at the pinned version
+      shell: bash
+      run: |
+        dist_version=$(sed -n 's/^QL_DIST_VERSION[[:space:]]*:=[[:space:]]*//p' Makefile)
+        curl -fsSL -o /tmp/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp
+        sbcl --noinform --non-interactive --load /tmp/quicklisp.lisp \
+          --eval '(quicklisp-quickstart:install)' \
+          --eval "(ql-dist:install-dist \"http://beta.quicklisp.org/dist/quicklisp/${dist_version}/distinfo.txt\" :replace t :prompt nil)"
