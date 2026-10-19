@@ -6,6 +6,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Added
 
+- **Recording what you do as a script.** `F9`, a **Rec** chip in the status bar and More > Record actions start a
+  recording, and the same again stops it and asks where to save the script. The script is read from the steps of
+  undo that came after the start, so an action that was undone is not in it: new entities are the commands that
+  draw them, erased ones `erase`, moved ones `move` (entities moved by the same distance share one command),
+  changed properties `edit`, and any other change `redraw`. What the recording made is named by variables
+  (`*line-12*`) and what was already there by its number, so the script is run on the drawing as it was when
+  the recording began; layers and the blocks that placements use are declared in the script. A recording that
+  cannot be told (the drawing was replaced, or what came before it was undone) says so. The console gets
+  `redraw`, which puts the entity that a drawing command makes in the place of another, keeping its number, its
+  layer and its place in the drawing order.
+- **Spread.** A tool in the Modify menu (`Shift+P`) that needs no selection: click inside a rectangle, polygon,
+  closed polyline, circle or block and it comes apart, each piece moving 1 cm from the others (a number typed
+  before the click sets the distance). A rectangle, polygon or polyline becomes its sides, each moved straight out
+  of the shape; a circle becomes four arcs; a block becomes the entities it stands for. The result is shown under
+  the pointer before the click, it is one step of undo, and a shape with no pieces says so.
+- **Light theme.** A sun and moon button in the title bar switches between the dark and the light theme, and the
+  choice is kept for the next run; `--theme dark|light` and `BORBA_CAD_THEME` override it. On the white canvas
+  the colors of the layers are darkened where they would be too pale to see (a near-white layer is near-black),
+  in the canvas and in the layer swatches; the file keeps the colors the layers were given.
+- **Zoom buttons.** + and - buttons in the top right corner of the canvas zoom by one notch of the wheel about
+  the center of the canvas.
 - **Blocks.** Make block (`Shift+B`) turns the selection into a named block and one placement of it, Insert block
   (`I`) places a block with a click, a typed scale and a second click for the turn, and Explode (`Shift+X`) takes a
   placement apart. A placement has a position, scale, rotation and flip, takes the layer it is on, is drawn, picked
@@ -66,6 +87,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ### Changed
 
+- **A version is a tag.** Every tag that reads `vMAJOR.MINOR.PATCH` is a version, and `make version` and the names
+  of the distributions come from the nearest version tag (`1.3.0`, or `1.3.0-4-g1a2b3c4` four commits past it, and
+  `-dev` where there is no version tag) instead of from `borba-cad.asd`.
+- **The pipeline runs on GitHub.** The workflow that only built the distributions is replaced by `ci.yml`:
+  version, lint, tests, builds for Linux and Windows, a documentation site deploy and, for a version tag, the
+  release with the Linux and Windows programs, their checksums and the notes of the version from this changelog.
+  A tag that is not a version, or a version with no notes here, fails in seconds. Runs of `main`, of pull
+  requests and by hand keep the programs only as artifacts and no longer make `build-N` tags and pre-releases.
+- The demonstration frames the plan at 0.09 px/mm, so that its corner is not under the zoom buttons, and
+  `examples/floor-plan.bcad` is regenerated, which brings it to the current format.
 - The `.bcad` format is now version 5, which adds the radius, diameter and angle dimensions, the hatch and the
   blocks. Versions 1 to 4 still open and are saved as version 5; a version 4 file cannot be opened by an earlier release
   of the program.

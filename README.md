@@ -2,7 +2,7 @@
 
 **A native 2D CAD written in Common Lisp, with a Lisp console that draws.**
 
-[![Build](https://img.shields.io/github/actions/workflow/status/AF2B/borba-cad/dist.yml?label=build)](https://github.com/AF2B/borba-cad/actions/workflows/dist.yml)
+[![Pipeline](https://img.shields.io/github/actions/workflow/status/AF2B/borba-cad/ci.yml?branch=main&label=pipeline)](https://github.com/AF2B/borba-cad/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/AF2B/borba-cad?include_prereleases&label=release)](https://github.com/AF2B/borba-cad/releases)
 ![Common Lisp](https://img.shields.io/badge/Common%20Lisp-SBCL-3a6ea5)
 ![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows-555)
@@ -20,16 +20,19 @@ draw by typing Lisp into a console, because the language of the program is Lisp 
   aligned, radius, diameter and angle dimensions, hatches and solid fills, on layers you can show, hide, lock and
   recolor.
 - **Editing**: window and crossing selection, grips to stretch and turn what is selected, a numeric inspector
-  for every property, copy and paste (also between windows), and undo and redo of everything.
+  for every property, rotate, mirror, scale, trim, extend, offset, fillet, spread, blocks, copy and paste (also
+  between windows), and undo and redo of everything.
 - **Precision**: grid snap and object snap (endpoints, midpoints, centers, intersections, quadrants and, from
   the last point, perpendiculars and tangents), ortho and polar, points you can type, millimetres inside,
   shown in mm, cm or m, and doubles that are saved and read back exactly.
 - **A Lisp console**: `(rect-size 0 0 (m 9) (m 6))` draws; any Common Lisp works; a command is one step of
-  undo, and one that fails leaves nothing behind. Scripts run from files and drawings export as scripts.
+  undo, and one that fails leaves nothing behind. Scripts run from files, drawings export as scripts, and what
+  you do in the editor can be recorded as one.
 - **Files**: its own `.bcad` format (text, versioned, never evaluated), DXF import of any ASCII version and DXF
   R12 export, a JPEG of what the canvas shows, and PDF and SVG sheets to print at a scale.
-- **Friendly**: a start screen with your recent drawings, a file dialog with places and search, and the
-  interface in English, Brazilian Portuguese or Russian.
+- **Friendly**: a start screen with your recent drawings, a file dialog with places and search, a dark and a
+  light theme one click apart, zoom buttons on the canvas, and the interface in English, Brazilian Portuguese
+  or Russian.
 - **Measured**: every operation is timed and logged; benchmarks and a session log back the numbers.
 
 ## Screenshots
@@ -44,16 +47,21 @@ draw by typing Lisp into a console, because the language of the program is Lisp 
 ![The interface in Brazilian Portuguese, with a rectangle selected in the inspector](docs/images/portuguese.png)
 <p align="center"><b>The same drawing in Brazilian Portuguese</b>, with a rectangle selected: area and perimeter in the inspector.</p>
 
+![The light theme, with the zoom buttons in the corner of the canvas and the sun and moon switch in the title bar](docs/images/light-theme.png)
+<p align="center"><b>The light theme</b>: the sun and moon button at the right of the title bar switches it, the layer colors are darkened to read on white, and the zoom buttons sit in the corner of the canvas.</p>
+
 ## Download
 
 | System | How |
 |---|---|
 | **Windows** | Download the `.zip` from the [releases](https://github.com/AF2B/borba-cad/releases), extract it, double-click `borba-cad.exe`. Windows warns about an unknown app because the program is not signed: choose *More info*, then *Run anyway*. If it does not start, `borba-cad-console.exe` shows why. |
-| **Linux** | Build the folder with `make dist` (see below), unpack it anywhere and double-click `Borba CAD.desktop`; `./install.sh` adds it to the applications menu and opens `.bcad` files with it. |
+| **Linux** | Download the `.tar.gz` from the [releases](https://github.com/AF2B/borba-cad/releases) (or build the folder with `make dist`, see below), unpack it anywhere and double-click `Borba CAD.desktop`; `./install.sh` adds it to the applications menu and opens `.bcad` files with it. |
 
-Both folders carry the libraries and the fonts they need, so nothing has to be installed. The Windows build is
-made by [GitHub Actions](.github/workflows/dist.yml) on a Windows machine and has not yet been tried on a real
-one; see [docs/development.md](docs/development.md#windows).
+Both folders carry the libraries and the fonts they need, so nothing has to be installed. **A version is a tag
+of the repository**: every tag that reads `vMAJOR.MINOR.PATCH` is a version, and [GitHub Actions](.github/workflows/ci.yml)
+makes its release with the Linux and the Windows programs, their checksums and the notes from the
+[changelog](CHANGELOG.md); no program is built by hand. The Windows build is made on a Windows machine of GitHub
+and has not yet been tried on a real one; see [docs/development.md](docs/development.md#windows).
 
 ## Build from source
 
@@ -90,7 +98,8 @@ Open a drawing at startup with `make run FILE=examples/floor-plan.bcad`, change 
 | `run`, `demo`, `debug`, `repl` | Run the program, a scripted demo with a screenshot, run under the Lisp debugger, an interactive session |
 | `exe` / `run-exe` | Standalone executable `build/borba-cad` |
 | `dist` / `dist-check` | Linux folder to double-click and its `.tar.gz` in `dist/` / start it in a clean environment and check it uses its own libraries and fonts |
-| `dist-windows` | Windows folder and `.zip`, in an MSYS2 shell (the workflow runs it on GitHub) |
+| `dist-windows` | Windows folder and `.zip`, in an MSYS2 shell (the pipeline runs it on GitHub) |
+| `version` | The version: the nearest version tag (`1.3.0`, or `1.3.0-4-g1a2b3c4` four commits past it) |
 | `bench`, `bench-gui`, `bench-quick` | Benchmarks, written to `bench/reports/` |
 | `logs-tail`, `logs-summary` | Follow the log, aggregate it per event (no GUI needed) |
 | `example`, `docs` | Regenerate `examples/floor-plan.bcad`, regenerate `docs/reference.md` |
@@ -104,11 +113,13 @@ When it starts without a drawing, a **start screen** offers the drawings you wor
 with its folder), a new drawing, a drawing to open, a script to run, or the way out; Escape goes on with an
 empty drawing. The palette on the left holds the Select tool, the **Draw** button, which lists every drawing
 tool with its key, the **Modify** button, which lists the tools that change what is drawn, and the **Measure** button. The title bar has the file and history buttons, the name of the drawing (a dot marks unsaved
-changes), the **More** menu (DXF, JPEG, the console and the scripts), the language menu and the performance
-overlay. The side panel holds the layers and the properties, where every property of the selection is
+changes), the **More** menu (DXF, JPEG, PDF, SVG, the console, the scripts and the recording), the language menu,
+the performance overlay and the **sun and moon** button that switches between the dark theme and the light one.
+The corner of the canvas has the **+ and - buttons**, which zoom by one notch of the wheel about the center of
+the canvas. The side panel holds the layers and the properties, where every property of the selection is
 editable as a number; input that makes no sense is refused with a message and the old value is kept. The
-status bar shows the hint, the position of the pointer and the switches of the grid, the snaps, the unit and
-zoom to fit.
+status bar shows the hint, the position of the pointer and the switches of the grid, the snaps, ortho, polar,
+the recording, the unit and zoom to fit.
 
 Select one entity and its **grips** appear: squares to change its shape, a circle to move it. Click picks an
 entity (Shift+click adds or removes), dragging from left to right selects what lies inside the rectangle and
@@ -122,6 +133,13 @@ a placement back into its entities. A block is defined once and kept in the file
 snaps like the entities it stands for, takes the layer of the placement, and has a position, scale, rotation and
 flip that the inspector edits. Rotate, mirror and scale work on placements, and copy and paste carry the block along.
 A block cannot hold a block. In the console: `with-block`, `make-block`, `insert`, `explode` and `blocks`.
+
+**Spread** is in the Modify menu (`Shift+P`) and needs no selection. Click inside a rectangle, polygon, closed
+polyline, circle or block and it comes apart and its pieces move 1 cm from each other: a rectangle, a polygon or a
+polyline into its sides, each moved straight out of the shape; a circle into four arcs; a block into the entities it
+stands for, each moved away from the center of the block. An open polyline moves its segments away from its center.
+A live preview shows the result under the pointer; a number typed before the click is the distance (in the display
+unit); it is one step of undo, and a line, an arc, a text or an ellipse, which have no pieces, say so.
 
 **Hatch and Solid fill** are in the Draw menu. Click inside a closed shape (a rectangle, circle, ellipse,
 polygon or closed polyline: the smallest one that holds the point is used) and it is filled, with a live preview
@@ -171,7 +189,7 @@ points work as they do when drawing.
 | Keys | What they do |
 |---|---|
 | `Shift+R`, `Shift+M`, `Shift+S` | Rotate, mirror, scale the selection |
-| `Shift+T`, `Shift+E`, `Shift+O`, `Shift+F` | Trim, extend, offset, fillet |
+| `Shift+T`, `Shift+E`, `Shift+O`, `Shift+F`, `Shift+P` | Trim, extend, offset, fillet, spread |
 | `M`, `Shift+A`, `Shift+Q` | Measure a distance, an angle, an area |
 | `L` `P` `R` `N` `C` `A` `E` `T` `D` | Line, polyline (Enter finishes, the first vertex closes), rectangle, polygon (Up and Down set the sides), circle, arc (center, start, end counter-clockwise), ellipse (center, axis end, other half-axis), text (drag to turn it), dimension |
 | The Draw menu | Also the **radius**, **diameter** and **angle** dimensions, which have no key |
@@ -184,7 +202,7 @@ points work as they do when drawing.
 | `Ctrl+N`, `Ctrl+O`, `Ctrl+S`, `Ctrl+Shift+S` | New, open, save, save as (a drawing dropped on the window opens too) |
 | `Ctrl+Shift+I`, `Ctrl+Shift+E` | Import DXF, export DXF |
 | `F2`, `F3` | Console, performance overlay |
-| `F8`, `F10` | Ortho, polar |
+| `F8`, `F9`, `F10` | Ortho, record what you do as a script, polar |
 
 </details>
 
@@ -208,7 +226,7 @@ millimetres and angles degrees, unless written `(rad x)`; `(mm 3)`, `(cm 20)`, `
 
 The commands: `line rect rect-size circle arc ellipse polygon pline text dimension radius-dimension diameter-dimension
 angle-dimension` draw; `move copy rotate
-mirror scale erase edit move-to-layer` change; `layer with-layer layers entities entity-count extents info` look and arrange;
+mirror scale erase edit redraw move-to-layer` change; `layer with-layer layers entities entity-count extents info` look and arrange;
 `select select-all deselect selected fit` act on the window; `display-unit grid-spacing` set the drawing; `say`
 and `help` talk, and `(help 'line)` explains one. Up and Down recall commands, Page Up and Page Down scroll, an
 expression whose parentheses are still open waits for its next lines, `Ctrl+L` clears.
@@ -234,6 +252,18 @@ stays defined. Numbers with a point are double-floats, and `sqrt`, `sin`, `cos`,
   useful; do not paste what you do not understand.
 
 More > Export as script... writes the drawing as the commands that draw it again, bit for bit.
+
+**Recording.** `F9`, the **Rec** chip in the status bar or More > Record actions starts a recording; the same again
+stops it and asks where to save the script. The script is made from the steps of undo that came after the start,
+so what you drew, moved, edited, erased, copied, rotated, trimmed or spread is in it, in order, and what you undid
+is not: a new entity is the command that draws it, an erased one `erase`, a moved one `move` (several moved by
+the same distance in one command), a changed property `edit`, and any other change `redraw`, which puts the new
+entity in the place of the old one, keeping its number, its layer and its place in the drawing order. An entity
+the recording made is named by a variable (`*line-12*`), because the number it will have when the script runs
+is not the number it had; one that was already there is named by its number, so the script is run (More > Run
+script, on a new layer) on the drawing as it was when the recording began. Layers and blocks are not steps of
+undo, so the script makes the ones it uses. A rotation, a scale or a mirror is recorded as the entity it made, not
+as the transform, and a recording is lost when the drawing is replaced or when you undo what came before it.
 [`examples/house-plan.lisp`](examples/house-plan.lisp) and [`examples/rosette.lisp`](examples/rosette.lisp)
 are scripts to read and run.
 
@@ -300,6 +330,14 @@ English (US) is always the default. The globe in the title bar switches to **Por
 override it. Each language is a data file in [`src/i18n/`](src/i18n), and the lint fails when a text of the
 program has no translation.
 
+## Themes
+
+The window starts dark. The sun and moon button at the right of the title bar switches to the **light theme**
+and back, and the choice is kept for the next run; `--theme light` or `dark`, or `BORBA_CAD_THEME`, override it.
+On the white canvas the colors of the layers are drawn darker where they would be too pale to see (a near-white
+layer becomes near-black), in the canvas, in the layer swatches and in the JPEG, and never in the file, where
+a layer keeps the color it was given.
+
 ## Observability
 
 Every run writes a log (rotated, 5 files of 5 MiB), one line per event:
@@ -319,20 +357,24 @@ measured is reported as unavailable, never estimated.
 | `src/` | The core (`borba-cad`, no window or foreign library): geometry, domain, viewport, persistence, DXF, images, the script language, observability, scene, UI and application; and `src/platform/` (`borba-cad/platform`): SDL window, OpenGL renderer, FreeType atlas, event loop |
 | `tests/`, `platform-tests/` | FiveAM suites (headless / window program) |
 | `test-support/`, `bench/` | Seeded workload generator; benchmarks (headless and windowed) |
-| `scripts/` | Bootstrap, environment check, lint, build and packaging tools |
+| `scripts/` | Bootstrap, environment check, lint, build, packaging, version and release-notes tools |
+| `.github/` | The [pipeline](.github/workflows/ci.yml): version, lint, test, Linux and Windows builds, documentation deploy and release |
 | `docs/` | [Specification](docs/specification.md), [architecture](docs/architecture.md), [geometry](docs/geometry.md), [performance](docs/performance.md), [development guide](docs/development.md), [experiment report](docs/experiment-report.md), generated [API reference](docs/reference.md) |
 | `examples/` | A sample drawing and two scripts |
 
 ## Status and known limits
 
-Version **1.2.0** (see the [changelog](CHANGELOG.md)). The strict build has zero warnings, and the lint,
-226,000+ headless checks and 215 window checks pass. The benchmark baseline and the experiment report are
+The latest release is on the [releases page](https://github.com/AF2B/borba-cad/releases), and what `main` has that
+no release has is in the [changelog](CHANGELOG.md) under *Unreleased*. The strict build has zero warnings, and the
+lint, 235,000+ headless checks and 215 window checks pass. The benchmark baseline and the experiment report are
 those of 1.0.0.
 
 - Run on Linux x86_64 with SBCL; the Windows build is made by the workflow and has not yet been opened on a
   real Windows machine.
 - Single-line text, axis-aligned rectangles and linear, radius, diameter and angle dimensions only; there is
   no printing from the program itself, only PDF and SVG sheets and a JPEG; the PDF font has no Cyrillic.
+- Trim and extend work on lines, arcs and circles, a hatch has no holes, a block cannot hold a block, and the
+  console has no command for trim, extend, offset, fillet or spread (a recording writes their result).
 - The DXF import was tried on test files and a few small files from the internet, not on a collection of real
   drawings.
 - Portuguese and Russian keep the decimal point, and leave in English the console's error messages and the
