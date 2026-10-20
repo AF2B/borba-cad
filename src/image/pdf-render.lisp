@@ -3,9 +3,8 @@
 ;;;; Drawing a page of a PDF into a raster: the content of the page is run as the PDF model says (ISO 32000-1,
 ;;;; section 8): a stack of graphics states with a current transform, paths built point by point and then filled,
 ;;;; stroked or used to clip, colors in the device spaces and the spaces that reduce to them, images and form
-;;;; XObjects. Text is not drawn, since that needs the fonts; shadings and patterns are not drawn; a clipping path
-;;;; limits the drawing to its bounding box. A page made of one scanned picture is drawn at the picture's own
-;;;; resolution.
+;;;; XObjects, and text in the fonts a file carries (TrueType and CFF); shadings and patterns are not drawn. A page
+;;;; made of one scanned picture is drawn at the picture's own resolution.
 
 (defconstant +default-render-dpi+ 150
   "The resolution a page without a large picture is drawn at, in dots per inch.")
@@ -55,7 +54,15 @@
   (dash-phase 0d0 :type double-float)
   (fill-alpha 1d0 :type double-float)
   (stroke-alpha 1d0 :type double-float)
-  (clip (make-fill-clip) :type fill-clip))
+  (clip (make-fill-clip) :type fill-clip)
+  (font nil)
+  (font-size 0d0 :type double-float)
+  (character-spacing 0d0 :type double-float)
+  (word-spacing 0d0 :type double-float)
+  (horizontal-scale 1d0 :type double-float)
+  (leading 0d0 :type double-float)
+  (rise 0d0 :type double-float)
+  (render-mode 0 :type fixnum))
 
 (defstruct (subpath (:conc-name subpath-))
   "A run of connected points of a path, in raster coordinates."
@@ -77,7 +84,10 @@
   (depth 0 :type fixnum)
   (dry-run nil)
   (placements '())
-  (page-area 1d0 :type double-float))
+  (page-area 1d0 :type double-float)
+  (text-matrix +identity-matrix+ :type (simple-array double-float (6)))
+  (line-matrix +identity-matrix+ :type (simple-array double-float (6)))
+  (fonts (make-hash-table :test 'eq)))
 
 ;;; Matrices
 
@@ -261,7 +271,7 @@ CONTEXT: the render context."
                        low-y
                        high-x
                        high-y)
-  "Narrow the clip of the current state to a box.
+  "Narrow the clip of the current state to a box; a mask that the clip has is kept.
 
 CONTEXT: the render context.
 LOW-X: the left of the box, in raster coordinates.
@@ -274,29 +284,88 @@ HIGH-Y: the bottom."
           (make-fill-clip :x0 (max (clip-x0 clip) (floor low-x))
                           :y0 (max (clip-y0 clip) (floor low-y))
                           :x1 (min (clip-x1 clip) (ceiling high-x))
-                          :y1 (min (clip-y1 clip) (ceiling high-y))))))
+                          :y1 (min (clip-y1 clip) (ceiling high-y))
+                          :mask (clip-mask clip)))))
+
+(defun subpaths-edges (context)
+  "Return the edge list of the path, every subpath taken as closed.
+
+CONTEXT: the render context."
+  (let ((edges (make-edge-list)))
+    (dolist (subpath (ctx-subpaths context) edges)
+      (when (>= (length (subpath-points subpath)) 4)
+        (add-polygon-edges edges (coerce (subpath-points subpath) '(simple-array double-float (*))))))))
 
 (defun fill-subpaths (context
                       even-odd)
-  "Fill the path with the fill color of the current state.
+  "Fill the path with the fill color of the current state, unless that is a pattern, which is not drawn.
 
 CONTEXT: the render context.
 EVEN-ODD: true for the even-odd rule."
-  (let ((graphics (ctx-graphics context))
-        (edges (make-edge-list)))
-    (dolist (subpath (ctx-subpaths context))
-      (when (>= (length (subpath-points subpath)) 4)
-        (add-polygon-edges edges (coerce (subpath-points subpath) '(simple-array double-float (*))))))
-    (destructuring-bind (red green blue)
-        (gs-fill-color graphics)
-      (fill-edges (ctx-raster context)
-                  edges
-                  even-odd
-                  red
-                  green
-                  blue
-                  (gs-fill-alpha graphics)
-                  (gs-clip graphics)))))
+  (let ((graphics (ctx-graphics context)))
+    (when (gs-fill-color graphics)
+      (destructuring-bind (red green blue)
+          (gs-fill-color graphics)
+        (fill-edges (ctx-raster context)
+                    (subpaths-edges context)
+                    even-odd
+                    red
+                    green
+                    blue
+                    (gs-fill-alpha graphics)
+                    (gs-clip graphics))))))
+
+(defun rectangle-path-p (context)
+  "Return true when the path is one rectangle whose sides run along the axes of the raster.
+
+CONTEXT: the render context."
+  (let ((subpaths (ctx-subpaths context)))
+    (and subpaths
+         (null (rest subpaths))
+         (let ((points (subpath-points (first subpaths))))
+           (and (member (length points) '(8 10))
+                (flet ((same (a
+                              b)
+                         (< (abs (- a b)) 1d-6)))
+                  (and (or (= (length points) 8)
+                           (and (same (aref points 0) (aref points 8))
+                                (same (aref points 1) (aref points 9))))
+                       (or (and (same (aref points 0) (aref points 2))
+                                (same (aref points 3) (aref points 5))
+                                (same (aref points 4) (aref points 6))
+                                (same (aref points 7) (aref points 1)))
+                           (and (same (aref points 1) (aref points 3))
+                                (same (aref points 2) (aref points 4))
+                                (same (aref points 5) (aref points 7))
+                                (same (aref points 6) (aref points 0)))))))))))
+
+(defun apply-clip-path (context
+                        even-odd)
+  "Narrow the clip to what the path lets through: its box when it is a rectangle, else the shape of the path.
+
+CONTEXT: the render context.
+EVEN-ODD: true when the path was marked to clip by the even-odd rule."
+  (multiple-value-bind (low-x low-y high-x high-y)
+      (path-bounds context)
+    (cond ((null low-x)
+           (intersect-clip context
+                           0
+                           0
+                           0
+                           0))
+          ((rectangle-path-p context)
+           (intersect-clip context
+                           low-x
+                           low-y
+                           high-x
+                           high-y))
+          (t
+           (let ((graphics (ctx-graphics context)))
+             (setf (gs-clip graphics)
+                   (clip-by-edges (ctx-raster context)
+                                  (subpaths-edges context)
+                                  even-odd
+                                  (gs-clip graphics))))))))
 
 (defun stroke-subpaths (context)
   "Stroke the path with the stroke color and the line style of the current state.
@@ -308,7 +377,7 @@ CONTEXT: the render context."
          (pattern (mapcar (lambda (length) (* length scale)) (gs-dash graphics)))
          (edges (make-edge-list)))
     (destructuring-bind (red green blue)
-        (gs-stroke-color graphics)
+        (or (gs-stroke-color graphics) (return-from stroke-subpaths nil))
       (flet ((flush ()
                (fill-edges (ctx-raster context)
                            edges
@@ -366,19 +435,8 @@ CLOSE: true to close the subpath being built first."
       (stroke-subpaths context)
       (setf (ctx-painted context) t)))
   (when (ctx-pending-clip context)
-    (multiple-value-bind (low-x low-y high-x high-y)
-        (path-bounds context)
-      (if low-x
-          (intersect-clip context
-                          low-x
-                          low-y
-                          high-x
-                          high-y)
-          (intersect-clip context
-                          0
-                          0
-                          0
-                          0)))
+    (unless (ctx-dry-run context)
+      (apply-clip-path context (eq (ctx-pending-clip context) :even-odd)))
     (setf (ctx-pending-clip context) nil))
   (setf (ctx-subpaths context) '()))
 
@@ -587,7 +645,8 @@ NAME: the name in the resources."
 (defun set-color-space (context
                         name
                         stroke)
-  "Set the color space of fills or strokes by name, and the color to black.
+  "Set the color space of fills or strokes by name, and the color to black; a pattern, which the program does not
+draw, leaves no color, and what is painted with it is left out.
 
 CONTEXT: the render context.
 NAME: the name of a space.
@@ -598,9 +657,9 @@ STROKE: true to set the space of strokes, false for fills."
         (graphics (ctx-graphics context)))
     (if stroke
         (setf (gs-stroke-space graphics) space
-              (gs-stroke-color graphics) (list 0 0 0))
+              (gs-stroke-color graphics) (if (eq (space-kind space) :pattern) nil (list 0 0 0)))
         (setf (gs-fill-space graphics) space
-              (gs-fill-color graphics) (list 0 0 0)))))
+              (gs-fill-color graphics) (if (eq (space-kind space) :pattern) nil (list 0 0 0))))))
 
 (defun set-color (context
                   operands
@@ -614,14 +673,253 @@ STROKE: true to set the color of strokes, false for fills.
 SPACE: the color space to read them in, or NIL for the current one of that kind."
   (let* ((graphics (ctx-graphics context))
          (space (or space (if stroke (gs-stroke-space graphics) (gs-fill-space graphics)))))
-    (unless (eq (space-kind space) :pattern)
-      (multiple-value-bind (red green blue)
-          (color-from-operands space operands)
+    (if (eq (space-kind space) :pattern)
         (if stroke
-            (setf (gs-stroke-space graphics) space
-                  (gs-stroke-color graphics) (list red green blue))
-            (setf (gs-fill-space graphics) space
-                  (gs-fill-color graphics) (list red green blue)))))))
+            (setf (gs-stroke-color graphics) nil)
+            (setf (gs-fill-color graphics) nil))
+        (multiple-value-bind (red green blue)
+            (color-from-operands space operands)
+          (if stroke
+              (setf (gs-stroke-space graphics) space
+                    (gs-stroke-color graphics) (list red green blue))
+              (setf (gs-fill-space graphics) space
+                    (gs-fill-color graphics) (list red green blue)))))))
+
+;;; Text
+
+(defun context-font (context
+                     name)
+  "Return the font of the resources that has a name, loading it the first time, or NIL when there is none.
+
+CONTEXT: the render context.
+NAME: the name in the resources."
+  (let* ((document (ctx-document context))
+         (dictionary (pdf-resolve document (find-resource context
+                                                          "Font"
+                                                          name))))
+    (when (hash-table-p dictionary)
+      (or (gethash dictionary (ctx-fonts context))
+          (setf (gethash dictionary (ctx-fonts context))
+                (load-pdf-font document dictionary))))))
+
+(defun add-glyph-edges (edges
+                        commands
+                        matrix)
+  "Add the outline of a glyph to an edge list, carried by a matrix, with its curves cut into lines.
+
+EDGES: the edge list.
+COMMANDS: the commands of the glyph, in the units of its font.
+MATRIX: the six numbers that carry them to the raster."
+  (declare (type (simple-array double-float (6)) matrix))
+  (let ((start-x 0d0) (start-y 0d0) (here-x 0d0) (here-y 0d0))
+    (flet ((carry (x
+                   y)
+             (values (limit-coordinate (+ (* (aref matrix 0) x) (* (aref matrix 2) y) (aref matrix 4)))
+                     (limit-coordinate (+ (* (aref matrix 1) x) (* (aref matrix 3) y) (aref matrix 5))))))
+      (dolist (command commands)
+        (ecase (first command)
+          (:move
+           (multiple-value-setq (here-x here-y) (carry (float (second command) 1d0) (float (third command) 1d0)))
+           (setf start-x here-x
+                 start-y here-y))
+          (:line
+           (multiple-value-bind (x y)
+               (carry (float (second command) 1d0) (float (third command) 1d0))
+             (add-edge edges
+                       here-x
+                       here-y
+                       x
+                       y)
+             (setf here-x x
+                   here-y y)))
+          (:curve
+           (multiple-value-bind (x1 y1) (carry (float (second command) 1d0) (float (third command) 1d0))
+             (multiple-value-bind (x2 y2) (carry (float (fourth command) 1d0) (float (fifth command) 1d0))
+               (multiple-value-bind (x3 y3) (carry (float (sixth command) 1d0) (float (seventh command) 1d0))
+                 (let* ((bend (max (sqrt (+ (expt (+ here-x (* -2 x1) x2) 2) (expt (+ here-y (* -2 y1) y2) 2)))
+                                   (sqrt (+ (expt (+ x1 (* -2 x2) x3) 2) (expt (+ y1 (* -2 y2) y3) 2)))))
+                        (segments (max 1 (min +maximum-curve-segments+
+                                              (ceiling (sqrt (/ (* 0.75d0 bend) +curve-tolerance+))))))
+                        (previous-x here-x)
+                        (previous-y here-y))
+                   (loop for step from 1 to segments
+                         do (let* ((time (/ step segments))
+                                   (rest (- 1 time))
+                                   (b0 (* rest rest rest))
+                                   (b1 (* 3 rest rest time))
+                                   (b2 (* 3 rest time time))
+                                   (b3 (* time time time))
+                                   (x (+ (* b0 here-x) (* b1 x1) (* b2 x2) (* b3 x3)))
+                                   (y (+ (* b0 here-y) (* b1 y1) (* b2 y2) (* b3 y3))))
+                              (add-edge edges
+                                        previous-x
+                                        previous-y
+                                        x
+                                        y)
+                              (setf previous-x x
+                                    previous-y y)))
+                   (setf here-x x3
+                         here-y y3))))))
+          (:close
+           (add-edge edges
+                     here-x
+                     here-y
+                     start-x
+                     start-y)
+           (setf here-x start-x
+                 here-y start-y)))))))
+
+(defun move-text (context
+                  tx
+                  ty)
+  "Move the text matrix along the text line by an amount in text space.
+
+CONTEXT: the render context.
+TX: how far along the line.
+TY: how far up."
+  (setf (ctx-text-matrix context)
+        (matrix-then (matrix-of 1
+                                0
+                                0
+                                1
+                                tx
+                                ty) (ctx-text-matrix context))))
+
+(defun show-string (context
+                    bytes)
+  "Show a string with the current font: draw its glyphs, if they are visible, and move the text matrix along by what it
+takes.
+
+CONTEXT: the render context.
+BYTES: the string."
+  (let* ((graphics (ctx-graphics context))
+         (font (gs-font graphics))
+         (size (gs-font-size graphics))
+         (scale (gs-horizontal-scale graphics)))
+    (when (and font (typep bytes 'octets))
+      (let ((edges (make-edge-list))
+            (visible (and (not (ctx-dry-run context))
+                          (not (member (gs-render-mode graphics) '(3 7)))
+                          (gs-fill-color graphics))))
+        (dolist (glyph (font-string-glyphs font bytes))
+          (destructuring-bind (commands width space)
+              glyph
+            (when (and visible commands)
+              (add-glyph-edges edges
+                               commands
+                               (matrix-then (matrix-of (* (font-scale font) size scale)
+                                                       0
+                                                       0
+                                                       (* (font-scale font) size)
+                                                       0
+                                                       (gs-rise graphics))
+                                            (matrix-then (ctx-text-matrix context) (gs-matrix graphics)))))
+            (move-text context
+                       (* scale (+ (* (/ width 1000) size)
+                                   (gs-character-spacing graphics)
+                                   (if space (gs-word-spacing graphics) 0)))
+                       0)))
+        (when (plusp (edges-count edges))
+          (destructuring-bind (red green blue)
+              (gs-fill-color graphics)
+            (fill-edges (ctx-raster context)
+                        edges
+                        nil
+                        red
+                        green
+                        blue
+                        (gs-fill-alpha graphics)
+                        (gs-clip graphics)))
+          (setf (ctx-painted context) t))))))
+
+(defun show-text-array (context
+                        items)
+  "Show an array of strings and numbers: the strings as they are, the numbers as moves back (positive) or forward of
+that many thousandths of the font size.
+
+CONTEXT: the render context.
+ITEMS: the vector."
+  (let ((graphics (ctx-graphics context)))
+    (when (vectorp items)
+      (loop for item across items
+            do (cond ((typep item 'octets)
+                      (show-string context item))
+                     ((realp item)
+                      (move-text context
+                                 (* (- (/ item 1000d0)) (gs-font-size graphics) (gs-horizontal-scale graphics))
+                                 0)))))))
+
+(defun run-text-operator (context
+                          name
+                          operands)
+  "Do an operator of text: the text state, the text matrix, and the showing of strings. Returns true when NAME is one.
+
+CONTEXT: the render context.
+NAME: the operator.
+OPERANDS: its operands, in order."
+  (let ((graphics (ctx-graphics context)))
+    (flet ((number (index)
+             (operand-number operands index)))
+      (cond
+        ((string= name "BT")
+         (setf (ctx-text-matrix context) +identity-matrix+
+               (ctx-line-matrix context) +identity-matrix+))
+        ((string= name "ET"))
+        ((string= name "Tc") (setf (gs-character-spacing graphics) (number 0)))
+        ((string= name "Tw") (setf (gs-word-spacing graphics) (number 0)))
+        ((string= name "Tz") (setf (gs-horizontal-scale graphics) (/ (number 0) 100)))
+        ((string= name "TL") (setf (gs-leading graphics) (number 0)))
+        ((string= name "Tr") (setf (gs-render-mode graphics) (max 0 (min 7 (round (number 0))))))
+        ((string= name "Ts") (setf (gs-rise graphics) (number 0)))
+        ((string= name "Tf")
+         (setf (gs-font graphics) (and (stringp (first operands)) (context-font context (first operands)))
+               (gs-font-size graphics) (number 1)))
+        ((or (string= name "Td") (string= name "TD"))
+         (when (string= name "TD")
+           (setf (gs-leading graphics) (- (number 1))))
+         (setf (ctx-line-matrix context)
+               (matrix-then (matrix-of 1
+                                       0
+                                       0
+                                       1
+                                       (number 0)
+                                       (number 1)) (ctx-line-matrix context))
+               (ctx-text-matrix context) (ctx-line-matrix context)))
+        ((string= name "Tm")
+         (setf (ctx-line-matrix context)
+               (matrix-of (number 0)
+                          (number 1)
+                          (number 2)
+                          (number 3)
+                          (number 4)
+                          (number 5))
+               (ctx-text-matrix context) (ctx-line-matrix context)))
+        ((string= name "T*")
+         (setf (ctx-line-matrix context)
+               (matrix-then (matrix-of 1
+                                       0
+                                       0
+                                       1
+                                       0
+                                       (- (gs-leading graphics))) (ctx-line-matrix context))
+               (ctx-text-matrix context) (ctx-line-matrix context)))
+        ((string= name "Tj") (show-string context (first operands)))
+        ((string= name "TJ") (show-text-array context (first operands)))
+        ((string= name "'")
+         (run-text-operator context
+                            "T*"
+                            '())
+         (show-string context (first operands)))
+        ((string= name "\"")
+         (setf (gs-word-spacing graphics) (number 0)
+               (gs-character-spacing graphics) (number 1))
+         (run-text-operator context
+                            "T*"
+                            '())
+         (show-string context (third operands)))
+        (t
+         (return-from run-text-operator nil)))
+      t)))
 
 ;;; Operators
 
@@ -807,7 +1105,8 @@ OPERANDS: its operands, in order."
                                          :close
                                          t))
         ((string= name "n") (paint-path context))
-        ((or (string= name "W") (string= name "W*")) (setf (ctx-pending-clip context) t))
+        ((string= name "W") (setf (ctx-pending-clip context) :nonzero))
+        ((string= name "W*") (setf (ctx-pending-clip context) :even-odd))
         ((string= name "g") (set-color context
                                        operands
                                        nil
@@ -844,7 +1143,10 @@ OPERANDS: its operands, in order."
         ((or (string= name "SC") (string= name "SCN")) (set-color context
                                                                   operands
                                                                   t))
-        ((string= name "Do") (when (stringp (first operands)) (draw-xobject context (first operands))))))))
+        ((string= name "Do") (when (stringp (first operands)) (draw-xobject context (first operands))))
+        (t (run-text-operator context
+                              name
+                              operands))))))
 
 (defun run-content (context
                     bytes)
@@ -1032,5 +1334,5 @@ DPI: dots per inch, or NIL to choose: the resolution of a scan that covers the p
         (unless (ctx-painted context)
           (if (ctx-skipped context)
               (error (first (last (ctx-skipped context))))
-              (image-failure "This PDF page draws no lines or pictures; the program does not draw text.")))
+              (image-failure "This PDF page draws no lines, pictures or text that the program can show.")))
         (values raster chosen)))))

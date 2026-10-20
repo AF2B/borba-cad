@@ -124,6 +124,17 @@ rsvg-convert -f pdf --dpi-x 72 --dpi-y 72 "$WORK/vector.svg" -o pdf-vector.pdf
 pdftoppm -r 72 pdf-vector.pdf "$WORK/vector-ref"
 magick "$WORK"/vector-ref*.ppm -depth 8 -alpha on rgba:pdf-vector.rgba
 
+cat > "$WORK/text.svg" <<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" width="160px" height="60px" viewBox="0 0 160 60">
+  <rect width="160" height="60" fill="white"/>
+  <text x="8" y="26" font-family="Noto Sans" font-size="20" fill="black">Room 12,5 m</text>
+  <text x="8" y="50" font-family="Noto Sans Mono" font-size="12" fill="#cc0000">3.50 x 4.20</text>
+</svg>
+SVG
+rsvg-convert -f pdf --dpi-x 72 --dpi-y 72 "$WORK/text.svg" -o pdf-text.pdf
+pdftoppm -r 72 pdf-text.pdf "$WORK/text-ref"
+magick "$WORK"/text-ref*.ppm -depth 8 -alpha on rgba:pdf-text.rgba
+
 magick -seed 4 -size 40x30 plasma:fractal -depth 8 "$WORK/scan.png"
 magick "$WORK/scan.png" -density 72 -compress zip pdf-scan-flate.pdf
 magick "$WORK/scan.png" -depth 8 -alpha on rgba:pdf-scan-flate.rgba

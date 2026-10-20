@@ -130,6 +130,10 @@
                              (:file "pdf-file")
                              (:file "pdf-raster")
                              (:file "pdf-image")
+                             (:file "font-truetype")
+                             (:file "font-cff")
+                             (:file "pdf-encodings")
+                             (:file "pdf-fonts")
                              (:file "pdf-render")
                              (:file "read")))
                (:module "shapes"

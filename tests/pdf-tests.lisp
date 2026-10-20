@@ -478,6 +478,53 @@ STREAM."
     (is (<= (* (image:raster-width raster) (image:raster-height raster)) image::+maximum-raster-pixels+))
     (is (< dpi 600))))
 
+(test a-clipping-path-that-is-not-a-box-limits-the-painting-to-its-shape
+  (let ((raster (draw-page "q 10 10 m 90 10 l 50 70 l h W n 0 g 0 0 100 80 re f Q")))
+    (is (equal '(0 0 0) (pixel-at raster 50 50)) "inside the triangle")
+    (is (equal *white* (pixel-at raster 15 20)) "inside its box and outside it")
+    (is (equal *white* (pixel-at raster 85 20)))
+    (is (equal *white* (pixel-at raster 5 5)))
+    (is (equal *white* (pixel-at raster 50 5)) "above its tip")))
+
+(test the-clipping-path-follows-the-even-odd-rule-when-it-is-asked-to
+  (let ((nonzero (draw-page "q 10 10 80 60 re 30 20 40 40 re W n 0 g 0 0 100 80 re f Q"))
+        (even-odd (draw-page "q 10 10 80 60 re 30 20 40 40 re W* n 0 g 0 0 100 80 re f Q")))
+    (is (equal '(0 0 0) (pixel-at nonzero 50 40)) "the hole is inside")
+    (is (equal *white* (pixel-at even-odd 50 40)) "the hole is left out")
+    (is (equal '(0 0 0) (pixel-at even-odd 20 40)))))
+
+(test clipping-paths-in-force-together-let-through-only-what-all-of-them-do
+  (let ((raster (draw-page (concatenate 'string
+                                        "q 10 10 m 90 10 l 50 70 l h W n "
+                                        "q 0 40 100 40 re W n 0 g 0 0 100 80 re f Q "
+                                        "1 0 0 rg 0 0 100 30 re f Q"))))
+    (is (equal '(0 0 0) (pixel-at raster 50 20)) "inside the triangle and above the line y = 40")
+    (is (equal *white* (pixel-at raster 50 45)) "inside the triangle, below that line and above the red")
+    (is (equal '(255 0 0) (pixel-at raster 50 60)) "inside the triangle and below 30")
+    (is (equal *white* (pixel-at raster 15 60)) "outside the triangle")
+    (is (equal *white* (pixel-at raster 50 5)) "above the tip")))
+
+(test lines-drawn-inside-a-clipping-path-stop-at-its-edge-as-a-hatch-does
+  (let ((raster (draw-page (concatenate 'string
+                                        "q 20 20 m 80 20 l 50 60 l h W n 0 g 2 w "
+                                        "0 30 m 100 30 l S 0 40 m 100 40 l S Q"))))
+    (is (equal '(0 0 0) (pixel-at raster 50 49)) "a line inside")
+    (is (equal *white* (pixel-at raster 10 49)) "and none outside, on the same line")
+    (is (equal *white* (pixel-at raster 95 49)))))
+
+(test a-fill-painted-with-a-pattern-is-left-out-and-does-not-turn-black
+  (let ((raster (draw-page "/Pattern cs /P1 scn 10 10 30 30 re f 0 0 1 rg 50 10 20 20 re f"
+                           :resources "/Pattern << >>")))
+    (is (equal *white* (pixel-at raster 20 50)))
+    (is (equal '(0 0 255) (pixel-at raster 60 60)) "the paint that follows is not touched")))
+
+(test a-picture-is-drawn-only-inside-the-clip
+  (let ((raster (draw-page "q 10 10 m 90 10 l 50 70 l h W n q 80 0 0 60 10 10 cm /Im Do Q Q"
+                           :resources "/XObject << /Im 5 0 R >>"
+                           :extra-objects (list (image-xobject 5 1 1 "/DeviceRGB" 8 (octets-of 255 0 0))))))
+    (is (near-color-p '(255 0 0) (pixel-at raster 50 50) 2))
+    (is (equal *white* (pixel-at raster 15 20)))))
+
 ;;; Fixtures made by other programs
 
 (defun mean-difference (raster
@@ -502,6 +549,42 @@ or :SIZE when the sizes differ."
     (let ((difference (mean-difference raster (picture-fixture "pdf-vector.rgba"))))
       (is (numberp difference))
       (is (< difference 1.5) "mean difference ~a" difference))))
+
+(test the-text-of-a-page-is-drawn-from-the-fonts-it-carries
+  (let ((raster (image:read-picture (picture-fixture "pdf-text.pdf") :dpi 72)))
+    (let ((difference (mean-difference raster (picture-fixture "pdf-text.rgba"))))
+      (is (numberp difference))
+      (is (< difference 2.5) "mean difference ~a" difference))
+    (is (some (lambda (index) (< (aref (image:raster-pixels raster) (* 4 index)) 100))
+              (loop for index below (* 160 30) collect index))
+        "there is ink where the first line is")))
+
+(test the-numbers-of-a-cff-dictionary-are-read-with-their-signs-and-fractions
+  (is (equal '((17 -397 397 -1 0 107 -107 1000 -2000))
+             (image::read-cff-dictionary (octets-of 252 33 248 33 138 139 246 32 28 3 232 28 #xF8 #x30 17)
+                                         0
+                                         15))
+      "the encodings of one, two and three bytes, negative and positive")
+  (is (= 0.001d0 (image::parse-cff-real "0.001")))
+  (is (= -0.0015d0 (image::parse-cff-real "-1.5e-3")))
+  (is (= 12d0 (image::parse-cff-real "12")))
+  (is (= 0d0 (image::parse-cff-real ""))))
+
+(test the-names-of-glyphs-give-their-unicode-values
+  (is (= 65 (image::glyph-name-unicode "A")))
+  (is (= 233 (image::glyph-name-unicode "eacute")))
+  (is (= 8364 (image::glyph-name-unicode "Euro")))
+  (is (= 65 (image::glyph-name-unicode "uni0041")))
+  (is (= 97 (image::glyph-name-unicode "a.alt")) "a suffix after a dot is left out")
+  (is (null (image::glyph-name-unicode "nosuchglyph"))))
+
+(test the-encodings-give-the-glyph-of-each-code
+  (is (equal "A" (svref image::*winansi-encoding* 65)))
+  (is (equal "Euro" (svref image::*winansi-encoding* 128)))
+  (is (equal "eacute" (svref image::*winansi-encoding* 233)))
+  (is (equal "quoteright" (svref image::*standard-encoding* 39)))
+  (is (equal "Adieresis" (svref image::*mac-roman-encoding* 128)))
+  (is (null (svref image::*standard-encoding* 128))))
 
 (test a-page-with-a-scan-is-drawn-at-the-resolution-of-the-scan-and-the-pixels-come-through-whole
   (dolist (name '("pdf-scan-flate" "pdf-scan-1bit" "pdf-scan-indexed"))

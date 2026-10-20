@@ -127,12 +127,56 @@ POINTS: a vector of doubles, x then y of each corner in turn."
 
 ;;; Filling
 
+(defstruct (clip-mask (:conc-name mask-))
+  "How much of each pixel of a box a clipping path lets through, from 0 to 255, row by row.
+
+X0: the first column of the box.
+Y0: the first row.
+WIDTH: columns in the box.
+HEIGHT: rows in the box.
+DATA: the bytes."
+  (x0 0 :type fixnum)
+  (y0 0 :type fixnum)
+  (width 0 :type fixnum)
+  (height 0 :type fixnum)
+  (data (make-octets 0) :type octets))
+
 (defstruct (fill-clip (:conc-name clip-))
-  "The pixels a drawing may reach: columns from X0 up to X1 and rows from Y0 up to Y1."
+  "The pixels a drawing may reach: columns from X0 up to X1 and rows from Y0 up to Y1, and, when a clipping path that
+is not a box made the clip, how much of each pixel of that box is let through.
+
+X0: the first column.
+Y0: the first row.
+X1: the column after the last.
+Y1: the row after the last.
+MASK: the CLIP-MASK, or NIL when the whole box is let through."
   (x0 0 :type fixnum)
   (y0 0 :type fixnum)
   (x1 0 :type fixnum)
-  (y1 0 :type fixnum))
+  (y1 0 :type fixnum)
+  (mask nil :type (or null clip-mask)))
+
+(declaim (inline clip-factor))
+
+(defun clip-factor (clip
+                    x
+                    y)
+  "Return how much of the pixel at column X and row Y a clip lets through, from 0 to 1.
+
+CLIP: the FILL-CLIP.
+X: the column.
+Y: the row."
+  (declare (type fill-clip clip)
+           (type fixnum x y)
+           (optimize (speed 3) (safety 1)))
+  (let ((mask (clip-mask clip)))
+    (if mask
+        (let ((column (- x (mask-x0 mask)))
+              (row (- y (mask-y0 mask))))
+          (if (and (< -1 column (mask-width mask)) (< -1 row (mask-height mask)))
+              (/ (float (aref (mask-data mask) (+ column (* row (mask-width mask)))) 1d0) 255d0)
+              0d0))
+        1d0)))
 
 (defun sort-crossings (positions
                        directions
@@ -189,7 +233,8 @@ the current row, the crossings of the current sub-row, and the coverage gathered
   (cover (make-array 0 :element-type 'double-float) :type (simple-array double-float (*)))
   (diff (make-array 0 :element-type 'double-float) :type (simple-array double-float (*)))
   (min-x 0 :type fixnum)
-  (max-x 0 :type fixnum))
+  (max-x 0 :type fixnum)
+  (mask nil :type (or null clip-mask)))
 
 (defun prepare-fill (raster
                      edges
@@ -257,7 +302,8 @@ CLIP: the FILL-CLIP the painting may not leave."
                        :bucket-start bucket-start
                        :order order
                        :cover (make-array (+ width 2) :element-type 'double-float :initial-element 0d0)
-                       :diff (make-array (+ width 2) :element-type 'double-float :initial-element 0d0)))))
+                       :diff (make-array (+ width 2) :element-type 'double-float :initial-element 0d0)
+                       :mask (clip-mask clip)))))
 
 (defun activate-row (state
                      row)
@@ -358,6 +404,25 @@ EVEN-ODD: true for the even-odd rule, false for the non-zero rule."
                            (incf (aref diff (1+ ia)) 1d0)
                            (decf (aref diff ib) 1d0)))))))))))))
 
+(declaim (inline mask-factor))
+
+(defun mask-factor (mask
+                    x
+                    y)
+  "Return how much of the pixel at column X and row Y a clip mask lets through, from 0 to 1.
+
+MASK: the CLIP-MASK.
+X: the column.
+Y: the row."
+  (declare (type clip-mask mask)
+           (type fixnum x y)
+           (optimize (speed 3) (safety 1)))
+  (let ((column (- x (mask-x0 mask)))
+        (row (- y (mask-y0 mask))))
+    (if (and (< -1 column (mask-width mask)) (< -1 row (mask-height mask)))
+        (/ (float (aref (mask-data mask) (+ column (* row (mask-width mask)))) 1d0) 255d0)
+        0d0)))
+
 (defun blend-row (state
                   raster
                   device-row
@@ -384,13 +449,20 @@ ALPHA: the opacity of the paint, 0 to 1."
         (diff (fill-diff state))
         (pixels (raster-pixels raster))
         (width (fill-width state))
+        (mask (fill-mask state))
         (running 0d0)
         (last (min (fill-max-x state) (1- (fill-clip-x1 state)))))
     (declare (type double-float running)
              (type fixnum width last))
     (loop for x of-type fixnum from (fill-min-x state) to last
           do (incf running (aref diff x))
-             (let ((coverage (* alpha (min 1d0 (/ (+ (aref cover x) running) +sub-rows+)))))
+             (let ((coverage (* alpha
+                                (min 1d0 (/ (+ (aref cover x) running) +sub-rows+))
+                                (if mask
+                                    (mask-factor mask
+                                                 x
+                                                 device-row)
+                                    1d0))))
                (declare (type double-float coverage))
                (when (> coverage 0d0)
                  (let ((at (* +raster-channels+ (+ x (* device-row width)))))
@@ -447,6 +519,136 @@ CLIP: the FILL-CLIP the painting may not leave."
                        blue
                        alpha)))))
     nil))
+
+(defun store-row (state
+                  mask
+                  device-row)
+  "Put the coverage gathered for a row into a clip mask, and clear the coverage.
+
+STATE: the fill state.
+MASK: the CLIP-MASK being made.
+DEVICE-ROW: the row, counted from the top of the raster."
+  (declare (type fill-state state)
+           (type clip-mask mask)
+           (type fixnum device-row)
+           (optimize (speed 3) (safety 1))
+           (sb-ext:muffle-conditions sb-ext:compiler-note))
+  (let ((cover (fill-cover state))
+        (diff (fill-diff state))
+        (data (mask-data mask))
+        (width (mask-width mask))
+        (first-column (mask-x0 mask))
+        (row (- device-row (mask-y0 mask)))
+        (running 0d0)
+        (last (min (fill-max-x state) (1- (fill-clip-x1 state)))))
+    (declare (type double-float running)
+             (type fixnum width first-column row last))
+    (loop for x of-type fixnum from (fill-min-x state) to last
+          do (incf running (aref diff x))
+             (let ((coverage (min 1d0 (/ (+ (aref cover x) running) +sub-rows+))))
+               (declare (type double-float coverage))
+               (when (< -1 (- x first-column) width)
+                 (setf (aref data (+ (- x first-column) (* row width)))
+                       (max 0 (min 255 (round (* 255 coverage))))))))
+    (loop for x of-type fixnum from (fill-min-x state) to (min (1+ (fill-max-x state)) (1+ (fill-width state)))
+          do (setf (aref cover x) 0d0
+                   (aref diff x) 0d0))))
+
+(defun edges-bounds (edges)
+  "Return the box that holds the edges of a shape, as four values: lowest x, lowest y, highest x, highest y, or NIL for
+a shape with no edge.
+
+EDGES: the edge list."
+  (declare (type edge-list edges))
+  (when (plusp (edges-count edges))
+    (let ((low-x most-positive-double-float)
+          (low-y most-positive-double-float)
+          (high-x most-negative-double-float)
+          (high-y most-negative-double-float))
+      (dotimes (index (edges-count edges))
+        (setf low-x (min low-x (aref (edges-x0 edges) index) (aref (edges-x1 edges) index))
+              high-x (max high-x (aref (edges-x0 edges) index) (aref (edges-x1 edges) index))
+              low-y (min low-y (aref (edges-y0 edges) index))
+              high-y (max high-y (aref (edges-y1 edges) index))))
+      (values low-x low-y high-x high-y))))
+
+(defun clip-by-edges (raster
+                      edges
+                      even-odd
+                      clip)
+  "Return the clip that a clipping path makes with a clip already in force: the part of the first that the shape of
+the path lets through, as a box and, for the pixels the edge of the shape cuts or leaves out, a mask.
+
+RASTER: the raster.
+EDGES: the edge list of the clipping path.
+EVEN-ODD: true for the even-odd rule, false for the non-zero rule.
+CLIP: the FILL-CLIP in force."
+  (multiple-value-bind (low-x low-y high-x high-y)
+      (edges-bounds edges)
+    (let* ((x0 (if low-x (max (clip-x0 clip) 0 (floor low-x)) 0))
+           (y0 (if low-y (max (clip-y0 clip) 0 (floor low-y)) 0))
+           (x1 (if high-x (min (clip-x1 clip) (raster-width raster) (ceiling high-x)) 0))
+           (y1 (if high-y (min (clip-y1 clip) (raster-height raster) (ceiling high-y)) 0)))
+      (if (or (null low-x) (<= x1 x0) (<= y1 y0))
+          (make-fill-clip :x0
+                          0
+                          :y0
+                          0
+                          :x1
+                          0
+                          :y1
+                          0)
+          (let* ((width (- x1 x0))
+                 (height (- y1 y0))
+                 (mask (make-clip-mask :x0 x0
+                                       :y0 y0
+                                       :width width
+                                       :height height
+                                       :data (make-octets (* width height))))
+                 (box (make-fill-clip :x0
+                                      x0
+                                      :y0
+                                      y0
+                                      :x1
+                                      x1
+                                      :y1
+                                      y1))
+                 (state (prepare-fill raster
+                                      edges
+                                      box)))
+            (when state
+              (dotimes (row (fill-rows state))
+                (let ((device-row (+ row (fill-clip-y0 state))))
+                  (setf (fill-min-x state) (fill-clip-x1 state)
+                        (fill-max-x state) (fill-clip-x0 state))
+                  (activate-row state row)
+                  (dotimes (sub +sub-rows+)
+                    (accumulate-sub-row state
+                                        (+ device-row (/ (+ sub 0.5d0) +sub-rows+))
+                                        even-odd))
+                  (when (<= (fill-min-x state) (fill-max-x state))
+                    (store-row state
+                               mask
+                               device-row)))))
+            (when (clip-mask clip)
+              (let ((data (mask-data mask)))
+                (dotimes (row height)
+                  (dotimes (column width)
+                    (let ((at (+ column (* row width))))
+                      (setf (aref data at)
+                            (round (* (aref data at) (clip-factor clip
+                                                                  (+ x0 column)
+                                                                  (+ y0 row))))))))))
+            (make-fill-clip :x0
+                            x0
+                            :y0
+                            y0
+                            :x1
+                            x1
+                            :y1
+                            y1
+                            :mask
+                            mask))))))
 
 ;;; Strokes
 

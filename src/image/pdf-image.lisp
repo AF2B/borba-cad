@@ -542,6 +542,10 @@ CLIP: the FILL-CLIP the drawing may not leave."
                                                  (* (- 1d0 v) (raster-height mask))
                                                  soft)
                                   (setf opacity (* opacity (/ (aref soft 0) 255d0))))
+                                (when (clip-mask clip)
+                                  (setf opacity (* opacity (clip-factor clip
+                                                                        px
+                                                                        py))))
                                 (when (> opacity 0d0)
                                   (dotimes (channel 3)
                                     (let* ((old (aref pixels (+ at channel)))
