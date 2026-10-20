@@ -30,6 +30,7 @@
                 :components ((:file "package")
                              (:file "tolerances")
                              (:file "conditions")
+                             (:file "base64")
                              (:file "units")
                              (:file "config")))
                (:module "geometry"
@@ -119,7 +120,12 @@
                (:module "image"
                 :serial t
                 :components ((:file "package")
-                             (:file "jpeg")))
+                             (:file "jpeg")
+                             (:file "inflate")
+                             (:file "raster")
+                             (:file "png")
+                             (:file "jpeg-decode")
+                             (:file "read")))
                (:module "shapes"
                 :serial t
                 :components ((:file "package")
@@ -316,6 +322,7 @@
                (:file "console-tests")
                (:file "welcome-tests")
                (:file "image-tests")
+               (:file "picture-tests")
                (:file "autosave-tests")
                (:file "constraints-tests")
                (:file "snapping-tests")

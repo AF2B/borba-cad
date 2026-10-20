@@ -64,6 +64,13 @@ complete, user-facing message in the language of the interface."))
   (:documentation "An edit that changes existing entities, such as trimming or filleting, cannot be done as asked.
 REASON is a complete sentence in the language of the interface."))
 
+(define-condition image-error (borba-cad-error)
+  ((reason :initarg :reason :reader image-error-reason))
+  (:report (lambda (condition stream)
+             (write-string (image-error-reason condition) stream)))
+  (:documentation "A picture cannot be read, because it is damaged, is of a kind that is not read, or is too large.
+REASON is a complete sentence in the language of the interface."))
+
 (define-condition export-refused (borba-cad-error)
   ((reason :initarg :reason :reader export-refused-reason))
   (:report (lambda (condition stream)

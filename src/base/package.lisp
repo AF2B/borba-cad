@@ -5,6 +5,9 @@
   (:import-from #:borba-cad/sbcl-support
                 #:environment-variable)
   (:export
+   ;; Base64
+   #:base64-encode
+   #:base64-decode
    ;; Tolerances
    #:+maximum-coordinate-magnitude+
    #:+maximum-length+
@@ -47,6 +50,8 @@
    #:edit-refused-reason
    #:export-refused
    #:export-refused-reason
+   #:image-error
+   #:image-error-reason
    #:drawing-file-error
    #:drawing-file-error-path
    #:drawing-file-error-reason
