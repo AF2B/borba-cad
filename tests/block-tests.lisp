@@ -435,6 +435,18 @@
         "a block of version 7 was drawn by hand")
     (is (string= (as-newest-version fixture 7) written))))
 
+(test a-version-8-file-is-read-and-saved-as-the-newest-version
+  (let* ((fixture (fixture-text "v8-plan.bcad"))
+         (drawing (persist:parse-drawing-text fixture))
+         (written (persist:drawing-to-string drawing)))
+    (is (search "(format-version 8)" fixture))
+    (is (search "(generator \"door\"" fixture))
+    (is (= 9 (dom:drawing-entity-count drawing)))
+    (is (dom:block-definition-origin (dom:find-block drawing "door")) "the block was drawn by a generator")
+    (is (null (dom:drawing-underlays drawing)) "a file of version 8 has no underlays")
+    (is (string= (as-newest-version fixture 8) written))
+    (is (search " (underlays" written))))
+
 ;;; Drawing, plotting and exporting
 
 (test a-placement-is-drawn-with-the-entities-it-places

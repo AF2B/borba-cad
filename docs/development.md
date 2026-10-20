@@ -306,6 +306,18 @@ reads it, saves it and reads it back. A migration that a default cannot express 
 meaning) is a function from the parsed fields of the old version to those of the new one, applied in
 `parse-named-fields` or `parse-entity` for files older than the change; it too gets a fixture.
 
+### Pictures in the tests
+
+The readers of PNG, JPEG and PDF (`src/image/`) are checked against the pixels that other programs give,
+never against themselves. `tests/fixtures/images/` holds small pictures of every kind (every PNG color type
+and depth, interlaced or not, with a palette or a transparency chunk; JPEG baseline and progressive, every
+sampling, restart intervals, gray, RGB and CMYK; PDF pages drawn by cairo and ImageMagick, and one written by
+hand with an object stream), each with the `.rgba` file of the pixels it must read as. The pixels come from
+ImageMagick, libjpeg (`djpeg`) and poppler (`pdftoppm`); `tests/fixtures/images/make-fixtures.sh` makes the whole
+set again and says in its header what it needs. The PDF pages that the tests build themselves
+(`tests/pdf-tests.lisp`) are written as text, so each check of drawing is one line of what is drawn and the pixel
+it must leave. The window tests draw pictures through the real renderer and read the pixels back.
+
 ## 8. Build and packaging
 
 `make build` is `make compile` (strict) plus `make exe`. The executable is an SBCL image saved with

@@ -121,8 +121,9 @@ TEXT: the text of a file with them."
 
 (defun as-newest-version (text version)
   "Return the text of a file of an older VERSION as the writer writes it in the newest version: the version line,
-the section of blocks that version 5 added, which is empty, the holes of the hatches that version 6 added, and the
-section of sheets that version 7 added, which is empty.
+the section of blocks that version 5 added, which is empty, the holes of the hatches that version 6 added, the
+section of sheets that version 7 added, which is empty, and the section of underlays that version 9 added, which is
+empty.
 
 TEXT: the text of the old file.
 VERSION: its format version."
@@ -134,27 +135,36 @@ VERSION: its format version."
                                              (format nil " )~% (entities")
                                              (format nil " )~% (blocks~% )~% (entities"))
                           renumbered)))
-    (let ((with-holes (if (< version 6)
-                          (hatch-lines-with-holes with-blocks)
-                          with-blocks)))
-      (if (< version 7)
-          (replace-once-text with-holes
+    (let* ((with-holes (if (< version 6)
+                           (hatch-lines-with-holes with-blocks)
+                           with-blocks))
+           (with-sheets (if (< version 7)
+                            (replace-once-text with-holes
+                                               (format nil " )~% (entities")
+                                               (format nil " )~% (sheets~% )~% (entities"))
+                            with-holes)))
+      (if (< version 9)
+          (replace-once-text with-sheets
                              (format nil " )~% (entities")
-                             (format nil " )~% (sheets~% )~% (entities"))
-          with-holes))))
+                             (format nil " )~% (underlays~% )~% (entities"))
+          with-sheets))))
 
 (defun as-older-version (text version)
   "Return the text of a file of the newest version as the file of an older VERSION would read: with that version
-line, without the section of blocks when the version predates it, and without the holes of the hatches when it
-predates them.
+line, without the section of blocks when the version predates it, without the holes of the hatches when it
+predates them, and without the sections of sheets and of underlays when it predates those.
 
-TEXT: the text of a file of the newest version, with an empty section of blocks and no holes in its hatches.
+TEXT: the text of a file of the newest version, with empty sections of blocks, sheets and underlays and no holes in its
+hatches.
 VERSION: the format version to say."
-  (let* ((renumbered (replace-once-text (if (< version 7)
-                                            (replace-once-text text
+  (let* ((without-underlays (if (< version 9)
+                                (replace-once-text text (format nil " (underlays~% )~%") "")
+                                text))
+         (renumbered (replace-once-text (if (< version 7)
+                                            (replace-once-text without-underlays
                                                                (format nil " (sheets~% )~%")
                                                                "")
-                                            text)
+                                            without-underlays)
                                         (format nil "(format-version ~d)" persist:+supported-format-version+)
                                         (format nil "(format-version ~d)" version)))
          (without-blocks (if (< version 5)

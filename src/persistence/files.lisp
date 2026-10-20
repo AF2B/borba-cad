@@ -1,8 +1,9 @@
 (in-package #:borba-cad/persistence)
 
-(defconstant +maximum-file-bytes+ (* 64 1024 1024)
-  "Largest drawing file that will be read. A 100,000-entity drawing is about 12 MB; the limit
-bounds the memory used to read an untrusted file (NFR-7).")
+(defconstant +maximum-file-bytes+ (* 96 1024 1024)
+  "Largest drawing file that will be read. A 100,000-entity drawing is about 12 MB, and the pictures under a drawing
+may take 40 MiB of file, which as text is a third more; the limit bounds the memory used to read an untrusted file
+(NFR-7).")
 
 (defun io-failure (path
                    control

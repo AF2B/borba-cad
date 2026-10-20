@@ -288,6 +288,115 @@ RENDERER: the renderer."
                 :jpeg-bytes (and pixels
                                  (length (borba-cad/image:encode-jpeg width height pixels)))))))))
 
+(defun picture-of-colors (width
+                          height
+                          colors)
+  "Return a raster of WIDTH by HEIGHT whose quadrants are the four colors of COLORS: top left, top right, bottom left,
+bottom right, each (red green blue).
+
+WIDTH: width in pixels.
+HEIGHT: height in pixels.
+COLORS: the four colors."
+  (let* ((raster (borba-cad/image:make-raster width height))
+         (pixels (borba-cad/image:raster-pixels raster)))
+    (dotimes (row height)
+      (dotimes (column width)
+        (let ((color (nth (+ (if (< column (floor width 2)) 0 1) (if (< row (floor height 2)) 0 2)) colors))
+              (at (* 4 (+ column (* row width)))))
+          (setf (aref pixels at) (first color)
+                (aref pixels (+ at 1)) (second color)
+                (aref pixels (+ at 2)) (third color)
+                (aref pixels (+ at 3)) 255))))
+    raster))
+
+(defun observe-pictures (window
+                         renderer)
+  "Draw pictures through the renderer: one upright, one turned a quarter, one half opaque, one drawn again from the
+texture the renderer kept, and one too wide for a texture.
+
+WINDOW: the SDL window.
+RENDERER: the renderer."
+  (let* ((colors '((255 0 0) (0 255 0) (0 0 255) (255 255 0)))
+         (picture (picture-of-colors 2 2 colors))
+         (list (scene:make-draw-list)))
+    (scene:add-picture list 9001 picture '((100f0 . 300f0) (300f0 . 300f0) (300f0 . 100f0) (100f0 . 100f0)) 1f0)
+    (scene:add-picture list 9002 picture '((600f0 . 300f0) (600f0 . 100f0) (800f0 . 100f0) (800f0 . 300f0)) 1f0)
+    (scene:add-picture list 9003 picture '((900f0 . 300f0) (1100f0 . 300f0) (1100f0 . 100f0) (900f0 . 100f0)) 0.5f0)
+    (let ((first (render-frame window renderer list))
+          (again (scene:make-draw-list)))
+      (scene:add-picture again 9001 nil '((100f0 . 300f0) (300f0 . 300f0) (300f0 . 100f0) (100f0 . 100f0)) 1f0)
+      (let* ((kept (render-frame window renderer again))
+             (wide (borba-cad/image:make-raster 40000 2))
+             (wide-list (scene:make-draw-list)))
+        (let ((pixels (borba-cad/image:raster-pixels wide)))
+          (dotimes (index (length pixels))
+            (setf (aref pixels index) (if (= 3 (mod index 4)) 255 200))))
+        (scene:add-picture wide-list 9004 wide '((100f0 . 600f0) (700f0 . 600f0) (700f0 . 500f0) (100f0 . 500f0)) 1f0)
+        (let ((reduced (render-frame window renderer wide-list)))
+          (list :upright-top-left (frame-pixel first 150 150)
+                :upright-top-right (frame-pixel first 250 150)
+                :upright-bottom-left (frame-pixel first 150 250)
+                :upright-bottom-right (frame-pixel first 250 250)
+                :outside (frame-pixel first 90 200)
+                :turned-top-left (frame-pixel first 650 150)
+                :turned-top-right (frame-pixel first 750 150)
+                :turned-bottom-left (frame-pixel first 650 250)
+                :turned-bottom-right (frame-pixel first 750 250)
+                :half-opaque (frame-pixel first 950 150)
+                :kept-top-left (frame-pixel kept 150 150)
+                :kept-bottom-right (frame-pixel kept 250 250)
+                :wide-inside (frame-pixel reduced 400 550)
+                :wide-outside (frame-pixel reduced 400 450)
+                :background (color-octets *test-background*)))))))
+
+(defun observe-underlay-frame (window
+                               renderer)
+  "Render a whole application frame of an empty drawing with a picture under it, as the program draws one that is
+opened, and count what the picture covers of the canvas.
+
+WINDOW: the SDL window.
+RENDERER: the renderer."
+  (let* ((application (app:make-app (base:default-config)
+                                    :width (float +test-window-width+ 1d0)
+                                    :height (float +test-window-height+ 1d0)))
+         (theme (app:app-theme application))
+         (path (namestring (asdf:system-relative-pathname "borba-cad" "tests/fixtures/images/png-rgb8.png"))))
+    (app:app-handle-event application (platform::resize-event-for window))
+    (let ((added (app:add-underlay-from-app application path)))
+      (app:app-render application)
+      (let* ((frame (render-frame window
+                                  renderer
+                                  (app:app-draw-list application)
+                                  :background (scene:theme-canvas-background theme)))
+             (canvas-background (color-octets (scene:theme-canvas-background theme)))
+             (underlay (first (dom:drawing-underlays (app:app-drawing application))))
+             (viewport (app:app-viewport application)))
+        (multiple-value-bind (left top)
+            (view:world->screen viewport
+                                (dom:underlay-x underlay)
+                                (+ (dom:underlay-y underlay) (dom:underlay-height underlay)))
+          (multiple-value-bind (right bottom)
+              (view:world->screen viewport
+                                  (+ (dom:underlay-x underlay) (dom:underlay-width underlay))
+                                  (dom:underlay-y underlay))
+            (list :added added
+                  :picture-runs (length (scene:draw-list-picture-runs (app:app-draw-list application)))
+                  :inside-ink (count-ink frame
+                                         (ceiling (+ left 4))
+                                         (ceiling (+ top 4))
+                                         (floor (- right 4))
+                                         (floor (- bottom 4))
+                                         canvas-background)
+                  :inside-area (* (- (floor (- right 4)) (ceiling (+ left 4)))
+                                  (- (floor (- bottom 4)) (ceiling (+ top 4))))
+                  :outside-ink (count-ink frame
+                                          (floor (- left 50))
+                                          (ceiling top)
+                                          (floor (- left 10))
+                                          (floor bottom)
+                                          canvas-background)
+                  :outside-area (* 40 (- (floor bottom) (ceiling top))))))))))
+
 (defun collect-observations ()
   "Open one window and take every observation of the renderer tests in it."
   (platform::call-with-gl-window
@@ -302,7 +411,9 @@ RENDERER: the renderer."
            :interface-text (observe-interface-text window renderer)
            :clipboard (observe-clipboard)
            :application (observe-application-frame window renderer)
-           :capture (observe-canvas-capture window renderer)))))
+           :capture (observe-canvas-capture window renderer)
+           :pictures (observe-pictures window renderer)
+           :underlay-frame (observe-underlay-frame window renderer)))))
 
 (defun observation (&rest path)
   "Return a value from the shared observations, taking them on first use.
@@ -424,3 +535,45 @@ PATH: keywords leading to the value, for example :shapes :background."
 (test the-picture-of-the-canvas-encodes-as-a-jpeg
   (when (display-or-skip)
     (is (> (observation :capture :jpeg-bytes) 500))))
+
+(test a-picture-is-drawn-upright-with-its-corners-where-they-were-given
+  (when (display-or-skip)
+    (is (same-color-p (observation :pictures :upright-top-left) '(255 0 0)))
+    (is (same-color-p (observation :pictures :upright-top-right) '(0 255 0)))
+    (is (same-color-p (observation :pictures :upright-bottom-left) '(0 0 255)))
+    (is (same-color-p (observation :pictures :upright-bottom-right) '(255 255 0)))
+    (is (same-color-p (observation :pictures :outside) (observation :pictures :background)))))
+
+(test a-picture-turns-with-its-corners
+  (when (display-or-skip)
+    (is (same-color-p (observation :pictures :turned-top-left) '(255 255 0)))
+    (is (same-color-p (observation :pictures :turned-top-right) '(0 255 0)))
+    (is (same-color-p (observation :pictures :turned-bottom-left) '(0 0 255)))
+    (is (same-color-p (observation :pictures :turned-bottom-right) '(255 0 0)))))
+
+(test a-picture-with-an-opacity-lets-what-is-behind-it-through
+  (when (display-or-skip)
+    (let ((background (observation :pictures :background))
+          (shown (observation :pictures :half-opaque)))
+      (is (same-color-p shown (mapcar (lambda (paint behind) (round (+ (* 0.5 paint) (* 0.5 behind))))
+                                      '(255 0 0)
+                                      background))))))
+
+(test a-picture-is-drawn-again-from-the-texture-the-renderer-kept
+  (when (display-or-skip)
+    (is (same-color-p (observation :pictures :kept-top-left) '(255 0 0)))
+    (is (same-color-p (observation :pictures :kept-bottom-right) '(255 255 0)))))
+
+(test a-picture-wider-than-a-texture-may-be-is-reduced-and-still-drawn
+  (when (display-or-skip)
+    (is (same-color-p (observation :pictures :wide-inside) '(200 200 200)))
+    (is (same-color-p (observation :pictures :wide-outside) (observation :pictures :background)))))
+
+(test a-picture-under-the-drawing-shows-on-the-canvas-of-the-application
+  (when (display-or-skip)
+    (is (observation :underlay-frame :added))
+    (is (= 1 (observation :underlay-frame :picture-runs)))
+    (is (> (observation :underlay-frame :inside-ink) (* 0.9 (observation :underlay-frame :inside-area)))
+        "the picture covers the rectangle it stands on")
+    (is (< (observation :underlay-frame :outside-ink) (* 0.1 (observation :underlay-frame :outside-area)))
+        "and nothing beside it")))

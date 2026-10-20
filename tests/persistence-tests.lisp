@@ -28,7 +28,7 @@
 (defparameter *golden-text*
   (format nil "~{~a~%~}"
           (list "(drawing"
-            " (format-version 8)"
+            " (format-version 9)"
             " (unit millimeter)"
             " (display-unit millimeter)"
             " (grid (spacing 100.0) (visible t) (snap t) (object-snap t))"
@@ -44,6 +44,8 @@
             " )"
             " (sheets"
             " )"
+            " (underlays"
+            " )"
             " (entities"
             "  (line (id 1) (layer 1) (x1 0.0) (y1 0.0) (x2 5000.0) (y2 0.0))"
             "  (rectangle (id 2) (layer 1) (min-x 100.0) (min-y 200.0) (width 3000.0) (height 2500.0))"
@@ -54,7 +56,7 @@
                          "  (dimension (id 6) (layer 0) (x1 0.0) (y1 0.0) (x2 1000.0) (y2 0.0) "
                          "(offset 500.0) (text-height 100.0) (unit meter) (precision 2))")
             " ))"))
-  "The exact text the writer must produce for GOLDEN-DRAWING (documents format version 8).")
+  "The exact text the writer must produce for GOLDEN-DRAWING (documents format version 9).")
 
 (defun replace-once (text old new)
   "Return TEXT with the single occurrence of OLD replaced by NEW; fails the test if OLD is not
@@ -236,7 +238,7 @@ fragment."
                       (replace-once *golden-text* "\"walls\"" "\"wa\\xlls\""))
   (signals-file-error (base:drawing-file-syntax-error :message "control characters")
                       (replace-once *golden-text* "\"walls\"" (format nil "\"wa~%lls\"")))
-  (signals-file-error (base:drawing-file-syntax-error :line 19 :message "unexpected character")
+  (signals-file-error (base:drawing-file-syntax-error :line 21 :message "unexpected character")
                       (replace-once *golden-text* "(x1 0.0) (y1 0.0) (x2 5000.0)" "(x1 #.(boom)) (y1 0.0) (x2 5000.0)"))
   (signals-file-error (base:drawing-file-syntax-error :message "unexpected content after")
                       (concatenate 'string *golden-text* "(drawing)")))
@@ -244,7 +246,7 @@ fragment."
 (test syntax-error-columns-are-one-based
   (signals-file-error (base:drawing-file-content-error :line 2 :column 2 :message "expected the field (format-version")
                       (format nil "(drawing~% (xyz ~%)"))
-  (signals-file-error (base:drawing-file-content-error :line 19 :column 4 :message "unknown entity type")
+  (signals-file-error (base:drawing-file-content-error :line 21 :column 4 :message "unknown entity type")
                       (replace-once *golden-text* "(line (id 1)" "(lyne (id 1)")))
 
 (test reader-limits-bound-nesting-token-length-and-exponents
@@ -264,11 +266,11 @@ fragment."
 
 (test version-errors-are-distinct-and-explicit
   (signals-file-error (base:drawing-file-version-error :line 2 :message "newer")
-                      (replace-once *golden-text* "(format-version 8)" "(format-version 9)"))
+                      (replace-once *golden-text* "(format-version 9)" "(format-version 10)"))
   (signals-file-error (base:drawing-file-version-error :message "not supported")
-                      (replace-once *golden-text* "(format-version 8)" "(format-version 0)"))
+                      (replace-once *golden-text* "(format-version 9)" "(format-version 0)"))
   (signals-file-error (base:drawing-file-content-error :message "whole number")
-                      (replace-once *golden-text* "(format-version 8)" "(format-version 8.0)")))
+                      (replace-once *golden-text* "(format-version 9)" "(format-version 9.0)")))
 
 (test header-fields-are-required-ordered-and-validated
   (signals-file-error (base:drawing-file-content-error :message "expected the field (unit")
@@ -308,37 +310,37 @@ fragment."
   (layer (id 1)")))
 
 (test entity-field-errors-name-the-offender
-  (signals-file-error (base:drawing-file-content-error :line 19 :message "unknown field \"z1\"")
+  (signals-file-error (base:drawing-file-content-error :line 21 :message "unknown field \"z1\"")
                       (replace-once *golden-text*
                                     "(line (id 1) (layer 1) (x1 0.0) (y1 0.0)"
                                     "(line (id 1) (layer 1) (x1 0.0) (z1 0.0)"))
-  (signals-file-error (base:drawing-file-content-error :line 19 :message "appears twice")
+  (signals-file-error (base:drawing-file-content-error :line 21 :message "appears twice")
                       (replace-once *golden-text*
                                     "(line (id 1) (layer 1) (x1 0.0) (y1 0.0)"
                                     "(line (id 1) (layer 1) (x1 0.0) (x1 0.0)"))
-  (signals-file-error (base:drawing-file-content-error :line 19 :message "missing field \"y2\"")
+  (signals-file-error (base:drawing-file-content-error :line 21 :message "missing field \"y2\"")
                       (replace-once *golden-text* " (y2 0.0))
   (rectangle" ")
   (rectangle"))
-  (signals-file-error (base:drawing-file-content-error :line 19 :message "expected a number")
+  (signals-file-error (base:drawing-file-content-error :line 21 :message "expected a number")
                       (replace-once *golden-text* "(line (id 1) (layer 1) (x1 0.0)" "(line (id 1) (layer 1) (x1 nan)"))
-  (signals-file-error (base:drawing-file-content-error :line 19 :message "expected a number")
+  (signals-file-error (base:drawing-file-content-error :line 21 :message "expected a number")
                       (replace-once *golden-text*
                                     "(line (id 1) (layer 1) (x1 0.0)"
                                     "(line (id 1) (layer 1) (x1 \"0\")"))
-  (signals-file-error (base:drawing-file-content-error :line 19 :message "exactly one value")
+  (signals-file-error (base:drawing-file-content-error :line 21 :message "exactly one value")
                       (replace-once *golden-text*
                                     "(line (id 1) (layer 1) (x1 0.0)"
                                     "(line (id 1) (layer 1) (x1 0.0 1.0)"))
-  (signals-file-error (base:drawing-file-content-error :line 19 :message "expected a field")
+  (signals-file-error (base:drawing-file-content-error :line 21 :message "expected a field")
                       (replace-once *golden-text* "(line (id 1) (layer 1) (x1 0.0)" "(line (id 1) (layer 1) x1"))
-  (signals-file-error (base:drawing-file-content-error :line 22 :message "expected t or nil")
+  (signals-file-error (base:drawing-file-content-error :line 24 :message "expected t or nil")
                       (replace-once *golden-text* "(closed nil)" "(closed maybe)"))
-  (signals-file-error (base:drawing-file-content-error :line 23 :message "expected a quoted string")
+  (signals-file-error (base:drawing-file-content-error :line 25 :message "expected a quoted string")
                       (replace-once *golden-text* "(string \"Hi \\\"you\\\"\")" "(string hello)"))
-  (signals-file-error (base:drawing-file-content-error :line 24 :message "unknown unit")
+  (signals-file-error (base:drawing-file-content-error :line 26 :message "unknown unit")
                       (replace-once *golden-text* "(unit meter)" "(unit parsec)"))
-  (signals-file-error (base:drawing-file-content-error :line 24 :message "whole number")
+  (signals-file-error (base:drawing-file-content-error :line 26 :message "whole number")
                       (replace-once *golden-text* "(precision 2)" "(precision 2.5)")))
 
 (test entity-structure-errors
@@ -346,35 +348,35 @@ fragment."
                       (replace-once *golden-text* "  (circle (id 3)" "  42 (circle (id 3)"))
   (signals-file-error (base:drawing-file-content-error :message "unknown entity type \"spline\"")
                       (replace-once *golden-text* "(circle (id 3)" "(spline (id 3)"))
-  (signals-file-error (base:drawing-file-content-error :line 20 :message "entity id 1 appears twice")
+  (signals-file-error (base:drawing-file-content-error :line 22 :message "entity id 1 appears twice")
                       (replace-once *golden-text* "(rectangle (id 2)" "(rectangle (id 1)"))
-  (signals-file-error (base:drawing-file-content-error :line 21 :message "missing layer 9")
+  (signals-file-error (base:drawing-file-content-error :line 23 :message "missing layer 9")
                       (replace-once *golden-text* "(circle (id 3) (layer 0)" "(circle (id 3) (layer 9)"))
-  (signals-file-error (base:drawing-file-content-error :line 24 :message "not below next-entity-id")
+  (signals-file-error (base:drawing-file-content-error :line 26 :message "not below next-entity-id")
                       (replace-once *golden-text* "(next-entity-id 7)" "(next-entity-id 6)"))
   (signals-file-error (base:drawing-file-content-error :message "outside the allowed range")
                       (replace-once *golden-text* "(id 1) (layer 1) (x1" "(id 0) (layer 1) (x1")))
 
 (test invariant-violations-are-reported-with-the-entity-position
-  (signals-file-error (base:drawing-file-content-error :line 19 :column 3 :message "Invalid line")
+  (signals-file-error (base:drawing-file-content-error :line 21 :column 3 :message "Invalid line")
                       (replace-once *golden-text* "(x2 5000.0) (y2 0.0)" "(x2 0.0) (y2 0.0)"))
-  (signals-file-error (base:drawing-file-content-error :line 20 :message "Invalid rectangle")
+  (signals-file-error (base:drawing-file-content-error :line 22 :message "Invalid rectangle")
                       (replace-once *golden-text* "(width 3000.0)" "(width 0.0)"))
-  (signals-file-error (base:drawing-file-content-error :line 21 :message "Invalid circle")
+  (signals-file-error (base:drawing-file-content-error :line 23 :message "Invalid circle")
                       (replace-once *golden-text* "(radius 250.0)" "(radius -5.0)"))
-  (signals-file-error (base:drawing-file-content-error :line 22 :message "Invalid polyline")
+  (signals-file-error (base:drawing-file-content-error :line 24 :message "Invalid polyline")
                       (replace-once *golden-text*
                                     "(vertices 0.0 0.0 100.0 0.0 100.0 100.0)"
                                     "(vertices 0.0 0.0 0.0 0.0)"))
-  (signals-file-error (base:drawing-file-content-error :line 22 :message "pairs")
+  (signals-file-error (base:drawing-file-content-error :line 24 :message "pairs")
                       (replace-once *golden-text*
                                     "(vertices 0.0 0.0 100.0 0.0 100.0 100.0)"
                                     "(vertices 0.0 0.0 100.0)"))
-  (signals-file-error (base:drawing-file-content-error :line 23 :message "Invalid text")
+  (signals-file-error (base:drawing-file-content-error :line 25 :message "Invalid text")
                       (replace-once *golden-text* "(string \"Hi \\\"you\\\"\")" "(string \"\")"))
-  (signals-file-error (base:drawing-file-content-error :line 24 :message "Invalid dimension")
+  (signals-file-error (base:drawing-file-content-error :line 26 :message "Invalid dimension")
                       (replace-once *golden-text* "(precision 2)" "(precision 99)"))
-  (signals-file-error (base:drawing-file-content-error :line 19 :message "Invalid line")
+  (signals-file-error (base:drawing-file-content-error :line 21 :message "Invalid line")
                       (replace-once *golden-text* "(x2 5000.0)" "(x2 5.0e8)")))
 
 ;;; Robustness
@@ -512,4 +514,4 @@ fragment."
       (handler-case (progn (persist:load-drawing path) (fail "expected an error"))
         (base:drawing-file-content-error (condition)
           (is (search "bad.bcad" (princ-to-string condition)))
-          (is (= 21 (base:drawing-file-error-line condition))))))))
+          (is (= 23 (base:drawing-file-error-line condition))))))))

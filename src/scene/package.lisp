@@ -61,6 +61,11 @@ viewport and the interaction state into a draw list.")
    #:draw-list-vertex-count
    #:draw-list-commands
    #:draw-list-text-runs
+   #:draw-list-picture-runs
+   #:picture-run
+   #:picture-run-key
+   #:picture-run-raster
+   #:add-picture
    #:draw-list-white-u
    #:draw-list-white-v
    #:draw-command

@@ -285,6 +285,7 @@ TEXT: a name or a path."
     (:image (image-file-path text))
     (:pdf (pdf-file-path text))
     (:svg (svg-file-path text))
+    (:underlay (underlay-file-path text))
     (:quantities (csv-file-path text))
     (:sheets (pdf-file-path text))))
 
@@ -302,6 +303,7 @@ PATH-TEXT: the file name."
     (:dxf (import-dxf-into-app app path-text))
     (:script (run-script-file-in-app app path-text))
     (:shape (import-shape-into-app app path-text))
+    (:underlay (add-underlay-from-app app path-text))
     ((:image :pdf :svg :recording :quantities :sheets) nil)))
 
 (defun save-dialog-file (app
@@ -318,7 +320,7 @@ PATH-TEXT: the file name."
     (:dxf (export-dxf-from-app app path-text))
     (:script (export-script-from-app app path-text))
     (:recording (save-recording-from-app app path-text))
-    (:shape nil)
+    ((:shape :underlay) nil)
     (:image (export-image-from-app app path-text))
     (:pdf (export-pdf-from-app app path-text))
     (:svg (export-svg-from-app app path-text))

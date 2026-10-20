@@ -71,3 +71,14 @@ APP: the application."
                     :save
                     nil
                     :image))
+
+(defparameter *underlay-extensions* (list "png" "jpg" "jpeg" "pdf")
+  "The extensions of the files an underlay may be made from.")
+
+(defun underlay-file-path (text)
+  "Return the pathname of the picture that TEXT names, with the extension of a picture added when it has none.
+
+TEXT: a file name as typed by the user."
+  (persist:file-path-with-extension text
+                                    (first *underlay-extensions*)
+                                    *underlay-extensions*))

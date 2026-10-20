@@ -37,7 +37,8 @@ visibly at the edge.")
                                                              window-crossing
                                                              grips
                                                              hot-grip
-                                                             snap)))
+                                                             snap
+                                                             underlays)))
   "The interaction state that decorates the drawing.
 
 SELECTED-IDS: hash table of selected entity ids, or NIL.
@@ -47,8 +48,9 @@ WINDOW: world bounds of a window-selection rectangle, or NIL.
 WINDOW-CROSSING: true when that rectangle is a crossing selection, drawn dashed and in another color.
 GRIPS: the grips of the selected entity, drawn as handles.
 HOT-GRIP: the one of them the pointer is on, drawn filled.
-SNAP: (x y kind) in world coordinates of the snap marker, or NIL."
-  selected-ids translation preview-entities window window-crossing grips hot-grip snap)
+SNAP: (x y kind) in world coordinates of the snap marker, or NIL.
+UNDERLAYS: the pictures under the drawing that show, as a list of (underlay key raster), the lowest first."
+  selected-ids translation preview-entities window window-crossing grips hot-grip snap underlays)
 
 (defstruct (scene-result (:constructor make-scene-result (drawn-entities
                                                           culled-entities)))
@@ -684,6 +686,40 @@ STATE: the scene state."
                    (theme-preview theme)))
     (make-scene-result drawn culled)))
 
+(defconstant +picture-culling-margin-pixels+ 8d0
+  "How far past the canvas the corners of a picture may be before the picture, which is then wholly outside, is left
+out.")
+
+(defun add-underlays (list
+                      viewport
+                      underlays)
+  "Emit the pictures under the drawing, the lowest first, each as a quadrilateral the renderer fills.
+
+LIST: the draw list.
+VIEWPORT: the viewport.
+UNDERLAYS: a list of (underlay key raster), where the key tells the pixels from others and stays while they do."
+  (let ((left (view:viewport-origin-x viewport))
+        (top (view:viewport-origin-y viewport)))
+    (loop for (underlay key raster) in underlays
+          do (let ((corners (loop for (x . y) in (dom:underlay-corners underlay)
+                                  collect (multiple-value-bind (screen-x screen-y)
+                                              (view:world->screen viewport
+                                                                  x
+                                                                  y)
+                                            (cons screen-x screen-y)))))
+               (unless (or (< (reduce #'max corners :key #'car) (- left +picture-culling-margin-pixels+))
+                           (> (reduce #'min corners :key #'car)
+                              (+ left (view:viewport-width viewport) +picture-culling-margin-pixels+))
+                           (< (reduce #'max corners :key #'cdr) (- top +picture-culling-margin-pixels+))
+                           (> (reduce #'min corners :key #'cdr)
+                              (+ top (view:viewport-height viewport) +picture-culling-margin-pixels+)))
+                 (add-picture list
+                              key
+                              raster
+                              (loop for (x . y) in corners
+                                    collect (cons (to-single x) (to-single y)))
+                              (to-single (dom:underlay-opacity underlay))))))))
+
 (defun add-grid (list
                  drawing
                  viewport
@@ -948,6 +984,9 @@ THEME: the theme."
                             viewport
                             clip
                             theme)))
+    (add-underlays list
+                   viewport
+                   (scene-state-underlays state))
     (add-grid list
               drawing
               viewport

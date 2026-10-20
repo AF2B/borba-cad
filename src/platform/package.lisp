@@ -5,6 +5,7 @@
                     (#:sbcl #:borba-cad/sbcl-support)
                     (#:geo #:borba-cad/geometry)
                     (#:dom #:borba-cad/domain)
+                    (#:image #:borba-cad/image)
                     (#:view #:borba-cad/viewport)
                     (#:obs #:borba-cad/observability)
                     (#:scene #:borba-cad/scene)

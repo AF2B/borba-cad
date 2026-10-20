@@ -249,7 +249,7 @@ NAME: the name of the block."
   (with-customizations
     (let* ((drawing (drawing-with-a-grille))
            (text (persist:drawing-to-string drawing)))
-      (is (search "(format-version 8)" text))
+      (is (search (format nil "(format-version ~d)" persist:+supported-format-version+) text))
       (is (search (format nil "  (block (name \"grade(1000, 600, 100)\")~%   (generator \"grade\" ~
                                (arg \"largura\" 1000.0) (arg \"altura\" 600.0) (arg \"passo\" 100.0))~%   (entities")
                   text))
@@ -312,7 +312,7 @@ NAME: the name of the block."
 (test a-file-of-version-seven-cannot-have-a-generator-in-a-block
   (with-customizations
     (let ((text (replace-once (persist:drawing-to-string (drawing-with-a-grille))
-                              "(format-version 8)"
+                              (format nil "(format-version ~d)" persist:+supported-format-version+)
                               "(format-version 7)")))
       (handler-case (progn (persist:parse-drawing-text text)
                            (fail "a generator in a version 7 file was accepted"))

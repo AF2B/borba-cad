@@ -17,8 +17,8 @@
 (defconstant +measure-minimum-contour-points+ 3
   "Corners a contour needs to enclose an area.")
 
-(defparameter *measure-tool-kinds* '(:measure-distance :measure-angle :measure-area)
-  "The tools that measure, which the Measure button opens.")
+(defparameter *measure-tool-kinds* '(:measure-distance :measure-angle :measure-area :calibrate)
+  "The tools that measure, which the Measure button opens, and the one that calibrates an underlay by measuring.")
 
 (defun measure-tool-kind-p (kind)
   "Return true when KIND is a tool that measures.
@@ -578,7 +578,7 @@ POINTS: the corners, as (x . y) conses."
 and are translated where the menu is built.")
 
 (defparameter *measure-button-icons*
-  '((:measure-distance . :ruler) (:measure-angle . :angle) (:measure-area . :area))
+  '((:measure-distance . :ruler) (:measure-angle . :angle) (:measure-area . :area) (:calibrate . :ruler))
   "The icon the Measure button wears while each measuring tool is active.")
 
 (defparameter *measure-shortcuts* '((:a . :measure-angle) (:q . :measure-area) (:l . :quantities))

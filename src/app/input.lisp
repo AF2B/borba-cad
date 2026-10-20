@@ -427,6 +427,7 @@ MODIFIERS: modifier keys held."
       (:o (operation-open app) t)
       (:i (when shift (operation-import-dxf app)) t)
       (:e (when shift (operation-export-dxf app)) t)
+      (:u (when shift (operation-add-underlay app)) t)
       (:n (operation-new app) t)
       (:q (operation-quit app) t)
       (:k (operation-command-palette app) t)

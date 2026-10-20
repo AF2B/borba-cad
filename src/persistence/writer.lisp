@@ -156,6 +156,40 @@ STREAM: output stream."
     (write-viewport viewport stream))
   (format stream "   ))~%"))
 
+(defconstant +underlay-data-line-length+ 1024
+  "Characters of the Base64 text of a picture on one line of the file, so that the file stays one an editor can open.")
+
+(defun write-underlay (underlay
+                       stream)
+  "Write one underlay: where it stands, then the file of its picture as lines of Base64 text.
+
+UNDERLAY: the underlay.
+STREAM: output stream."
+  (format stream "  (underlay (id ~d) (name " (dom:underlay-id underlay))
+  (write-quoted-string (dom:underlay-name underlay) stream)
+  (format stream ") (kind ~(~a~)) (page ~d) (dpi ~a)~%"
+          (dom:underlay-kind underlay)
+          (dom:underlay-page underlay)
+          (if (dom:underlay-dpi underlay)
+              (format-double (dom:underlay-dpi underlay))
+              "auto"))
+  (format stream "   (size ~d ~d) (position ~a ~a) (rotation ~a) (scale ~a) (opacity ~a) (visible ~a)~%"
+          (dom:underlay-pixel-width underlay)
+          (dom:underlay-pixel-height underlay)
+          (format-double (dom:underlay-x underlay))
+          (format-double (dom:underlay-y underlay))
+          (format-double (dom:underlay-rotation underlay))
+          (format-double (dom:underlay-scale underlay))
+          (format-double (dom:underlay-opacity underlay))
+          (if (dom:underlay-visible underlay) "t" "nil"))
+  (format stream "   (data")
+  (let ((text (base:base64-encode (dom:underlay-data underlay))))
+    (loop for start from 0 below (length text) by +underlay-data-line-length+
+          do (format stream "~%    \"")
+             (write-string text stream :start start :end (min (length text) (+ start +underlay-data-line-length+)))
+             (write-char #\" stream)))
+  (format stream "))~%"))
+
 (defun blocks-to-write (drawing)
   "Return the blocks that the file keeps, sorted by name: the blocks that were drawn by hand, and the blocks that a
 generator drew only when something places them, with the blocks that placements hold even if the drawing has lost them
@@ -213,6 +247,10 @@ STREAM: character output stream; UTF-8 is expected."
   (format stream " (sheets~%")
   (dolist (sheet (dom:drawing-sheets drawing))
     (write-sheet sheet stream))
+  (format stream " )~%")
+  (format stream " (underlays~%")
+  (dolist (underlay (dom:drawing-underlays drawing))
+    (write-underlay underlay stream))
   (format stream " )~%")
   (format stream " (entities~%")
   (dom:map-entities (lambda (entity) (write-entity entity stream))

@@ -278,6 +278,50 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:add-viewport
    #:replace-viewport
    #:remove-viewport
+   #:underlay
+   #:underlay-p
+   #:make-underlay
+   #:underlay-id
+   #:underlay-name
+   #:underlay-kind
+   #:underlay-data
+   #:underlay-page
+   #:underlay-dpi
+   #:underlay-pixel-width
+   #:underlay-pixel-height
+   #:underlay-x
+   #:underlay-y
+   #:underlay-rotation
+   #:underlay-scale
+   #:underlay-opacity
+   #:underlay-visible
+   #:underlay-with
+   #:underlay-with-picture
+   #:underlay-width
+   #:underlay-height
+   #:underlay-world-point
+   #:underlay-picture-point
+   #:underlay-corners
+   #:underlay-bounds
+   #:underlays-bounds
+   #:calibrated-underlay
+   #:*underlay-kinds*
+   #:*calibration-alignments*
+   #:+maximum-underlays+
+   #:+maximum-underlay-bytes+
+   #:+maximum-underlay-page+
+   #:+maximum-underlay-side+
+   #:+maximum-underlay-scale+
+   #:+minimum-underlay-scale+
+   #:drawing-underlays
+   #:drawing-next-underlay-id
+   #:underlay-count
+   #:find-underlay
+   #:underlays-total-bytes
+   #:set-underlays
+   #:add-underlay
+   #:replace-underlay
+   #:remove-underlay
    #:quantity-report
    #:quantity-report-kind
    #:quantity-report-columns

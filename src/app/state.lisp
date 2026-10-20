@@ -198,6 +198,8 @@ SPREAD-DISTANCE: the distance, in millimetres, the spread tool moves each piece 
 FORM-SETTINGS: what was chosen or typed in the forms that were last accepted, as an alist of the key of each line and
 its value.
 SHEET-VIEW: the state of looking at the sheets, a LAYOUT-STATE, or NIL while the drawing is shown.
+PICTURES: the pictures of the underlays that were read, by the number of the underlay.
+PICTURE-COUNTER: the number the next picture that is read is given, which tells the renderer its pixels are new.
 QUANTITY-EXPORT: the report of quantities that is to be written as a CSV file and how, as a cons of the report and
 :standard or :excel, or NIL.
 CUSTOMIZATIONS: the commands, key bindings and hooks that the init file and the console defined.
@@ -266,6 +268,8 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   (spread-distance +default-spread-distance+ :type double-float)
   (form-settings '() :type list)
   sheet-view
+  (pictures (make-hash-table) :type hash-table)
+  (picture-counter 0 :type fixnum)
   quantity-export
   (customizations (script:make-customizations))
   (recorded-commands '() :type list)

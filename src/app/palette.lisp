@@ -86,6 +86,11 @@ GROUP: the name of the menu, translated."
         (list (i18n:mark "View") (i18n:mark "Make the interface smaller") "Ctrl+-" 'operation-interface-zoom-out)
         (list (i18n:mark "View") (i18n:mark "Reset the size of the interface") "Ctrl+0"
               'operation-interface-zoom-reset)
+        (list (i18n:mark "Underlay") (i18n:mark "Add a picture or a PDF under the drawing...") "Ctrl+Shift+U"
+              'operation-add-underlay)
+        (list (i18n:mark "Underlay") (i18n:mark "Calibrate an underlay") nil 'operation-calibrate-underlay)
+        (list (i18n:mark "Underlay") (i18n:mark "Manage the underlays...") nil 'operation-underlays)
+        (list (i18n:mark "Underlay") (i18n:mark "Show or hide the underlays") nil 'operation-toggle-underlays)
         (list (i18n:mark "Layout") (i18n:mark "Show or leave the sheets") "Ctrl+L" 'operation-toggle-layout)
         (list (i18n:mark "Layout") (i18n:mark "Export the sheets as PDF...") nil 'operation-export-sheets)
         (list (i18n:mark "Settings") (i18n:mark "Run the init file again") nil 'operation-reload-init))

@@ -45,7 +45,8 @@ ALPHA: opacity in [0, 1]."
                                                           count)))
   "A run of primitives of one kind.
 
-KIND: :lines (vertex pairs), :triangles (vertex triples) or :text (text runs).
+KIND: :lines (vertex pairs), :triangles (vertex triples), :text (text runs) or :picture (a picture, as the six
+vertices of its two triangles, the next of the picture runs).
 START: first vertex, or first text run for :text.
 COUNT: number of vertices, or of text runs for :text."
   (kind :lines :type keyword :read-only t)
@@ -77,6 +78,16 @@ the proportional faces of the user interface, whose widths the renderer measures
   (color nil :type (or null rgba) :read-only t)
   (font :mono :type keyword :read-only t))
 
+(defstruct (picture-run (:constructor make-picture-run (key
+                                                        raster)))
+  "A picture to draw: which one, and its pixels for a renderer that does not have them yet. The corners are the
+vertices of the :picture command that stands for it.
+
+KEY: a number that tells the picture from the others, the same for as long as its pixels are the same.
+RASTER: the pixels of the picture, as the image module reads them."
+  (key 0 :type fixnum :read-only t)
+  (raster nil :read-only t))
+
 (defstruct (draw-list (:constructor %make-draw-list))
   "Everything a renderer needs for one frame.
 
@@ -84,6 +95,7 @@ VERTICES: x y u v r g b a for every vertex; only the first VERTEX-COUNT are mean
 VERTEX-COUNT: vertices written so far.
 COMMANDS: draw commands in painter's order.
 TEXT-RUNS: text runs referenced by :text commands.
+PICTURE-RUNS: the pictures of the :picture commands, in the order of the commands.
 WHITE-U: u of a fully opaque white texel, set by the renderer's texture atlas.
 WHITE-V: v of that texel."
   (vertices (make-array (* +initial-vertex-capacity+ +floats-per-vertex+) :element-type 'single-float)
@@ -91,6 +103,7 @@ WHITE-V: v of that texel."
   (vertex-count 0 :type fixnum)
   (commands (make-array 64 :adjustable t :fill-pointer 0) :type (and vector (not simple-array)))
   (text-runs (make-array 64 :adjustable t :fill-pointer 0) :type (and vector (not simple-array)))
+  (picture-runs (make-array 4 :adjustable t :fill-pointer 0) :type (and vector (not simple-array)))
   (white-u 0f0 :type single-float)
   (white-v 0f0 :type single-float))
 
@@ -104,7 +117,8 @@ WHITE-V: v of that texel."
 LIST: a draw list."
   (setf (draw-list-vertex-count list) 0
         (fill-pointer (draw-list-commands list)) 0
-        (fill-pointer (draw-list-text-runs list)) 0)
+        (fill-pointer (draw-list-text-runs list)) 0
+        (fill-pointer (draw-list-picture-runs list)) 0)
   list)
 
 (defun ensure-vertex-room (list
@@ -359,3 +373,53 @@ LIST: a draw list."
   (loop for command across (draw-list-commands list)
         when (eq (draw-command-kind command) :triangles)
           sum (floor (draw-command-count command) 3)))
+
+(defun add-picture (list
+                    key
+                    raster
+                    corners
+                    opacity)
+  "Append a picture: a quadrilateral, in pixels, that the renderer fills with the pixels of a raster.
+
+LIST: a draw list.
+KEY: the number that tells the picture from the others, the same for as long as its pixels are.
+RASTER: the pixels, as the image module reads them.
+CORNERS: four (x . y) points in pixels: the lower left corner of the picture, then the lower right, the upper right
+and the upper left.
+OPACITY: from 0 to 1."
+  (destructuring-bind ((lower-left-x . lower-left-y)
+                       (lower-right-x . lower-right-y)
+                       (upper-right-x . upper-right-y)
+                       (upper-left-x . upper-left-y))
+      corners
+    (let ((color (make-rgba 1f0
+                            1f0
+                            1f0
+                            opacity))
+          (first (draw-list-vertex-count list)))
+      (ensure-vertex-room list 6)
+      (flet ((vertex (x
+                      y
+                      u
+                      v)
+               (let ((array (draw-list-vertices list))
+                     (base (* (draw-list-vertex-count list) +floats-per-vertex+)))
+                 (setf (aref array base) x
+                       (aref array (+ base 1)) y
+                       (aref array (+ base 2)) u
+                       (aref array (+ base 3)) v
+                       (aref array (+ base 4)) (rgba-r color)
+                       (aref array (+ base 5)) (rgba-g color)
+                       (aref array (+ base 6)) (rgba-b color)
+                       (aref array (+ base 7)) (rgba-a color))
+                 (incf (draw-list-vertex-count list)))))
+        (vertex lower-left-x lower-left-y 0f0 1f0)
+        (vertex lower-right-x lower-right-y 1f0 1f0)
+        (vertex upper-right-x upper-right-y 1f0 0f0)
+        (vertex lower-left-x lower-left-y 0f0 1f0)
+        (vertex upper-right-x upper-right-y 1f0 0f0)
+        (vertex upper-left-x upper-left-y 0f0 0f0))
+      (vector-push-extend (make-picture-run key raster) (draw-list-picture-runs list))
+      (vector-push-extend (make-draw-command :picture
+                                             first
+                                             6) (draw-list-commands list)))))

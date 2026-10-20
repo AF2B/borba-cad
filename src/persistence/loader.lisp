@@ -602,6 +602,113 @@ DRAWING: the drawing being built."
                             (lambda ()
                               (dom:set-sheets drawing (mapcar #'parse-sheet (rest (node-value node)))))))
 
+(defparameter *underlay-field-names*
+  '("id" "name" "kind" "page" "dpi" "size" "position" "rotation" "scale" "opacity" "visible" "data")
+  "The fields of an underlay, all of which it has.")
+
+(defun underlay-data-bytes (node)
+  "Return the bytes that the (data \"...\" ...) field of an underlay holds as Base64 text.
+
+NODE: the data field."
+  (let ((text (with-output-to-string (stream)
+                (dolist (line (rest (node-value node)))
+                  (write-string (node-string line) stream)))))
+    (or (base:base64-decode text)
+        (content-failure node "the picture is not valid Base64 text"))))
+
+(defun parse-underlay (node)
+  "Interpret one (underlay (id ...) (name ...) ...) element.
+
+NODE: the underlay element."
+  (unless (equal "underlay" (head-name node))
+    (content-failure node "expected an underlay such as (underlay (id 1) ...)"))
+  (let ((fields (make-hash-table :test #'equal)))
+    (dolist (child (rest (node-value node)))
+      (let ((head (head-name child)))
+        (unless (member head *underlay-field-names* :test #'equal)
+          (content-failure child
+                           "unknown field in an underlay; expected ~{~a~^, ~}"
+                           *underlay-field-names*))
+        (when (gethash head fields)
+          (content-failure child
+                           "the field ~a appears twice in the underlay"
+                           head))
+        (setf (gethash head fields) child)))
+    (dolist (name *underlay-field-names*)
+      (unless (gethash name fields)
+        (content-failure node
+                         "an underlay has the fields ~{~a~^, ~}; ~a is missing"
+                         *underlay-field-names*
+                         name)))
+    (flet ((values-of (name)
+             (rest (node-value (gethash name fields))))
+           (field (name)
+             (gethash name fields)))
+      (let* ((kind-node (single-value (values-of "kind") (field "kind")))
+             (kind (or (and (eq (node-kind kind-node) :word)
+                            (find (node-value kind-node) dom:*underlay-kinds*
+                                  :key #'string-downcase
+                                  :test #'string=))
+                       (content-failure kind-node
+                                        "unknown kind of underlay; use one of ~{~(~a~)~^, ~}"
+                                        dom:*underlay-kinds*)))
+             (dpi-node (single-value (values-of "dpi") (field "dpi")))
+             (size (values-of "size"))
+             (position (values-of "position")))
+        (unless (= 2 (length size))
+          (content-failure (field "size") "the size is two whole numbers: width and height"))
+        (unless (= 2 (length position))
+          (content-failure (field "position") "the position is two numbers: x and y"))
+        (let ((id (node-integer (single-value (values-of "id") (field "id"))
+                                0
+                                +maximum-identifier+))
+              (name (node-string (single-value (values-of "name") (field "name"))))
+              (page (node-integer (single-value (values-of "page") (field "page"))
+                                  1
+                                  dom:+maximum-underlay-page+))
+              (dpi (if (and (eq (node-kind dpi-node) :word) (string= (node-value dpi-node) "auto"))
+                       nil
+                       (node-number dpi-node)))
+              (pixel-width (node-integer (first size)
+                                         1
+                                         dom:+maximum-underlay-side+))
+              (pixel-height (node-integer (second size)
+                                          1
+                                          dom:+maximum-underlay-side+))
+              (x (node-number (first position)))
+              (y (node-number (second position)))
+              (rotation (node-number (single-value (values-of "rotation") (field "rotation"))))
+              (scale (node-number (single-value (values-of "scale") (field "scale"))))
+              (opacity (node-number (single-value (values-of "opacity") (field "opacity"))))
+              (visible (node-boolean (single-value (values-of "visible") (field "visible"))))
+              (data (underlay-data-bytes (field "data"))))
+          (call-with-content-errors node
+                                    (lambda ()
+                                      (dom:make-underlay :id id
+                                                         :name name
+                                                         :kind kind
+                                                         :data data
+                                                         :page page
+                                                         :dpi dpi
+                                                         :pixel-width pixel-width
+                                                         :pixel-height pixel-height
+                                                         :x x
+                                                         :y y
+                                                         :rotation rotation
+                                                         :scale scale
+                                                         :opacity opacity
+                                                         :visible visible))))))))
+
+(defun parse-underlays (node
+                        drawing)
+  "Read every underlay of the (underlays ...) element into the drawing.
+
+NODE: the underlays element.
+DRAWING: the drawing being built."
+  (call-with-content-errors node
+                            (lambda ()
+                              (dom:set-underlays drawing (mapcar #'parse-underlay (rest (node-value node)))))))
+
 (defun read-entities-section (source
                               drawing
                               next-entity-id)
@@ -703,6 +810,8 @@ SOURCE: the source."
         (parse-blocks (expect-field source "blocks") drawing))
       (when (>= *format-version* 7)
         (parse-sheets (expect-field source "sheets") drawing))
+      (when (>= *format-version* 9)
+        (parse-underlays (expect-field source "underlays") drawing))
       (let ((entities (read-entities-section source
                                              drawing
                                              next-entity-id)))

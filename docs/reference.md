@@ -13,7 +13,7 @@ The zooms of the interface that the keys step through, in percent: 100 is the in
 
 ### `*measure-tool-kinds*` (variable)
 
-The tools that measure, which the Measure button opens.
+The tools that measure, which the Measure button opens, and the one that calibrates an underlay by measuring.
 
 ### `*modify-tool-kinds*` (variable)
 
@@ -23,6 +23,10 @@ need a selection, and the ones that work on what is clicked.
 ### `*selection-tool-kinds*` (variable)
 
 The tools that change what is selected as a whole, and so need a selection.
+
+### `*underlay-extensions*` (variable)
+
+The extensions of the files an underlay may be made from.
 
 ### `+autosave-interval-nanoseconds+` (constant)
 
@@ -70,6 +74,18 @@ How close, in pixels, the pointer must be to an endpoint or center for object sn
 
 Zoom factor of one mouse-wheel notch.
 
+### `add-underlay-from-app` (function)
+
+```lisp
+(add-underlay-from-app app path-text)
+```
+
+Read the picture or PDF at PATH-TEXT and put it under the drawing. On failure the drawing is untouched and the
+reason is shown. Returns true on success, or when the question about a PDF was asked.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
+
 ### `app` (type)
 
 The whole application state.
@@ -106,6 +122,8 @@ NIL when it selects only what it holds (dragged from left to right).
 - `FORM-SETTINGS`: what was chosen or typed in the forms that were last accepted, as an alist of the key of each line and
 its value.
 - `SHEET-VIEW`: the state of looking at the sheets, a LAYOUT-STATE, or NIL while the drawing is shown.
+- `PICTURES`: the pictures of the underlays that were read, by the number of the underlay.
+- `PICTURE-COUNTER`: the number the next picture that is read is given, which tells the renderer its pixels are new.
 - `QUANTITY-EXPORT`: the report of quantities that is to be written as a CSV file and how, as a cons of the report and
 :standard or :excel, or NIL.
 - `CUSTOMIZATIONS`: the commands, key bindings and hooks that the init file and the console defined.
@@ -413,6 +431,14 @@ Return the regions of the window as they are now: the console takes its strip fr
 
 (undocumented)
 
+### `app-pictures` (function)
+
+```lisp
+(app-pictures instance)
+```
+
+(undocumented)
+
 ### `app-plot-settings` (function)
 
 ```lisp
@@ -678,6 +704,20 @@ uses this same interaction so that their frame costs are comparable.
 - `APP`: the application.
 - `FRAME`: frame number, which selects the zoom direction.
 
+### `apply-underlay-settings` (function)
+
+```lisp
+(apply-underlay-settings app underlay values original)
+```
+
+Give an underlay the settings that a form holds. Returns NIL when it was done, or a sentence that says why it could
+not be, so that the form stays.
+
+- `APP`: the application.
+- `UNDERLAY`: the underlay.
+- `VALUES`: the alist of the form.
+- `ORIGINAL`: the alist of what its lines were shown with.
+
 ### `arc-tool` (type)
 
 Creates an arc from its center, the point where it starts (which gives the radius) and
@@ -693,6 +733,17 @@ Ask the numbers that a generator draws its block from, and go on to the tool tha
 
 - `APP`: the application.
 - `GENERATOR`: the generator.
+
+### `ask-underlay-settings` (function)
+
+```lisp
+(ask-underlay-settings app underlay)
+```
+
+Open the form where the position, turn, size of a pixel, opacity, name and visibility of an underlay are changed.
+
+- `APP`: the application.
+- `UNDERLAY`: the underlay.
 
 ### `autosave-exists-p` (function)
 
@@ -748,6 +799,27 @@ panel, the title bar, the tool palette, the status bar, the tooltip of the widge
 pointer, the open menu, the file dialog when one is open, and the modal prompt when one is.
 
 - `APP`: the application.
+
+### `calibrate-first-point` (generic function)
+
+```lisp
+(calibrate-first-point object)
+```
+
+(undocumented)
+
+### `calibrate-tool` (type)
+
+Takes two clicks on a picture, where something is whose length is known, and asks what that length
+is and how to turn the picture. UNDERLAY-ID is the underlay it works on.
+
+### `calibrate-underlay-id` (generic function)
+
+```lisp
+(calibrate-underlay-id object)
+```
+
+(undocumented)
 
 ### `circle-tool` (type)
 
@@ -1998,6 +2070,16 @@ Add a sheet after the last, on the paper of the one shown and with its title blo
 
 - `APP`: the application.
 
+### `operation-add-underlay` (function)
+
+```lisp
+(operation-add-underlay app)
+```
+
+Open the dialog where the user picks a picture or a PDF to put under the drawing.
+
+- `APP`: the application.
+
 ### `operation-arm-viewport` (function)
 
 ```lisp
@@ -2028,6 +2110,16 @@ Move the selected entities to another layer.
 
 - `APP`: the application.
 - `LAYER-ID`: id of the destination layer.
+
+### `operation-calibrate-underlay` (function)
+
+```lisp
+(operation-calibrate-underlay app)
+```
+
+Wait for the two points that calibrate an underlay: the only one, or the one the user picks.
+
+- `APP`: the application.
 
 ### `operation-close-layout` (function)
 
@@ -2718,6 +2810,26 @@ Change from the dark theme to the light one, or back.
 
 - `APP`: the application.
 
+### `operation-toggle-underlays` (function)
+
+```lisp
+(operation-toggle-underlays app)
+```
+
+Hide the underlays when any of them shows, and show them all when none does.
+
+- `APP`: the application.
+
+### `operation-underlays` (function)
+
+```lisp
+(operation-underlays app)
+```
+
+Ask which underlay to work on, when there are several, and what to do with it.
+
+- `APP`: the application.
+
 ### `operation-undo` (function)
 
 ```lisp
@@ -2745,7 +2857,7 @@ Zoom the view by FACTOR about the center of the canvas, as a turn of the wheel d
 (operation-zoom-extents app)
 ```
 
-Fit the view to every visible entity.
+Fit the view to every visible entity and every underlay that shows.
 
 - `APP`: the application.
 
@@ -2821,6 +2933,30 @@ that direction in degrees (with the @ or without it). Without an anchor the orig
 - `ANCHOR`: an (x . y) cons, the last point, or NIL for the first.
 - `POINTER`: an (x . y) cons, where the pointer is, or NIL.
 - `UNIT`: the display unit, assumed for numbers without a unit.
+
+### `picture-entry-key` (function)
+
+```lisp
+(picture-entry-key instance)
+```
+
+(undocumented)
+
+### `picture-entry-problem` (function)
+
+```lisp
+(picture-entry-problem instance)
+```
+
+(undocumented)
+
+### `picture-entry-raster` (function)
+
+```lisp
+(picture-entry-raster instance)
+```
+
+(undocumented)
 
 ### `place-shape` (function)
 
@@ -3227,6 +3363,17 @@ Turn the mouse wheel with the pointer over a world position.
 - `WORLD-Y`: world y under the pointer.
 - `NOTCHES`: positive to zoom in.
 
+### `scene-underlays` (function)
+
+```lisp
+(scene-underlays app)
+```
+
+Return the underlays that show and whose pictures could be read, lowest first, each as a list of the underlay, the
+number of its pixels and the pixels, for the scene.
+
+- `APP`: the application.
+
 ### `scroll-shapes` (function)
 
 ```lisp
@@ -3444,6 +3591,17 @@ Return the largest of the usual scales that is no larger than RATIO, or RATIO wh
 
 - `RATIO`: millimetres of paper for a millimetre of the drawing.
 
+### `start-calibration` (function)
+
+```lisp
+(start-calibration app underlay)
+```
+
+Make the tool that calibrates an underlay the active one.
+
+- `APP`: the application.
+- `UNDERLAY`: the underlay to calibrate.
+
 ### `start-customizations` (function)
 
 ```lisp
@@ -3579,6 +3737,28 @@ shown, unless it is absolute or starts with ~.
 
 - `DIALOG`: the file dialog.
 - `TEXT`: what the user typed or pasted.
+
+### `underlay-file-path` (function)
+
+```lisp
+(underlay-file-path text)
+```
+
+Return the pathname of the picture that TEXT names, with the extension of a picture added when it has none.
+
+- `TEXT`: a file name as typed by the user.
+
+### `underlay-picture` (function)
+
+```lisp
+(underlay-picture app underlay)
+```
+
+Return the picture of an underlay, reading it first when it has not been read or the underlay shows another picture
+now.
+
+- `APP`: the application.
+- `UNDERLAY`: the underlay.
 
 ### `user-shapes-directory` (function)
 
@@ -3771,6 +3951,26 @@ worst-case representation error of any stored coordinate.
 Largest length accepted for any single length value, in millimetres. The diagonal of the
 square of valid coordinates is 2.83e7 mm, so every distance between two valid points fits;
 the bound also keeps every product and sum computed from lengths far from overflow.
+
+### `base64-decode` (function)
+
+```lisp
+(base64-decode text)
+```
+
+Return the bytes that a Base64 text stands for, or NIL when the text is not valid Base64. White space is ignored.
+
+- `TEXT`: the Base64 string.
+
+### `base64-encode` (function)
+
+```lisp
+(base64-encode octets)
+```
+
+Return the Base64 text of a vector of bytes.
+
+- `OCTETS`: the bytes.
 
 ### `borba-cad-error` (condition)
 
@@ -4193,6 +4393,19 @@ Format a length for display.
 - `UNIT`: display unit keyword.
 - `PRECISION`: decimals to show; defaults to the unit's default precision.
 - `WITH-UNIT`: when true, append the unit abbreviation.
+
+### `image-error` (condition)
+
+A picture cannot be read, because it is damaged, is of a kind that is not read, or is too large.
+REASON is a complete sentence in the language of the interface.
+
+### `image-error-reason` (generic function)
+
+```lisp
+(image-error-reason condition)
+```
+
+(undocumented)
 
 ### `installed-config` (function)
 
@@ -4723,6 +4936,11 @@ Render each workload in a real window and write the report. Returns the report p
 The drawing model: entities, layers, the drawing aggregate, change sets,
 history, picking and snapping. Pure data and rules; no rendering, input or file I/O.
 
+### `*calibration-alignments*` (variable)
+
+How a calibration may turn the picture: leave it, make the line between the two points level or upright, or make it
+point in a given direction.
+
 ### `*hatch-patterns*` (variable)
 
 The ways a hatch fills its region: solid, with parallel lines, or with two sets of lines at right angles.
@@ -4742,6 +4960,10 @@ The kinds of entity that can be spread.
 ### `*title-field-keys*` (variable)
 
 The fields of the title block that the user writes, in the order they are asked and kept.
+
+### `*underlay-kinds*` (variable)
+
+The kinds of file an underlay may come from.
 
 ### `+default-grid-spacing+` (constant)
 
@@ -4824,6 +5046,27 @@ Largest number of characters in a text annotation.
 
 Longest text a field of the title block may hold.
 
+### `+maximum-underlay-bytes+` (constant)
+
+Most bytes of picture files the underlays of a drawing may hold together, so that the drawing file stays one that
+can be read back.
+
+### `+maximum-underlay-page+` (constant)
+
+Highest page number an underlay may name.
+
+### `+maximum-underlay-scale+` (constant)
+
+Largest number of millimetres a pixel of an underlay may be.
+
+### `+maximum-underlay-side+` (constant)
+
+Longest side of an underlay, in pixels.
+
+### `+maximum-underlays+` (constant)
+
+Most underlays a drawing may have.
+
 ### `+maximum-viewports+` (constant)
 
 Most viewports a sheet may have.
@@ -4832,6 +5075,10 @@ Most viewports a sheet may have.
 
 Smallest accepted grid spacing in millimetres. Finer grids add nothing the user can click
 at any practical zoom and would be hidden by the adaptive grid display.
+
+### `+minimum-underlay-scale+` (constant)
+
+Smallest number of millimetres a pixel of an underlay may be.
 
 ### `add-layer` (function)
 
@@ -4856,6 +5103,17 @@ Put a sheet after the others. Returns its position.
 
 - `DRAWING`: the drawing.
 - `SHEET`: the sheet.
+
+### `add-underlay` (function)
+
+```lisp
+(add-underlay drawing underlay)
+```
+
+Put an underlay on top of the others, giving it the next number. Returns the underlay as it is kept.
+
+- `DRAWING`: the drawing.
+- `UNDERLAY`: the underlay.
 
 ### `add-viewport` (function)
 
@@ -5169,6 +5427,26 @@ parameters.
 ```
 
 (undocumented)
+
+### `calibrated-underlay` (function)
+
+```lisp
+(calibrated-underlay underlay ax ay bx by distance &key (alignment keep) (angle 0))
+```
+
+Return the underlay scaled, and turned if asked, so that the two points of the drawing where its picture stood
+under the pointer, A and B, stand DISTANCE apart. The picture is scaled and turned about A, which stays where it is.
+Signals EDIT-REFUSED when the points are one or the distance is not above zero.
+
+- `UNDERLAY`: the underlay.
+- `AX`: x of the first point, in the drawing.
+- `AY`: y of the first point.
+- `BX`: x of the second point.
+- `BY`: y of the second point.
+- `DISTANCE`: how far apart the points really are, in millimetres.
+- `ALIGNMENT`: :KEEP to leave the turn, :HORIZONTAL or :VERTICAL to turn the line between the points to the nearest level or
+upright position, :ANGLE to make it point in the direction ANGLE.
+- `ANGLE`: that direction, in degrees counterclockwise from the right, for :ANGLE.
 
 ### `change` (type)
 
@@ -5496,6 +5774,8 @@ The drawing aggregate: layers, entities and drawing-wide settings.
 - `NEXT-ENTITY-ID`: id the next new entity receives; never decreases.
 - `NEXT-LAYER-ID`: id the next new layer receives; never decreases.
 - `SHEETS`: the sheets that are printed, in order; see sheets.lisp.
+- `UNDERLAYS`: the pictures under the drawing, from the lowest; see underlays.lisp.
+- `NEXT-UNDERLAY-ID`: number the next underlay receives; never decreases.
 - `REVISION`: counter bumped by every change, for dirty tracking and cache invalidation.
 
 ### `drawing-current-layer-id` (function)
@@ -5574,6 +5854,14 @@ Return the number of entities in DRAWING.
 
 (undocumented)
 
+### `drawing-next-underlay-id` (function)
+
+```lisp
+(drawing-next-underlay-id instance)
+```
+
+(undocumented)
+
 ### `drawing-object-snap` (function)
 
 ```lisp
@@ -5610,6 +5898,14 @@ Return the number of entities in DRAWING.
 
 ```lisp
 (drawing-store instance)
+```
+
+(undocumented)
+
+### `drawing-underlays` (function)
+
+```lisp
+(drawing-underlays instance)
 ```
 
 (undocumented)
@@ -6168,6 +6464,17 @@ perpendicular and the tangent.
 - `Y`: point y in millimetres.
 - `RADIUS`: snap radius in millimetres.
 - `ANCHOR`: an (x . y) cons, the last point drawn, or NIL.
+
+### `find-underlay` (function)
+
+```lisp
+(find-underlay drawing id)
+```
+
+Return the underlay of a drawing that has a number, or NIL.
+
+- `DRAWING`: the drawing.
+- `ID`: the number.
 
 ### `grip` (type)
 
@@ -7042,6 +7349,29 @@ Create a validated text annotation. Signals INVALID-ENTITY when an invariant is 
 - `ANGLE`: direction of the baseline in radians, counter-clockwise from +x; any finite angle, kept
 reduced to [0, 2 pi).
 
+### `make-underlay` (function)
+
+```lisp
+(make-underlay &key (id 0) (name underlay) kind data (page 1) dpi pixel-width pixel-height (x 0) (y 0) (rotation 0) (scale 1) (opacity 0.6d0) (visible t))
+```
+
+Create an underlay. Signals EDIT-REFUSED, with the reason, when it makes no sense.
+
+- `ID`: its number in the drawing, or zero.
+- `NAME`: what it is called, not empty.
+- `KIND`: :png, :jpeg or :pdf.
+- `DATA`: the bytes of the file.
+- `PAGE`: which page, from one.
+- `DPI`: the resolution of a PDF page, or NIL.
+- `PIXEL-WIDTH`: width of the picture in pixels.
+- `PIXEL-HEIGHT`: height of the picture in pixels.
+- `X`: x of the lower left corner of the picture, in millimetres.
+- `Y`: y of that corner.
+- `ROTATION`: degrees counterclockwise.
+- `SCALE`: millimetres a pixel stands for.
+- `OPACITY`: from 0 to 1.
+- `VISIBLE`: true to show it.
+
 ### `make-viewport` (function)
 
 ```lisp
@@ -7695,6 +8025,17 @@ Take away the sheet at a position. Signals EDIT-REFUSED when there is none there
 - `DRAWING`: the drawing.
 - `INDEX`: the position.
 
+### `remove-underlay` (function)
+
+```lisp
+(remove-underlay drawing id)
+```
+
+Take away the underlay that has a number. Signals EDIT-REFUSED when there is none.
+
+- `DRAWING`: the drawing.
+- `ID`: the number.
+
 ### `remove-viewport` (function)
 
 ```lisp
@@ -7730,6 +8071,17 @@ Put a sheet in place of the one at a position. Signals EDIT-REFUSED when there i
 - `DRAWING`: the drawing.
 - `INDEX`: the position.
 - `SHEET`: the new sheet.
+
+### `replace-underlay` (function)
+
+```lisp
+(replace-underlay drawing underlay)
+```
+
+Put an underlay in place of the one of the same number. Signals EDIT-REFUSED when there is none.
+
+- `DRAWING`: the drawing.
+- `UNDERLAY`: the new underlay.
 
 ### `replace-viewport` (function)
 
@@ -7983,6 +8335,18 @@ Enable or disable snapping to the grid.
 
 - `DRAWING`: the drawing.
 - `ENABLED`: true to snap.
+
+### `set-underlays` (function)
+
+```lisp
+(set-underlays drawing underlays)
+```
+
+Replace the underlays of the drawing, which counts as a change to it. Signals EDIT-REFUSED when there are too many,
+their pictures are too large together, or two have one number.
+
+- `DRAWING`: the drawing.
+- `UNDERLAYS`: the list of underlays, in order, from the one at the bottom.
 
 ### `sheet` (type)
 
@@ -8340,6 +8704,275 @@ or an arc may be left in two pieces. Signals EDIT-REFUSED when it cannot be done
 - `ID`: id of the entity to trim.
 - `X`: world x of the click, which says which part to cut away.
 - `Y`: world y of the click.
+
+### `underlay` (type)
+
+A picture under the drawing.
+
+- `ID`: the number that tells it from the other underlays of the drawing; zero until the drawing has it.
+- `NAME`: what it is called, as a file name usually is.
+- `KIND`: :png, :jpeg or :pdf.
+- `DATA`: the bytes of the file it came from.
+- `PAGE`: which page, for a PDF; one for the others.
+- `DPI`: the resolution a PDF page is drawn at, or NIL when the program chooses it.
+- `PIXEL-WIDTH`: width of the picture, in pixels.
+- `PIXEL-HEIGHT`: height of the picture, in pixels.
+- `X`: x in the drawing, in millimetres, of the lower left corner of the picture.
+- `Y`: y of that corner.
+- `ROTATION`: degrees the picture is turned counterclockwise about that corner.
+- `SCALE`: millimetres of the drawing for a pixel of the picture.
+- `OPACITY`: from 0 (clear) to 1 (opaque).
+- `VISIBLE`: whether it shows.
+
+### `underlay-bounds` (function)
+
+```lisp
+(underlay-bounds underlay)
+```
+
+Return the box in the drawing that holds the picture.
+
+- `UNDERLAY`: the underlay.
+
+### `underlay-corners` (function)
+
+```lisp
+(underlay-corners underlay)
+```
+
+Return the four corners of the picture in the drawing, as a list of (x . y), from the lower left one going counter-
+clockwise as the picture is seen.
+
+- `UNDERLAY`: the underlay.
+
+### `underlay-count` (function)
+
+```lisp
+(underlay-count drawing)
+```
+
+Return how many underlays the drawing has.
+
+- `DRAWING`: the drawing.
+
+### `underlay-data` (function)
+
+```lisp
+(underlay-data instance)
+```
+
+(undocumented)
+
+### `underlay-dpi` (function)
+
+```lisp
+(underlay-dpi instance)
+```
+
+(undocumented)
+
+### `underlay-height` (function)
+
+```lisp
+(underlay-height underlay)
+```
+
+Return the height of the picture in the drawing, in millimetres.
+
+- `UNDERLAY`: the underlay.
+
+### `underlay-id` (function)
+
+```lisp
+(underlay-id instance)
+```
+
+(undocumented)
+
+### `underlay-kind` (function)
+
+```lisp
+(underlay-kind instance)
+```
+
+(undocumented)
+
+### `underlay-name` (function)
+
+```lisp
+(underlay-name instance)
+```
+
+(undocumented)
+
+### `underlay-opacity` (function)
+
+```lisp
+(underlay-opacity instance)
+```
+
+(undocumented)
+
+### `underlay-p` (function)
+
+```lisp
+(underlay-p object)
+```
+
+(undocumented)
+
+### `underlay-page` (function)
+
+```lisp
+(underlay-page instance)
+```
+
+(undocumented)
+
+### `underlay-picture-point` (function)
+
+```lisp
+(underlay-picture-point underlay x y)
+```
+
+Return, as two values, the point of the picture, in pixels from its left and top edges, that stands at a point of
+the drawing.
+
+- `UNDERLAY`: the underlay.
+- `X`: x of the point of the drawing.
+- `Y`: y of that point.
+
+### `underlay-pixel-height` (function)
+
+```lisp
+(underlay-pixel-height instance)
+```
+
+(undocumented)
+
+### `underlay-pixel-width` (function)
+
+```lisp
+(underlay-pixel-width instance)
+```
+
+(undocumented)
+
+### `underlay-rotation` (function)
+
+```lisp
+(underlay-rotation instance)
+```
+
+(undocumented)
+
+### `underlay-scale` (function)
+
+```lisp
+(underlay-scale instance)
+```
+
+(undocumented)
+
+### `underlay-visible` (function)
+
+```lisp
+(underlay-visible instance)
+```
+
+(undocumented)
+
+### `underlay-width` (function)
+
+```lisp
+(underlay-width underlay)
+```
+
+Return the width of the picture in the drawing, in millimetres.
+
+- `UNDERLAY`: the underlay.
+
+### `underlay-with` (function)
+
+```lisp
+(underlay-with underlay &key (id (underlay-id underlay)) (name (underlay-name underlay)) (x (underlay-x underlay)) (y (underlay-y underlay)) (rotation (underlay-rotation underlay)) (scale (underlay-scale underlay)) (opacity (underlay-opacity underlay)) (visible (underlay-visible underlay)))
+```
+
+Return an underlay like another with some of it changed. The picture stays.
+
+- `UNDERLAY`: the underlay.
+- `ID`: the new number.
+- `NAME`: the new name.
+- `X`: new x of the lower left corner.
+- `Y`: new y of that corner.
+- `ROTATION`: new turn, in degrees.
+- `SCALE`: new millimetres a pixel stands for.
+- `OPACITY`: new opacity.
+- `VISIBLE`: new visibility.
+
+### `underlay-with-picture` (function)
+
+```lisp
+(underlay-with-picture underlay &key page (dpi (underlay-dpi underlay)) pixel-width pixel-height (scale (underlay-scale underlay)))
+```
+
+Return an underlay like another that shows another page, or the same page drawn at another resolution, or whose
+picture turned out to be of another size than was thought, standing where the other stood.
+
+- `UNDERLAY`: the underlay.
+- `PAGE`: the new page, or NIL for the same.
+- `DPI`: the new resolution of a PDF page.
+- `PIXEL-WIDTH`: the width of the new picture, or NIL for the same.
+- `PIXEL-HEIGHT`: the height of the new picture, or NIL for the same.
+- `SCALE`: the new millimetres a pixel stands for.
+
+### `underlay-world-point` (function)
+
+```lisp
+(underlay-world-point underlay column row)
+```
+
+Return, as two values, the point of the drawing where a point of the picture stands.
+
+- `UNDERLAY`: the underlay.
+- `COLUMN`: the position along the width of the picture, in pixels from its left edge.
+- `ROW`: the position down the picture, in pixels from its top edge.
+
+### `underlay-x` (function)
+
+```lisp
+(underlay-x instance)
+```
+
+(undocumented)
+
+### `underlay-y` (function)
+
+```lisp
+(underlay-y instance)
+```
+
+(undocumented)
+
+### `underlays-bounds` (function)
+
+```lisp
+(underlays-bounds drawing)
+```
+
+Return the box that holds every underlay that shows, or NIL when none does.
+
+- `DRAWING`: the drawing.
+
+### `underlays-total-bytes` (function)
+
+```lisp
+(underlays-total-bytes underlays)
+```
+
+Return how many bytes of picture files a list of underlays holds.
+
+- `UNDERLAYS`: the list.
 
 ### `update-angular-dimension` (function)
 
@@ -10590,12 +11223,21 @@ Run BODY speaking LANGUAGE.
 
 ## BORBA-CAD/IMAGE
 
-Making picture files from pixels: a JPEG encoder in plain Lisp, so that the program needs no
-library to export what the canvas shows.
+Making picture files from pixels, a JPEG encoder in plain Lisp, and reading them back: PNG and
+JPEG files and the pictures inside a PDF, so that the program needs no library to export what the canvas shows or to
+show a scan under the drawing.
 
 ### `+default-jpeg-quality+` (constant)
 
 The quality a picture is encoded with when none is asked for, from 1 to 100.
+
+### `+maximum-picture-bytes+` (constant)
+
+The largest picture file the program takes, in bytes. The drawing keeps the file whole, as text.
+
+### `+raster-channels+` (constant)
+
+Bytes of a pixel of a raster: red, green, blue and opacity.
 
 ### `encode-jpeg` (function)
 
@@ -10609,6 +11251,95 @@ Return the bytes of a JPEG file of a picture.
 - `HEIGHT`: height in pixels, from 1 to 65535.
 - `RGB`: the pixels, row by row from the top, a byte each of red, green and blue.
 - `QUALITY`: from 1 (smallest file) to 100 (best picture).
+
+### `make-raster` (function)
+
+```lisp
+(make-raster width height)
+```
+
+Return a raster of that size, all pixels transparent black, or signal IMAGE-ERROR when it is too large.
+
+- `WIDTH`: width in pixels.
+- `HEIGHT`: height in pixels.
+
+### `octets` (symbol)
+
+(undocumented)
+
+### `picture-kind` (function)
+
+```lisp
+(picture-kind bytes)
+```
+
+Return :PNG, :JPEG or :PDF according to how a file begins, or NIL for a file of any other kind.
+
+- `BYTES`: the file.
+
+### `picture-page-count` (function)
+
+```lisp
+(picture-page-count bytes)
+```
+
+Return how many pages a picture file has: those of a PDF, one for the other kinds.
+
+- `BYTES`: the file.
+
+### `raster` (type)
+
+A picture: its size in pixels and its pixels as bytes, four each (red, green, blue, opacity), row by row from the
+top.
+
+### `raster-height` (function)
+
+```lisp
+(raster-height instance)
+```
+
+(undocumented)
+
+### `raster-pixels` (function)
+
+```lisp
+(raster-pixels instance)
+```
+
+(undocumented)
+
+### `raster-width` (function)
+
+```lisp
+(raster-width instance)
+```
+
+(undocumented)
+
+### `read-picture` (function)
+
+```lisp
+(read-picture bytes &key (page 1) dpi)
+```
+
+Return the raster of a PNG or JPEG file, or of a page of a PDF, and the resolution a PDF page was drawn at in dots
+per inch (NIL for the other kinds, which have no size on paper). Signals IMAGE-ERROR when the file is of another
+kind, damaged, protected, or too large.
+
+- `BYTES`: the file.
+- `PAGE`: which page of a PDF, counted from one.
+- `DPI`: the resolution to draw a PDF page at, or NIL to choose it from the page.
+
+### `reduce-raster` (function)
+
+```lisp
+(reduce-raster raster factor)
+```
+
+Return a smaller raster in which each pixel is the mean of FACTOR by FACTOR pixels of RASTER.
+
+- `RASTER`: the raster.
+- `FACTOR`: how many pixels to take in each direction, at least 2.
 
 ## BORBA-CAD/OBSERVABILITY
 
@@ -11465,8 +12196,9 @@ v1.2 final, gets .bcad after it.
 
 ### `+maximum-file-bytes+` (constant)
 
-Largest drawing file that will be read. A 100,000-entity drawing is about 12 MB; the limit
-bounds the memory used to read an untrusted file (NFR-7).
+Largest drawing file that will be read. A 100,000-entity drawing is about 12 MB, and the pictures under a drawing
+may take 40 MiB of file, which as text is a third more; the limit bounds the memory used to read an untrusted file
+(NFR-7).
 
 ### `+maximum-nesting-depth+` (constant)
 
@@ -13255,6 +13987,21 @@ Append one line segment, in pixels.
 - `Y2`: end y.
 - `COLOR`: an RGBA.
 
+### `add-picture` (function)
+
+```lisp
+(add-picture list key raster corners opacity)
+```
+
+Append a picture: a quadrilateral, in pixels, that the renderer fills with the pixels of a raster.
+
+- `LIST`: a draw list.
+- `KEY`: the number that tells the picture from the others, the same for as long as its pixels are.
+- `RASTER`: the pixels, as the image module reads them.
+- `CORNERS`: four (x . y) points in pixels: the lower left corner of the picture, then the lower right, the upper right
+and the upper left.
+- `OPACITY`: from 0 to 1.
+
 ### `add-polygon` (function)
 
 ```lisp
@@ -13452,7 +14199,8 @@ Return the dark theme, the one the application starts with.
 
 A run of primitives of one kind.
 
-- `KIND`: :lines (vertex pairs), :triangles (vertex triples) or :text (text runs).
+- `KIND`: :lines (vertex pairs), :triangles (vertex triples), :text (text runs) or :picture (a picture, as the six
+vertices of its two triangles, the next of the picture runs).
 - `START`: first vertex, or first text run for :text.
 - `COUNT`: number of vertices, or of text runs for :text.
 
@@ -13488,6 +14236,7 @@ Everything a renderer needs for one frame.
 - `VERTEX-COUNT`: vertices written so far.
 - `COMMANDS`: draw commands in painter's order.
 - `TEXT-RUNS`: text runs referenced by :text commands.
+- `PICTURE-RUNS`: the pictures of the :picture commands, in the order of the commands.
 - `WHITE-U`: u of a fully opaque white texel, set by the renderer's texture atlas.
 - `WHITE-V`: v of that texel.
 
@@ -13508,6 +14257,14 @@ Everything a renderer needs for one frame.
 Return the number of line segments in LIST.
 
 - `LIST`: a draw list.
+
+### `draw-list-picture-runs` (function)
+
+```lisp
+(draw-list-picture-runs instance)
+```
+
+(undocumented)
 
 ### `draw-list-reset` (function)
 
@@ -13604,7 +14361,31 @@ Create an empty draw list.
 ### `make-scene-state` (function)
 
 ```lisp
-(make-scene-state &key selected-ids translation preview-entities window window-crossing grips hot-grip snap)
+(make-scene-state &key selected-ids translation preview-entities window window-crossing grips hot-grip snap underlays)
+```
+
+(undocumented)
+
+### `picture-run` (type)
+
+A picture to draw: which one, and its pixels for a renderer that does not have them yet. The corners are the
+vertices of the :picture command that stands for it.
+
+- `KEY`: a number that tells the picture from the others, the same for as long as its pixels are the same.
+- `RASTER`: the pixels of the picture, as the image module reads them.
+
+### `picture-run-key` (function)
+
+```lisp
+(picture-run-key instance)
+```
+
+(undocumented)
+
+### `picture-run-raster` (function)
+
+```lisp
+(picture-run-raster instance)
 ```
 
 (undocumented)
@@ -13712,6 +14493,7 @@ The interaction state that decorates the drawing.
 - `GRIPS`: the grips of the selected entity, drawn as handles.
 - `HOT-GRIP`: the one of them the pointer is on, drawn filled.
 - `SNAP`: (x y kind) in world coordinates of the snap marker, or NIL.
+- `UNDERLAYS`: the pictures under the drawing that show, as a list of (underlay key raster), the lowest first.
 
 ### `scene-state-preview-entities` (function)
 

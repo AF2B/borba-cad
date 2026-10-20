@@ -188,6 +188,7 @@ DIALOG: the file dialog."
     ((:svg :shape) *svg-extensions*)
     (:image *image-extensions*)
     (:pdf *pdf-extensions*)
+    (:underlay *underlay-extensions*)
     (:quantities *csv-extensions*)
     (:sheets *pdf-extensions*)))
 

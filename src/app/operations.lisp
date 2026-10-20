@@ -184,7 +184,7 @@ VALUE: the new value (double-float, string, integer, boolean or unit keyword)."
 ;;; View and settings
 
 (defun operation-zoom-extents (app)
-  "Fit the view to every visible entity.
+  "Fit the view to every visible entity and every underlay that shows.
 
 APP: the application."
   (when (layout-mode-p app)
@@ -199,6 +199,11 @@ APP: the application."
                                              (geo:bounds-union bounds (dom:entity-bounds entity))
                                              (dom:entity-bounds entity))))))
                       (dom:drawing-store drawing))
+    (let ((underlays (dom:underlays-bounds drawing)))
+      (when underlays
+        (setf bounds (if bounds
+                         (geo:bounds-union bounds underlays)
+                         underlays))))
     (setf (app-viewport app)
           (if bounds
               (view:fit-viewport-to-bounds (app-viewport app) bounds)
@@ -443,6 +448,7 @@ PATH: its file, or NIL for a new drawing."
         (app-interaction app) nil
         (app-welcome app) nil)
   (clrhash (app-selection app))
+  (clrhash (app-pictures app))
   (operation-set-tool app :select)
   (operation-zoom-extents app)
   (app-request-redraw app)

@@ -370,6 +370,25 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:+minimum-viewport-size+
    #:operation-command-palette
    #:operation-reload-init
+   #:operation-add-underlay
+   #:operation-underlays
+   #:operation-calibrate-underlay
+   #:operation-toggle-underlays
+   #:add-underlay-from-app
+   #:scene-underlays
+   #:underlay-picture
+   #:underlay-file-path
+   #:*underlay-extensions*
+   #:calibrate-tool
+   #:calibrate-first-point
+   #:calibrate-underlay-id
+   #:start-calibration
+   #:apply-underlay-settings
+   #:ask-underlay-settings
+   #:picture-entry-raster
+   #:picture-entry-problem
+   #:picture-entry-key
+   #:app-pictures
    #:start-customizations
    #:run-user-key
    #:run-hooks

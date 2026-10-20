@@ -66,6 +66,7 @@ APP: the application."
                                            :window-crossing (app-window-crossing app)
                                            :grips (selection-grips app)
                                            :hot-grip (grip-under-pointer app)
+                                           :underlays (scene-underlays app)
                                            :snap (and cursor (cursor-snap-kind cursor) (null (app-prompt app))
                                                       (list (cursor-x cursor) (cursor-y cursor)
                                                             (cursor-snap-kind cursor))))

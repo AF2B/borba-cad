@@ -550,7 +550,7 @@ true, recent files are remembered in a folder inside DIRECTORY."
 (test a-drawing-that-cannot-be-opened-is-explained-in-the-dialog-and-the-drawing-stays
   (with-temporary-directory (directory)
     (make-tree directory)
-    (touch-text (merge-pathnames "broken.bcad" directory) "(drawing (format-version 9))")
+    (touch-text (merge-pathnames "broken.bcad" directory) "(drawing (format-version 10))")
     (let ((application (dialog-app directory)))
       (app:operation-open application)
       (click-widget application '(:entry "broken.bcad"))
@@ -813,7 +813,7 @@ true, recent files are remembered in a folder inside DIRECTORY."
 (test a-dropped-drawing-opens-and-a-dropped-broken-file-explains
   (with-temporary-directory (directory)
     (make-tree directory)
-    (touch-text (merge-pathnames "broken.bcad" directory) "(drawing (format-version 9))")
+    (touch-text (merge-pathnames "broken.bcad" directory) "(drawing (format-version 10))")
     (let ((application (dialog-app directory)))
       (send application (app:make-file-drop-event (uiop:native-namestring (merge-pathnames "zeta.bcad" directory))))
       (is (string= "zeta.bcad" (file-namestring (app:app-file-path application))))

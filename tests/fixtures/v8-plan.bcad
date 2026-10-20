@@ -1,0 +1,34 @@
+(drawing
+ (format-version 8)
+ (unit millimeter)
+ (display-unit millimeter)
+ (grid (spacing 100.0) (visible t) (snap t) (object-snap t))
+ (default-text-height 250.0)
+ (current-layer 1)
+ (next-layer-id 2)
+ (next-entity-id 10)
+ (layers
+  (layer (id 0) (name "0") (color 235 235 235) (visible t) (locked nil))
+  (layer (id 1) (name "walls") (color 255 150 60) (visible t) (locked nil))
+ )
+ (blocks
+  (block (name "door")
+   (generator "door" (arg "width" 900.0))
+   (entities
+     (line (id 1) (layer 0) (x1 0.0) (y1 0.0) (x2 900.0) (y2 0.0))
+     (arc (id 2) (layer 0) (center-x 0.0) (center-y 0.0) (radius 900.0) (start-angle 0.0) (end-angle 1.5707963267948966))
+   ))
+ )
+ (sheets
+ )
+ (entities
+  (line (id 1) (layer 1) (x1 0.0) (y1 0.0) (x2 5000.0) (y2 0.0))
+  (rectangle (id 2) (layer 1) (min-x 100.0) (min-y 200.0) (width 3000.0) (height 2500.0))
+  (circle (id 3) (layer 1) (center-x 500.0) (center-y 600.0) (radius 250.0))
+  (polyline (id 4) (layer 1) (closed nil) (vertices 0.0 0.0 100.0 0.0 100.0 100.0))
+  (text (id 5) (layer 1) (x 10.0) (y 20.0) (height 150.0) (string "Hi") (angle 0.5235987755982988))
+  (hatch (id 6) (layer 1) (vertices 0.0 0.0 1000.0 0.0 1000.0 1000.0 0.0 1000.0) (pattern lines) (angle 0.6981317007977318) (spacing 120.0) (hole-vertices ) (hole-sizes ))
+  (hatch (id 7) (layer 1) (vertices 0.0 0.0 300.0 0.0 300.0 300.0 0.0 300.0) (pattern solid) (angle 0.7853981633974483) (spacing 125.0) (hole-vertices ) (hole-sizes ))
+  (insert (id 8) (layer 1) (block "door") (x 2000.0) (y 2000.0) (scale 2.0) (rotation 0.5235987755982988) (flipped nil))
+  (insert (id 9) (layer 1) (block "door") (x 4000.0) (y 2000.0) (scale 1.0) (rotation 0.0) (flipped t))
+ ))

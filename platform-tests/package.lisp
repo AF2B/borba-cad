@@ -10,6 +10,7 @@
                     (#:ui #:borba-cad/ui)
                     (#:app #:borba-cad/app)
                     (#:dom #:borba-cad/domain)
+                    (#:view #:borba-cad/viewport)
                     (#:obs #:borba-cad/observability)
                     (#:platform #:borba-cad/platform))
   (:documentation "Tests of the window program: PNG encoding, SDL event translation, font

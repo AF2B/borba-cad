@@ -463,12 +463,13 @@ BLOCKED: true while a modal covers them."
 
 (defun empty-hint-widgets (app
                            canvas)
-  "Build the hint that tells a new user how to begin, centered over an empty drawing. It is
-gone as soon as there is something drawn, a tool is at work, or a dialog or a question is open.
+  "Build the hint that tells a new user how to begin, centered over an empty drawing. It is gone as soon as there is
+something drawn or a picture under the drawing, a tool is at work, or a dialog or a question is open.
 
 APP: the application.
 CANVAS: the canvas rectangle."
   (when (and (zerop (dom:drawing-entity-count (app-drawing app)))
+             (zerop (dom:underlay-count (app-drawing app)))
              (not (tool-in-progress-p (app-tool app)))
              (null (app-prompt app))
              (null (app-dialog app)))

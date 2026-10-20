@@ -717,7 +717,7 @@ about 2.7 m to the left and right of the origin and 2 m above and below it."
            (path (namestring (merge-pathnames "plan.bcad" directory)))
            (broken (namestring (merge-pathnames "broken.bcad" directory))))
       (app:save-app-drawing source path)
-      (with-open-file (out broken :direction :output) (write-string "(drawing (format-version 9))" out))
+      (with-open-file (out broken :direction :output) (write-string "(drawing (format-version 10))" out))
       (let ((application (make-test-app)))
         (press application :o :control)
         (is (eq :open (app:file-dialog-mode (app:app-dialog application))))

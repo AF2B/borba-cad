@@ -718,7 +718,7 @@ MITER-LIMIT: the longest miter, as a multiple of the width."
                                          x1
                                          y1
                                          half)))))
-             (loop for index from (if closed 0 1) below (if closed segments segments)
+             (loop for index from (if closed 0 1) below segments
                    do (let ((previous (svref directions (mod (1- index) segments)))
                             (next (svref directions (mod index segments)))
                             (vertex (svref vertices (mod index count))))

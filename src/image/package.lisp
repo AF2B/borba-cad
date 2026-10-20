@@ -14,6 +14,8 @@ show a scan under the drawing.")
    #:raster-width
    #:raster-height
    #:raster-pixels
+   #:make-raster
+   #:reduce-raster
    #:+raster-channels+
    #:+maximum-picture-bytes+
    #:picture-kind
