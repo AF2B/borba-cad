@@ -4,6 +4,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ## [Unreleased]
 
+### Added
+
+- **Documentation site.** `docs/` is published with GitHub Pages at https://af2b.github.io/borba-cad/ on every
+  push to `main`: how to run the program (download, extract, double-click), the documentation pages, an icon, and
+  a wider column on wide screens.
+
 ## [1.4.0] - 2026-10-20
 
 ### Added

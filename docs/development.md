@@ -395,9 +395,8 @@ behind the commit, `1.3.0` on the tagged commit and `1.3.0-4-g1a2b3c4` four comm
 so that a build that is not a release never carries the name of one. `make dist VERSION=1.3.0` names one by
 hand.
 
-GitHub runs the whole pipeline (`.github/workflows/ci.yml`); nothing of it needs a person's machine or the
-assistant's time. It starts on every push to `main`, on every pull request, on every version tag and by hand
-(Actions > Pipeline > Run workflow):
+GitHub runs the whole pipeline (`.github/workflows/ci.yml`); nothing of it needs a person's machine. It starts on
+every push to `main`, on every pull request, on every version tag and by hand (Actions > Pipeline > Run workflow):
 
 | Job | What it does | Runs |
 |---|---|---|
@@ -406,7 +405,7 @@ assistant's time. It starts on every push to `main`, on every pull request, on e
 | Test | `make compile test test-gui` under `xvfb`: the strict build, the headless tests and the window tests | always |
 | Build for Linux | `make dist dist-check`: the program, its folder and `.tar.gz`, and the package started in a clean environment | after Lint and Test |
 | Build for Windows | `make dist-windows` in MSYS2: the folder and `.zip` | after Lint and Test |
-| Deploy the documentation | Publishes `docs/` as a site with GitHub Pages | pushes to `main`; it fails, and nothing else does, until Pages is switched on (Settings > Pages > Source: GitHub Actions) |
+| Deploy the documentation | Publishes `docs/` as a site with GitHub Pages, at https://af2b.github.io/borba-cad/ | pushes to `main`; a failure here stops nothing else |
 | Release | Makes the GitHub release of the tag, with the Linux and the Windows programs, `SHA256SUMS` and the notes of the version from `CHANGELOG.md` | version tags only, after everything above |
 
 A run that is not a version keeps the programs as artifacts of the run for two weeks (they need a login to be

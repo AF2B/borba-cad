@@ -1,0 +1,15 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+/* The theme's column is 500 px wide, too narrow for the tables of these pages; on a wide screen the text gets room. */
+@media screen and (min-width: 1200px) {
+  .wrapper {
+    width: 1120px;
+  }
+
+  section {
+    width: 760px;
+  }
+}

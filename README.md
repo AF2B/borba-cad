@@ -63,7 +63,8 @@ draw by typing Lisp into a console, because the language of the program is Lisp 
 | **Windows** | Download the `.zip` from the [releases](https://github.com/AF2B/borba-cad/releases), extract it, double-click `borba-cad.exe`. Windows warns about an unknown app because the program is not signed: choose *More info*, then *Run anyway*. If it does not start, `borba-cad-console.exe` shows why. |
 | **Linux** | Download the `.tar.gz` from the [releases](https://github.com/AF2B/borba-cad/releases) (or build the folder with `make dist`, see below), unpack it anywhere and double-click `Borba CAD.desktop`; `./install.sh` adds it to the applications menu and opens `.bcad` files with it. |
 
-Both folders carry the libraries and the fonts they need, so nothing has to be installed. **A version is a tag
+Both folders carry the libraries and the fonts they need, so nothing has to be installed: download, extract,
+double-click. The documentation is also a site, <https://af2b.github.io/borba-cad/>. **A version is a tag
 of the repository**: every tag that reads `vMAJOR.MINOR.PATCH` is a version, and [GitHub Actions](.github/workflows/ci.yml)
 makes its release with the Linux and the Windows programs, their checksums and the notes from the
 [changelog](CHANGELOG.md); no program is built by hand. The Windows build is made on a Windows machine of GitHub

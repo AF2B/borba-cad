@@ -174,8 +174,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: [lint, test]
     runs-on: ubuntu-latest
-    # The site needs GitHub Pages to be switched on for the repository (Settings > Pages > Source: GitHub Actions).
-    # Until it is, this job fails and nothing else does.
+    # The site needs GitHub Pages switched on for the repository (Settings > Pages > Source: GitHub Actions).
+    # A site that fails to publish must not stop anything else, a release least of all.
     continue-on-error: true
     permissions:
       contents: read
