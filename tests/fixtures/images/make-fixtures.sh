@@ -3,6 +3,7 @@
 # the libjpeg tools (cjpeg, djpeg). The reference pixels (*.rgba, 8-bit red, green, blue, opacity, row by row) come
 # from ImageMagick for PNG and from djpeg (no smoothing, integer transform) for JPEG, never from this program.
 set -e
+export SOURCE_DATE_EPOCH=1700000000
 cd "$(dirname "$0")"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -14,7 +15,7 @@ magick "$WORK/base.png" \( -size 13x11 gradient:black-white \) -compose CopyOpac
 png() { # name source options...
   local name=$1 source=$2
   shift 2
-  magick "$WORK/$source" "$@" "png-$name.png"
+  magick "$WORK/$source" "$@" -strip "png-$name.png"
 }
 png rgb8 base.png -define png:color-type=2 -define png:bit-depth=8
 png rgb16 base.png -define png:color-type=2 -define png:bit-depth=16
@@ -94,7 +95,7 @@ jpeg grayprog -quality 90 -grayscale -progressive
 jpeg q100 -quality 100 -sample 1x1
 jpeg q5 -quality 5 -sample 2x2
 jpeg rgb -quality 90 -rgb -sample 1x1
-magick "$WORK/src.ppm" -colorspace CMYK -quality 90 jpeg-cmyk.jpg
+magick "$WORK/src.ppm" -colorspace CMYK -quality 90 -strip jpeg-cmyk.jpg
 
 for file in jpeg-*.jpg; do
   case $file in
@@ -103,3 +104,85 @@ for file in jpeg-*.jpg; do
        magick "$WORK/ref.ppm" -depth 8 -alpha on "rgba:${file%.jpg}.rgba" ;;
   esac
 done
+
+# PDF files. The vector page is drawn by cairo from an SVG; the pages with a scan are made by ImageMagick; the
+# page whose objects sit inside an object stream, with a cross-reference stream, is written by hand below.
+# Reference pixels: poppler's pdftoppm for the vector pages, the source picture for the scans.
+cat > "$WORK/vector.svg" <<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" width="120px" height="80px" viewBox="0 0 120 80">
+  <rect width="120" height="80" fill="white"/>
+  <rect x="10" y="10" width="50" height="30" fill="none" stroke="black" stroke-width="2"/>
+  <line x1="10" y1="25" x2="60" y2="25" stroke="red" stroke-width="1" stroke-dasharray="5 3"/>
+  <circle cx="90" cy="25" r="15" fill="#8888ff" stroke="blue" stroke-width="2"/>
+  <path d="M 10 70 C 30 45, 50 80, 70 60 S 100 50, 110 70" fill="none" stroke="darkgreen" stroke-width="3"
+        stroke-linecap="round"/>
+  <path d="M 75 45 L 105 45 L 105 55 L 75 55 Z M 80 48 L 100 48 L 100 52 L 80 52 Z" fill="#cc4444"
+        fill-rule="evenodd"/>
+</svg>
+SVG
+rsvg-convert -f pdf --dpi-x 72 --dpi-y 72 "$WORK/vector.svg" -o pdf-vector.pdf
+pdftoppm -r 72 pdf-vector.pdf "$WORK/vector-ref"
+magick "$WORK"/vector-ref*.ppm -depth 8 -alpha on rgba:pdf-vector.rgba
+
+magick -seed 4 -size 40x30 plasma:fractal -depth 8 "$WORK/scan.png"
+magick "$WORK/scan.png" -density 72 -compress zip pdf-scan-flate.pdf
+magick "$WORK/scan.png" -depth 8 -alpha on rgba:pdf-scan-flate.rgba
+magick "$WORK/scan.png" -colorspace Gray -threshold 50% -define png:color-type=0 -define png:bit-depth=1 "$WORK/bw.png"
+magick "$WORK/bw.png" -density 72 -compress zip pdf-scan-1bit.pdf
+magick "$WORK/bw.png" -depth 8 -alpha on rgba:pdf-scan-1bit.rgba
+magick "$WORK/scan.png" -colors 16 -define png:color-type=3 "$WORK/pal.png"
+magick "$WORK/pal.png" -density 72 -compress zip pdf-scan-indexed.pdf
+magick "$WORK/pal.png" -depth 8 -alpha on rgba:pdf-scan-indexed.rgba
+magick "$WORK/scan.png" -quality 88 "$WORK/scan.jpg"
+magick "$WORK/scan.jpg" -density 72 -compress jpeg pdf-scan-jpeg.pdf
+pdfimages -j pdf-scan-jpeg.pdf "$WORK/extracted"
+djpeg -nosmooth -dct int -ppm "$WORK"/extracted-000.jpg > "$WORK/extracted.ppm"
+magick "$WORK/extracted.ppm" -depth 8 -alpha on rgba:pdf-scan-jpeg.rgba
+magick "$WORK/scan.png" -density 144 -compress zip pdf-scan-dense.pdf
+
+python3 - <<'PY'
+import zlib
+
+def stream(dictionary, data, compress=True):
+    body = zlib.compress(data) if compress else data
+    flate = b"/Filter /FlateDecode " if compress else b""
+    return (b"<< " + dictionary + b" " + flate + b"/Length " + str(len(body)).encode() + b" >>\nstream\n"
+            + body + b"\nendstream")
+
+content = b"0.2 0.4 0.9 rg 10 10 60 40 re f 1 0 0 RG 3 w 5 5 m 95 55 l S"
+objects = {
+    1: b"<< /Type /Catalog /Pages 2 0 R >>",
+    2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    3: b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 60] /Contents 4 0 R /Resources << >> >>",
+}
+inner = b""
+offsets = []
+for number in (1, 2, 3):
+    offsets.append((number, len(inner)))
+    inner += objects[number] + b"\n"
+header = b" ".join(b"%d %d" % pair for pair in offsets) + b"\n"
+objstm = stream(b"/Type /ObjStm /N 3 /First %d" % len(header), header + inner)
+out = b"%PDF-1.5\n"
+positions = {}
+positions[4] = len(out)
+out += b"4 0 obj\n" + stream(b"", content) + b"\nendobj\n"
+positions[5] = len(out)
+out += b"5 0 obj\n" + objstm + b"\nendobj\n"
+xref_position = len(out)
+# Cross-reference stream: type, field 2, field 3 for objects 0..6.
+rows = bytearray()
+def row(kind, a, b):
+    rows.extend(bytes([kind, (a >> 8) & 255, a & 255, b]))
+row(0, 0, 255)
+row(2, 5, 0)
+row(2, 5, 1)
+row(2, 5, 2)
+row(1, positions[4], 0)
+row(1, positions[5], 0)
+row(1, xref_position, 0)
+out += (b"6 0 obj\n" + stream(b"/Type /XRef /Size 7 /W [1 2 1] /Root 1 0 R", bytes(rows)) + b"\nendobj\n")
+out += b"startxref\n%d\n%%%%EOF\n" % xref_position
+open("pdf-objstm.pdf", "wb").write(out)
+PY
+pdftoppm -r 72 pdf-objstm.pdf "$WORK/objstm-ref"
+magick "$WORK"/objstm-ref*.ppm -depth 8 -alpha on rgba:pdf-objstm.rgba

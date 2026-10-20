@@ -125,6 +125,11 @@
                              (:file "raster")
                              (:file "png")
                              (:file "jpeg-decode")
+                             (:file "pdf-syntax")
+                             (:file "pdf-file")
+                             (:file "pdf-raster")
+                             (:file "pdf-image")
+                             (:file "pdf-render")
                              (:file "read")))
                (:module "shapes"
                 :serial t
@@ -323,6 +328,7 @@
                (:file "welcome-tests")
                (:file "image-tests")
                (:file "picture-tests")
+               (:file "pdf-tests")
                (:file "autosave-tests")
                (:file "constraints-tests")
                (:file "snapping-tests")

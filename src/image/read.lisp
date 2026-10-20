@@ -10,20 +10,6 @@
   (coerce '(#xFF #xD8 #xFF) 'octets)
   "The first bytes of every JPEG file.")
 
-(defparameter *pdf-signature*
-  (coerce '(#x25 #x50 #x44 #x46 #x2D) 'octets)
-  "The first bytes of every PDF file: %PDF-.")
-
-(defun starts-with-p (bytes
-                      signature)
-  "Return true when the vector begins with the bytes of a signature.
-
-BYTES: the vector.
-SIGNATURE: the bytes it must begin with."
-  (declare (type octets bytes signature))
-  (and (>= (length bytes) (length signature))
-       (null (mismatch signature bytes :end2 (length signature)))))
-
 (defun picture-kind (bytes)
   "Return :PNG, :JPEG or :PDF according to how a file begins, or NIL for a file of any other kind.
 
@@ -43,13 +29,43 @@ BYTES: the file."
   (when (zerop (length bytes))
     (image-failure "This picture file is empty.")))
 
-(defun read-picture (bytes)
-  "Return the raster of a PNG or JPEG file. Signals IMAGE-ERROR when the file is of another kind, damaged, or too large.
+(defun picture-page-count (bytes)
+  "Return how many pages a picture file has: those of a PDF, one for the other kinds.
 
 BYTES: the file."
   (declare (type octets bytes))
   (check-picture-bytes bytes)
-  (ecase (or (picture-kind bytes)
-             (image-failure "This file is not a PNG or JPEG picture."))
-    (:png (read-png bytes))
-    (:jpeg (read-jpeg bytes))))
+  (if (eq (picture-kind bytes) :pdf)
+      (length (pdf-pages (open-pdf bytes)))
+      1))
+
+(defun read-picture (bytes
+                     &key (page 1)
+                          dpi)
+  "Return the raster of a PNG or JPEG file, or of a page of a PDF, and the resolution a PDF page was drawn at in dots
+per inch (NIL for the other kinds, which have no size on paper). Signals IMAGE-ERROR when the file is of another
+kind, damaged, protected, or too large.
+
+BYTES: the file.
+PAGE: which page of a PDF, counted from one.
+DPI: the resolution to draw a PDF page at, or NIL to choose it from the page."
+  (declare (type octets bytes))
+  (check-picture-bytes bytes)
+  (handler-case
+      (ecase (or (picture-kind bytes)
+                 (image-failure "This file is not a PNG, JPEG or PDF picture."))
+        (:png (values (read-png bytes) nil))
+        (:jpeg (values (read-jpeg bytes) nil))
+        (:pdf (let* ((document (open-pdf bytes))
+                     (pages (pdf-pages document)))
+                (unless (<= 1 page (length pages))
+                  (image-failure "This PDF has ~d pages, so there is no page ~d."
+                                 (length pages)
+                                 page))
+                (render-pdf-page document
+                                 (nth (1- page) pages)
+                                 dpi))))
+    (arithmetic-error ()
+      (image-failure "This picture holds numbers the program cannot work with."))
+    (storage-condition ()
+      (image-failure "This picture needs more memory than the program has."))))

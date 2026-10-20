@@ -17,4 +17,5 @@ show a scan under the drawing.")
    #:+raster-channels+
    #:+maximum-picture-bytes+
    #:picture-kind
+   #:picture-page-count
    #:read-picture))

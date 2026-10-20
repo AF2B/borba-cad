@@ -106,3 +106,17 @@ END: the position after its last byte."
                                      (logand (logxor crc (aref octets position)) #xFF))
                                (ash crc -8))))
     (logxor crc #xFFFFFFFF)))
+
+(defparameter *pdf-signature*
+  (coerce '(#x25 #x50 #x44 #x46 #x2D) 'octets)
+  "The first bytes of every PDF file: %PDF-.")
+
+(defun starts-with-p (bytes
+                      signature)
+  "Return true when the vector begins with the bytes of a signature.
+
+BYTES: the vector.
+SIGNATURE: the bytes it must begin with."
+  (declare (type octets bytes signature))
+  (and (>= (length bytes) (length signature))
+       (null (mismatch signature bytes :end2 (length signature)))))
