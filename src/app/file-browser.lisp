@@ -188,7 +188,8 @@ DIALOG: the file dialog."
     ((:svg :shape) *svg-extensions*)
     (:image *image-extensions*)
     (:pdf *pdf-extensions*)
-    (:quantities *csv-extensions*)))
+    (:quantities *csv-extensions*)
+    (:sheets *pdf-extensions*)))
 
 (defun compute-visible-entries (entries
                                 show-all
@@ -491,7 +492,7 @@ MODE: :open or :save.
 PURPOSE: :drawing, :dxf, :script, :image, :pdf or :svg; a DXF file, a script, a picture or a sheet is offered the
 name of the drawing with its own extension."
   (cond ((eq mode :open) "")
-        ((member purpose '(:dxf :script :recording :image :pdf :svg :quantities))
+        ((member purpose '(:dxf :script :recording :image :pdf :svg :quantities :sheets))
          (concatenate 'string
                       (if (app-file-path app)
                           (pathname-name (app-file-path app))
@@ -503,7 +504,8 @@ name of the drawing with its own extension."
                                (:image *image-extensions*)
                                (:pdf *pdf-extensions*)
                                (:svg *svg-extensions*)
-                               (:quantities *csv-extensions*)))))
+                               (:quantities *csv-extensions*)
+                               (:sheets *pdf-extensions*)))))
         ((app-file-path app) (file-namestring (app-file-path app)))
         (t *untitled-file-name*)))
 

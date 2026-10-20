@@ -103,6 +103,42 @@ STREAM: output stream."
     (write-entity entity stream))
   (format stream "   ))~%"))
 
+(defun write-viewport (viewport
+                       stream)
+  "Write one viewport of a sheet as a single line.
+
+VIEWPORT: the viewport.
+STREAM: output stream."
+  (format stream "    (viewport (x ~a) (y ~a) (width ~a) (height ~a) (center-x ~a) (center-y ~a) (scale ~a))~%"
+          (format-double (dom:viewport-x viewport))
+          (format-double (dom:viewport-y viewport))
+          (format-double (dom:viewport-width viewport))
+          (format-double (dom:viewport-height viewport))
+          (format-double (dom:viewport-center-x viewport))
+          (format-double (dom:viewport-center-y viewport))
+          (format-double (dom:viewport-scale viewport))))
+
+(defun write-sheet (sheet
+                    stream)
+  "Write one sheet: its name, its paper, its title block and its viewports.
+
+SHEET: the sheet.
+STREAM: output stream."
+  (format stream "  (sheet (name ")
+  (write-quoted-string (dom:sheet-name sheet) stream)
+  (format stream ") (paper ~(~a~)) (landscape ~a)~%"
+          (dom:sheet-paper sheet)
+          (if (dom:sheet-landscape sheet) "t" "nil"))
+  (format stream "   (fields")
+  (loop for (key . text) in (dom:sheet-fields sheet)
+        do (format stream " (~(~a~) " key)
+           (write-quoted-string text stream)
+           (write-char #\) stream))
+  (format stream ")~%   (viewports~%")
+  (dolist (viewport (dom:sheet-viewports sheet))
+    (write-viewport viewport stream))
+  (format stream "   ))~%"))
+
 (defun write-drawing (drawing
                       stream)
   "Write DRAWING in the .bcad format (the newest version).
@@ -129,6 +165,10 @@ STREAM: character output stream; UTF-8 is expected."
   (format stream " (blocks~%")
   (dolist (definition (dom:block-definitions drawing))
     (write-block definition stream))
+  (format stream " )~%")
+  (format stream " (sheets~%")
+  (dolist (sheet (dom:drawing-sheets drawing))
+    (write-sheet sheet stream))
   (format stream " )~%")
   (format stream " (entities~%")
   (dom:map-entities (lambda (entity) (write-entity entity stream))

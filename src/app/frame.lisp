@@ -53,21 +53,23 @@ APP: the application."
          (tool (app-tool app)))
     (expire-message app)
     (scene:draw-list-reset list)
-    (let* ((state (scene:make-scene-state
-                   :selected-ids (and (plusp (hash-table-count selection)) selection)
-                   :translation (app-translation app)
-                   :preview-entities (tool-preview-entities tool app)
-                   :window (app-window app)
-                   :window-crossing (app-window-crossing app)
-                   :grips (selection-grips app)
-                   :hot-grip (grip-under-pointer app)
-                   :snap (and cursor (cursor-snap-kind cursor) (null (app-prompt app))
-                              (list (cursor-x cursor) (cursor-y cursor) (cursor-snap-kind cursor)))))
-           (result (scene:build-scene list
-                                      drawing
-                                      (app-viewport app)
-                                      state
-                                      theme)))
+    (let* ((result (if (layout-mode-p app)
+                       (build-layout-scene app list)
+                       (scene:build-scene list
+                                          drawing
+                                          (app-viewport app)
+                                          (scene:make-scene-state
+                                           :selected-ids (and (plusp (hash-table-count selection)) selection)
+                                           :translation (app-translation app)
+                                           :preview-entities (tool-preview-entities tool app)
+                                           :window (app-window app)
+                                           :window-crossing (app-window-crossing app)
+                                           :grips (selection-grips app)
+                                           :hot-grip (grip-under-pointer app)
+                                           :snap (and cursor (cursor-snap-kind cursor) (null (app-prompt app))
+                                                      (list (cursor-x cursor) (cursor-y cursor)
+                                                            (cursor-snap-kind cursor))))
+                                          theme))))
       (ui:draw-widgets list
                        theme
                        (build-widgets app)

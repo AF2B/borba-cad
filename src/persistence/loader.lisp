@@ -441,6 +441,130 @@ DRAWING: the drawing being built."
   (dolist (block-node (rest (node-value node)))
     (parse-block block-node drawing)))
 
+(defparameter *viewport-fields*
+  (real-fields "x"
+               nil
+               "y"
+               nil
+               "width"
+               nil
+               "height"
+               nil
+               "center-x"
+               nil
+               "center-y"
+               nil
+               "scale"
+               nil)
+  "Fields of a viewport of a sheet.")
+
+(defun head-name (node)
+  "Return the name that starts a list element, or NIL when it is not a list that starts with a word.
+
+NODE: an element."
+  (let ((head (and (eq (node-kind node) :list) (first (node-value node)))))
+    (and head (eq (node-kind head) :word) (node-value head))))
+
+(defun parse-viewport (node)
+  "Interpret one (viewport (x ...) ...) element.
+
+NODE: the viewport element."
+  (unless (equal "viewport" (head-name node))
+    (content-failure node "expected a viewport such as (viewport (x 0.0) ...)"))
+  (let ((fields (parse-named-fields node
+                                    *viewport-fields*
+                                    "viewport")))
+    (call-with-content-errors node
+                              (lambda ()
+                                (dom:make-viewport :x (getf fields :x)
+                                                   :y (getf fields :y)
+                                                   :width (getf fields :width)
+                                                   :height (getf fields :height)
+                                                   :center-x (getf fields :center-x)
+                                                   :center-y (getf fields :center-y)
+                                                   :scale (getf fields :scale))))))
+
+(defun parse-title-fields (node)
+  "Read the (fields (project \"...\") ...) element of a sheet into an alist.
+
+NODE: the fields element."
+  (let ((seen '()))
+    (dolist (field-node (rest (node-value node)))
+      (let* ((name (head-name field-node))
+             (key (and name (find name dom:*title-field-keys* :key #'string-downcase :test #'string=))))
+        (unless key
+          (content-failure field-node
+                           "unknown field of the title block; use one of ~{~(~a~)~^, ~}"
+                           dom:*title-field-keys*))
+        (when (assoc key seen)
+          (content-failure field-node
+                           "the field ~(~a~) appears twice"
+                           key))
+        (push (cons key (node-string (single-value (rest (node-value field-node)) field-node))) seen)))
+    (nreverse seen)))
+
+(defun parse-sheet (node)
+  "Interpret one (sheet (name ...) (paper ...) (landscape ...) (fields ...) (viewports ...)) element.
+
+NODE: the sheet element."
+  (unless (equal "sheet" (head-name node))
+    (content-failure node "expected a sheet such as (sheet (name \"A\") ...)"))
+  (let ((name nil)
+        (paper nil)
+        (landscape :unset)
+        (fields :unset)
+        (viewports :unset))
+    (dolist (child (rest (node-value node)))
+      (let ((head (head-name child)))
+        (flet ((once (current)
+                 (unless (or (null current) (eq current :unset))
+                   (content-failure child
+                                    "the field ~a appears twice in the sheet"
+                                    head))))
+          (cond ((equal head "name")
+                 (once name)
+                 (setf name (node-string (single-value (rest (node-value child)) child))))
+                ((equal head "paper")
+                 (once paper)
+                 (let ((word (single-value (rest (node-value child)) child)))
+                   (setf paper (or (and (eq (node-kind word) :word)
+                                        (find (node-value word) dom:*sheet-papers*
+                                              :key #'string-downcase
+                                              :test #'string=))
+                                   (content-failure word
+                                                    "unknown paper; use one of ~{~(~a~)~^, ~}"
+                                                    dom:*sheet-papers*)))))
+                ((equal head "landscape")
+                 (once landscape)
+                 (setf landscape (node-boolean (single-value (rest (node-value child)) child))))
+                ((equal head "fields")
+                 (once fields)
+                 (setf fields (parse-title-fields child)))
+                ((equal head "viewports")
+                 (once viewports)
+                 (setf viewports (mapcar #'parse-viewport (rest (node-value child)))))
+                (t (content-failure child "unknown field in a sheet; expected name, paper, landscape, fields or ~
+viewports"))))))
+    (when (or (null name) (null paper) (eq landscape :unset) (eq fields :unset) (eq viewports :unset))
+      (content-failure node "a sheet has five fields: name, paper, landscape, fields and viewports"))
+    (call-with-content-errors node
+                              (lambda ()
+                                (dom:make-sheet :name name
+                                                :paper paper
+                                                :landscape landscape
+                                                :fields fields
+                                                :viewports viewports)))))
+
+(defun parse-sheets (node
+                     drawing)
+  "Read every sheet of the (sheets ...) element into the drawing.
+
+NODE: the sheets element.
+DRAWING: the drawing being built."
+  (call-with-content-errors node
+                            (lambda ()
+                              (dom:set-sheets drawing (mapcar #'parse-sheet (rest (node-value node)))))))
+
 (defun read-entities-section (source
                               drawing
                               next-entity-id)
@@ -540,6 +664,8 @@ SOURCE: the source."
                                  :default-text-height text-height)
       (when (>= *format-version* 5)
         (parse-blocks (expect-field source "blocks") drawing))
+      (when (>= *format-version* 7)
+        (parse-sheets (expect-field source "sheets") drawing))
       (let ((entities (read-entities-section source
                                              drawing
                                              next-entity-id)))

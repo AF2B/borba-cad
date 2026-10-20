@@ -80,6 +80,7 @@
                              (:file "regions")
                              (:file "arrays")
                              (:file "quantities")
+                             (:file "sheets")
                              (:file "block-commands")
                              (:file "transfer")))
                (:module "viewport"
@@ -111,6 +112,8 @@
                 :serial t
                 :components ((:file "package")
                              (:file "layout")
+                             (:file "clip")
+                             (:file "sheet")
                              (:file "pdf")
                              (:file "svg")))
                (:module "image"
@@ -176,6 +179,7 @@
                              (:file "image-operations")
                              (:file "plot-operations")
                              (:file "quantity-tools")
+                             (:file "layout-operations")
                              (:file "autosave")
                              (:file "constraints")
                              (:file "grips")
@@ -193,6 +197,7 @@
                              (:file "palette")
                              (:file "customizing")
                              (:file "region-tools")
+                             (:file "layout-tools")
                              (:file "array-tools")
                              (:file "shape-tools")
                              (:file "welcome")
@@ -318,6 +323,8 @@
                (:file "dimension-tests")
                (:file "reshaping-tests")
                (:file "plot-tests")
+               (:file "sheet-tests")
+               (:file "layout-tests")
                (:file "hatch-tests")
                (:file "block-tests")
                (:file "spreading-tests")

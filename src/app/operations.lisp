@@ -181,6 +181,9 @@ VALUE: the new value (double-float, string, integer, boolean or unit keyword)."
   "Fit the view to every visible entity.
 
 APP: the application."
+  (when (layout-mode-p app)
+    (fit-layout-view app)
+    (return-from operation-zoom-extents))
   (let ((bounds nil)
         (drawing (app-drawing app)))
     (dom:map-entities (lambda (entity)
@@ -275,6 +278,8 @@ KIND: :select, :line, :rectangle, :circle, :polyline, :text, :dimension, :arc, :
 :diameter-dimension, :angular-dimension, :hatch, :solid-fill, :trim, :extend, :offset, :fillet, :spread or
 :subtract. A tool that
 changes the selection (rotate, mirror, scale) is not activated when nothing is selected."
+  (when (and (layout-mode-p app) (not (eq kind :layout)))
+    (operation-close-layout app))
   (cond ((and (selection-tool-kind-p kind) (zerop (hash-table-count (app-selection app))))
          (set-message app
                       (i18n:tr "Select what you want to change first.")

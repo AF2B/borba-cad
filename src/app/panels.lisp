@@ -577,7 +577,7 @@ BLOCKED: true while a modal covers the palette."
                                       (toggle-menu app
                                                    :draw
                                                    :draw))
-                            :active (not (or selecting modifying measuring shaping))
+                            :active (not (or selecting modifying measuring shaping (layout-mode-p app)))
                             :blocked blocked
                             :hint (i18n:tr "Drawing tools")
                             :variant :tool
@@ -733,6 +733,9 @@ APP: the application."
           (list :record (i18n:tr "Rec") nil
                 (lambda () (operation-toggle-recording app))
                 (i18n:tr "Record what you do as a script") "F9" (app-recording-p app))
+          (list :layout (i18n:tr "Layout") nil
+                (lambda () (operation-toggle-layout app))
+                (i18n:tr "Show the sheets as they will be printed") "Ctrl+L" (layout-mode-p app))
           (list :unit
                 (i18n:trf "Unit: ~a" (base:unit-abbreviation (dom:drawing-display-unit drawing)))
                 :unit

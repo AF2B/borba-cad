@@ -583,6 +583,7 @@ APP: the application."
          (dialog-widgets (and (app-dialog app)
                               (file-dialog-widgets app (and (app-prompt app) t))))
          (base-widgets (append (and (not (app-welcome app))
+                                    (not (layout-mode-p app))
                                     (empty-hint-widgets app (ui:layout-canvas layout)))
                                (list (ui:make-widget :panel
                                                      :side-panel
@@ -600,6 +601,10 @@ APP: the application."
                                (zoom-widgets app
                                              (ui:layout-canvas layout)
                                              blocked)
+                               (and (layout-mode-p app)
+                                    (layout-widgets app
+                                                    (ui:layout-canvas layout)
+                                                    blocked))
                                (palette-widgets app
                                                 (ui:layout-tool-palette layout)
                                                 blocked)

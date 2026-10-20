@@ -22,6 +22,7 @@ of Common Lisp, so that what is typed in the console is as exact as the drawing.
                     (#:geo #:borba-cad/geometry)
                     (#:dom #:borba-cad/domain)
                     (#:persist #:borba-cad/persistence)
+                    (#:plot #:borba-cad/plot)
                     (#:sbcl #:borba-cad/sbcl-support))
   (:documentation "The language the program can be driven with: commands that draw and edit, written in Lisp
 and run against a drawing; the context they run in, with the transaction that makes each command a single step
@@ -109,6 +110,11 @@ commands that draw it.")
    #:array-grid
    #:array-polar
    #:array-path
+   #:sheet
+   #:edit-sheet
+   #:remove-sheet
+   #:viewport
+   #:sheets
    #:region-union
    #:region-subtract
    #:region-intersect

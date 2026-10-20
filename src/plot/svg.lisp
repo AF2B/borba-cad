@@ -58,10 +58,11 @@ ITEM: a plot stroke, fill or text."
   (etypecase item
     (plot-stroke
      (when (cdr (plot-stroke-points item))
-       (format stream "<~:[polyline~;polygon~] points=\"~a\" stroke=\"~a\"/>~%"
+       (format stream "<~:[polyline~;polygon~] points=\"~a\" stroke=\"~a\"~@[ stroke-width=\"~a\"~]/>~%"
                (plot-stroke-closed item)
                (svg-points plan (plot-stroke-points item))
-               (svg-color (plot-stroke-color item)))))
+               (svg-color (plot-stroke-color item))
+               (and (plot-stroke-width item) (svg-number (plot-stroke-width item))))))
     (plot-fill
      (format stream "<polygon points=\"~a\" fill=\"~a\" stroke=\"none\"/>~%"
              (svg-points plan (plot-fill-points item))

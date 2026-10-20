@@ -207,7 +207,10 @@ SCALE: framebuffer pixels per logical pixel.
 BACKGROUND: an RGBA clear color."
   (when (glyph-atlas-full (renderer-atlas renderer))
     (reset-glyph-atlas (renderer-atlas renderer)))
-  (gl:viewport 0 0 framebuffer-width framebuffer-height)
+  (gl:viewport 0
+               0
+               framebuffer-width
+               framebuffer-height)
   (gl:clear-color (scene:rgba-r background) (scene:rgba-g background) (scene:rgba-b background) 1f0)
   (gl:clear :color-buffer-bit)
   (gl:use-program (renderer-program renderer))

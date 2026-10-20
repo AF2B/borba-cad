@@ -113,6 +113,7 @@ viewport and the interaction state into a draw list.")
    #:scene-state-window
    #:scene-state-snap
    #:scene-result
+   #:make-scene-result
    #:scene-result-drawn-entities
    #:scene-result-culled-entities
    #:build-scene

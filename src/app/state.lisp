@@ -197,6 +197,7 @@ FILLET-RADIUS: the radius, in millimetres, the fillet tool gives the next arc.
 SPREAD-DISTANCE: the distance, in millimetres, the spread tool moves each piece of a shape from the others.
 FORM-SETTINGS: what was chosen or typed in the forms that were last accepted, as an alist of the key of each line and
 its value.
+SHEET-VIEW: the state of looking at the sheets, a LAYOUT-STATE, or NIL while the drawing is shown.
 QUANTITY-EXPORT: the report of quantities that is to be written as a CSV file and how, as a cons of the report and
 :standard or :excel, or NIL.
 CUSTOMIZATIONS: the commands, key bindings and hooks that the init file and the console defined.
@@ -264,6 +265,7 @@ LAST-ERROR: the last error condition reported, for tests and diagnostics."
   (fillet-radius +default-fillet-radius+ :type double-float)
   (spread-distance +default-spread-distance+ :type double-float)
   (form-settings '() :type list)
+  sheet-view
   quantity-export
   (customizations (script:make-customizations))
   (recorded-commands '() :type list)

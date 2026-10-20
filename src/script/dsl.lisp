@@ -863,6 +863,197 @@ IDS: an id or a list of ids to count, or NIL for everything on the layers that a
     (append (dom:quantity-report-rows report)
             (list (dom:quantity-report-totals report)))))
 
+(defun scale-ratio (scale)
+  "Return a scale as the millimetres of paper for a millimetre of the drawing: a number is that, and a string such as
+\"1:50\" is a fiftieth.
+
+SCALE: a positive number, or text that names a scale."
+  (cond ((realp scale)
+         (unless (plusp scale)
+           (error "A scale is above zero, but ~s was given." scale))
+         (float scale 1d0))
+        ((stringp scale)
+         (or (handler-case (plot:parse-plot-scale scale)
+               (base:invalid-input (condition)
+                 (error "~a" condition)))
+             (error "A scale is a number or text such as \"1:50\", but ~s was given." scale)))
+        (t (error "A scale is a number or text such as \"1:50\", but ~s was given." scale))))
+
+(defun sheet-index (number)
+  "Return the position, from 0, of the sheet that a command names by its number, signaling an error when there is none.
+
+NUMBER: the number of a sheet, from 1."
+  (unless (and (integerp number) (<= 1 number (dom:sheet-count (the-drawing))))
+    (error "There is no sheet ~s; the drawing has ~d." number (dom:sheet-count (the-drawing))))
+  (1- number))
+
+(defun title-field-alist (project
+                          title
+                          author
+                          date
+                          revision)
+  "Return the fields of a title block that were given, as an alist.
+
+PROJECT: the project, or NIL.
+TITLE: the title of the sheet, or NIL.
+AUTHOR: who drew it, or NIL.
+DATE: when, or NIL.
+REVISION: which revision, or NIL."
+  (loop for (key value) in (list (list :project project)
+                                 (list :title title)
+                                 (list :author author)
+                                 (list :date date)
+                                 (list :revision revision))
+        when value
+          collect (cons key value)))
+
+(defun sheet (name
+              &key (paper :a3)
+                   (landscape t)
+                   project
+                   title
+                   author
+                   date
+                   revision)
+  "Add a sheet that is printed: a page of a paper with a title block. Returns its number, from 1. Sheets, like layers,
+are not part of what a command takes back when it fails.
+
+NAME: what it is called, a string.
+PAPER: :a4, :a3, :a2, :a1, :a0 or :letter.
+LANDSCAPE: true for paper lying down.
+PROJECT: the project, for the title block.
+TITLE: the title of the sheet.
+AUTHOR: who drew it.
+DATE: when, as text.
+REVISION: which revision."
+  (handler-case (1+ (dom:add-sheet (the-drawing)
+                                   (dom:make-sheet :name name
+                                                   :paper paper
+                                                   :landscape landscape
+                                                   :fields (title-field-alist project
+                                                                              title
+                                                                              author
+                                                                              date
+                                                                              revision))))
+    (base:edit-refused (condition)
+      (error "~a" condition))))
+
+(defun edit-sheet (number
+                   &key name
+                        paper
+                        (landscape nil landscape-given)
+                        project
+                        title
+                        author
+                        date
+                        revision)
+  "Change a sheet: what is named is changed and the rest stays. Returns its number.
+
+NUMBER: the number of the sheet, from 1.
+NAME: its new name.
+PAPER: its new paper.
+LANDSCAPE: true for paper lying down, false for standing.
+PROJECT: the project, for the title block.
+TITLE: the title of the sheet.
+AUTHOR: who drew it.
+DATE: when, as text.
+REVISION: which revision."
+  (let* ((index (sheet-index number))
+         (current (dom:sheet-at (the-drawing) index)))
+    (handler-case (dom:replace-sheet (the-drawing)
+                                     index
+                                     (dom:sheet-with current
+                                                     :name (or name (dom:sheet-name current))
+                                                     :paper (or paper (dom:sheet-paper current))
+                                                     :landscape (if landscape-given
+                                                                    landscape
+                                                                    (dom:sheet-landscape current))
+                                                     :fields (title-field-alist project
+                                                                                title
+                                                                                author
+                                                                                date
+                                                                                revision)))
+      (base:edit-refused (condition)
+        (error "~a" condition)))
+    number))
+
+(defun remove-sheet (number)
+  "Take a sheet away. The sheets after it move up by one. Returns NIL.
+
+NUMBER: the number of the sheet, from 1."
+  (handler-case (dom:remove-sheet (the-drawing) (sheet-index number))
+    (base:edit-refused (condition)
+      (error "~a" condition))))
+
+(defun viewport (number
+                 &key x
+                      y
+                      width
+                      height
+                      center-x
+                      center-y
+                      scale)
+  "Put a viewport on a sheet: a window on the drawing at a scale. What is not given is worked out: it fills the area of
+the sheet above the title block, shows the middle of the drawing, and is at the largest scale at which all of the
+drawing shows. Returns the number of the viewport on the sheet, from 1.
+
+NUMBER: the number of the sheet, from 1.
+X: x of its lower left corner on the sheet, in millimetres from the sheet's own corner.
+Y: y of that corner.
+WIDTH: its width on the sheet.
+HEIGHT: its height on the sheet.
+CENTER-X: x of the point of the drawing at its center.
+CENTER-Y: y of that point.
+SCALE: millimetres of paper for a millimetre of the drawing, or text such as \"1:50\"."
+  (let* ((index (sheet-index number))
+         (sheet (dom:sheet-at (the-drawing) index))
+         (bounds (let ((found (extents)))
+                   (and found (apply #'geo:make-bounds found))))
+         (body (plot:sheet-body sheet))
+         (inset plot:+default-viewport-inset+)
+         (center-x (if center-x
+                       (number-of center-x)
+                       (if bounds (geo:bounds-center-x bounds) 0d0)))
+         (center-y (if center-y
+                       (number-of center-y)
+                       (if bounds (geo:bounds-center-y bounds) 0d0)))
+         (width (if width
+                    (number-of width)
+                    (- (geo:bounds-width body) (* 2 plot:+default-viewport-inset+))))
+         (height (if height
+                     (number-of height)
+                     (- (geo:bounds-height body) (* 2 plot:+default-viewport-inset+))))
+         (scale (cond (scale (scale-ratio scale))
+                      (bounds (plot:fit-ratio bounds
+                                              width
+                                              height
+                                              0d0))
+                      (t 1d0))))
+    (handler-case (1+ (dom:add-viewport (the-drawing)
+                                        index
+                                        (dom:make-viewport :x (or (and x (number-of x))
+                                                                  (+ (geo:bounds-min-x body) inset))
+                                                           :y (or (and y (number-of y))
+                                                                  (+ (geo:bounds-min-y body) inset))
+                                                           :width width
+                                                           :height height
+                                                           :center-x center-x
+                                                           :center-y center-y
+                                                           :scale scale)))
+      (base:edit-refused (condition)
+        (error "~a" condition)))))
+
+(defun sheets ()
+  "Return the sheets of the drawing, each as a list of its number, its name, its paper, whether it lies and how many
+viewports it has."
+  (loop for sheet in (dom:drawing-sheets (the-drawing))
+        for number from 1
+        collect (list number
+                      (dom:sheet-name sheet)
+                      (dom:sheet-paper sheet)
+                      (dom:sheet-landscape sheet)
+                      (length (dom:sheet-viewports sheet)))))
+
 (defun blocks ()
   "Return the names of the blocks, in alphabetical order."
   (dom:block-names (the-drawing)))
@@ -1272,6 +1463,7 @@ THINGS: anything."
     ("Layers" layer with-layer layers)
     ("Blocks" with-block make-block insert explode spread blocks)
     ("Closed shapes" region-union region-subtract region-intersect)
+    ("Sheets" sheet edit-sheet remove-sheet viewport sheets)
     ("Repeating" array-grid array-polar array-path)
     ("Changing entities" move copy erase edit redraw move-to-layer rotate mirror scale)
     ("Finding entities" entities entity-count extents info quantities)

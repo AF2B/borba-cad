@@ -308,15 +308,18 @@
                  (:menu-item :export-image)
                  (:menu-item :export-pdf)
                  (:menu-item :export-svg)
+                 (:menu-item :export-sheets)
+                 (:menu-item :layout)
                  (:menu-item :console)
                  (:menu-item :run-script)
                  (:menu-item :export-script)
                  (:menu-item :record))
                (mapcar #'ui:widget-id (menu-rows application))))
-    (is (equal '("Import DXF..." "Export DXF..." "Export as JPEG..." "Export as PDF..." "Export as SVG..." "Console"
-                 "Run script..." "Export as script..." "Record actions")
+    (is (equal '("Import DXF..." "Export DXF..." "Export as JPEG..." "Export as PDF..." "Export as SVG..."
+                 "Export the sheets as PDF..." "Layout" "Console" "Run script..." "Export as script..."
+                 "Record actions")
                (mapcar #'ui:widget-label (menu-rows application))))
-    (is (equal '("Ctrl+Shift+I" "Ctrl+Shift+E" nil nil nil "F2" nil nil "F9")
+    (is (equal '("Ctrl+Shift+I" "Ctrl+Shift+E" nil nil nil nil "Ctrl+L" "F2" nil nil "F9")
                (mapcar #'ui:widget-shortcut (menu-rows application))))
     (click-widget application '(:menu-item :export-dxf))
     (is (null (menu-rows application)))

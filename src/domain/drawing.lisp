@@ -31,11 +31,13 @@ OBJECT-SNAP: whether pointer positions snap to entity endpoints and centers.
 DEFAULT-TEXT-HEIGHT: text height used for new text and dimensions.
 NEXT-ENTITY-ID: id the next new entity receives; never decreases.
 NEXT-LAYER-ID: id the next new layer receives; never decreases.
+SHEETS: the sheets that are printed, in order; see sheets.lisp.
 REVISION: counter bumped by every change, for dirty tracking and cache invalidation."
   (store (make-entity-store) :type entity-store :read-only t)
   (layers (make-hash-table) :type hash-table :read-only t)
   (layer-order nil :type list)
   (blocks (make-hash-table :test 'equal) :type hash-table :read-only t)
+  (sheets nil :type list)
   (current-layer-id +default-layer-id+ :type (integer 0))
   (unit :millimeter :type keyword)
   (display-unit :millimeter :type keyword)

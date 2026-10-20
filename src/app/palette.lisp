@@ -54,6 +54,18 @@ GROUP: the name of the menu, translated."
                                         (menu-item-shortcut item)
                                         (menu-item-action item)))))
 
+(defparameter *layout-palette-choices*
+  (list (list (i18n:mark "Layout") (i18n:mark "Add a sheet") nil 'operation-add-sheet)
+        (list (i18n:mark "Layout") (i18n:mark "Change the name, paper and title block of the sheet") nil
+              'operation-sheet-properties)
+        (list (i18n:mark "Layout") (i18n:mark "Delete the sheet") nil 'operation-delete-sheet)
+        (list (i18n:mark "Layout") (i18n:mark "Show the next sheet") nil 'operation-show-next-sheet)
+        (list (i18n:mark "Layout") (i18n:mark "Show the sheet before") nil 'operation-show-previous-sheet)
+        (list (i18n:mark "Layout") (i18n:mark "Put a new viewport on the sheet") nil 'operation-arm-viewport)
+        (list (i18n:mark "Layout") (i18n:mark "Change what the viewport shows") "Enter" 'operation-edit-viewport)
+        (list (i18n:mark "Layout") (i18n:mark "Delete the viewport") "Delete" 'operation-delete-viewport))
+  "What the palette offers only while the sheets are shown, as (group label shortcut function), as the others are.")
+
 (defparameter *general-palette-choices*
   (list (list (i18n:mark "Edit") (i18n:mark "Select all") "Ctrl+A" 'operation-select-all)
         (list (i18n:mark "Edit") (i18n:mark "Delete the selection") "Delete" 'operation-delete-selection)
@@ -74,6 +86,8 @@ GROUP: the name of the menu, translated."
         (list (i18n:mark "View") (i18n:mark "Make the interface smaller") "Ctrl+-" 'operation-interface-zoom-out)
         (list (i18n:mark "View") (i18n:mark "Reset the size of the interface") "Ctrl+0"
               'operation-interface-zoom-reset)
+        (list (i18n:mark "Layout") (i18n:mark "Show or leave the sheets") "Ctrl+L" 'operation-toggle-layout)
+        (list (i18n:mark "Layout") (i18n:mark "Export the sheets as PDF...") nil 'operation-export-sheets)
         (list (i18n:mark "Settings") (i18n:mark "Run the init file again") nil 'operation-reload-init))
   "What the program does that no menu offers, as (group label shortcut function): the group and the label in English,
 translated where the palette is built, and the function that does it, of the application.")
@@ -91,7 +105,8 @@ APP: the application."
                                          nil
                                          (fifth spec)
                                          (third spec))))
-   (loop for choice in *general-palette-choices*
+   (loop for choice in (append *general-palette-choices*
+                               (and (layout-mode-p app) *layout-palette-choices*))
          collect (let ((function (fourth choice)))
                    (make-palette-entry (format nil "~a: ~a" (i18n:tr (first choice)) (i18n:tr (second choice)))
                                        nil

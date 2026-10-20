@@ -37,6 +37,10 @@ typed: one centimetre.
 
 Pointer travel, in pixels, before a press becomes a drag; below it a release is a click.
 
+### `+minimum-viewport-size+` (constant)
+
+Smallest width or height, in millimetres of paper, that a viewport made with the pointer may have.
+
 ### `+palette-visible-rows+` (constant)
 
 Most commands the palette lists at once; the arrows and the wheel bring the others.
@@ -101,6 +105,7 @@ NIL when it selects only what it holds (dragged from left to right).
 - `SPREAD-DISTANCE`: the distance, in millimetres, the spread tool moves each piece of a shape from the others.
 - `FORM-SETTINGS`: what was chosen or typed in the forms that were last accepted, as an alist of the key of each line and
 its value.
+- `SHEET-VIEW`: the state of looking at the sheets, a LAYOUT-STATE, or NIL while the drawing is shown.
 - `QUANTITY-EXPORT`: the report of quantities that is to be written as a CSV file and how, as a cons of the report and
 :standard or :excel, or NIL.
 - `CUSTOMIZATIONS`: the commands, key bindings and hooks that the init file and the console defined.
@@ -532,6 +537,14 @@ Handle a window size change: the canvas follows the layout and keeps its center 
 
 (undocumented)
 
+### `app-sheet-view` (function)
+
+```lisp
+(app-sheet-view instance)
+```
+
+(undocumented)
+
 ### `app-spread-distance` (function)
 
 ```lisp
@@ -827,6 +840,18 @@ the user and nothing changes. Returns true when changes were committed.
 - `EVENT`: dotted event name such as entity.create.
 - `CONTEXT`: short name used in the error message log.
 
+### `commit-sheets` (function)
+
+```lisp
+(commit-sheets app change)
+```
+
+Change the sheets of the drawing with CHANGE, keeping what the layout has worked out of the drawing, which this
+does not change, and say that the next frame is different.
+
+- `APP`: the application.
+- `CHANGE`: function of no arguments that changes the sheets, which may signal EDIT-REFUSED.
+
 ### `console-focused-p` (function)
 
 ```lisp
@@ -1116,6 +1141,18 @@ scale that were chosen. Returns true on success.
 
 Save the drawing as a script at PATH-TEXT (.lisp is added to a name without an extension) and tell the user
 how it went in a modal. On failure the previous file is untouched. Returns true on success.
+
+- `APP`: the application.
+- `PATH-TEXT`: file name as typed by the user.
+
+### `export-sheets-from-app` (function)
+
+```lisp
+(export-sheets-from-app app path-text)
+```
+
+Save the sheets as a PDF file at PATH-TEXT (.pdf is added to a name without an extension), a page for each. Returns
+true on success.
 
 - `APP`: the application.
 - `PATH-TEXT`: file name as typed by the user.
@@ -1513,6 +1550,93 @@ A key press or release.
 
 (undocumented)
 
+### `layout-button-rows` (function)
+
+```lisp
+(layout-button-rows app)
+```
+
+Return the buttons of the layout as two rows of (id label action enabled active hint), where an id that is NIL is
+not a button but the name of the sheet that is shown.
+
+- `APP`: the application.
+
+### `layout-mode-p` (function)
+
+```lisp
+(layout-mode-p app)
+```
+
+Return true while the sheets are shown in place of the drawing.
+
+- `APP`: the application.
+
+### `layout-sheet` (function)
+
+```lisp
+(layout-sheet app)
+```
+
+Return the sheet that is shown, or NIL when the layout is not open.
+
+- `APP`: the application.
+
+### `layout-state-arming` (function)
+
+```lisp
+(layout-state-arming instance)
+```
+
+(undocumented)
+
+### `layout-state-drag` (function)
+
+```lisp
+(layout-state-drag instance)
+```
+
+(undocumented)
+
+### `layout-state-preview` (function)
+
+```lisp
+(layout-state-preview instance)
+```
+
+(undocumented)
+
+### `layout-state-selected` (function)
+
+```lisp
+(layout-state-selected instance)
+```
+
+(undocumented)
+
+### `layout-state-sheet-index` (function)
+
+```lisp
+(layout-state-sheet-index instance)
+```
+
+(undocumented)
+
+### `layout-tool` (type)
+
+Selects, moves and resizes the viewports of the sheet that is shown, and makes new ones.
+
+### `layout-viewport-items` (function)
+
+```lisp
+(layout-viewport-items app viewport)
+```
+
+Return what draws a viewport, as the plot items and how many entities it shows, working it out when that has not
+been done for this viewport since the drawing changed.
+
+- `APP`: the application.
+- `VIEWPORT`: the viewport.
+
 ### `line-tool` (type)
 
 Creates a line segment from two clicks.
@@ -1747,7 +1871,8 @@ Open the file dialog to choose a drawing to open or a place and a name to save t
 - `CONTINUATION`: function of no arguments run after a successful save, or NIL.
 - `PURPOSE`: :drawing for a drawing of the program, :dxf to import or export a DXF file, :script to run a script
 or export one, :recording to save the script of a recording, :shape to choose an SVG file to add as a shape,
-:image to export a picture, :pdf or :svg to export a sheet, or :quantities to write a report as a CSV file.
+:image to export a picture, :pdf or :svg to export a sheet, :quantities to write a report as a CSV file, or :sheets
+to write the sheets as a PDF file.
 
 ### `open-form-prompt` (function)
 
@@ -1842,6 +1967,26 @@ Create a layer, make it current and tell the user.
 - `APP`: the application.
 - `NAME`: the layer name.
 
+### `operation-add-sheet` (function)
+
+```lisp
+(operation-add-sheet app)
+```
+
+Add a sheet after the last, on the paper of the one shown and with its title block, without viewports, and show it.
+
+- `APP`: the application.
+
+### `operation-arm-viewport` (function)
+
+```lisp
+(operation-arm-viewport app)
+```
+
+Make the next drag with the pointer, on the sheet, put a viewport there; a second choice takes it back.
+
+- `APP`: the application.
+
 ### `operation-array` (function)
 
 ```lisp
@@ -1862,6 +2007,16 @@ Move the selected entities to another layer.
 
 - `APP`: the application.
 - `LAYER-ID`: id of the destination layer.
+
+### `operation-close-layout` (function)
+
+```lisp
+(operation-close-layout app)
+```
+
+Show the drawing again, in the view it was in when the layout was opened.
+
+- `APP`: the application.
 
 ### `operation-command-palette` (function)
 
@@ -1935,6 +2090,26 @@ Delete the selected entities.
 
 - `APP`: the application.
 
+### `operation-delete-sheet` (function)
+
+```lisp
+(operation-delete-sheet app)
+```
+
+Ask whether to take away the sheet that is shown, and do it when the answer is yes.
+
+- `APP`: the application.
+
+### `operation-delete-viewport` (function)
+
+```lisp
+(operation-delete-viewport app)
+```
+
+Take the selected viewport off the sheet.
+
+- `APP`: the application.
+
 ### `operation-edit-property` (function)
 
 ```lisp
@@ -1947,6 +2122,16 @@ Set one property of one entity to an already interpreted value.
 - `ENTITY-ID`: id of the entity.
 - `KEY`: property key from the entity's property list.
 - `VALUE`: the new value (double-float, string, integer, boolean or unit keyword).
+
+### `operation-edit-viewport` (function)
+
+```lisp
+(operation-edit-viewport app)
+```
+
+Ask what the selected viewport shows: the whole drawing, the selection, or a scale and a center.
+
+- `APP`: the application.
 
 ### `operation-explode-selection` (function)
 
@@ -2007,6 +2192,16 @@ Ask where to write the report that is shown, as a CSV file.
 ```
 
 Open the dialog where the user picks a folder and a name, and export the drawing there as a script.
+
+- `APP`: the application.
+
+### `operation-export-sheets` (function)
+
+```lisp
+(operation-export-sheets app)
+```
+
+Ask whether to print in black or in color, then where to save the sheets of the drawing as a PDF file.
 
 - `APP`: the application.
 
@@ -2102,6 +2297,17 @@ Start a new empty drawing, after offering to save the current one.
 
 - `APP`: the application.
 
+### `operation-next-sheet` (function)
+
+```lisp
+(operation-next-sheet app step)
+```
+
+Show the sheet STEP places after the one shown, going round at the ends.
+
+- `APP`: the application.
+- `STEP`: 1 for the next, -1 for the one before.
+
 ### `operation-open` (function)
 
 ```lisp
@@ -2109,6 +2315,17 @@ Start a new empty drawing, after offering to save the current one.
 ```
 
 Open the dialog where the user finds a drawing to open, after offering to save the current one.
+
+- `APP`: the application.
+
+### `operation-open-layout` (function)
+
+```lisp
+(operation-open-layout app)
+```
+
+Show the sheets in place of the drawing, making a first sheet when the drawing has none, which shows all of the
+drawing.
 
 - `APP`: the application.
 
@@ -2270,6 +2487,16 @@ Activate a tool, cancelling whatever the previous one was doing.
 :subtract. A tool that
 changes the selection (rotate, mirror, scale) is not activated when nothing is selected.
 
+### `operation-sheet-properties` (function)
+
+```lisp
+(operation-sheet-properties app)
+```
+
+Ask for the name, the paper and the title block of the sheet that is shown.
+
+- `APP`: the application.
+
 ### `operation-spread` (function)
 
 ```lisp
@@ -2352,6 +2579,16 @@ Show or hide a layer; its entities leave the selection when hidden.
 
 - `APP`: the application.
 - `LAYER-ID`: layer id.
+
+### `operation-toggle-layout` (function)
+
+```lisp
+(operation-toggle-layout app)
+```
+
+Open the layout, or leave it when it is open.
+
+- `APP`: the application.
 
 ### `operation-toggle-object-snap` (function)
 
@@ -2792,6 +3029,21 @@ The window changed size.
 
 (undocumented)
 
+### `resized-viewport` (function)
+
+```lisp
+(resized-viewport viewport corner x y)
+```
+
+Return a viewport like another with one corner moved to a point and the opposite corner where it was, which keeps
+what it shows where it is on the sheet, or NIL when that would leave it too small.
+
+- `VIEWPORT`: the viewport.
+- `CORNER`: which corner is dragged: 0 for the lower left, 1 for the lower right, 2 for the upper right, 3 for the upper
+left.
+- `X`: x of the point on the sheet.
+- `Y`: y of the point.
+
 ### `run-command-by-name` (function)
 
 ```lisp
@@ -2970,6 +3222,17 @@ Select the entities with IDS, replacing the selection unless ADD is true.
 Selects by click, by window (left to right: what lies inside) or by crossing (right to
 left: what it touches), and moves the selection by dragging.
 
+### `select-viewport` (function)
+
+```lisp
+(select-viewport app position)
+```
+
+Select a viewport of the sheet that is shown, or none.
+
+- `APP`: the application.
+- `POSITION`: its position on the sheet, from 0, or NIL.
+
 ### `selected-entities` (function)
 
 ```lisp
@@ -2989,6 +3252,16 @@ Return the selected entities in stacking order.
 Return the selected entry, or NIL when none is selected or it is not in the list.
 
 - `DIALOG`: the file dialog.
+
+### `selected-viewport` (function)
+
+```lisp
+(selected-viewport app)
+```
+
+Return the selected viewport, or NIL.
+
+- `APP`: the application.
 
 ### `selection-grips` (function)
 
@@ -3115,6 +3388,16 @@ Return TEXT as a line to paste into a one-line field: line breaks and tabs becom
 of them becomes one, and the ends are trimmed.
 
 - `TEXT`: a string that may have several lines.
+
+### `standard-scale-within` (function)
+
+```lisp
+(standard-scale-within ratio)
+```
+
+Return the largest of the usual scales that is no larger than RATIO, or RATIO when it is smaller than all of them.
+
+- `RATIO`: millimetres of paper for a millimetre of the drawing.
 
 ### `start-customizations` (function)
 
@@ -3261,6 +3544,32 @@ shown, unless it is absolute or starts with ~.
 Return the folder where the shapes that the user added are kept, in the state directory, or NIL when there is none.
 
 - `APP`: the application.
+
+### `viewport-corners` (function)
+
+```lisp
+(viewport-corners viewport)
+```
+
+Return the corners of a viewport on the sheet as a list of (x . y) conses, the lower left first and going round
+counter-clockwise, the order that RESIZED-VIEWPORT numbers them in.
+
+- `VIEWPORT`: the viewport.
+
+### `viewport-from-corners` (function)
+
+```lisp
+(viewport-from-corners app x1 y1 x2 y2)
+```
+
+Return the viewport that fills a rectangle of the sheet and shows all of the drawing at one of the usual scales, or
+NIL when the rectangle is too small.
+
+- `APP`: the application.
+- `X1`: x of one corner on the sheet.
+- `Y1`: y of that corner.
+- `X2`: x of the opposite corner.
+- `Y2`: y of that corner.
 
 ### `visible-entries` (function)
 
@@ -4377,9 +4686,17 @@ The ways a hatch fills its region: solid, with parallel lines, or with two sets 
 
 The palette as RGB values.
 
+### `*sheet-papers*` (variable)
+
+The papers a sheet may be on, which the plot module gives sizes to.
+
 ### `*spreadable-kinds*` (variable)
 
 The kinds of entity that can be spread.
+
+### `*title-field-keys*` (variable)
+
+The fields of the title block that the user writes, in the order they are asked and kept.
 
 ### `+default-grid-spacing+` (constant)
 
@@ -4450,9 +4767,21 @@ Most vertices of a polyline that get a grip; a polyline with more is changed in 
 
 Largest vertex count of a polyline. Bounds memory use when loading untrusted files.
 
+### `+maximum-sheets+` (constant)
+
+Most sheets a drawing may have.
+
 ### `+maximum-text-length+` (constant)
 
 Largest number of characters in a text annotation.
+
+### `+maximum-title-field-length+` (constant)
+
+Longest text a field of the title block may hold.
+
+### `+maximum-viewports+` (constant)
+
+Most viewports a sheet may have.
 
 ### `+minimum-grid-spacing+` (constant)
 
@@ -4471,6 +4800,29 @@ too long or already used.
 - `DRAWING`: the drawing.
 - `NAME`: layer name.
 - `COLOR`: an RGB color.
+
+### `add-sheet` (function)
+
+```lisp
+(add-sheet drawing sheet)
+```
+
+Put a sheet after the others. Returns its position.
+
+- `DRAWING`: the drawing.
+- `SHEET`: the sheet.
+
+### `add-viewport` (function)
+
+```lisp
+(add-viewport drawing index viewport)
+```
+
+Put a viewport on a sheet, above the others. Returns the position of the viewport on the sheet.
+
+- `DRAWING`: the drawing.
+- `INDEX`: the position of the sheet.
+- `VIEWPORT`: the viewport.
 
 ### `angular-dimension-end-angle` (function)
 
@@ -5065,6 +5417,7 @@ The drawing aggregate: layers, entities and drawing-wide settings.
 - `DEFAULT-TEXT-HEIGHT`: text height used for new text and dimensions.
 - `NEXT-ENTITY-ID`: id the next new entity receives; never decreases.
 - `NEXT-LAYER-ID`: id the next new layer receives; never decreases.
+- `SHEETS`: the sheets that are printed, in order; see sheets.lisp.
 - `REVISION`: counter bumped by every change, for dirty tracking and cache invalidation.
 
 ### `drawing-current-layer-id` (function)
@@ -5155,6 +5508,14 @@ Return the number of entities in DRAWING.
 
 ```lisp
 (drawing-revision instance)
+```
+
+(undocumented)
+
+### `drawing-sheets` (function)
+
+```lisp
+(drawing-sheets instance)
 ```
 
 (undocumented)
@@ -6563,6 +6924,20 @@ Create a rectangle from two opposite corners given in any order.
 
 (undocumented)
 
+### `make-sheet` (function)
+
+```lisp
+(make-sheet &key (name sheet) (paper a3) (landscape t) fields viewports)
+```
+
+Create a sheet. Signals EDIT-REFUSED, with the reason, when it makes no sense.
+
+- `NAME`: what it is called, not empty.
+- `PAPER`: a keyword of *SHEET-PAPERS*.
+- `LANDSCAPE`: true for paper lying down.
+- `FIELDS`: the title block, an alist from keys to text; the keys it lacks are empty.
+- `VIEWPORTS`: list of viewports.
+
 ### `make-text` (function)
 
 ```lisp
@@ -6579,6 +6954,22 @@ Create a validated text annotation. Signals INVALID-ENTITY when an invariant is 
 - `HEIGHT`: text height (em size), above the length tolerance.
 - `ANGLE`: direction of the baseline in radians, counter-clockwise from +x; any finite angle, kept
 reduced to [0, 2 pi).
+
+### `make-viewport` (function)
+
+```lisp
+(make-viewport &key x y width height center-x center-y scale)
+```
+
+Create a viewport. Signals EDIT-REFUSED, with the reason, when it makes no sense.
+
+- `X`: x of its lower left corner on the sheet.
+- `Y`: y of that corner.
+- `WIDTH`: width on the sheet, above zero.
+- `HEIGHT`: height on the sheet, above zero.
+- `CENTER-X`: x of the point of the drawing at its center.
+- `CENTER-Y`: y of that point.
+- `SCALE`: millimetres of paper for a millimetre of the drawing, above zero.
 
 ### `map-entities` (function)
 
@@ -7195,6 +7586,29 @@ holds entities. The caller must clear the undo history, which may refer to the l
 - `DRAWING`: the drawing.
 - `ID`: layer id.
 
+### `remove-sheet` (function)
+
+```lisp
+(remove-sheet drawing index)
+```
+
+Take away the sheet at a position. Signals EDIT-REFUSED when there is none there.
+
+- `DRAWING`: the drawing.
+- `INDEX`: the position.
+
+### `remove-viewport` (function)
+
+```lisp
+(remove-viewport drawing index position)
+```
+
+Take a viewport away from a sheet.
+
+- `DRAWING`: the drawing.
+- `INDEX`: the position of the sheet.
+- `POSITION`: the position of the viewport on it.
+
 ### `rename-layer` (function)
 
 ```lisp
@@ -7206,6 +7620,31 @@ Rename a layer. Signals LAYER-ERROR when NAME is empty, too long or used by anot
 - `DRAWING`: the drawing.
 - `ID`: layer id.
 - `NAME`: the new name.
+
+### `replace-sheet` (function)
+
+```lisp
+(replace-sheet drawing index sheet)
+```
+
+Put a sheet in place of the one at a position. Signals EDIT-REFUSED when there is none there.
+
+- `DRAWING`: the drawing.
+- `INDEX`: the position.
+- `SHEET`: the new sheet.
+
+### `replace-viewport` (function)
+
+```lisp
+(replace-viewport drawing index position viewport)
+```
+
+Put a viewport in place of another on a sheet.
+
+- `DRAWING`: the drawing.
+- `INDEX`: the position of the sheet.
+- `POSITION`: the position of the viewport on it.
+- `VIEWPORT`: the new viewport.
 
 ### `restore-drawing-state` (function)
 
@@ -7425,6 +7864,17 @@ Enable or disable snapping to entity endpoints and centers.
 - `DRAWING`: the drawing.
 - `ENABLED`: true to snap.
 
+### `set-sheets` (function)
+
+```lisp
+(set-sheets drawing sheets)
+```
+
+Replace the sheets of the drawing, which counts as a change to it. Signals EDIT-REFUSED when there are too many.
+
+- `DRAWING`: the drawing.
+- `SHEETS`: the list of sheets, in order.
+
 ### `set-snap-to-grid` (function)
 
 ```lisp
@@ -7435,6 +7885,111 @@ Enable or disable snapping to the grid.
 
 - `DRAWING`: the drawing.
 - `ENABLED`: true to snap.
+
+### `sheet` (type)
+
+A page that is printed.
+
+- `NAME`: what it is called in the list of sheets.
+- `PAPER`: a keyword of *SHEET-PAPERS*.
+- `LANDSCAPE`: true when the paper lies, with its long side across.
+- `FIELDS`: the title block, as an alist from the keys of *TITLE-FIELD-KEYS* to text, with every key in it.
+- `VIEWPORTS`: the viewports, the first at the bottom.
+
+### `sheet-at` (function)
+
+```lisp
+(sheet-at drawing index)
+```
+
+Return the sheet at a position, from 0, or NIL when there is none.
+
+- `DRAWING`: the drawing.
+- `INDEX`: its position.
+
+### `sheet-count` (function)
+
+```lisp
+(sheet-count drawing)
+```
+
+Return how many sheets the drawing has.
+
+- `DRAWING`: the drawing.
+
+### `sheet-field` (function)
+
+```lisp
+(sheet-field sheet key)
+```
+
+Return what a field of the title block says.
+
+- `SHEET`: the sheet.
+- `KEY`: a key of *TITLE-FIELD-KEYS*.
+
+### `sheet-fields` (function)
+
+```lisp
+(sheet-fields instance)
+```
+
+(undocumented)
+
+### `sheet-landscape` (function)
+
+```lisp
+(sheet-landscape instance)
+```
+
+(undocumented)
+
+### `sheet-name` (function)
+
+```lisp
+(sheet-name instance)
+```
+
+(undocumented)
+
+### `sheet-p` (function)
+
+```lisp
+(sheet-p object)
+```
+
+(undocumented)
+
+### `sheet-paper` (function)
+
+```lisp
+(sheet-paper instance)
+```
+
+(undocumented)
+
+### `sheet-viewports` (function)
+
+```lisp
+(sheet-viewports instance)
+```
+
+(undocumented)
+
+### `sheet-with` (function)
+
+```lisp
+(sheet-with sheet &key (name (sheet-name sheet)) (paper (sheet-paper sheet)) (landscape (sheet-landscape sheet)) (fields (sheet-fields sheet)) (viewports (sheet-viewports sheet)))
+```
+
+Return a sheet like another with some of it changed.
+
+- `SHEET`: the sheet.
+- `NAME`: the new name.
+- `PAPER`: the new paper.
+- `LANDSCAPE`: whether the paper lies.
+- `FIELDS`: the new title block, in whole, or the old one with some fields changed when it is an alist.
+- `VIEWPORTS`: the new list of viewports.
 
 ### `snap-point` (function)
 
@@ -7920,6 +8475,121 @@ Return a validated copy of TEXT with the given fields replaced.
 Return true when VALUE is an acceptable grid spacing in millimetres.
 
 - `VALUE`: any object.
+
+### `viewport` (type)
+
+A window on the drawing, put on a sheet.
+
+- `X`: x of its lower left corner on the sheet, in millimetres from the sheet's lower left corner.
+- `Y`: y of that corner.
+- `WIDTH`: width on the sheet.
+- `HEIGHT`: height on the sheet.
+- `CENTER-X`: x of the point of the drawing at the center of the window.
+- `CENTER-Y`: y of that point.
+- `SCALE`: millimetres of paper for a millimetre of the drawing.
+
+### `viewport-center-x` (function)
+
+```lisp
+(viewport-center-x instance)
+```
+
+(undocumented)
+
+### `viewport-center-y` (function)
+
+```lisp
+(viewport-center-y instance)
+```
+
+(undocumented)
+
+### `viewport-height` (function)
+
+```lisp
+(viewport-height instance)
+```
+
+(undocumented)
+
+### `viewport-moved` (function)
+
+```lisp
+(viewport-moved viewport dx dy)
+```
+
+Return a viewport like another, put DX and DY farther on the sheet.
+
+- `VIEWPORT`: the viewport.
+- `DX`: how far to the right, in millimetres.
+- `DY`: how far up.
+
+### `viewport-p` (function)
+
+```lisp
+(viewport-p object)
+```
+
+(undocumented)
+
+### `viewport-scale` (function)
+
+```lisp
+(viewport-scale instance)
+```
+
+(undocumented)
+
+### `viewport-width` (function)
+
+```lisp
+(viewport-width instance)
+```
+
+(undocumented)
+
+### `viewport-window` (function)
+
+```lisp
+(viewport-window viewport)
+```
+
+Return the part of the drawing that a viewport shows, as bounds in the drawing.
+
+- `VIEWPORT`: the viewport.
+
+### `viewport-with` (function)
+
+```lisp
+(viewport-with viewport &key (x (viewport-x viewport)) (y (viewport-y viewport)) (width (viewport-width viewport)) (height (viewport-height viewport)) (center-x (viewport-center-x viewport)) (center-y (viewport-center-y viewport)) (scale (viewport-scale viewport)))
+```
+
+Return a viewport like another with some of its numbers changed.
+
+- `VIEWPORT`: the viewport.
+- `X`: new x on the sheet.
+- `Y`: new y on the sheet.
+- `WIDTH`: new width on the sheet.
+- `HEIGHT`: new height on the sheet.
+- `CENTER-X`: new x of the drawing at its center.
+- `CENTER-Y`: new y of the drawing at its center.
+- `SCALE`: new scale.
+
+### `viewport-x` (function)
+
+```lisp
+(viewport-x instance)
+```
+
+(undocumented)
+
+### `viewport-y` (function)
+
+```lisp
+(viewport-y instance)
+```
+
+(undocumented)
 
 ## BORBA-CAD/DOUBLES
 
@@ -11293,9 +11963,112 @@ writers of that, one of a PDF file made by hand and one of an SVG file.
 
 The sheets, as (keyword name width height) with the width and the height in millimetres, the sheet standing up.
 
+### `+default-viewport-inset+` (constant)
+
+How far inside the area for viewports a viewport that is made to fill it is kept from its edges, in millimetres.
+
+### `+frame-margin+` (constant)
+
+How far the frame of a sheet is from the edge of the paper, in millimetres.
+
 ### `+points-per-millimeter+` (constant)
 
 How many PDF points, 1/72 of an inch, there are in a millimetre.
+
+### `+title-block-height+` (constant)
+
+How tall the title block along the bottom of the frame is, in millimetres.
+
+### `clip-fill` (function)
+
+```lisp
+(clip-fill fill bounds)
+```
+
+Return the filled polygon that lies inside a rectangle, or NIL when none of it does.
+
+- `FILL`: a plot fill.
+- `BOUNDS`: the rectangle.
+
+### `clip-item` (function)
+
+```lisp
+(clip-item item bounds)
+```
+
+Return what lies inside a rectangle of an item of a plot, as a list.
+
+- `ITEM`: a plot stroke, fill or text.
+- `BOUNDS`: the rectangle, as bounds in sheet millimetres.
+
+### `clip-stroke` (function)
+
+```lisp
+(clip-stroke stroke bounds)
+```
+
+Return the strokes that are what lies of a stroke inside a rectangle: the stroke itself when all of it does, and
+otherwise the runs of it that do, each its own stroke, which are none when none of it does.
+
+- `STROKE`: a plot stroke.
+- `BOUNDS`: the rectangle, as bounds in sheet millimetres.
+
+### `default-viewport` (function)
+
+```lisp
+(default-viewport sheet center-x center-y scale)
+```
+
+Return a viewport that fills the area of a sheet for viewports, to a margin, showing a point of the drawing at its
+center at a scale.
+
+- `SHEET`: the sheet.
+- `CENTER-X`: x of the point of the drawing at the center.
+- `CENTER-Y`: y of that point.
+- `SCALE`: millimetres of paper for a millimetre of the drawing.
+
+### `entities-bounds` (function)
+
+```lisp
+(entities-bounds entities)
+```
+
+Return the bounds that hold every entity.
+
+- `ENTITIES`: a non-empty list of entities.
+
+### `fit-ratio` (function)
+
+```lisp
+(fit-ratio bounds width height margin)
+```
+
+Return the scale at which the drawing just fills the sheet inside the margins.
+
+- `BOUNDS`: the bounds of the drawing.
+- `WIDTH`: width of the sheet.
+- `HEIGHT`: height of the sheet.
+- `MARGIN`: the empty edge.
+
+### `fitted-text` (function)
+
+```lisp
+(fitted-text string width height)
+```
+
+Return a text cut to fit a width in the plot font, with three dots at the end when something was cut.
+
+- `STRING`: the text.
+- `WIDTH`: the room, in millimetres.
+- `HEIGHT`: the height of the text.
+
+### `make-plot-fill` (function)
+
+```lisp
+(make-plot-fill points color)
+```
+
+(undocumented)
 
 ### `make-plot-settings` (function)
 
@@ -11310,6 +12083,22 @@ Create validated plot settings. Signals INVALID-INPUT when one makes no sense.
 - `MONOCHROME`: true to draw everything in black.
 - `LINE-WIDTH`: thickness of lines in millimetres, above zero.
 - `MARGIN`: empty edge of the sheet in millimetres, zero or more and less than half of the sheet.
+
+### `make-plot-stroke` (function)
+
+```lisp
+(make-plot-stroke points closed color &optional width)
+```
+
+(undocumented)
+
+### `make-plot-text` (function)
+
+```lisp
+(make-plot-text string x y height angle color)
+```
+
+(undocumented)
 
 ### `paper-name` (function)
 
@@ -11354,6 +12143,45 @@ when nothing is visible.
 
 - `DRAWING`: the drawing.
 - `SETTINGS`: the plot settings.
+
+### `plan-sheet` (function)
+
+```lisp
+(plan-sheet drawing sheet index count settings &optional (entities (visible-entities drawing)))
+```
+
+Work out what is printed on a sheet: the drawing through each of its viewports, then the frame and the title block.
+Returns a plot plan in the millimetres of the sheet.
+
+- `DRAWING`: the drawing.
+- `SHEET`: the sheet.
+- `INDEX`: the position of the sheet, from 0.
+- `COUNT`: how many sheets there are.
+- `SETTINGS`: the plot settings, of which the colors and the thickness of lines are used.
+- `ENTITIES`: the entities that are on layers that are not hidden.
+
+### `plan-sheets` (function)
+
+```lisp
+(plan-sheets drawing settings)
+```
+
+Work out every sheet of the drawing, as a list of plot plans in the order of the sheets. Signals EXPORT-REFUSED
+when the drawing has no sheets.
+
+- `DRAWING`: the drawing.
+- `SETTINGS`: the plot settings.
+
+### `plans-pdf` (function)
+
+```lisp
+(plans-pdf plans)
+```
+
+Return the plot plans as the bytes of a PDF file, a page for each, and how many characters of text had to be written
+as a question mark because the PDF font cannot show them.
+
+- `PLANS`: the plot plans, in the order of the pages.
 
 ### `plot-fill` (type)
 
@@ -11505,6 +12333,7 @@ A run of segments.
 - `POINTS`: the vertices as a list of (x . y) conses in sheet millimetres.
 - `CLOSED`: true when the last joins the first.
 - `COLOR`: a list of red, green and blue, each from 0 to 1.
+- `WIDTH`: the thickness in millimetres, or NIL for the thickness of the plot.
 
 ### `plot-stroke-closed` (function)
 
@@ -11526,6 +12355,14 @@ A run of segments.
 
 ```lisp
 (plot-stroke-points instance)
+```
+
+(undocumented)
+
+### `plot-stroke-width` (function)
+
+```lisp
+(plot-stroke-width instance)
 ```
 
 (undocumented)
@@ -11601,6 +12438,19 @@ to be written as a question mark because the PDF font cannot show them. Signals 
 - `DRAWING`: the drawing.
 - `SETTINGS`: the plot settings.
 
+### `render-sheets-pdf` (function)
+
+```lisp
+(render-sheets-pdf drawing settings)
+```
+
+Return the sheets of the drawing as the bytes of a PDF file with a page for each, the plot plans that were used, and
+how many characters of text had to be written as a question mark because the PDF font cannot show them. Signals
+EXPORT-REFUSED when the drawing has no sheets.
+
+- `DRAWING`: the drawing.
+- `SETTINGS`: the plot settings, of which the colors and the thickness of lines are used.
+
 ### `render-svg` (function)
 
 ```lisp
@@ -11622,6 +12472,95 @@ is visible.
 Return a scale as a ratio, such as 1:50, or 2:1 when it enlarges.
 
 - `RATIO`: millimetres of paper for a millimetre of the drawing.
+
+### `sheet-body` (function)
+
+```lisp
+(sheet-body sheet)
+```
+
+Return the rectangle inside the frame and above the title block, where the viewports go.
+
+- `SHEET`: the sheet.
+
+### `sheet-frame` (function)
+
+```lisp
+(sheet-frame sheet)
+```
+
+Return the rectangle inside the margin of a sheet, where its frame is drawn.
+
+- `SHEET`: the sheet.
+
+### `sheet-size` (function)
+
+```lisp
+(sheet-size sheet)
+```
+
+Return the width and the height of a sheet as it lies on the paper, in millimetres, as two values.
+
+- `SHEET`: the sheet.
+
+### `title-block-items` (function)
+
+```lisp
+(title-block-items sheet index count)
+```
+
+Return the strokes and texts that draw the frame and the title block of a sheet.
+
+- `SHEET`: the sheet.
+- `INDEX`: the position of the sheet, from 0.
+- `COUNT`: how many sheets there are.
+
+### `title-cells` (function)
+
+```lisp
+(title-cells sheet index count)
+```
+
+Return the cells of the title block of a sheet, each as a list of x, y, width and height on the sheet, the small
+name, what it says and the height of that: the cells of the project and the title of the sheet, and six small ones.
+
+- `SHEET`: the sheet.
+- `INDEX`: the position of the sheet, from 0.
+- `COUNT`: how many sheets there are.
+
+### `viewport-items` (function)
+
+```lisp
+(viewport-items drawing entities viewport settings)
+```
+
+Return the items that draw a viewport: what of the drawing shows in its window, at its scale and cut to its
+rectangle, and its border. Also returns how many entities were drawn.
+
+- `DRAWING`: the drawing.
+- `ENTITIES`: the entities that are on layers that are not hidden.
+- `VIEWPORT`: the viewport.
+- `SETTINGS`: the plot settings.
+
+### `viewport-rectangle` (function)
+
+```lisp
+(viewport-rectangle viewport)
+```
+
+Return where a viewport is on its sheet, as bounds.
+
+- `VIEWPORT`: the viewport.
+
+### `visible-entities` (function)
+
+```lisp
+(visible-entities drawing)
+```
+
+Return the entities of the drawing that are on visible layers, in stacking order.
+
+- `DRAWING`: the drawing.
 
 ## BORBA-CAD/SBCL-SUPPORT
 
@@ -12552,6 +13491,14 @@ Create an empty draw list.
 
 ```lisp
 (make-rgba r g b a)
+```
+
+(undocumented)
+
+### `make-scene-result` (function)
+
+```lisp
+(make-scene-result drawn-entities culled-entities)
 ```
 
 (undocumented)
@@ -13487,6 +14434,24 @@ Change properties of an entity. Returns its id.
 are the ones the inspector lists (:center-x, :center-y, :radius, :x1, :min-x, :height, :angle, :sides, ...),
 lengths are millimetres and angles are degrees.
 
+### `edit-sheet` (function)
+
+```lisp
+(edit-sheet number &key name paper (landscape nil landscape-given) project title author date revision)
+```
+
+Change a sheet: what is named is changed and the rest stays. Returns its number.
+
+- `NUMBER`: the number of the sheet, from 1.
+- `NAME`: its new name.
+- `PAPER`: its new paper.
+- `LANDSCAPE`: true for paper lying down, false for standing.
+- `PROJECT`: the project, for the title block.
+- `TITLE`: the title of the sheet.
+- `AUTHOR`: who drew it.
+- `DATE`: when, as text.
+- `REVISION`: which revision.
+
 ### `ellipse` (function)
 
 ```lisp
@@ -14008,6 +14973,16 @@ that replaces them. Returns the ids of the polylines that result.
 
 - `IDS`: a list of ids, two or more.
 
+### `remove-sheet` (function)
+
+```lisp
+(remove-sheet number)
+```
+
+Take a sheet away. The sheets after it move up by one. Returns NIL.
+
+- `NUMBER`: the number of the sheet, from 1.
+
 ### `rgb` (function)
 
 ```lisp
@@ -14158,6 +15133,33 @@ Select every entity that can be selected. Returns how many are selected.
 
 Return the ids of the entities selected in the window.
 
+### `sheet` (function)
+
+```lisp
+(sheet name &key (paper a3) (landscape t) project title author date revision)
+```
+
+Add a sheet that is printed: a page of a paper with a title block. Returns its number, from 1. Sheets, like layers,
+are not part of what a command takes back when it fails.
+
+- `NAME`: what it is called, a string.
+- `PAPER`: :a4, :a3, :a2, :a1, :a0 or :letter.
+- `LANDSCAPE`: true for paper lying down.
+- `PROJECT`: the project, for the title block.
+- `TITLE`: the title of the sheet.
+- `AUTHOR`: who drew it.
+- `DATE`: when, as text.
+- `REVISION`: which revision.
+
+### `sheets` (function)
+
+```lisp
+(sheets)
+```
+
+Return the sheets of the drawing, each as a list of its number, its name, its paper, whether it lies and how many
+viewports it has.
+
 ### `spread` (function)
 
 ```lisp
@@ -14239,6 +15241,25 @@ A command that the user defined.
 ```
 
 (undocumented)
+
+### `viewport` (function)
+
+```lisp
+(viewport number &key x y width height center-x center-y scale)
+```
+
+Put a viewport on a sheet: a window on the drawing at a scale. What is not given is worked out: it fills the area of
+the sheet above the title block, shows the middle of the drawing, and is at the largest scale at which all of the
+drawing shows. Returns the number of the viewport on the sheet, from 1.
+
+- `NUMBER`: the number of the sheet, from 1.
+- `X`: x of its lower left corner on the sheet, in millimetres from the sheet's own corner.
+- `Y`: y of that corner.
+- `WIDTH`: its width on the sheet.
+- `HEIGHT`: its height on the sheet.
+- `CENTER-X`: x of the point of the drawing at its center.
+- `CENTER-Y`: y of that point.
+- `SCALE`: millimetres of paper for a millimetre of the drawing, or text such as "1:50".
 
 ### `with-block` (macro)
 

@@ -36,6 +36,8 @@ writers of that, one of a PDF file made by hand and one of an SVG file.")
    #:plot-stroke-points
    #:plot-stroke-closed
    #:plot-stroke-color
+   #:plot-stroke-width
+   #:make-plot-stroke
    #:plot-fill
    #:plot-fill-points
    #:plot-fill-color
@@ -46,7 +48,32 @@ writers of that, one of a PDF file made by hand and one of an SVG file.")
    #:plot-text-height
    #:plot-text-angle
    #:plot-text-color
+   #:make-plot-text
+   #:make-plot-fill
+   ;; Sheets
+   #:sheet-size
+   #:sheet-frame
+   #:sheet-body
+   #:title-cells
+   #:title-block-items
+   #:fitted-text
+   #:viewport-rectangle
+   #:viewport-items
+   #:plan-sheet
+   #:plan-sheets
+   #:default-viewport
+   #:visible-entities
+   #:entities-bounds
+   #:fit-ratio
+   #:clip-item
+   #:clip-stroke
+   #:clip-fill
+   #:+frame-margin+
+   #:+title-block-height+
+   #:+default-viewport-inset+
    ;; Writing
    #:render-pdf
+   #:render-sheets-pdf
+   #:plans-pdf
    #:render-svg
    #:+points-per-millimeter+))

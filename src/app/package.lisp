@@ -333,6 +333,37 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:prompt-scroll
    #:open-report-prompt
    #:operation-quantities
+   #:app-sheet-view
+   #:layout-mode-p
+   #:layout-sheet
+   #:layout-state-sheet-index
+   #:layout-state-selected
+   #:layout-state-arming
+   #:layout-state-drag
+   #:layout-state-preview
+   #:selected-viewport
+   #:select-viewport
+   #:operation-open-layout
+   #:operation-close-layout
+   #:operation-toggle-layout
+   #:operation-add-sheet
+   #:operation-delete-sheet
+   #:operation-sheet-properties
+   #:operation-next-sheet
+   #:operation-arm-viewport
+   #:operation-edit-viewport
+   #:operation-delete-viewport
+   #:operation-export-sheets
+   #:export-sheets-from-app
+   #:resized-viewport
+   #:viewport-from-corners
+   #:viewport-corners
+   #:standard-scale-within
+   #:layout-viewport-items
+   #:layout-tool
+   #:layout-button-rows
+   #:commit-sheets
+   #:+minimum-viewport-size+
    #:operation-command-palette
    #:operation-reload-init
    #:start-customizations

@@ -303,15 +303,18 @@ Y: y in the drawing."
 
 (defstruct (plot-stroke (:constructor make-plot-stroke (points
                                                          closed
-                                                         color)))
+                                                         color
+                                                         &optional width)))
   "A run of segments.
 
 POINTS: the vertices as a list of (x . y) conses in sheet millimetres.
 CLOSED: true when the last joins the first.
-COLOR: a list of red, green and blue, each from 0 to 1."
+COLOR: a list of red, green and blue, each from 0 to 1.
+WIDTH: the thickness in millimetres, or NIL for the thickness of the plot."
   points
   closed
-  color)
+  color
+  width)
 
 (defstruct (plot-fill (:constructor make-plot-fill (points
                                                      color)))

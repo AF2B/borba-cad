@@ -667,7 +667,7 @@ true, recent files are remembered in a folder inside DIRECTORY."
 
 (test a-failed-save-keeps-the-dialog-and-says-why
   (with-temporary-directory (directory)
-    (let ((application (dialog-app directory)))
+    (let ((application (dialog-app directory :width 1800d0)))
       (app:operation-save-as application)
       (type-text application "/proc/nowhere/plan.bcad")
       (press application :enter)

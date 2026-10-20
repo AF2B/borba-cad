@@ -191,7 +191,9 @@ APP: the application."
           (choice :export-image (i18n:tr "Export as JPEG...") :export nil #'operation-export-image)
           (choice :export-pdf (i18n:tr "Export as PDF...") :export nil #'operation-export-pdf)
           (choice :export-svg (i18n:tr "Export as SVG...") :export nil #'operation-export-svg)
+          (choice :export-sheets (i18n:tr "Export the sheets as PDF...") :export nil #'operation-export-sheets)
           nil
+          (choice :layout (i18n:tr "Layout") :layout "Ctrl+L" #'operation-toggle-layout)
           (choice :console (i18n:tr "Console") :console "F2" #'operation-toggle-console)
           (choice :run-script (i18n:tr "Run script...") :open nil #'operation-run-script)
           (choice :export-script (i18n:tr "Export as script...") :export nil #'operation-export-script)

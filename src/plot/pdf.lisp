@@ -1,8 +1,8 @@
 (in-package #:borba-cad/plot)
 
-;;;; A PDF file written by hand: a catalog, one page, the drawing as drawing operators in the content stream, and one of
-;;;; the standard fonts, Courier, whose characters are all 0.6 of their size wide, as the text of the drawing is
-;;;; measured everywhere else. Nothing is compressed and no library is needed.
+;;;; A PDF file written by hand: a catalog, a page or more, each the drawing as drawing operators in a content stream,
+;;;; and one of the standard fonts, Courier, whose characters are all 0.6 of their size wide, as the text of the drawing
+;;;; is measured everywhere else. Nothing is compressed and no library is needed.
 
 (defconstant +points-per-millimeter+ (/ 72d0 25.4d0)
   "How many PDF points, 1/72 of an inch, there are in a millimetre.")
@@ -67,13 +67,17 @@ STRING: the characters."
             replaced)))
 
 (defun write-stroke (stream
-                     stroke)
-  "Write the operators of a stroke.
+                     stroke
+                     default-width)
+  "Write the operators of a stroke, with its own thickness when it has one and the thickness of the page again after.
 
 STREAM: the output stream.
-STROKE: a plot stroke."
+STROKE: a plot stroke.
+DEFAULT-WIDTH: the thickness of lines on the page, in millimetres."
   (let ((points (plot-stroke-points stroke)))
     (when (cdr points)
+      (when (plot-stroke-width stroke)
+        (format stream "~a w~%" (point-number (plot-stroke-width stroke))))
       (format stream "~a RG~%" (color-operands (plot-stroke-color stroke)))
       (loop for (x . y) in points
             for first = t then nil
@@ -81,7 +85,9 @@ STROKE: a plot stroke."
                        (point-number x)
                        (point-number y)
                        first))
-      (write-line (if (plot-stroke-closed stroke) "s" "S") stream))))
+      (write-line (if (plot-stroke-closed stroke) "s" "S") stream)
+      (when (plot-stroke-width stroke)
+        (format stream "~a w~%" (point-number default-width))))))
 
 (defun write-fill (stream
                    fill)
@@ -129,37 +135,45 @@ PLAN: the plot plan."
               (format stream "1 J~%1 j~%~a w~%" (point-number (plot-settings-line-width (plot-plan-settings plan))))
               (dolist (item (plot-plan-items plan))
                 (etypecase item
-                  (plot-stroke (write-stroke stream item))
+                  (plot-stroke (write-stroke stream
+                                             item
+                                             (plot-settings-line-width (plot-plan-settings plan))))
                   (plot-fill (write-fill stream item))
                   (plot-text (incf replaced (write-text stream item))))))
             replaced)))
 
-(defun pdf-objects (plan
-                    content)
-  "Return the objects of the file, as a list of strings: the catalog, the page tree, the page, its content, the font and
-the information.
+(defun pdf-objects (plans
+                    contents)
+  "Return the objects of the file, as a list of strings: the catalog, the page tree, the font, the information, and for
+each page the page and its content, in that order.
 
-PLAN: the plot plan.
-CONTENT: the content stream."
-  (list "<< /Type /Catalog /Pages 2 0 R >>"
-        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>"
-        (format nil "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ~a ~a] /Contents 4 0 R ~
-                     /Resources << /Font << /F1 5 0 R >> >> >>"
-                (compact-number (* (plot-plan-width plan) +points-per-millimeter+) 2)
-                (compact-number (* (plot-plan-height plan) +points-per-millimeter+) 2))
-        (format nil "<< /Length ~d >>~%stream~%~aendstream" (length content) content)
-        "<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>"
-        "<< /Producer (Borba CAD) /Creator (Borba CAD) >>"))
+PLANS: the plot plans, one for each page.
+CONTENTS: the content stream of each."
+  (let* ((count (length plans))
+         (page-numbers (loop for index below count collect (+ 5 (* 2 index)))))
+    (append (list "<< /Type /Catalog /Pages 2 0 R >>"
+                  (format nil "<< /Type /Pages /Kids [~{~d 0 R~^ ~}] /Count ~d >>" page-numbers count)
+                  "<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>"
+                  "<< /Producer (Borba CAD) /Creator (Borba CAD) >>")
+            (loop for plan in plans
+                  for content in contents
+                  for number in page-numbers
+                  append (list (format nil "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ~a ~a] /Contents ~d 0 R ~
+                                            /Resources << /Font << /F1 3 0 R >> >> >>"
+                                       (compact-number (* (plot-plan-width plan) +points-per-millimeter+) 2)
+                                       (compact-number (* (plot-plan-height plan) +points-per-millimeter+) 2)
+                                       (1+ number))
+                               (format nil "<< /Length ~d >>~%stream~%~aendstream" (length content) content))))))
 
-(defun pdf-file-text (plan
-                      content)
+(defun pdf-file-text (plans
+                      contents)
   "Return the whole file as a string whose every character is one byte of it.
 
-PLAN: the plot plan.
-CONTENT: the content stream."
+PLANS: the plot plans, one for each page.
+CONTENTS: the content stream of each."
   (let* ((header (format nil "%PDF-1.4~%%~{~a~}~%"
                          (mapcar #'code-char '(226 227 207 211))))
-         (objects (pdf-objects plan content))
+         (objects (pdf-objects plans contents))
          (offsets '())
          (body (with-output-to-string (stream)
                  (let ((position (length header)))
@@ -177,11 +191,25 @@ CONTENT: the content stream."
                    header
                    body
                    (format nil "xref~%0 ~d~%0000000000 65535 f ~%~atrailer~%~
-                                << /Size ~d /Root 1 0 R /Info 6 0 R >>~%startxref~%~d~%%%EOF~%"
+                                << /Size ~d /Root 1 0 R /Info 4 0 R >>~%startxref~%~d~%%%EOF~%"
                            (1+ (length objects))
                            entries
                            (1+ (length objects))
                            xref-position)))))
+
+(defun plans-pdf (plans)
+  "Return the plot plans as the bytes of a PDF file, a page for each, and how many characters of text had to be written
+as a question mark because the PDF font cannot show them.
+
+PLANS: the plot plans, in the order of the pages."
+  (let ((contents '())
+        (replaced 0))
+    (dolist (plan plans)
+      (multiple-value-bind (content count) (pdf-content plan)
+        (push content contents)
+        (incf replaced count)))
+    (values (map '(vector (unsigned-byte 8)) #'char-code (pdf-file-text plans (nreverse contents)))
+            replaced)))
 
 (defun render-pdf (drawing
                    settings)
@@ -191,8 +219,17 @@ to be written as a question mark because the PDF font cannot show them. Signals 
 DRAWING: the drawing.
 SETTINGS: the plot settings."
   (let ((plan (plan-plot drawing settings)))
-    (multiple-value-bind (content replaced) (pdf-content plan)
-      (let ((text (pdf-file-text plan content)))
-        (values (map '(vector (unsigned-byte 8)) #'char-code text)
-                plan
-                replaced)))))
+    (multiple-value-bind (octets replaced) (plans-pdf (list plan))
+      (values octets plan replaced))))
+
+(defun render-sheets-pdf (drawing
+                          settings)
+  "Return the sheets of the drawing as the bytes of a PDF file with a page for each, the plot plans that were used, and
+how many characters of text had to be written as a question mark because the PDF font cannot show them. Signals
+EXPORT-REFUSED when the drawing has no sheets.
+
+DRAWING: the drawing.
+SETTINGS: the plot settings, of which the colors and the thickness of lines are used."
+  (let ((plans (plan-sheets drawing settings)))
+    (multiple-value-bind (octets replaced) (plans-pdf plans)
+      (values octets plans replaced))))

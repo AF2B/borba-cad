@@ -234,6 +234,44 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:region-changes
    #:region-target
    #:existing-editable-entities
+   #:*sheet-papers*
+   #:*title-field-keys*
+   #:+maximum-sheets+
+   #:+maximum-viewports+
+   #:+maximum-title-field-length+
+   #:viewport
+   #:viewport-p
+   #:make-viewport
+   #:viewport-x
+   #:viewport-y
+   #:viewport-width
+   #:viewport-height
+   #:viewport-center-x
+   #:viewport-center-y
+   #:viewport-scale
+   #:viewport-moved
+   #:viewport-with
+   #:viewport-window
+   #:sheet
+   #:sheet-p
+   #:make-sheet
+   #:sheet-name
+   #:sheet-paper
+   #:sheet-landscape
+   #:sheet-fields
+   #:sheet-viewports
+   #:sheet-with
+   #:sheet-field
+   #:drawing-sheets
+   #:sheet-count
+   #:sheet-at
+   #:set-sheets
+   #:add-sheet
+   #:replace-sheet
+   #:remove-sheet
+   #:add-viewport
+   #:replace-viewport
+   #:remove-viewport
    #:quantity-report
    #:quantity-report-kind
    #:quantity-report-columns

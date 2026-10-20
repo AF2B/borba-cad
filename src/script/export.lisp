@@ -184,6 +184,34 @@ STREAM: the stream to write to."
     (format stream "  ~a~%" (entity-command entity)))
   (format stream ")~%"))
 
+(defun sheet-command (sheet)
+  "Return the command that adds a sheet, with the fields of its title block that say something.
+
+SHEET: a sheet."
+  (format nil "(sheet ~a :paper ~a :landscape ~a~{ ~a~})"
+          (string-text (dom:sheet-name sheet))
+          (keyword-text (dom:sheet-paper sheet))
+          (boolean-text (dom:sheet-landscape sheet))
+          (loop for (key . text) in (dom:sheet-fields sheet)
+                when (plusp (length text))
+                  collect (format nil "~a ~a" (keyword-text key) (string-text text)))))
+
+(defun viewport-command (number
+                         viewport)
+  "Return the command that puts a viewport on a sheet.
+
+NUMBER: the number of the sheet, from 1.
+VIEWPORT: the viewport."
+  (format nil "(viewport ~d :x ~a :y ~a :width ~a :height ~a :center-x ~a :center-y ~a :scale ~a)"
+          number
+          (number-text (dom:viewport-x viewport))
+          (number-text (dom:viewport-y viewport))
+          (number-text (dom:viewport-width viewport))
+          (number-text (dom:viewport-height viewport))
+          (number-text (dom:viewport-center-x viewport))
+          (number-text (dom:viewport-center-y viewport))
+          (number-text (dom:viewport-scale viewport))))
+
 (defun drawing-script (drawing)
   "Return the text of a script that makes DRAWING again when it is run on an empty drawing: its settings, its
 layers, its entities in the order they are drawn, each on the layer it is on, and last the layers that are
@@ -210,6 +238,13 @@ DRAWING: the drawing."
                                     (string-text (dom:layer-name (dom:find-layer drawing current)))))
                           (write-line (entity-command entity) stream))
                         (dom:drawing-store drawing)))
+    (when (dom:drawing-sheets drawing)
+      (terpri stream)
+      (loop for sheet in (dom:drawing-sheets drawing)
+            for number from 1
+            do (write-line (sheet-command sheet) stream)
+               (dolist (viewport (dom:sheet-viewports sheet))
+                 (write-line (viewport-command number viewport) stream))))
     (terpri stream)
     (dolist (layer (dom:layers-in-order drawing))
       (let ((command (layer-state-command layer)))

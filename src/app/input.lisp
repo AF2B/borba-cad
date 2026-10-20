@@ -32,11 +32,13 @@ MODIFIERS: modifier keys held."
                             x
                             y)
       (multiple-value-bind (snapped-x snapped-y kind)
-          (dom:snap-point drawing
-                          world-x
-                          world-y
-                          (view:pixels->world-length viewport +snap-radius-pixels+)
-                          (tool-anchor (app-tool app)))
+          (if (layout-mode-p app)
+              (values world-x world-y nil)
+              (dom:snap-point drawing
+                              world-x
+                              world-y
+                              (view:pixels->world-length viewport +snap-radius-pixels+)
+                              (tool-anchor (app-tool app))))
         (let ((anchor (tool-anchor (app-tool app)))
               (mode (app-constraint app)))
           (when (and anchor mode (member kind '(nil :grid)))
@@ -428,6 +430,7 @@ MODIFIERS: modifier keys held."
       (:n (operation-new app) t)
       (:q (operation-quit app) t)
       (:k (operation-command-palette app) t)
+      (:l (operation-toggle-layout app) t)
       (:plus (operation-interface-zoom-in app) t)
       (:minus (operation-interface-zoom-out app) t)
       (:zero (operation-interface-zoom-reset app) t)
