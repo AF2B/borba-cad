@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-20
+
 ### Added
 
 - **Underlays: trace over a picture or a PDF.** More > Add an underlay (`Ctrl+Shift+U`) puts a PNG, a JPEG or a

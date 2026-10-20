@@ -1,5 +1,5 @@
 (drawing
- (format-version 5)
+ (format-version 9)
  (unit millimeter)
  (display-unit millimeter)
  (grid (spacing 100.0) (visible t) (snap t) (object-snap t))
@@ -14,6 +14,10 @@
   (layer (id 3) (name "annotations") (color 160 220 120) (visible t) (locked nil))
  )
  (blocks
+ )
+ (sheets
+ )
+ (underlays
  )
  (entities
   (rectangle (id 1) (layer 1) (min-x 0.0) (min-y 0.0) (width 10000.0) (height 7000.0))
