@@ -27,7 +27,8 @@ TOOL: the tool."
 more.
 
 APP: the application."
-  (let ((names (dom:block-names (app-drawing app))))
+  (let ((names (append (dom:block-names (app-drawing app))
+                       (mapcar #'script:block-generator-name (block-generators app)))))
     (format nil "~{~a~^, ~}~:[~;, ...~]"
             (subseq names 0 (min +block-names-listed+ (length names)))
             (> (length names) +block-names-listed+))))
@@ -248,19 +249,24 @@ PROBLEM: what was wrong with the last answer, or NIL."
                       (or (and (app-last-block-name app)
                                (dom:find-block (app-drawing app) (app-last-block-name app))
                                (app-last-block-name app))
-                          (first (dom:block-names (app-drawing app))))
+                          (first (dom:block-names (app-drawing app)))
+                          (script:block-generator-name (first (block-generators app)))
+                          "")
                       (lambda (text)
                         (let ((name (string-trim " " text)))
-                          (if (dom:find-block (app-drawing app) name)
-                              (start-insert-tool app name)
-                              (ask-for-block-to-insert app
-                                                       (i18n:trf "There is no block called ~a." name))))))))
+                          (cond ((dom:find-block (app-drawing app) name)
+                                 (start-insert-tool app name))
+                                ((find-block-generator-in app name)
+                                 (operation-insert-parametric-block app name))
+                                (t
+                                 (ask-for-block-to-insert app
+                                                          (i18n:trf "There is no block called ~a." name)))))))))
 
 (defun operation-insert-block (app)
   "Place a block: ask which, then wait for the clicks that say where and how it is turned.
 
 APP: the application."
-  (if (null (dom:block-names (app-drawing app)))
+  (if (and (null (dom:block-names (app-drawing app))) (null (block-generators app)))
       (set-message app
                    (i18n:tr "There are no blocks yet: select entities and choose Make block.")
                    :error)

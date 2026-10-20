@@ -124,6 +124,14 @@ APP: the application."
                                               (script:user-command-description command)
                                               nil
                                               (lambda () (run-user-command app command)))))
+          (loop for generator in (block-generators app)
+                collect (let ((generator generator))
+                          (make-palette-entry (format nil "~a: ~a"
+                                                      (i18n:tr "Block")
+                                                      (script:block-generator-name generator))
+                                              (script:block-generator-description generator)
+                                              nil
+                                              (lambda () (ask-block-parameters app generator)))))
           (loop for name in (app-recorded-commands app)
                 collect (let ((name name))
                           (make-palette-entry (format nil "~a: ~a" (i18n:tr "Recorded") name)

@@ -186,6 +186,12 @@ history, picking and snapping. Pure data and rules; no rendering, input or file 
    #:block-definition
    #:make-block-definition
    #:block-definition-name
+   #:block-definition-origin
+   #:block-origin
+   #:make-block-origin
+   #:block-origin-generator
+   #:block-origin-arguments
+   #:parameter-properties
    #:block-definition-entities
    #:block-definition-bounds
    #:+maximum-block-entities+

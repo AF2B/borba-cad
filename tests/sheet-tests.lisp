@@ -175,7 +175,7 @@ STROKE: a plot stroke."
 
 (test the-sheets-are-written-in-the-drawing-file
   (let ((text (persist:drawing-to-string (drawing-with-sheets))))
-    (is (search "(format-version 7)" text))
+    (is (search "(format-version 8)" text))
     (is (search (format nil " (sheets~%  (sheet (name \"Plan\") (paper a3) (landscape t)~%") text))
     (is (search (concatenate 'string
                              "   (fields (project \"House \\\"Alfa\\\"\") (title \"Ground floor\") (author \"Ana\") "

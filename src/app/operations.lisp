@@ -161,6 +161,12 @@ APP: the application.
 ENTITY-ID: id of the entity.
 KEY: property key from the entity's property list.
 VALUE: the new value (double-float, string, integer, boolean or unit keyword)."
+  (when (consp key)
+    (return-from operation-edit-property
+      (operation-edit-parameter app
+                                entity-id
+                                (second key)
+                                value)))
   (handler-case
       (let ((changes (dom:edit-property-changes (app-drawing app)
                                                 entity-id

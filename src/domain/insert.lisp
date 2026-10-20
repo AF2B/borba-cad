@@ -197,12 +197,27 @@ FLIPPED: replacement flip."
         (loop for entity in (insert-entities insert)
               append (entity-snap-points entity))))
 
+(defun parameter-properties (insert)
+  "Return one property for each parameter of the generator that drew the block of a placement, to be changed in the
+inspector, which draws the block again; none when it was drawn by hand.
+
+INSERT: the placement."
+  (let ((origin (block-definition-origin (insert-block insert))))
+    (and origin
+         (loop for (name . value) in (block-origin-arguments origin)
+               collect (make-property (list :parameter name)
+                                      name
+                                      :factor
+                                      value
+                                      t)))))
+
 (defmethod entity-properties ((insert insert-entity))
   (append (list (make-property :block
                                (i18n:tr "Block")
                                :text
                                (block-definition-name (insert-block insert))
                                nil))
+          (parameter-properties insert)
           (coordinate-properties (list (list :x (i18n:mark "Position X"))
                                        (list :y (i18n:mark "Position Y")))
                                  (list (insert-x insert) (insert-y insert)))
@@ -230,6 +245,9 @@ FLIPPED: replacement flip."
 (defmethod entity-with-property ((insert insert-entity)
                                  key
                                  value)
+  (when (consp key)
+    (error 'base:edit-refused
+           :reason (i18n:tr "A parameter of a block is changed by drawing the block again, which the program does.")))
   (ecase key
     (:x (update-insert insert :x value))
     (:y (update-insert insert :y value))

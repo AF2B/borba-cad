@@ -333,6 +333,10 @@ building. It is headless: a window system feeds it events and draws the draw lis
    #:prompt-scroll
    #:open-report-prompt
    #:operation-quantities
+   #:block-generators
+   #:ask-block-parameters
+   #:operation-insert-parametric-block
+   #:operation-edit-parameter
    #:app-sheet-view
    #:layout-mode-p
    #:layout-sheet

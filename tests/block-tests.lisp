@@ -423,6 +423,18 @@
     (is (string= (as-newest-version fixture 6) written))
     (is (search " (sheets" written))))
 
+(test a-version-7-file-is-read-and-saved-as-the-newest-version
+  (let* ((fixture (fixture-text "v7-plan.bcad"))
+         (drawing (persist:parse-drawing-text fixture))
+         (written (persist:drawing-to-string drawing)))
+    (is (search "(format-version 7)" fixture))
+    (is (search " (sheets" fixture))
+    (is (= 9 (dom:drawing-entity-count drawing)))
+    (is (every (lambda (name) (null (dom:block-definition-origin (dom:find-block drawing name))))
+               (dom:block-names drawing))
+        "a block of version 7 was drawn by hand")
+    (is (string= (as-newest-version fixture 7) written))))
+
 ;;; Drawing, plotting and exporting
 
 (test a-placement-is-drawn-with-the-entities-it-places

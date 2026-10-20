@@ -665,26 +665,66 @@ BASE-Y: y of that point."
                y
                &key (scale 1)
                     (rotation 0)
-                    flipped)
-  "Place the block called NAME with its base point at (X, Y). Returns the id of the placement.
+                    flipped
+                    with)
+  "Place the block called NAME with its base point at (X, Y). With WITH, NAME is a parametric block, which DEFBLOCK
+defined, and it is drawn from those numbers first. Returns the id of the placement.
 
 NAME: the name of the block.
 X: x of the point.
 Y: y of the point.
 SCALE: how many times larger than the block.
 ROTATION: the turn, in degrees.
-FLIPPED: true to reflect the block across its vertical axis before it is turned."
+FLIPPED: true to reflect the block across its vertical axis before it is turned.
+WITH: for a parametric block, its numbers: a list of numbers in the order of its parameters, or of names and numbers,
+such as (:width 1200 :height 900); the parameters that are left out have their defaults."
   (when *block-collector*
     (error "A block cannot hold a block: place it after the block is made."))
   (creation-layer-id)
   (let ((changes (dom:insert-changes (the-drawing)
-                                     name
+                                     (if with
+                                         (parametric-block-name name with)
+                                         name)
                                      (number-of x)
                                      (number-of y)
                                      :scale (float (number-of scale) 1d0)
                                      :rotation (angle-radians rotation)
                                      :flipped flipped)))
     (emit-change nil (dom:change-after (first changes)))))
+
+(defun parametric-block-name (name
+                              given)
+  "Draw a parametric block from some numbers, add it to the drawing, and return its name.
+
+NAME: the name of the generator, as DEFBLOCK defined it.
+GIVEN: the numbers, as INSERT is given them."
+  (let ((generator (find-block-generator (current-customizations) name)))
+    (unless generator
+      (error "There is no parametric block called ~a. DEFBLOCK defines one." name))
+    (handler-case (dom:block-definition-name (parametric-block (the-drawing)
+                                                               generator
+                                                               (argument-numbers generator given)))
+      (base:edit-refused (condition)
+        (error "~a" condition)))))
+
+(defun set-parameter (id
+                      parameter
+                      value)
+  "Give a parameter of a placed parametric block another number, which draws the block again. Returns the id.
+
+ID: the id of the placement.
+PARAMETER: the name of the parameter, a string or a symbol.
+VALUE: its new number."
+  (handler-case
+      (let ((changes (parameter-changes (the-drawing)
+                                         id
+                                         (string-downcase (if (stringp parameter) parameter (symbol-name parameter)))
+                                         (number-of value))))
+        (dolist (change changes)
+          (emit-change (dom:change-before change) (dom:change-after change)))
+        id)
+    (base:edit-refused (condition)
+      (error "~a" condition))))
 
 (defun explode (ids)
   "Replace the blocks, rectangles, polygons and polylines among IDS by the entities they come apart into: what a block
@@ -1462,6 +1502,7 @@ THINGS: anything."
      diameter-dimension angle-dimension hatch hatch-polygon)
     ("Layers" layer with-layer layers)
     ("Blocks" with-block make-block insert explode spread blocks)
+    ("Parametric blocks" defblock generators set-parameter)
     ("Closed shapes" region-union region-subtract region-intersect)
     ("Sheets" sheet edit-sheet remove-sheet viewport sheets)
     ("Repeating" array-grid array-polar array-path)

@@ -392,6 +392,33 @@ SEEN-IDS: hash table of entity ids already read."
                                   (lambda ()
                                     (apply (entity-format-constructor entity-format) fields)))))))
 
+(defun parse-block-origin (node)
+  "Interpret a (generator \"name\" (arg \"parameter\" 1.0) ...) element of a block.
+
+NODE: the generator element."
+  (let ((values (rest (node-value node))))
+    (when (null values)
+      (content-failure node "a generator needs its name, and then what it was given"))
+    (let ((generator (node-string (first values)))
+          (seen '()))
+      (call-with-content-errors
+       node
+       (lambda ()
+         (dom:make-block-origin generator
+                                (loop for argument in (rest values)
+                                      collect (progn
+                                                (unless (and (equal "arg" (head-name argument))
+                                                             (= 3 (length (node-value argument))))
+                                                  (content-failure argument
+                                                                   "expected (arg \"parameter\" number) here"))
+                                                (let ((name (node-string (second (node-value argument)))))
+                                                  (when (member name seen :test #'string=)
+                                                    (content-failure argument
+                                                                     "the parameter ~s appears twice"
+                                                                     name))
+                                                  (push name seen)
+                                                  (cons name (node-number (third (node-value argument)))))))))))))
+
 (defun parse-block (node
                     drawing)
   "Interpret one (block (name ...) (entities ...)) element and add the block to the drawing.
@@ -402,9 +429,16 @@ DRAWING: the drawing being built."
                (let ((head (first (node-value node))))
                  (and head (eq (node-kind head) :word) (string= (node-value head) "block"))))
     (content-failure node "expected a block such as (block (name \"door\") (entities ...))"))
-  (let ((fields (rest (node-value node))))
+  (let* ((fields (rest (node-value node)))
+         (generator-field (and (>= *format-version* 8)
+                               (= 3 (length fields))
+                               (second fields)))
+         (fields (if generator-field
+                     (list (first fields) (third fields))
+                     fields)))
     (unless (and (= 2 (length fields))
-                 (every (lambda (field) (eq (node-kind field) :list)) fields))
+                 (every (lambda (field) (eq (node-kind field) :list)) fields)
+                 (or (null generator-field) (equal "generator" (head-name generator-field))))
       (content-failure node "a block has two fields: (name ...) and (entities ...)"))
     (destructuring-bind (name-field entities-field) fields
       (let ((name-head (first (node-value name-field)))
@@ -429,8 +463,11 @@ DRAWING: the drawing being built."
                                                          "block ~s is defined twice"
                                                          name))
                                       (dom:define-block drawing
-                                                        (dom:make-block-definition :name name
-                                                                                   :entities entities)))))))))
+                                                        (dom:make-block-definition
+                                                         :name name
+                                                         :entities entities
+                                                         :origin (and generator-field
+                                                                      (parse-block-origin generator-field)))))))))))
 
 (defun parse-blocks (node
                      drawing)

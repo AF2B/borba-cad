@@ -10,9 +10,9 @@
 ;;;; defaults filled in. Version 2 added the angle of a text, the arc, the ellipse and the polygon. Version 3 added
 ;;;; the radius, diameter and angle dimensions. Version 4 added the hatch. Version 5 added the blocks
 ;;;; section and the placement of a block. Version 6 added the holes of a hatch. Version 7 added the sheets that
-;;;; are printed.
+;;;; are printed. Version 8 added, to a block, what drew it when it is a parametric block.
 
-(defconstant +supported-format-version+ 7
+(defconstant +supported-format-version+ 8
   "The newest format version: the one this program writes, and the newest it reads.")
 
 (defconstant +oldest-supported-format-version+ 1

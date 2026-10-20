@@ -11,18 +11,32 @@
 (defconstant +maximum-block-entities+ 20000
   "Most entities one block may hold.")
 
+(defstruct (block-origin (:constructor make-block-origin (generator
+                                                          arguments))
+                         (:copier nil))
+  "What a parametric block was made by: the code that draws it, which is not kept in the drawing, and what it was given.
+
+GENERATOR: the name of the generator, a string.
+ARGUMENTS: an alist from the name of each parameter, a string, to the number it was given, in the order of the
+parameters."
+  (generator "" :type string :read-only t)
+  (arguments nil :type list :read-only t))
+
 (defstruct (block-definition (:constructor %make-block-definition (name
                                                                      entities
-                                                                     bounds))
+                                                                     bounds
+                                                                     origin))
                              (:copier nil))
   "A named group of entities.
 
 NAME: what the block is called, with the case the user gave it.
 ENTITIES: the entities, in the order they were drawn, with the base point of the block at the origin.
-BOUNDS: the bounds of the entities."
+BOUNDS: the bounds of the entities.
+ORIGIN: the BLOCK-ORIGIN of a block that a generator drew, or NIL for one that was drawn by hand."
   (name "" :type string :read-only t)
   (entities nil :type list :read-only t)
-  (bounds nil :type (or null geo:bounds) :read-only t))
+  (bounds nil :type (or null geo:bounds) :read-only t)
+  (origin nil :type (or null block-origin) :read-only t))
 
 (defun block-name-key (name)
   "Return what blocks are compared by: the name without case, so that Door and door are one block.
@@ -47,7 +61,8 @@ NAME: what the user typed."
 (defun make-block-definition (&key name
                                    entities
                                    (base-x 0d0)
-                                   (base-y 0d0))
+                                   (base-y 0d0)
+                                   origin)
   "Create a block from entities that are in a drawing, moved so that the base point is the origin and given the ids 1
 and on and the default layer. Signals EDIT-REFUSED when the name is no good, there are no entities, there are too many
 of them, or one of them is a placement of a block, which a block cannot hold; and INVALID-ENTITY when moving one makes
@@ -56,7 +71,8 @@ it invalid.
 NAME: what the block is called.
 ENTITIES: the entities, in the order they are to be drawn.
 BASE-X: x of the point that is the origin of the block.
-BASE-Y: y of that point."
+BASE-Y: y of that point.
+ORIGIN: the BLOCK-ORIGIN of a block that a generator drew, or NIL."
   (let ((clean (clean-block-name name)))
     (when (null entities)
       (error 'base:edit-refused :reason (i18n:tr "A block needs at least one entity.")))
@@ -74,4 +90,5 @@ BASE-Y: y of that point."
                                                       +default-layer-id+))))
       (%make-block-definition clean
                               placed
-                              (entities-bounds placed)))))
+                              (entities-bounds placed)
+                              origin))))

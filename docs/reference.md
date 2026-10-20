@@ -683,6 +683,17 @@ uses this same interaction so that their frame costs are comparable.
 Creates an arc from its center, the point where it starts (which gives the radius) and
 a point in the direction where it ends, counter-clockwise.
 
+### `ask-block-parameters` (function)
+
+```lisp
+(ask-block-parameters app generator)
+```
+
+Ask the numbers that a generator draws its block from, and go on to the tool that places the block.
+
+- `APP`: the application.
+- `GENERATOR`: the generator.
+
 ### `autosave-exists-p` (function)
 
 ```lisp
@@ -705,6 +716,16 @@ called on every pass of the window loop.
 
 - `APP`: the application.
 - `NOW`: the monotonic time, in nanoseconds.
+
+### `block-generators` (function)
+
+```lisp
+(block-generators app)
+```
+
+Return the generators of parametric blocks that are defined.
+
+- `APP`: the application.
 
 ### `breadcrumbs` (function)
 
@@ -2110,6 +2131,19 @@ Take the selected viewport off the sheet.
 
 - `APP`: the application.
 
+### `operation-edit-parameter` (function)
+
+```lisp
+(operation-edit-parameter app entity-id parameter value)
+```
+
+Give a parameter of a placed parametric block another number, which draws the block again, as one step of undo.
+
+- `APP`: the application.
+- `ENTITY-ID`: the id of the placement.
+- `PARAMETER`: the name of the parameter.
+- `VALUE`: its new number.
+
 ### `operation-edit-property` (function)
 
 ```lisp
@@ -2246,6 +2280,17 @@ Open the dialog where the user picks an SVG file to add as a shape.
 Place a block: ask which, then wait for the clicks that say where and how it is turned.
 
 - `APP`: the application.
+
+### `operation-insert-parametric-block` (function)
+
+```lisp
+(operation-insert-parametric-block app name)
+```
+
+Ask for the numbers of a parametric block and place it.
+
+- `APP`: the application.
+- `NAME`: the name of its generator.
 
 ### `operation-interface-zoom-in` (function)
 
@@ -5026,6 +5071,7 @@ A named group of entities.
 - `NAME`: what the block is called, with the case the user gave it.
 - `ENTITIES`: the entities, in the order they were drawn, with the base point of the block at the origin.
 - `BOUNDS`: the bounds of the entities.
+- `ORIGIN`: the BLOCK-ORIGIN of a block that a generator drew, or NIL for one that was drawn by hand.
 
 ### `block-definition-bounds` (function)
 
@@ -5047,6 +5093,14 @@ A named group of entities.
 
 ```lisp
 (block-definition-name instance)
+```
+
+(undocumented)
+
+### `block-definition-origin` (function)
+
+```lisp
+(block-definition-origin instance)
 ```
 
 (undocumented)
@@ -5091,6 +5145,30 @@ Return what blocks are compared by: the name without case, so that Door and door
 Return the names of the blocks of the drawing, sorted.
 
 - `DRAWING`: the drawing.
+
+### `block-origin` (type)
+
+What a parametric block was made by: the code that draws it, which is not kept in the drawing, and what it was given.
+
+- `GENERATOR`: the name of the generator, a string.
+- `ARGUMENTS`: an alist from the name of each parameter, a string, to the number it was given, in the order of the
+parameters.
+
+### `block-origin-arguments` (function)
+
+```lisp
+(block-origin-arguments instance)
+```
+
+(undocumented)
+
+### `block-origin-generator` (function)
+
+```lisp
+(block-origin-generator instance)
+```
+
+(undocumented)
 
 ### `change` (type)
 
@@ -6664,7 +6742,7 @@ entities is a placement; and INVALID-ENTITY when the placement would not be vali
 ### `make-block-definition` (function)
 
 ```lisp
-(make-block-definition &key name entities (base-x 0.0d0) (base-y 0.0d0))
+(make-block-definition &key name entities (base-x 0.0d0) (base-y 0.0d0) origin)
 ```
 
 Create a block from entities that are in a drawing, moved so that the base point is the origin and given the ids 1
@@ -6676,6 +6754,15 @@ it invalid.
 - `ENTITIES`: the entities, in the order they are to be drawn.
 - `BASE-X`: x of the point that is the origin of the block.
 - `BASE-Y`: y of that point.
+- `ORIGIN`: the BLOCK-ORIGIN of a block that a generator drew, or NIL.
+
+### `make-block-origin` (function)
+
+```lisp
+(make-block-origin generator arguments)
+```
+
+(undocumented)
 
 ### `make-change` (function)
 
@@ -7048,6 +7135,17 @@ Return the palette color that follows COLOR, or the first when COLOR is not in t
 Return the palette color at INDEX, counting round the palette: the color a new layer is given.
 
 - `INDEX`: a whole number, such as the id the next layer will have.
+
+### `parameter-properties` (function)
+
+```lisp
+(parameter-properties insert)
+```
+
+Return one property for each parameter of the generator that drew the block of a placement, to be changed in the
+inspector, which draws the block again; none when it was drawn by hand.
+
+- `INSERT`: the placement.
 
 ### `pasted-entities` (function)
 
@@ -14068,6 +14166,10 @@ The context of the command that is running.
 
 The customizations that the definitions being run are added to.
 
+### `*generator-timeout-seconds*` (variable)
+
+Longest a generator may take to draw a block.
+
 ### `*hook-events*` (variable)
 
 What a hook can be added to, and when it runs: when the program has started, after a drawing is opened or a new one
@@ -14077,6 +14179,10 @@ is made, before a drawing is saved and after it is saved.
 
 Most entities a single command may create, change or erase: well beyond what a drawing is meant to hold,
 and a bound on the memory a runaway loop can ask for.
+
+### `+default-parameter-value+` (constant)
+
+What a parameter that has no default is given when a form asks for it before the user has typed anything.
 
 ### `+default-timeout-seconds+` (constant)
 
@@ -14131,6 +14237,18 @@ angle END. Returns its id.
 - `RADIUS`: its radius.
 - `START`: the angle it starts at, in degrees.
 - `END`: the angle it ends at, in degrees.
+
+### `argument-numbers` (function)
+
+```lisp
+(argument-numbers generator given)
+```
+
+Return the number of each parameter of a generator: what GIVEN says for it, or its default. GIVEN is a list of
+numbers in the order of the parameters, or a list of names and numbers; signals an error saying what is wrong.
+
+- `GENERATOR`: the generator.
+- `GIVEN`: the numbers, or names and numbers.
 
 ### `array-grid` (function)
 
@@ -14201,6 +14319,39 @@ it), or a function of no arguments.
 
 Return the key bindings that were made, as a list of (key command): the key as it is written, and the name of the
 command or a function.
+
+### `block-generator` (type)
+
+The code that draws a parametric block.
+
+- `NAME`: what it is called, a string; the name of the parameter of a block is that of the generator that drew it.
+- `DESCRIPTION`: what it draws, in a sentence.
+- `PARAMETERS`: list of (name . default), each name a string and each default a number, or NIL when it has none.
+- `FUNCTION`: function of one number for each parameter that draws the block, with the commands of the console.
+
+### `block-generator-description` (function)
+
+```lisp
+(block-generator-description instance)
+```
+
+(undocumented)
+
+### `block-generator-name` (function)
+
+```lisp
+(block-generator-name instance)
+```
+
+(undocumented)
+
+### `block-generator-parameters` (function)
+
+```lisp
+(block-generator-parameters instance)
+```
+
+(undocumented)
 
 ### `blocks` (function)
 
@@ -14314,6 +14465,7 @@ Return how many forms TEXT holds, or NIL when it cannot be read.
 
 What the user's own files defined.
 
+- `GENERATORS`: the BLOCK-GENERATORs, in the order they were defined.
 - `COMMANDS`: the USER-COMMANDs, in the order they were defined.
 - `KEYS`: list of (key modifiers target), the target being the name of a command or a function.
 - `HOOKS`: list of (event . functions), each function being a function of no arguments or the name of a command.
@@ -14322,6 +14474,14 @@ What the user's own files defined.
 
 ```lisp
 (customizations-commands instance)
+```
+
+(undocumented)
+
+### `customizations-generators` (function)
+
+```lisp
+(customizations-generators instance)
 ```
 
 (undocumented)
@@ -14341,6 +14501,21 @@ What the user's own files defined.
 ```
 
 (undocumented)
+
+### `defblock` (macro)
+
+```lisp
+(defblock name (&rest parameters) &body body)
+```
+
+Define a parametric block: a block that BODY draws, with the commands of the console, from the numbers that its
+parameters have. It is drawn when it is placed, and again when a parameter is changed in the inspector. A parameter is a
+name, or a list of a name and the number it has unless it is given another. The name of the block is a symbol or a
+string. Returns its name.
+
+- `NAME`: what the block is called.
+- `PARAMETERS`: the names of the parameters, each with its default when it is written as a list.
+- `BODY`: a description of what it draws, as a string, if there is more than one form, and then the forms that draw it.
 
 ### `defcommand` (macro)
 
@@ -14546,6 +14721,17 @@ stands for, and the sides of a shape. Returns how many were exploded.
 Return the smallest rectangle that holds the drawing, as the list (min-x min-y max-x max-y), or NIL when
 it is empty.
 
+### `find-block-generator` (function)
+
+```lisp
+(find-block-generator customizations name)
+```
+
+Return the generator of that name, or NIL.
+
+- `CUSTOMIZATIONS`: what the user defined.
+- `NAME`: the name of the generator, in any case.
+
 ### `find-key-binding` (function)
 
 ```lisp
@@ -14586,6 +14772,39 @@ Zoom the window to show the whole drawing.
 Return VALUE feet as millimetres: (foot 1) is 304.8.
 
 - `VALUE`: a number.
+
+### `generate-block-definition` (function)
+
+```lisp
+(generate-block-definition generator numbers)
+```
+
+Return the block definition that a generator draws from some numbers, which is not in any drawing. Signals
+EDIT-REFUSED, with the reason, when the numbers are not right, the generator fails, draws nothing, or takes too long.
+
+- `GENERATOR`: the generator.
+- `NUMBERS`: a number for each of its parameters, in order.
+
+### `generated-block-name` (function)
+
+```lisp
+(generated-block-name generator-name numbers)
+```
+
+Return the name of the block that a generator draws from some numbers: the name of the generator and the numbers,
+as in grade(1200, 900, 100).
+
+- `GENERATOR-NAME`: the name of the generator.
+- `NUMBERS`: the number of each parameter.
+
+### `generators` (function)
+
+```lisp
+(generators)
+```
+
+Return the generators of parametric blocks that were defined, each as a list of its name, what it draws and its
+parameters, each a name or a list of a name and its default.
 
 ### `grid-spacing` (function)
 
@@ -14670,10 +14889,11 @@ Say what an entity is: its kind, its layer, and each of its properties and measu
 ### `insert` (function)
 
 ```lisp
-(insert name x y &key (scale 1) (rotation 0) flipped)
+(insert name x y &key (scale 1) (rotation 0) flipped with)
 ```
 
-Place the block called NAME with its base point at (X, Y). Returns the id of the placement.
+Place the block called NAME with its base point at (X, Y). With WITH, NAME is a parametric block, which DEFBLOCK
+defined, and it is drawn from those numbers first. Returns the id of the placement.
 
 - `NAME`: the name of the block.
 - `X`: x of the point.
@@ -14681,6 +14901,8 @@ Place the block called NAME with its base point at (X, Y). Returns the id of the
 - `SCALE`: how many times larger than the block.
 - `ROTATION`: the turn, in degrees.
 - `FLIPPED`: true to reflect the block across its vertical axis before it is turned.
+- `WITH`: for a parametric block, its numbers: a list of numbers in the order of its parameters, or of names and numbers,
+such as (:width 1200 :height 900); the parameters that are left out have their defaults.
 
 ### `layer` (function)
 
@@ -14806,6 +15028,34 @@ Move entities to the layer called NAME. Returns how many moved.
 
 - `IDS`: an id or a list of ids.
 - `NAME`: the name of the layer.
+
+### `parameter-changes` (function)
+
+```lisp
+(parameter-changes drawing id parameter value)
+```
+
+Return the change set that gives a parameter of a parametric block, as it is placed, another number, which draws the
+block again: the placement takes the new block. Signals EDIT-REFUSED, with the reason, when the placement is not
+one of a parametric block, the generator is not defined, or the block cannot be drawn.
+
+- `DRAWING`: the drawing.
+- `ID`: the id of the placement.
+- `PARAMETER`: the name of the parameter.
+- `VALUE`: its new number.
+
+### `parametric-block` (function)
+
+```lisp
+(parametric-block drawing generator numbers)
+```
+
+Return the block of the drawing that a generator draws from some numbers, drawing it and adding it to the drawing
+when the drawing has none like it.
+
+- `DRAWING`: the drawing.
+- `GENERATOR`: the generator.
+- `NUMBERS`: a number for each of its parameters, in order.
 
 ### `parse-chord` (function)
 
@@ -15132,6 +15382,18 @@ Select every entity that can be selected. Returns how many are selected.
 ```
 
 Return the ids of the entities selected in the window.
+
+### `set-parameter` (function)
+
+```lisp
+(set-parameter id parameter value)
+```
+
+Give a parameter of a placed parametric block another number, which draws the block again. Returns the id.
+
+- `ID`: the id of the placement.
+- `PARAMETER`: the name of the parameter, a string or a symbol.
+- `VALUE`: its new number.
 
 ### `sheet` (function)
 

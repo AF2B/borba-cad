@@ -25,6 +25,16 @@
   "Says how many entities the drawing has"
   (say (format nil "~d entities" (entity-count))))
 
+;;; A parametric block: drawn from numbers, placed from the command palette (Ctrl+K, "Block: grade") or with
+;;; (insert "grade" 0 0 :with '(:largura 1200)). A placement shows its numbers in the inspector, and changing one
+;;; draws the block again. A parameter is a name, or a name and the number it has unless it is given another.
+
+(defblock grade ((largura 1000) (altura 600) (passo 100))
+  "A grille: a frame and the bars across it"
+  (rect-size 0 0 largura altura)
+  (dotimes (index (1- (floor largura passo)))
+    (line (* (1+ index) passo) 0 (* (1+ index) passo) altura)))
+
 ;;; Keys: Ctrl or Alt with a letter, or a function key. They run a command of yours, or any command the palette lists.
 
 (bind-key "Ctrl+Alt+P" "Draw a fence post")

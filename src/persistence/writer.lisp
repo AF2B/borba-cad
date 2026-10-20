@@ -89,15 +89,32 @@ STREAM: output stream."
             (if (dom:layer-visible layer) "t" "nil")
             (if (dom:layer-locked layer) "t" "nil"))))
 
+(defun write-block-origin (origin
+                           stream)
+  "Write what drew a parametric block: the name of the generator and what it was given.
+
+ORIGIN: the block origin.
+STREAM: output stream."
+  (format stream "   (generator ")
+  (write-quoted-string (dom:block-origin-generator origin) stream)
+  (loop for (name . value) in (dom:block-origin-arguments origin)
+        do (format stream " (arg ")
+           (write-quoted-string name stream)
+           (format stream " ~a)" (format-double value)))
+  (format stream ")~%"))
+
 (defun write-block (definition
                     stream)
-  "Write one block definition: its name and its entities.
+  "Write one block definition: its name, what drew it when it is a parametric block, and its entities.
 
 DEFINITION: the block definition.
 STREAM: output stream."
   (format stream "  (block (name ")
   (write-quoted-string (dom:block-definition-name definition) stream)
-  (format stream ")~%   (entities~%")
+  (format stream ")~%")
+  (when (dom:block-definition-origin definition)
+    (write-block-origin (dom:block-definition-origin definition) stream))
+  (format stream "   (entities~%")
   (dolist (entity (dom:block-definition-entities definition))
     (write-string "   " stream)
     (write-entity entity stream))
@@ -139,6 +156,33 @@ STREAM: output stream."
     (write-viewport viewport stream))
   (format stream "   ))~%"))
 
+(defun blocks-to-write (drawing)
+  "Return the blocks that the file keeps, sorted by name: the blocks that were drawn by hand, and the blocks that a
+generator drew only when something places them, with the blocks that placements hold even if the drawing has lost them
+by undoing.
+
+DRAWING: the drawing."
+  (let ((placed (make-hash-table :test #'equal)))
+    (dom:map-entities (lambda (entity)
+                        (when (typep entity 'dom:insert-entity)
+                          (let ((definition (dom:insert-block entity)))
+                            (setf (gethash (dom:block-name-key (dom:block-definition-name definition)) placed)
+                                  definition))))
+                      (dom:drawing-store drawing))
+    (let ((kept (make-hash-table :test #'equal)))
+      (dolist (definition (dom:block-definitions drawing))
+        (let ((key (dom:block-name-key (dom:block-definition-name definition))))
+          (when (or (null (dom:block-definition-origin definition)) (gethash key placed))
+            (setf (gethash key kept) definition))))
+      (maphash (lambda (key definition)
+                 (unless (gethash key kept)
+                   (setf (gethash key kept) definition)))
+               placed)
+      (sort (loop for definition being the hash-values of kept
+                  collect definition)
+            #'string-lessp
+            :key #'dom:block-definition-name))))
+
 (defun write-drawing (drawing
                       stream)
   "Write DRAWING in the .bcad format (the newest version).
@@ -163,7 +207,7 @@ STREAM: character output stream; UTF-8 is expected."
     (write-layer layer stream))
   (format stream " )~%")
   (format stream " (blocks~%")
-  (dolist (definition (dom:block-definitions drawing))
+  (dolist (definition (blocks-to-write drawing))
     (write-block definition stream))
   (format stream " )~%")
   (format stream " (sheets~%")

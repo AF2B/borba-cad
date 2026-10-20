@@ -674,6 +674,7 @@ APPLICATION: the application."
       (is (equal '("Draw a fence post" "Draw a row of posts" "How many things?")
                  (command-names application)))
       (is (search "Init file ready" (console-text application)))
+      (is (equal '("grade") (mapcar #'script:block-generator-name (app:block-generators application))))
       (press application :p :control :alt)
       (is (= 2 (dom:drawing-entity-count (app:app-drawing application))))
       (app:run-command-by-name application "Draw a row of posts")

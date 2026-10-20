@@ -57,6 +57,22 @@ commands that draw it.")
    #:chord-text
    #:*hook-events*
    #:defcommand
+   #:defblock
+   #:generators
+   #:set-parameter
+   #:block-generator
+   #:block-generator-name
+   #:block-generator-description
+   #:block-generator-parameters
+   #:customizations-generators
+   #:find-block-generator
+   #:generate-block-definition
+   #:parametric-block
+   #:parameter-changes
+   #:generated-block-name
+   #:argument-numbers
+   #:+default-parameter-value+
+   #:*generator-timeout-seconds*
    #:bind-key
    #:add-hook
    #:commands

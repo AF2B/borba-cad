@@ -35,12 +35,26 @@ DESCRIPTION: what it does, in a sentence.
 FUNCTION: function of no arguments that does it."
   name description function)
 
+(defstruct (block-generator (:constructor make-block-generator (name
+                                                                description
+                                                                parameters
+                                                                function)))
+  "The code that draws a parametric block.
+
+NAME: what it is called, a string; the name of the parameter of a block is that of the generator that drew it.
+DESCRIPTION: what it draws, in a sentence.
+PARAMETERS: list of (name . default), each name a string and each default a number, or NIL when it has none.
+FUNCTION: function of one number for each parameter that draws the block, with the commands of the console."
+  name description parameters function)
+
 (defstruct (customizations (:constructor make-customizations ()))
   "What the user's own files defined.
 
+GENERATORS: the BLOCK-GENERATORs, in the order they were defined.
 COMMANDS: the USER-COMMANDs, in the order they were defined.
 KEYS: list of (key modifiers target), the target being the name of a command or a function.
 HOOKS: list of (event . functions), each function being a function of no arguments or the name of a command."
+  (generators '() :type list)
   (commands '() :type list)
   (keys '() :type list)
   (hooks '() :type list))
@@ -241,3 +255,264 @@ command or a function."
             (list (chord-text (first binding) (second binding))
                   (third binding)))
           (customizations-keys (current-customizations))))
+
+;;; Blocks that are drawn by code
+
+(defparameter *generator-timeout-seconds* 10d0
+  "Longest a generator may take to draw a block.")
+
+(defconstant +default-parameter-value+ 100d0
+  "What a parameter that has no default is given when a form asks for it before the user has typed anything.")
+
+(defun find-block-generator (customizations
+                             name)
+  "Return the generator of that name, or NIL.
+
+CUSTOMIZATIONS: what the user defined.
+NAME: the name of the generator, in any case."
+  (find (command-key name)
+        (customizations-generators customizations)
+        :key (lambda (generator) (command-key (block-generator-name generator)))
+        :test #'string=))
+
+(defun register-block-generator (name
+                                 description
+                                 parameters
+                                 function)
+  "Add a generator, replacing one of the same name. Returns its name.
+
+NAME: what it is called.
+DESCRIPTION: what it draws.
+PARAMETERS: list of (name . default).
+FUNCTION: function of one number for each parameter."
+  (unless (and (stringp name) (plusp (length (string-trim '(#\Space #\Tab) name))))
+    (error "A block needs a name, but ~s was given." name))
+  (let* ((customizations (current-customizations))
+         (generator (make-block-generator (string-trim '(#\Space #\Tab) name)
+                                          description
+                                          parameters
+                                          function))
+         (existing (find-block-generator customizations name)))
+    (if existing
+        (setf (customizations-generators customizations)
+              (substitute generator existing (customizations-generators customizations)))
+        (setf (customizations-generators customizations)
+              (append (customizations-generators customizations) (list generator))))
+    (block-generator-name generator)))
+
+(defmacro defblock (name
+                    (&rest parameters)
+                    &body body)
+  "Define a parametric block: a block that BODY draws, with the commands of the console, from the numbers that its
+parameters have. It is drawn when it is placed, and again when a parameter is changed in the inspector. A parameter is a
+name, or a list of a name and the number it has unless it is given another. The name of the block is a symbol or a
+string. Returns its name.
+
+NAME: what the block is called.
+PARAMETERS: the names of the parameters, each with its default when it is written as a list.
+BODY: a description of what it draws, as a string, if there is more than one form, and then the forms that draw it."
+  (let* ((text (and (stringp (first body)) (rest body) (first body)))
+         (forms (if text (rest body) body))
+         (variables (mapcar (lambda (parameter) (if (consp parameter) (first parameter) parameter)) parameters)))
+    `(register-block-generator ,(if (stringp name) name (string-downcase (symbol-name name)))
+                               ,(or text "")
+                               (list ,@(mapcar (lambda (parameter)
+                                                 `(cons ,(string-downcase (symbol-name (if (consp parameter)
+                                                                                           (first parameter)
+                                                                                           parameter)))
+                                                        ,(and (consp parameter) `(float ,(second parameter) 1d0))))
+                                               parameters))
+                               (lambda (,@variables)
+                                 (declare (ignorable ,@variables))
+                                 ,@forms))))
+
+(defun tidy-number (value)
+  "Return a number as short text, without zeros at the end of its decimals.
+
+VALUE: a number."
+  (let ((text (base:format-decimal value 4)))
+    (if (find #\. text)
+        (string-right-trim "." (string-right-trim "0" text))
+        text)))
+
+(defun generated-block-name (generator-name
+                             numbers)
+  "Return the name of the block that a generator draws from some numbers: the name of the generator and the numbers,
+as in grade(1200, 900, 100).
+
+GENERATOR-NAME: the name of the generator.
+NUMBERS: the number of each parameter."
+  (let* ((arguments (format nil "~{~a~^, ~}" (mapcar #'tidy-number numbers)))
+         (name (format nil "~a(~a)" generator-name arguments)))
+    (if (<= (length name) dom:+maximum-block-name-length+)
+        name
+        (format nil "~a#~36r"
+                (subseq generator-name 0 (min (length generator-name) 40))
+                (sxhash arguments)))))
+
+(defun generation-failure (generator
+                           reason)
+  "Signal EDIT-REFUSED saying that a block could not be drawn.
+
+GENERATOR: the generator.
+REASON: why, as text."
+  (error 'base:edit-refused
+         :reason (i18n:trf "The block ~a could not be drawn: ~a"
+                           (block-generator-name generator)
+                           reason)))
+
+(defun generate-block-definition (generator
+                                  numbers)
+  "Return the block definition that a generator draws from some numbers, which is not in any drawing. Signals
+EDIT-REFUSED, with the reason, when the numbers are not right, the generator fails, draws nothing, or takes too long.
+
+GENERATOR: the generator.
+NUMBERS: a number for each of its parameters, in order."
+  (unless (= (length numbers) (length (block-generator-parameters generator)))
+    (generation-failure generator
+                        (i18n:trf "it takes ~d ~:*~[numbers~;number~:;numbers~], but ~d were given"
+                                  (length (block-generator-parameters generator))
+                                  (length numbers))))
+  (unless (every (lambda (number) (and (realp number) (< (abs number) base:+maximum-coordinate-magnitude+))) numbers)
+    (generation-failure generator (i18n:tr "its numbers must be numbers of a reasonable size")))
+  (let* ((numbers (mapcar (lambda (number) (float number 1d0)) numbers))
+         (scratch (dom:make-drawing))
+         (collector (list nil)))
+    (handler-case
+        (let ((*context* (make-script-context scratch))
+              (*block-collector* collector)
+              (*redraw* nil))
+          (sbcl:call-with-timeout *generator-timeout-seconds*
+                                  (lambda () (apply (block-generator-function generator) numbers))))
+      (sbcl:timeout ()
+        (generation-failure generator
+                            (i18n:trf "it took more than ~d seconds" (round *generator-timeout-seconds*))))
+      (base:edit-refused (condition)
+        (error condition))
+      (error (condition)
+        (generation-failure generator (failure-message condition))))
+    (when (null (car collector))
+      (generation-failure generator (i18n:tr "it drew nothing")))
+    (handler-case (dom:make-block-definition
+                   :name (generated-block-name (block-generator-name generator) numbers)
+                   :entities (reverse (car collector))
+                   :origin (dom:make-block-origin (block-generator-name generator)
+                                                  (loop for (name) in (block-generator-parameters generator)
+                                                        for number in numbers
+                                                        collect (cons name number))))
+      (base:borba-cad-error (condition)
+        (generation-failure generator (princ-to-string condition))))))
+
+(defun same-origin-p (first
+                      second)
+  "Return true when two block origins are of the same generator with the same numbers.
+
+FIRST: a block origin, or NIL.
+SECOND: another."
+  (and first
+       second
+       (string-equal (dom:block-origin-generator first) (dom:block-origin-generator second))
+       (equalp (dom:block-origin-arguments first) (dom:block-origin-arguments second))))
+
+(defun parametric-block (drawing
+                         generator
+                         numbers)
+  "Return the block of the drawing that a generator draws from some numbers, drawing it and adding it to the drawing
+when the drawing has none like it.
+
+DRAWING: the drawing.
+GENERATOR: the generator.
+NUMBERS: a number for each of its parameters, in order."
+  (let* ((definition (generate-block-definition generator numbers))
+         (existing (dom:find-block drawing (dom:block-definition-name definition))))
+    (cond ((and existing (same-origin-p (dom:block-definition-origin existing)
+                                        (dom:block-definition-origin definition)))
+           existing)
+          (t
+           (dom:define-block drawing definition)
+           definition))))
+
+(defun argument-numbers (generator
+                         given)
+  "Return the number of each parameter of a generator: what GIVEN says for it, or its default. GIVEN is a list of
+numbers in the order of the parameters, or a list of names and numbers; signals an error saying what is wrong.
+
+GENERATOR: the generator.
+GIVEN: the numbers, or names and numbers."
+  (let ((parameters (block-generator-parameters generator)))
+    (cond ((and (listp given) (every #'realp given) given)
+           (when (> (length given) (length parameters))
+             (error "The block ~a has ~d ~:*~[parameters~;parameter~:;parameters~], but ~d numbers were given."
+                    (block-generator-name generator)
+                    (length parameters)
+                    (length given)))
+           (loop for (name . default) in parameters
+                 for index from 0
+                 collect (or (and (< index (length given)) (nth index given))
+                             default
+                             (error "The parameter ~a of the block ~a needs a number."
+                                    name
+                                    (block-generator-name generator)))))
+          ((and (listp given) (evenp (length given)))
+           (let ((named (loop for (key value) on given by #'cddr
+                              collect (cons (string-downcase (if (stringp key) key (symbol-name key))) value))))
+             (dolist (entry named)
+               (unless (assoc (car entry) parameters :test #'string=)
+                 (error "The block ~a has no parameter called ~a; it has ~{~a~^, ~}."
+                        (block-generator-name generator)
+                        (car entry)
+                        (mapcar #'car parameters))))
+             (loop for (name . default) in parameters
+                   collect (or (cdr (assoc name named :test #'string=))
+                               default
+                               (error "The parameter ~a of the block ~a needs a number."
+                                      name
+                                      (block-generator-name generator))))))
+          (t (error "A block is given its numbers as a list of numbers, or of names and numbers, but ~s was given."
+                    given)))))
+
+(defun parameter-changes (drawing
+                          id
+                          parameter
+                          value)
+  "Return the change set that gives a parameter of a parametric block, as it is placed, another number, which draws the
+block again: the placement takes the new block. Signals EDIT-REFUSED, with the reason, when the placement is not
+one of a parametric block, the generator is not defined, or the block cannot be drawn.
+
+DRAWING: the drawing.
+ID: the id of the placement.
+PARAMETER: the name of the parameter.
+VALUE: its new number."
+  (let* ((insert (dom:store-find (dom:drawing-store drawing) id))
+         (origin (and (typep insert 'dom:insert-entity)
+                      (dom:block-definition-origin (dom:insert-block insert)))))
+    (unless origin
+      (error 'base:edit-refused :reason (i18n:tr "That is not a block that a generator drew.")))
+    (unless (assoc parameter (dom:block-origin-arguments origin) :test #'string-equal)
+      (error 'base:edit-refused :reason (i18n:trf "The block has no parameter called ~a." parameter)))
+    (let ((generator (find-block-generator (current-customizations) (dom:block-origin-generator origin))))
+      (unless generator
+        (error 'base:edit-refused
+               :reason (i18n:trf "The generator ~a is not defined here; define it in the init file to draw it again."
+                                 (dom:block-origin-generator origin))))
+      (unless (and (realp value) (< (abs value) base:+maximum-coordinate-magnitude+))
+        (error 'base:edit-refused :reason (i18n:tr "A parameter is a number of a reasonable size.")))
+      (let* ((numbers (loop for (name . number) in (dom:block-origin-arguments origin)
+                            collect (if (string-equal name parameter) (float value 1d0) number)))
+             (block (parametric-block drawing
+                                      generator
+                                      numbers)))
+        (if (eq block (dom:insert-block insert))
+            '()
+            (list (dom:make-change id
+                                   insert
+                                   (dom:update-insert insert :block block))))))))
+
+(defun generators ()
+  "Return the generators of parametric blocks that were defined, each as a list of its name, what it draws and its
+parameters, each a name or a list of a name and its default."
+  (loop for generator in (customizations-generators (current-customizations))
+        collect (list (block-generator-name generator)
+                      (block-generator-description generator)
+                      (loop for (name . default) in (block-generator-parameters generator)
+                            collect (if default (list name default) name)))))
