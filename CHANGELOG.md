@@ -4,6 +4,56 @@ Format: [Keep a Changelog](https://keepachangelog.com/). The project follows sem
 
 ## [Unreleased]
 
+### Added
+
+- **Underlays: trace over a picture or a PDF.** More > Add an underlay (`Ctrl+Shift+U`) puts a PNG, a JPEG or a
+  page of a PDF under the drawing, in the middle of the view, and waits for the calibration: click two points of the
+  picture whose distance you know, type the distance (in the unit of the drawing or with `mm`, `cm`, `m`), and
+  choose whether to leave the picture turned, make the line between the points level or upright, or aim it at an
+  angle. The picture is scaled, and turned if asked, about the first point. A PDF asks for its page and a resolution
+  (`auto` reads a scan at its own resolution and a drawing of lines at 150 dots per inch, and a page keeps its size
+  on paper). More > Underlays (and the command palette) calibrate again, change the position, turn, size of a pixel,
+  opacity, name, page and resolution in a form, hide, show, zoom to and remove each underlay; zoom to fit takes the
+  underlays in. A drawing keeps its pictures whole inside the file (format version 9, as text), up to 8 of them and
+  40 MiB, so it opens anywhere; they are not printed, plotted or exported and, like layers and sheets, are not steps
+  of undo.
+- **Readers of PNG, JPEG and PDF, in Lisp.** PNG of every color type and depth (palette, transparency, interlaced),
+  JPEG baseline and progressive (any sampling, restart intervals, gray, RGB, CMYK), and PDF by its objects, even with
+  broken tables or object streams: lines, curves, dashes, joins and caps, fills by either rule, clipping paths of any
+  shape, forms, every common kind of image (raw, Flate, LZW, JPEG, indexed, stencil, soft masks), page rotation and
+  crop boxes, and text in the TrueType and CFF fonts the file carries. The pixels are the same as the reference
+  decoders give (ImageMagick, libjpeg, poppler); damaged, cut-short, protected (password), fax, JPEG 2000 and
+  oversized files are refused with a reason, and the memory a picture may claim is bounded. Text in fonts a file
+  leaves out, Type 1 and Type 3 fonts, shadings and patterns are not drawn.
+- **Shapes.** A Shapes button in the palette opens a scrollable 4 x 4 grid of shapes by area and group, starting with
+  20 acanthus leaves made by a procedure; a clicked shape is placed as a block (click, typed size, `F` to flip, a
+  second click or an angle to turn). Add SVG reads SVG files (paths with curves, basic elements, group transforms)
+  into a folder of shapes of your own.
+- **Join, cut and overlap.** Union, Subtract and Intersect (`Shift+U`, `Shift+D`, `Shift+I`) in the Modify menu work
+  on rectangles, polygons, circles and closed polylines; a hatch leaves out the shapes inside its boundary (file
+  format version 6). The console gets `region-union`, `region-subtract` and `region-intersect`.
+- **Arrays.** Array (`Shift+Y`) repeats the selection in a grid, round a clicked center, or along a clicked line,
+  curve or shape, with a form that says how many entities it would add. The console gets `array-grid`,
+  `array-polar` and `array-path`.
+- **Quantities.** Quantities (`Shift+L`) in the Measure menu totals the drawing by layer, by kind and by block, and
+  lists a cut list of bars by length, as a table to read and as CSV (standard or the form Excel in Portuguese
+  opens). The console gets `quantities`.
+- **Your own configuration.** `init.lisp` in `~/.config/borba-cad` (`%APPDATA%\BorbaCAD`) defines commands
+  (`defcommand`), key bindings (`bind-key`) and hooks (`add-hook`); `Ctrl+K` opens a command palette that finds
+  them, the recorded actions kept as commands, and every menu choice. `--config-dir` and `--no-init` are new;
+  `examples/init.lisp` shows it all.
+- **Print layout.** `Ctrl+L` shows the sheet as it will be printed: viewports that show the drawing at a scale of
+  their own, a frame and a title block (project, title, author, date, revision, scale, sheet, paper), and an
+  export of all the sheets as one PDF with a page each (file format version 7).
+- **Parametric blocks.** `defblock` defines a block drawn by code from named numbers; placing one asks the numbers,
+  a placement shows them in the inspector, and changing one draws the block again as one step of undo (file format
+  version 8 keeps what drew it, as data).
+
+### Changed
+
+- The drawing file is version 9. Files of versions 1 to 8 still open and are saved as 9; the largest file read is
+  96 MiB.
+
 ## [1.3.0] - 2026-10-19
 
 ### Added

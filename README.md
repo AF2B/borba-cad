@@ -28,8 +28,14 @@ draw by typing Lisp into a console, because the language of the program is Lisp 
 - **A Lisp console**: `(rect-size 0 0 (m 9) (m 6))` draws; any Common Lisp works; a command is one step of
   undo, and one that fails leaves nothing behind. Scripts run from files, drawings export as scripts, and what
   you do in the editor can be recorded as one.
+- **Tracing**: put a PNG, a JPEG or a page of a PDF under the drawing and calibrate it with two distances you
+  know; the readers of the three formats are written in Lisp.
+- **More tools**: union, subtract and intersect of closed shapes, arrays in a grid, round a point or along a path,
+  quantities and a cut list with CSV, a library of shapes (acanthus leaves, SVG files of your own), parametric
+  blocks drawn by code, and a command palette (`Ctrl+K`) over your own commands in `init.lisp`.
 - **Files**: its own `.bcad` format (text, versioned, never evaluated), DXF import of any ASCII version and DXF
-  R12 export, a JPEG of what the canvas shows, and PDF and SVG sheets to print at a scale.
+  R12 export, a JPEG of what the canvas shows, and PDF and SVG sheets to print at a scale, with a print layout of
+  sheets, viewports and title blocks.
 - **Friendly**: a start screen with your recent drawings, a file dialog with places and search, a dark and a
   light theme one click apart, zoom buttons on the canvas, and the interface in English, Brazilian Portuguese
   or Russian.
@@ -273,8 +279,8 @@ are scripts to read and run.
 
 ## Files and formats
 
-- **`.bcad`**, the program's own format: UTF-8 text, one S-expression, an explicit `format-version` (5; versions
-  1 to 4 open and are migrated), doubles that read back exactly. Loading never evaluates code; a malformed
+- **`.bcad`**, the program's own format: UTF-8 text, one S-expression, an explicit `format-version` (9; versions
+  1 to 8 open and are migrated), doubles that read back exactly. Loading never evaluates code; a malformed
   file is refused with its line and column, and a failed open leaves the open drawing untouched. Saving is
   atomic (temporary file, flush, rename).
 - **DXF import** (More > Import DXF) reads an ASCII DXF of any version as a new drawing: layers, lines,
@@ -300,6 +306,17 @@ are scripts to read and run.
   keeps every character.
 
 Exports end with a message in the middle of the window that says the file was saved or why it was not.
+
+**Underlays.** More > Add an underlay (`Ctrl+Shift+U`) asks for a PNG, a JPEG or a PDF and puts it under the drawing.
+A PDF asks for the page and the resolution first (`auto` reads a scan at its own resolution and a drawing of lines
+at 150 dots per inch). Then click two points of the picture whose distance you know, type the distance (`12.5 m`,
+or a number in the display unit) and choose how to turn the picture: leave it, make the line level or upright, or
+aim it at an angle; the picture is scaled and turned about the first point. More > Underlays (or `Ctrl+K`) calibrates
+again, changes the position, turn, size of a pixel, opacity, page and resolution, hides, shows, zooms to or removes
+each one. The pictures are kept whole in the drawing file (up to 8, and 40 MiB together), are not printed or
+exported, and are not steps of undo. PDFs: lines, curves, fills, clipping paths, images and text in the TrueType
+and CFF fonts the file carries are drawn; text in fonts left out of the file, shadings and patterns are not, and
+password-protected, fax and JPEG 2000 files are refused with the reason.
 
 **Ortho, polar and typed points.** `F8` (the **Ortho** chip) holds the next point of a line, polyline or
 dimension to a horizontal or vertical line from the last one, `F10` (**Polar**) to multiples of 15 degrees; an
@@ -378,15 +395,19 @@ measured is reported as unavailable, never estimated.
 
 The latest release is on the [releases page](https://github.com/AF2B/borba-cad/releases), and what `main` has that
 no release has is in the [changelog](CHANGELOG.md) under *Unreleased*. The strict build has zero warnings, and the
-lint, 235,000+ headless checks and 215 window checks pass. The benchmark baseline and the experiment report are
+lint, 260,000+ headless checks and 258 window checks pass. The benchmark baseline and the experiment report are
 those of 1.0.0.
 
 - Run on Linux x86_64 with SBCL; the Windows build is made by the workflow and has not yet been opened on a
   real Windows machine.
 - Single-line text, axis-aligned rectangles and linear, radius, diameter and angle dimensions only; there is
   no printing from the program itself, only PDF and SVG sheets and a JPEG; the PDF font has no Cyrillic.
-- Trim and extend work on lines, arcs and circles, a hatch has no holes, a block cannot hold a block, and the
-  console has no command for trim, extend, offset, fillet or spread (a recording writes their result).
+- Trim and extend work on lines, arcs and circles, a block cannot hold a block, a result of union, subtract or
+  intersect made from a circle is a polygon, and the console has no command for trim, extend, offset, fillet or
+  spread (a recording writes their result).
+- Underlays are not steps of undo (calibrate again to put one right), a PDF page is read as a picture (its text is
+  drawn only in fonts the file carries), and the pictures of a drawing make a large file that takes about a second to
+  open.
 - The DXF import was tried on test files and a few small files from the internet, not on a collection of real
   drawings.
 - Portuguese and Russian keep the decimal point, and leave in English the console's error messages and the
